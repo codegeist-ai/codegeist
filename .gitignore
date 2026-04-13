@@ -1,0 +1,7 @@
+.devcontainer/.local.env
+/.worktrees/
+/app/codegeist/.settings/
+/app/codegeist/target/
+**/bin/**
+*.log
+*.project
