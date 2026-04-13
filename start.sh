@@ -11,6 +11,8 @@
 #   worktrees via a symlink.
 # - Repairs the nested `.opencode` submodule checkout for the selected
 #   repository checkout so worktrees stay runnable.
+# - Allows the repo-local `.opencode` file-path submodule URL during that
+#   targeted repair step without changing global Git config.
 # - Opens the selected checkout directly through the repo's devcontainer
 #   definition instead of a plain host-side folder window.
 #
@@ -74,9 +76,17 @@ ensure_worktree() {
   printf '%s\n' "$worktree_path"
 }
 
+init_opencode_submodule() {
+  local checkout="$1"
+
+  git -C "$checkout" -c protocol.file.allow=always \
+    submodule update --init --recursive .opencode >&2
+}
+
 ensure_opencode_submodule() {
   local checkout="$1"
   local submodule_path="$checkout/.opencode"
+  local submodule_status=""
 
   if [ ! -f "$checkout/.gitmodules" ]; then
     return 0
@@ -90,6 +100,14 @@ ensure_opencode_submodule() {
     return 0
   fi
 
+  submodule_status="$(git -C "$checkout" submodule status -- .opencode 2>/dev/null || true)"
+
+  if [ -n "$submodule_status" ] && [ "${submodule_status#-}" != "$submodule_status" ]; then
+    printf 'Initializing .opencode submodule in %s\n' "$checkout" >&2
+    init_opencode_submodule "$checkout"
+    return 0
+  fi
+
   if [ -e "$submodule_path" ]; then
     printf 'Cannot initialize .opencode submodule in %s\n' "$checkout" >&2
     printf 'The path %s already exists and is not an initialized Git submodule.\n' "$submodule_path" >&2
@@ -98,7 +116,7 @@ ensure_opencode_submodule() {
   fi
 
   printf 'Initializing .opencode submodule in %s\n' "$checkout" >&2
-  git -C "$checkout" submodule update --init --recursive .opencode >&2
+  init_opencode_submodule "$checkout"
 }
 
 devcontainer_folder_uri() {
