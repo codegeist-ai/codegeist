@@ -13,6 +13,8 @@
 #   repository checkout so worktrees stay runnable.
 # - Allows the repo-local `.opencode` file-path submodule URL during that
 #   targeted repair step without changing global Git config.
+# - Waits for the opened VS Code window and removes the matching Compose
+#   project again when that window closes.
 # - Opens the selected checkout directly through the repo's devcontainer
 #   definition instead of a plain host-side folder window.
 #
@@ -123,8 +125,26 @@ devcontainer_folder_uri() {
   local checkout="$1"
   local workspace_hex=""
 
-  workspace_hex="$(printf '%s' "$checkout" | xxd -p -c 256 | tr -d '[:space:]')"
+  workspace_hex="$(printf '%s' "$checkout" | od -An -tx1 -v | tr -d '[:space:]')"
   printf 'vscode-remote://dev-container+%s%s\n' "$workspace_hex" "$checkout"
+}
+
+cleanup_devcontainer_project() {
+  local checkout="$1"
+
+  env \
+    PWD="$runtime_repo_worktree" \
+    CODEGEIST_REPO_ROOT="$runtime_repo_root" \
+    CODEGEIST_REPO_WORKTREE="$runtime_repo_worktree" \
+    COMPOSE_PROJECT_NAME="$runtime_project_name" \
+    PROJECT_NAME="$runtime_project_name" \
+    CODEGEIST_HOSTNAME="$runtime_hostname" \
+    UID="$runtime_uid" \
+    GID="$runtime_gid" \
+    docker compose \
+      --project-name "$runtime_project_name" \
+      -f "$checkout/.devcontainer/docker-compose.yml" \
+      down --remove-orphans >&2
 }
 
 set_runtime_env() {
@@ -186,7 +206,8 @@ if [ "${W_NO_OPEN:-0}" = "1" ]; then
   exit 0
 fi
 
-exec env \
+env \
+  PWD="$runtime_repo_worktree" \
   CODEGEIST_REPO_ROOT="$runtime_repo_root" \
   CODEGEIST_REPO_WORKTREE="$runtime_repo_worktree" \
   COMPOSE_PROJECT_NAME="$runtime_project_name" \
@@ -194,4 +215,6 @@ exec env \
   CODEGEIST_HOSTNAME="$runtime_hostname" \
   UID="$runtime_uid" \
   GID="$runtime_gid" \
-  code --new-window --folder-uri "$(devcontainer_folder_uri "$target")"
+  code --new-window --wait --folder-uri "$(devcontainer_folder_uri "$target")"
+
+cleanup_devcontainer_project "$target"
