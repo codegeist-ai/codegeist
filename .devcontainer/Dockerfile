@@ -5,6 +5,8 @@
 # - Keeps Docker available inside the container via the custom entrypoint.
 # - Installs the Java 25 and GraalVM toolchain needed by `app/codegeist`.
 # - Provides a system Maven installation so the app does not need a wrapper.
+# - Adds the Nix package manager for later package migration work without
+#   switching the devcontainer setup to flakes yet.
 #
 # Inputs:
 # - CONTAINER_USER and CONTAINER_GROUP select the login user created in the image.
@@ -97,13 +99,14 @@ RUN apt-get update \
       sudo \
       unzip \
       wget \
+      xz-utils \
       zlib1g-dev \
- && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
 
 RUN curl -LsSf https://astral.sh/uv/install.sh \
   | env UV_UNMANAGED_INSTALL=/usr/local/bin sh
 
-RUN npm install -g --prefix /usr/local opencode-ai repomix @ast-grep/cli \
+RUN npm install -g --prefix /usr/local opencode-ai repomix @ast-grep/cli @devcontainers/cli \
  && rm -f /usr/local/bin/sg \
  && npm cache clean --force
 
@@ -143,16 +146,30 @@ RUN groupadd --gid "$CONTAINER_GID" "$CONTAINER_GROUP" \
  && useradd --uid "$CONTAINER_UID" --gid "$CONTAINER_GID" --create-home --shell /bin/bash "$CONTAINER_USER" \
  && install -d -m 0755 /data/Projects \
  && install -d -m 0755 /host \
+ && install -d -m 0755 /nix \
  && ln -s /host/run/docker.sock /var/run/host-docker.sock \
  && install -d -m 0755 "/home/$CONTAINER_USER/.config/opencode" \
  && install -d -m 0755 "/home/$CONTAINER_USER/.m2" \
  && install -d -m 0755 "/home/$CONTAINER_USER/.local/share" \
  && install -d -m 0755 "/home/$CONTAINER_USER/.local/state/opencode" \
-  && chown -R "$CONTAINER_UID:$CONTAINER_GID" "/home/$CONTAINER_USER/.config" \
+  && chown -R "$CONTAINER_UID:$CONTAINER_GID" /nix \
+      "/home/$CONTAINER_USER/.config" \
       "/home/$CONTAINER_USER/.m2" \
       "/home/$CONTAINER_USER/.local" \
- && echo "$CONTAINER_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$CONTAINER_USER" \
- && chmod 0440 "/etc/sudoers.d/$CONTAINER_USER"
+  && echo "$CONTAINER_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$CONTAINER_USER" \
+  && chmod 0440 "/etc/sudoers.d/$CONTAINER_USER"
+
+# Install Nix for the normal workspace user without enabling flakes or replacing
+# the existing apt-managed toolchain yet.
+RUN su - "$CONTAINER_USER" -c 'curl -L https://nixos.org/nix/install | sh -s -- --no-daemon --no-modify-profile'
+
+# Make login shells pick up the single-user Nix profile as well. The plain PATH
+# env is not enough because `bash -l` resets PATH from Debian's profile logic.
+RUN printf '%s\n' \
+      'if [ -e "/home/'"$CONTAINER_USER"'/.nix-profile/etc/profile.d/nix.sh" ]; then' \
+      '  . "/home/'"$CONTAINER_USER"'/.nix-profile/etc/profile.d/nix.sh"' \
+      'fi' \
+      > /etc/profile.d/nix.sh
 
 COPY .devcontainer/entrypoint.sh /usr/local/bin/devcontainer-entrypoint
 
@@ -160,6 +177,8 @@ RUN chmod +x /usr/local/bin/devcontainer-entrypoint
 
 ENV USER=${CONTAINER_USER}
 ENV HOME=/home/${CONTAINER_USER}
+ENV NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV PATH=/home/${CONTAINER_USER}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:${PATH}
 
 VOLUME ["/var/lib/docker"]
 
