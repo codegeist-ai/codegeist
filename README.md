@@ -17,7 +17,7 @@ and project-local control over behavior, prompts, and developer tooling.
 The repository now contains the first runnable application bootstrap for that
 vision:
 
-- a compose-based devcontainer setup under `.devcontainer/`
+- a compose-based devcontainer setup mounted from the `.devcontainer/` submodule
 - a Spring Boot application under `app/codegeist` built in the devcontainer with Java 25 and GraalVM Community 25
 - a Spring Shell bootstrap application with the built-in shell commands enabled
 - a GraalVM native-image Maven profile prepared for the next build step
@@ -40,7 +40,7 @@ Key properties:
 
 ## Repository Layout
 
-- `.devcontainer/` - development container image and runtime setup
+- `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
 - `app/codegeist/` - Spring Boot bootstrap application, Maven project files, and local `Taskfile.yml`
 - `chat.md` - lightweight project memory for the repository
 - `README.md` - project overview
@@ -92,7 +92,7 @@ Implementation notes:
 
 ## Getting Started
 
-1. Clone the repository with `git clone --recurse-submodules <repo-url>` so the nested `.opencode` checkout is available from the start.
+1. Clone the repository with `git clone --recurse-submodules <repo-url>` so the nested `.opencode` and `.devcontainer` checkouts are available from the start.
 2. Create `.devcontainer/.local.env` from `.devcontainer/.local.env.example`.
 3. Open the repository root with `./start.sh`; it now opens the checkout
    directly in the repository's devcontainer.
@@ -102,8 +102,9 @@ Implementation notes:
 
 If the repository was cloned without `--recurse-submodules`, Git does not let the
 repository force that clone behavior afterward. Running `./start.sh` in the
-repository root or in a managed worktree repairs the nested `.opencode`
-checkout automatically before it opens the selected checkout in a devcontainer.
+repository root or in a managed worktree repairs the nested `.opencode` and
+`.devcontainer` checkouts automatically before it opens the selected checkout in
+a devcontainer.
 
 ## Git Worktrees
 
@@ -117,10 +118,11 @@ Recommended workflow:
 4. Keep `.devcontainer/.local.env` in the repository root; managed worktrees
    link to it automatically when `start.sh` prepares them.
 
-`start.sh` also ensures that the nested `.opencode` submodule is initialized in
-the selected checkout. New managed worktrees therefore get their own usable
-`.opencode/` checkout automatically, and existing worktrees are repaired if
-that nested submodule is still missing.
+`start.sh` also ensures that the nested `.opencode` and `.devcontainer`
+submodules are initialized in the selected checkout. New managed worktrees
+therefore get their own usable `.opencode/` and `.devcontainer/` checkouts
+automatically, and existing worktrees are repaired if either nested submodule
+is still missing.
 
 `start.sh` now opens the selected checkout directly as a VS Code devcontainer
 workspace instead of opening a plain host-side folder window first.
@@ -137,8 +139,9 @@ each checkout its own container, network, volume, and hostname.
 The hostname stays dot-free so the default Bash prompt shows the full branch-
 based name instead of truncating at the first `.`.
 
-The tracked `.devcontainer/.env` file now stays static across checkouts;
-`start.sh` handles the dynamic runtime values when it launches VS Code.
+The `.devcontainer/.env` file from the checked-out `.devcontainer` submodule now
+stays static across checkouts; `start.sh` handles the dynamic runtime values
+when it launches VS Code.
 
 Each worktree uses the `.devcontainer/` files from its own Git state. If you
 change the devcontainer setup in the repository root and want the same setup in

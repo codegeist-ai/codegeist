@@ -9,10 +9,9 @@
 #   on optional exported shell variables.
 # - Reuses the repository root's `.devcontainer/.local.env` from managed
 #   worktrees via a symlink.
-# - Repairs the nested `.opencode` submodule checkout for the selected
-#   repository checkout so worktrees stay runnable.
-# - Allows the repo-local `.opencode` file-path submodule URL during that
-#   targeted repair step without changing global Git config.
+# - Repairs the required `.opencode` and `.devcontainer` submodule checkouts for
+#   the selected repository checkout so worktrees stay runnable.
+# - Allows targeted submodule repair without changing global Git config.
 # - Waits for the opened VS Code window and removes the matching Compose
 #   project again when that window closes.
 # - Opens the selected checkout directly through the repo's devcontainer
@@ -78,23 +77,25 @@ ensure_worktree() {
   printf '%s\n' "$worktree_path"
 }
 
-init_opencode_submodule() {
+init_submodule() {
   local checkout="$1"
+  local submodule_name="$2"
 
   git -C "$checkout" -c protocol.file.allow=always \
-    submodule update --init --recursive .opencode >&2
+    submodule update --init --recursive "$submodule_name" >&2
 }
 
-ensure_opencode_submodule() {
+ensure_submodule() {
   local checkout="$1"
-  local submodule_path="$checkout/.opencode"
+  local submodule_name="$2"
+  local submodule_path="$checkout/$submodule_name"
   local submodule_status=""
 
   if [ ! -f "$checkout/.gitmodules" ]; then
     return 0
   fi
 
-  if ! git -C "$checkout" config --file .gitmodules --get 'submodule..opencode.path' >/dev/null 2>&1; then
+  if ! git -C "$checkout" config --file .gitmodules --get "submodule.${submodule_name}.path" >/dev/null 2>&1; then
     return 0
   fi
 
@@ -102,23 +103,23 @@ ensure_opencode_submodule() {
     return 0
   fi
 
-  submodule_status="$(git -C "$checkout" submodule status -- .opencode 2>/dev/null || true)"
+  submodule_status="$(git -C "$checkout" submodule status -- "$submodule_name" 2>/dev/null || true)"
 
   if [ -n "$submodule_status" ] && [ "${submodule_status#-}" != "$submodule_status" ]; then
-    printf 'Initializing .opencode submodule in %s\n' "$checkout" >&2
-    init_opencode_submodule "$checkout"
+    printf 'Initializing %s submodule in %s\n' "$submodule_name" "$checkout" >&2
+    init_submodule "$checkout" "$submodule_name"
     return 0
   fi
 
   if [ -e "$submodule_path" ]; then
-    printf 'Cannot initialize .opencode submodule in %s\n' "$checkout" >&2
+    printf 'Cannot initialize %s submodule in %s\n' "$submodule_name" "$checkout" >&2
     printf 'The path %s already exists and is not an initialized Git submodule.\n' "$submodule_path" >&2
     printf 'Move or remove that directory, then run %s again.\n' "$0" >&2
     return 1
   fi
 
-  printf 'Initializing .opencode submodule in %s\n' "$checkout" >&2
-  init_opencode_submodule "$checkout"
+  printf 'Initializing %s submodule in %s\n' "$submodule_name" "$checkout" >&2
+  init_submodule "$checkout" "$submodule_name"
 }
 
 devcontainer_folder_uri() {
@@ -184,7 +185,8 @@ if [ -n "$branch" ]; then
   target="$(ensure_worktree "$branch")"
 fi
 
-ensure_opencode_submodule "$target"
+ensure_submodule "$target" .opencode
+ensure_submodule "$target" .devcontainer
 
 ensure_worktree_local_env_link "$target"
 

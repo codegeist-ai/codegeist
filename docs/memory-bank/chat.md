@@ -9,6 +9,8 @@
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
   Submodul eingebunden.
+- `.devcontainer/` ist jetzt ebenfalls als eigenes Git-Submodul eingebunden und
+  zeigt auf `codegeist-devcontainer-kit`.
 - `start.sh` ist der zentrale Einstieg, um das Repo-Root oder ein Repo-Worktree direkt in einer VS-Code-Devcontainer-Session zu oeffnen.
 - Der Devcontainer oeffnet den echten Checkout-Pfad direkt und bekommt `UID`, `GID`, `PROJECT_NAME`, `COMPOSE_PROJECT_NAME`, `CODEGEIST_REPO_ROOT`, `CODEGEIST_REPO_WORKTREE` und `CODEGEIST_HOSTNAME` zur Laufzeit von `start.sh`.
 - `app/codegeist` ist ein Spring-Boot- und Spring-Shell-Bootstrap mit Java 25, Maven und vorbereitetem GraalVM-Native-Build.
@@ -17,8 +19,8 @@
   apt-basierte Toolchain oder den Devcontainer-Workflow schon auf Nix umzustellen.
 - `.devcontainer/Dockerfile` installiert jetzt auch `@devcontainers/cli` im
   bestehenden globalen npm-Toolblock.
-- `.devcontainer/tests.sh` ist der Devcontainer-Selbsttest fuer die spaetere
-  Auslagerung des gesamten `.devcontainer/`-Verzeichnisses in ein eigenes Repo.
+- `.devcontainer/tests.sh` liegt jetzt im ausgelagerten `.devcontainer`-
+  Submodul und bleibt dort der Devcontainer-Selbsttest.
 - Der Nix-Profil-Hook wird global ueber `/etc/profile.d/nix.sh` eingebunden,
   damit `nix` auch in Login-Shells im Container im `PATH` liegt.
 
@@ -29,9 +31,10 @@
 - Repo-Memory wird unter `docs/memory-bank/chat.md` gepflegt.
 - Nix wird vorerst nur als zusaetzlicher Paketmanager installiert; es gibt noch
   keine Flakes und noch keine Migration der Toolchain auf Nix-Pakete.
+- `start.sh` initialisiert nun sowohl `.opencode` als auch `.devcontainer`, wenn
+  ein Checkout ohne rekursive Submodule geoeffnet wird.
 
 ## Offene Punkte
 
-- Den neuen `.devcontainer/tests.sh`-Pfad weiter als Smoke-Test pflegen, waehrend
-  der `.devcontainer/`-Ordner fuer eine spaetere Repo-Auslagerung vorbereitet
-  wird.
+- Das Produkt-Repo auf den neuen `.devcontainer`-Gitlink committen und danach
+  den Startpfad mit dem ausgelagerten Devcontainer-Repo pruefen.

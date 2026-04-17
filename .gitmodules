@@ -2,3 +2,7 @@
 	path = .opencode
 	url = https://github.com/codegeist-ai/codegeist-agent-kit.git
 	branch = main
+[submodule ".devcontainer"]
+	path = .devcontainer
+	url = https://github.com/codegeist-ai/codegeist-devcontainer-kit.git
+	branch = main
