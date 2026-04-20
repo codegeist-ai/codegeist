@@ -127,6 +127,10 @@ is still missing.
 `start.sh` now opens the selected checkout directly as a VS Code devcontainer
 workspace instead of opening a plain host-side folder window first.
 
+The launcher can be started from the host or from inside an already running
+devcontainer. In the in-container case it first brings up the target checkout
+with the devcontainer CLI and only then opens the matching remote workspace.
+
 `start.sh` injects four runtime variables when it opens VS Code:
 `CODEGEIST_REPO_ROOT`, `CODEGEIST_REPO_WORKTREE`, `COMPOSE_PROJECT_NAME`, and
 `CODEGEIST_HOSTNAME`. In the repository root the two path variables point to
@@ -146,6 +150,10 @@ when it launches VS Code.
 Each worktree uses the `.devcontainer/` files from its own Git state. If you
 change the devcontainer setup in the repository root and want the same setup in
 an existing worktree, update that worktree to the newer commit first.
+
+If an older checked-out `.devcontainer` submodule does not yet contain
+`compose.local.yml.example`, `start.sh` writes a minimal local
+`compose.local.yml` fallback so the worktree still opens.
 
 ## Status
 

@@ -9,6 +9,8 @@
 #   on optional exported shell variables.
 # - Reuses the repository root's `.devcontainer/.local.env` from managed
 #   worktrees via a symlink.
+# - Creates a local `compose.local.yml` from the tracked example when the
+#   devcontainer workflow needs that optional overlay file.
 # - Repairs the required `.opencode` and `.devcontainer` submodule checkouts for
 #   the selected repository checkout so worktrees stay runnable.
 # - Allows targeted submodule repair without changing global Git config.
@@ -130,6 +132,27 @@ devcontainer_folder_uri() {
   printf 'vscode-remote://dev-container+%s%s\n' "$workspace_hex" "$checkout"
 }
 
+open_checkout() {
+  local checkout="$1"
+
+  if [ "${REMOTE_CONTAINERS:-false}" = "true" ] && [ -n "${VSCODE_IPC_HOOK_CLI:-}" ]; then
+    ensure_devcontainer_running "$checkout"
+    code --new-window --folder-uri "$(devcontainer_folder_uri "$checkout")"
+    return 0
+  fi
+
+  env \
+    PWD="$runtime_repo_worktree" \
+    CODEGEIST_REPO_ROOT="$runtime_repo_root" \
+    CODEGEIST_REPO_WORKTREE="$runtime_repo_worktree" \
+    COMPOSE_PROJECT_NAME="$runtime_project_name" \
+    PROJECT_NAME="$runtime_project_name" \
+    CODEGEIST_HOSTNAME="$runtime_hostname" \
+    UID="$runtime_uid" \
+    GID="$runtime_gid" \
+    code --new-window --wait --folder-uri "$(devcontainer_folder_uri "$checkout")"
+}
+
 cleanup_devcontainer_project() {
   local checkout="$1"
 
@@ -146,6 +169,28 @@ cleanup_devcontainer_project() {
       --project-name "$runtime_project_name" \
       -f "$checkout/.devcontainer/docker-compose.yml" \
       down --remove-orphans >&2
+}
+
+ensure_devcontainer_running() {
+  local checkout="$1"
+
+  env \
+    PWD="$runtime_repo_worktree" \
+    CODEGEIST_REPO_ROOT="$runtime_repo_root" \
+    CODEGEIST_REPO_WORKTREE="$runtime_repo_worktree" \
+    COMPOSE_PROJECT_NAME="$runtime_project_name" \
+    PROJECT_NAME="$runtime_project_name" \
+    CODEGEIST_HOSTNAME="$runtime_hostname" \
+    UID="$runtime_uid" \
+    GID="$runtime_gid" \
+    bash -lc '
+      set -euo pipefail
+      if command -v devcontainer >/dev/null 2>&1; then
+        devcontainer up --workspace-folder "$1" --log-level info
+      else
+        npx --yes @devcontainers/cli up --workspace-folder "$1" --log-level info
+      fi
+    ' bash "$checkout" >&2
 }
 
 set_runtime_env() {
@@ -181,6 +226,24 @@ ensure_worktree_local_env_link() {
   ln -s "$link_target" "$link_path"
 }
 
+ensure_compose_local_file() {
+  local checkout="$1"
+  local compose_local_path="$checkout/.devcontainer/compose.local.yml"
+  local compose_local_example_path="$checkout/.devcontainer/compose.local.yml.example"
+
+  if [ -f "$compose_local_path" ]; then
+    return 0
+  fi
+
+  if [ ! -f "$compose_local_example_path" ]; then
+    printf '%s\n' 'services:' > "$compose_local_path"
+    printf '%s\n' '  workspace: {}' >> "$compose_local_path"
+    return 0
+  fi
+
+  cp "$compose_local_example_path" "$compose_local_path"
+}
+
 if [ -n "$branch" ]; then
   target="$(ensure_worktree "$branch")"
 fi
@@ -189,6 +252,7 @@ ensure_submodule "$target" .opencode
 ensure_submodule "$target" .devcontainer
 
 ensure_worktree_local_env_link "$target"
+ensure_compose_local_file "$target"
 
 if [ ! -f "$target/.devcontainer/.local.env" ]; then
   printf 'Missing %s\n' "$target/.devcontainer/.local.env" >&2
@@ -208,15 +272,8 @@ if [ "${W_NO_OPEN:-0}" = "1" ]; then
   exit 0
 fi
 
-env \
-  PWD="$runtime_repo_worktree" \
-  CODEGEIST_REPO_ROOT="$runtime_repo_root" \
-  CODEGEIST_REPO_WORKTREE="$runtime_repo_worktree" \
-  COMPOSE_PROJECT_NAME="$runtime_project_name" \
-  PROJECT_NAME="$runtime_project_name" \
-  CODEGEIST_HOSTNAME="$runtime_hostname" \
-  UID="$runtime_uid" \
-  GID="$runtime_gid" \
-  code --new-window --wait --folder-uri "$(devcontainer_folder_uri "$target")"
+open_checkout "$target"
 
-cleanup_devcontainer_project "$target"
+if [ "${REMOTE_CONTAINERS:-false}" != "true" ]; then
+  cleanup_devcontainer_project "$target"
+fi
