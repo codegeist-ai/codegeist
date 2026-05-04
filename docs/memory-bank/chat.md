@@ -9,8 +9,8 @@
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
   Submodul eingebunden.
-- `.devcontainer/` ist jetzt ebenfalls als eigenes Git-Submodul eingebunden und
-  zeigt auf `codegeist-devcontainer-kit`.
+- `.devcontainer/` ist als eigenes Git-Submodul eingebunden und zeigt auf das
+  Release `v1.0.0` von `codegeist-devcontainer-kit`.
 - `start.sh` ist der zentrale Einstieg, um das Repo-Root oder ein Repo-Worktree direkt in einer VS-Code-Devcontainer-Session zu oeffnen.
 - Der Devcontainer oeffnet den echten Checkout-Pfad direkt und bekommt `UID`, `GID`, `PROJECT_NAME`, `COMPOSE_PROJECT_NAME`, `CODEGEIST_REPO_ROOT`, `CODEGEIST_REPO_WORKTREE` und `CODEGEIST_HOSTNAME` zur Laufzeit von `start.sh`.
 - `app/codegeist` ist ein Spring-Boot- und Spring-Shell-Bootstrap mit Java 25, Maven und vorbereitetem GraalVM-Native-Build.
@@ -36,5 +36,4 @@
 
 ## Offene Punkte
 
-- Das Produkt-Repo auf den neuen `.devcontainer`-Gitlink committen und danach
-  den Startpfad mit dem ausgelagerten Devcontainer-Repo pruefen.
+- Den Startpfad mit dem ausgelagerten `.devcontainer`-Release `v1.0.0` pruefen.
