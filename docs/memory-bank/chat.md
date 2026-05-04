@@ -8,7 +8,7 @@
 ## Aktueller Stand
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
-  Submodul eingebunden.
+  Submodul eingebunden; es zeigt auf `main` von `codegeist-agent-kit`.
 - `.devcontainer/` ist als eigenes Git-Submodul eingebunden und zeigt auf das
   Release `v1.0.0` von `codegeist-devcontainer-kit`.
 - `start.sh` ist der zentrale Einstieg, um das Repo-Root oder ein Repo-Worktree direkt in einer VS-Code-Devcontainer-Session zu oeffnen.
@@ -33,6 +33,10 @@
   keine Flakes und noch keine Migration der Toolchain auf Nix-Pakete.
 - `start.sh` initialisiert nun sowohl `.opencode` als auch `.devcontainer`, wenn
   ein Checkout ohne rekursive Submodule geoeffnet wird.
+- Beim Update von `.opencode` auf den aktuellen `main` wurden lokale
+  `package.json`/`package-lock.json`-Aenderungen im Submodule als Stash
+  `opencode-local-package-changes-before-update` gesichert; upstream hat diese
+  Dateien geloescht.
 
 ## Offene Punkte
 
