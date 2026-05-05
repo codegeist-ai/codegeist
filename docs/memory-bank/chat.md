@@ -9,8 +9,8 @@
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
   Submodul eingebunden; es zeigt auf `main` von `codegeist-agent-kit`.
-- `.devcontainer/` ist als eigenes Git-Submodul eingebunden und zeigt auf das
-  Release `v1.0.0` von `codegeist-devcontainer-kit`.
+- `.devcontainer/` ist als eigenes Git-Submodul eingebunden und zeigt jetzt auf
+  das Release `v1.0.1` von `codegeist-devcontainer-kit`.
 - `start.sh` ist der zentrale Einstieg, um das Repo-Root oder ein Repo-Worktree direkt in einer VS-Code-Devcontainer-Session zu oeffnen.
 - Der Devcontainer oeffnet den echten Checkout-Pfad direkt und bekommt `UID`, `GID`, `PROJECT_NAME`, `COMPOSE_PROJECT_NAME`, `CODEGEIST_REPO_ROOT`, `CODEGEIST_REPO_WORKTREE` und `CODEGEIST_HOSTNAME` zur Laufzeit von `start.sh`.
 - `app/codegeist` ist ein Spring-Boot- und Spring-Shell-Bootstrap mit Java 25, Maven und vorbereitetem GraalVM-Native-Build.
@@ -40,4 +40,7 @@
 
 ## Offene Punkte
 
-- Den Startpfad mit dem ausgelagerten `.devcontainer`-Release `v1.0.0` pruefen.
+- OpenCode im Devcontainer crasht, wenn `OPENCODE_CONFIG_DIR` auf das nicht
+  vorhandene `/workspace/.oc_local` zeigt. Der aktuelle `v1.0.1`-Release-Tag
+  enthaelt diesen Override noch; fuer den Fix braucht es einen neuen Kit-Release
+  oder eine explizite Neuveroeffentlichung dieses Tags.
