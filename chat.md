@@ -9,12 +9,12 @@
 ## Current State
 
 - The repo keeps its compose-based devcontainer under `.devcontainer/` and
-  stores lightweight project memory in `chat.md`.
-- `start.sh` is now the launcher for opening the repository root or a managed
-  worktree directly in the repository devcontainer.
-- The devcontainer now opens `CODEGEIST_REPO_WORKTREE` directly as the VS Code
-  workspace folder and container working directory while still mounting the
-  repository root so linked-worktree Git metadata keeps working.
+  stores primary lightweight project memory in `docs/memory-bank/chat.md`.
+- `start.sh` has been removed. Open the repo directly through VS Code Dev
+  Containers or `devcontainer up --workspace-folder .`.
+- The `.devcontainer` submodule tracks the kit `release` branch. Its
+  `initialize.sh` prepares root local files, generated compose overlays, and
+  optional `BRANCH`-selected worktrees under `.worktrees/`.
 - The first real application now lives under `app/codegeist` as a Spring Boot
   4.0.3 and Spring Shell 4.0.1 project with system Maven and a prepared
   GraalVM native build profile.
@@ -26,8 +26,8 @@
 - The application build and run workflow now executes directly inside the
   devcontainer through the app-local `Taskfile.yml`; the app no longer uses
   Docker-wrapped helper scripts.
-- `start.sh` now also repairs a missing nested `.opencode` checkout before it
-  opens the selected root or worktree as a devcontainer workspace.
+- Missing nested submodules are repaired explicitly with
+  `git submodule update --init --recursive` before opening the devcontainer.
 - Builds and tests should be executed directly in the active devcontainer when
   the local toolchain is already available.
 - Java 25 is now the fixed project baseline for the application and devcontainer.

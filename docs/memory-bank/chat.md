@@ -8,11 +8,17 @@
 ## Aktueller Stand
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
-  Submodul eingebunden; es zeigt auf `main` von `codegeist-agent-kit`.
-- `.devcontainer/` ist als eigenes Git-Submodul eingebunden und zeigt jetzt auf
-  das Release `v1.0.1` von `codegeist-devcontainer-kit`.
-- `start.sh` ist der zentrale Einstieg, um das Repo-Root oder ein Repo-Worktree direkt in einer VS-Code-Devcontainer-Session zu oeffnen.
-- Der Devcontainer oeffnet den echten Checkout-Pfad direkt und bekommt `UID`, `GID`, `PROJECT_NAME`, `COMPOSE_PROJECT_NAME`, `CODEGEIST_REPO_ROOT`, `CODEGEIST_REPO_WORKTREE` und `CODEGEIST_HOSTNAME` zur Laufzeit von `start.sh`.
+  Submodul eingebunden; es folgt dem `release`-Branch von
+  `codegeist-agent-kit` und zeigt aktuell auf `6901aa4`.
+- `.devcontainer/` ist als eigenes Git-Submodul eingebunden, folgt in
+  `.gitmodules` dem `release`-Branch von `codegeist-devcontainer-kit` und zeigt
+  aktuell auf `97289ef`.
+- `start.sh` ist entfernt; der Devcontainer wird direkt ueber VS Code Dev
+  Containers oder `devcontainer up --workspace-folder .` gestartet.
+- `.devcontainer/initialize.sh` aus dem Kit erzeugt root `.local.env`,
+  `compose.local.yml`, `.devcontainer/.gen.env` und
+  `.devcontainer/compose.local.gen.yml` bei Bedarf und kann per `BRANCH` einen
+  Worktree unter `.worktrees/<branch>` als `/workspace` auswaehlen.
 - `app/codegeist` ist ein Spring-Boot- und Spring-Shell-Bootstrap mit Java 25, Maven und vorbereitetem GraalVM-Native-Build.
 - `app/codegeist/Taskfile.yml` bietet `test`, `build`, `run` und `native`.
 - `.devcontainer/Dockerfile` installiert zusaetzlich `nix`, ohne die bisherige
@@ -27,16 +33,18 @@
 ## Wichtige Entscheidungen
 
 - Build-Artefakte wie `target/`, `bin/`, `.class` und `.jar` bleiben aus Git heraus.
-- Lokale Devcontainer-Overrides bleiben in `.devcontainer/.local.env`; die versionierte `.devcontainer/.env` enthaelt nur sichere Standardwerte.
+- Lokale Devcontainer-Umgebungswerte bleiben in root `.local.env`; root
+  `compose.local.yml` ist der versionierte lokale Compose-Override, den
+  `devcontainer.json` immer einbindet.
 - Repo-Memory wird unter `docs/memory-bank/chat.md` gepflegt.
 - Nix wird vorerst nur als zusaetzlicher Paketmanager installiert; es gibt noch
   keine Flakes und noch keine Migration der Toolchain auf Nix-Pakete.
-- `start.sh` initialisiert nun sowohl `.opencode` als auch `.devcontainer`, wenn
-  ein Checkout ohne rekursive Submodule geoeffnet wird.
-- Beim Update von `.opencode` auf den aktuellen `main` wurden lokale
-  `package.json`/`package-lock.json`-Aenderungen im Submodule als Stash
-  `opencode-local-package-changes-before-update` gesichert; upstream hat diese
-  Dateien geloescht.
+- Checkouts ohne rekursive Submodule werden mit
+  `git submodule update --init --recursive` repariert, nicht mehr ueber einen
+  repo-lokalen Launcher.
+- `.opencode` und `.devcontainer` sollen im Parent-Repo ueber ihre
+  `release`-Branches aktualisiert werden, nicht ueber die frueher genutzten
+  `main`-Branches oder repo-lokale Launcher-Skripte.
 
 ## Offene Punkte
 

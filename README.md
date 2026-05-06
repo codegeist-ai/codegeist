@@ -22,7 +22,7 @@ vision:
 - a Spring Shell bootstrap application with the built-in shell commands enabled
 - a GraalVM native-image Maven profile prepared for the next build step
 - repo-local agent workflow rules, commands, and configuration
-- lightweight project memory in `chat.md`
+- lightweight project memory in `docs/memory-bank/chat.md`
 
 ## Development Environment
 
@@ -33,16 +33,18 @@ Key properties:
 - custom Docker image and entrypoint
 - Docker available inside the workspace container
 - Node.js, Python, GitHub CLI, and supporting CLI tooling
-- a tracked `.devcontainer/.env` that `./start.sh` refreshes locally so standard
-  git worktrees can resolve repository-root metadata inside the container
-- local overrides separated from committed defaults via
-  `.devcontainer/.local.env`
+- an `.opencode/` submodule that tracks the agent kit `release` branch
+- a `.devcontainer/` submodule that tracks the devcontainer kit `release` branch
+- local runtime values in root `.local.env`, generated from the kit example when
+  missing and ignored by Git
+- root `compose.local.yml` for local compose overrides included by
+  `.devcontainer/devcontainer.json`
 
 ## Repository Layout
 
 - `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
 - `app/codegeist/` - Spring Boot bootstrap application, Maven project files, and local `Taskfile.yml`
-- `chat.md` - lightweight project memory for the repository
+- `docs/memory-bank/chat.md` - lightweight project memory for the repository
 - `README.md` - project overview
 
 ## Application Bootstrap
@@ -93,18 +95,17 @@ Implementation notes:
 ## Getting Started
 
 1. Clone the repository with `git clone --recurse-submodules <repo-url>` so the nested `.opencode` and `.devcontainer` checkouts are available from the start.
-2. Create `.devcontainer/.local.env` from `.devcontainer/.local.env.example`.
-3. Open the repository root with `./start.sh`; it now opens the checkout
-   directly in the repository's devcontainer.
+2. Open the repository root in VS Code and choose `Reopen in Container`, or run
+   `devcontainer up --workspace-folder .` from the repository root.
+3. Let `.devcontainer/initialize.sh` create root `.local.env`,
+   `compose.local.yml`, and the generated compose overlay when they are missing.
 4. Verify that `java -version` and `native-image --version` work inside the workspace.
 5. Run `task -t app/codegeist/Taskfile.yml run` from the repo root, or `task run` inside `app/codegeist/`.
 6. Run `java -jar app/codegeist/target/codegeist.jar help` to verify the built-in shell commands are available.
 
 If the repository was cloned without `--recurse-submodules`, Git does not let the
-repository force that clone behavior afterward. Running `./start.sh` in the
-repository root or in a managed worktree repairs the nested `.opencode` and
-`.devcontainer` checkouts automatically before it opens the selected checkout in
-a devcontainer.
+repository force that clone behavior afterward. Run
+`git submodule update --init --recursive` before opening the devcontainer.
 
 ## Git Worktrees
 
@@ -113,47 +114,24 @@ This repository uses standard Git worktrees under `.worktrees/<branch>`.
 Recommended workflow:
 
 1. Keep `main` checked out in the repository root.
-2. Open the repository root with `./start.sh`.
-3. Create or open a managed worktree with `./start.sh <branch>`.
-4. Keep `.devcontainer/.local.env` in the repository root; managed worktrees
-   link to it automatically when `start.sh` prepares them.
+2. Open the repository root directly through VS Code Dev Containers.
+3. To open a managed worktree, start VS Code or the Dev Containers CLI with
+   `BRANCH=<branch>` in the environment. The kit's `initializeCommand` creates
+   or reuses `.worktrees/<branch>` and mounts it as `/workspace`.
+4. Keep root `.local.env` in the repository root; managed worktrees link back to
+   it automatically when `.devcontainer/initialize.sh` prepares them.
 
-`start.sh` also ensures that the nested `.opencode` and `.devcontainer`
-submodules are initialized in the selected checkout. New managed worktrees
-therefore get their own usable `.opencode/` and `.devcontainer/` checkouts
-automatically, and existing worktrees are repaired if either nested submodule
-is still missing.
-
-`start.sh` now opens the selected checkout directly as a VS Code devcontainer
-workspace instead of opening a plain host-side folder window first.
-
-The launcher can be started from the host or from inside an already running
-devcontainer. In the in-container case it first brings up the target checkout
-with the devcontainer CLI and only then opens the matching remote workspace.
-
-`start.sh` injects four runtime variables when it opens VS Code:
-`CODEGEIST_REPO_ROOT`, `CODEGEIST_REPO_WORKTREE`, `COMPOSE_PROJECT_NAME`, and
-`CODEGEIST_HOSTNAME`. In the repository root the two path variables point to
-the same path; in a linked worktree they point to the repository root and the
-worktree path. The devcontainer opens `CODEGEIST_REPO_WORKTREE` directly as the
-workspace folder and working directory while the extra repository-root mount
-still lets Git resolve standard worktree metadata correctly. That also gives
-each checkout its own container, network, volume, and hostname.
-
-The hostname stays dot-free so the default Bash prompt shows the full branch-
-based name instead of truncating at the first `.`.
-
-The `.devcontainer/.env` file from the checked-out `.devcontainer` submodule now
-stays static across checkouts; `start.sh` handles the dynamic runtime values
-when it launches VS Code.
+The devcontainer kit generates `.devcontainer/.gen.env` and
+`.devcontainer/compose.local.gen.yml` on startup. These files keep the container
+hostname, user, UID, and GID aligned with the selected checkout without a
+repo-local launcher script.
 
 Each worktree uses the `.devcontainer/` files from its own Git state. If you
 change the devcontainer setup in the repository root and want the same setup in
 an existing worktree, update that worktree to the newer commit first.
 
-If an older checked-out `.devcontainer` submodule does not yet contain
-`compose.local.yml.example`, `start.sh` writes a minimal local
-`compose.local.yml` fallback so the worktree still opens.
+If an older checkout is missing nested submodules, initialize them with
+`git submodule update --init --recursive` before opening the devcontainer.
 
 ## Status
 
