@@ -9,10 +9,10 @@
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
   Submodul eingebunden; es folgt dem `release`-Branch von
-  `codegeist-agent-kit` und zeigt aktuell auf `2fdcec9`.
+  `codegeist-agent-kit` und zeigt aktuell auf `cb111ed`.
 - `.devcontainer/` ist als eigenes Git-Submodul eingebunden, folgt in
   `.gitmodules` dem `release`-Branch von `codegeist-devcontainer-kit` und zeigt
-  aktuell auf `a6bdb55`.
+  aktuell auf `e551e56`.
 - `start.sh` ist entfernt; der Devcontainer wird direkt ueber VS Code Dev
   Containers oder `devcontainer up --workspace-folder .` gestartet.
 - `.devcontainer/initialize.sh` aus dem Kit erzeugt root `.local.env`,
@@ -29,6 +29,11 @@
   Submodul und bleibt dort der Devcontainer-Selbsttest.
 - Der Nix-Profil-Hook wird global ueber `/etc/profile.d/nix.sh` eingebunden,
   damit `nix` auch in Login-Shells im Container im `PATH` liegt.
+- Das lokale OpenCode-Overlay `.oc_local/` enthaelt jetzt die Commands
+  `/analyse-project` und `/ask-project`, den Skill `/repository-analysis` sowie
+  die AI-Scripts `analyse-project.sh` und `render-mermaid.sh` fuer
+  reproduzierbare Third-Party-Repository-Analyse, Feature-/Cluster-
+  Dokumentation und Mermaid-SVG-Rendering.
 
 ## Wichtige Entscheidungen
 
@@ -48,6 +53,13 @@
 - Fuer gemeinsame Kit-Updates gibt es jetzt den OpenCode-Workflow
   `/update-submodules`, der `.opencode` und `.devcontainer` auf die in
   `.gitmodules` konfigurierten Branches setzt.
+- Projektspezifische Analyse-Workflows gehoeren ins lokale Overlay `.oc_local/`,
+  nicht in das geteilte `.opencode`-Submodul. Third-Party-Analyseartefakte werden
+  unter `docs/third-party/<project-name>/` abgelegt; Mermaid-Quellen liegen dort
+  unter `diagrams/source/` und gerenderte SVGs unter `diagrams/rendered/`.
+  Regenerierbare schwere Artefakte wie `repomix-output.*`, `graphify-out/`,
+  Logs, Manifeste, Verify-Reports und gerenderte SVGs bleiben per `.gitignore`
+  aus Git heraus und werden ueber `REGENERATE.md` neu erzeugt.
 
 ## Offene Punkte
 
