@@ -9,14 +9,14 @@
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
   Submodul eingebunden; es folgt dem `release`-Branch von
-  `codegeist-agent-kit` und zeigt aktuell auf `6901aa4`.
+  `codegeist-agent-kit` und zeigt aktuell auf `2fdcec9`.
 - `.devcontainer/` ist als eigenes Git-Submodul eingebunden, folgt in
   `.gitmodules` dem `release`-Branch von `codegeist-devcontainer-kit` und zeigt
-  aktuell auf `97289ef`.
+  aktuell auf `a6bdb55`.
 - `start.sh` ist entfernt; der Devcontainer wird direkt ueber VS Code Dev
   Containers oder `devcontainer up --workspace-folder .` gestartet.
 - `.devcontainer/initialize.sh` aus dem Kit erzeugt root `.local.env`,
-  `compose.local.yml`, `.devcontainer/.gen.env` und
+  `compose.local.yml`, root `.oc_local/`, `.devcontainer/.env` und
   `.devcontainer/compose.local.gen.yml` bei Bedarf und kann per `BRANCH` einen
   Worktree unter `.worktrees/<branch>` als `/workspace` auswaehlen.
 - `app/codegeist` ist ein Spring-Boot- und Spring-Shell-Bootstrap mit Java 25, Maven und vorbereitetem GraalVM-Native-Build.
@@ -45,10 +45,10 @@
 - `.opencode` und `.devcontainer` sollen im Parent-Repo ueber ihre
   `release`-Branches aktualisiert werden, nicht ueber die frueher genutzten
   `main`-Branches oder repo-lokale Launcher-Skripte.
+- Fuer gemeinsame Kit-Updates gibt es jetzt den OpenCode-Workflow
+  `/update-submodules`, der `.opencode` und `.devcontainer` auf die in
+  `.gitmodules` konfigurierten Branches setzt.
 
 ## Offene Punkte
 
-- OpenCode im Devcontainer crasht, wenn `OPENCODE_CONFIG_DIR` auf das nicht
-  vorhandene `/workspace/.oc_local` zeigt. Der aktuelle `v1.0.1`-Release-Tag
-  enthaelt diesen Override noch; fuer den Fix braucht es einen neuen Kit-Release
-  oder eine explizite Neuveroeffentlichung dieses Tags.
+- Keine konkreten naechsten Schritte aus diesem Chat offen.
