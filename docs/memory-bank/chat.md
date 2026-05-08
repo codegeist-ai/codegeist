@@ -39,6 +39,12 @@
 - `docs/third-party/opencode/` enthaelt jetzt die initiale Third-Party-
   Dokumentations-Workspace fuer OpenCode: `README.md`, `ANALYSIS_REPORT.md`,
   `REGENERATE.md`, Feature-, User-, Developer-Notizen und Mermaid-Quellen.
+- `docs/tasks/T001_define-codegeist-opencode-feature-architecture/` ist der
+  aktive Architektur-Epic fuer Codegeist/OpenCode-Paritaet. Der Epic ist in 25
+  feingranulare Dokumentations-Tasks unter `tasks/` zerlegt.
+- `docs/developer/codegeist-opencode-parity.md` haelt die beginnende
+  Architektur fest: Codegeist wird nicht als OpenCode/Bun/TypeScript-Kopie
+  geplant, sondern auf den Java-first Stack abgebildet.
 - Die `opencode`-Analyse nutzt fuer Graphify eine fokussierte Runtime-Corpus
   statt des ganzen Repos. Der letzte Graphify-Lauf erzeugte 1.247 Nodes, 2.008
   Edges und 78 Communities; Graphify-, Repomix- und Verify-Ausgaben bleiben
@@ -77,7 +83,16 @@
   `.oc_local/ai-scripts/analyse-project.sh`-Orchestrierung ist entfernt;
   Graph-Erzeugung laeuft ueber den geteilten `graphify`-Skill auf einer
   gefilterten Code-/Dokumentations-Corpus.
+- Die gesetzte Codegeist-Technologie-Baseline lautet: Java, GraalVM, Spring,
+  Spring AI, Vaadin, JBang und PF4J. OpenCode-Konzepte sollen in Architekturdocs
+  explizit auf diesen Stack gemappt werden.
 
 ## Offene Punkte
 
-- Keine konkreten naechsten Schritte aus diesem Chat offen.
+- Die 25 Child-Tasks unter
+  `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` sollen
+  nacheinander die Technologie-Baseline, OpenCode-zu-Java-Mappings,
+  Modulgrenzen, Agent-/Session-/Event-/Tool-/Permission-Modelle, Kontextladen,
+  PF4J, JBang, Vaadin, Server, Storage, GraalVM-Risiken, Feature-Matrix,
+  MVP-Schnitt, Prompt-Flow, Risiko-Register und Implementierungs-Backlog
+  ausarbeiten.
