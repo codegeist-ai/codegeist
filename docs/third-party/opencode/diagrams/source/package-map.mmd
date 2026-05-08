@@ -1,0 +1,23 @@
+flowchart TD
+  Root[opencode monorepo] --> OpenCode[pkg: packages/opencode]
+  Root --> Core[pkg: packages/core]
+  Root --> App[pkg: packages/app]
+  Root --> Desktop[pkg: packages/desktop]
+  Root --> Plugin[pkg: packages/plugin]
+  Root --> SDK[pkg: packages/sdk/js]
+  Root --> Web[pkg: packages/web]
+  Root --> Console[pkg: packages/console]
+
+  OpenCode --> CLI[CLI Commands]
+  OpenCode --> Server[Server Routes and Middleware]
+  OpenCode --> Session[Session Processing]
+  OpenCode --> Provider[Provider and Model Resolution]
+  OpenCode --> Tool[Tool Registry]
+  OpenCode --> Config[Config and Agents]
+  OpenCode --> Storage[Storage]
+
+  App --> Server
+  Desktop --> App
+  SDK --> Server
+  Plugin --> OpenCode
+  Core --> OpenCode

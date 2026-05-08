@@ -1,0 +1,19 @@
+sequenceDiagram
+  participant User
+  participant Client as CLI/TUI/Web/Desktop
+  participant Server as Server or In-Process Adapter
+  participant Session as Session Processor
+  participant Provider as Provider/LLM Stream
+  participant Tools as Tool Registry and Permissions
+  participant Store as Storage and Event Stream
+
+  User->>Client: Enter prompt or command
+  Client->>Server: Create, fork, continue, or prompt session
+  Server->>Session: Dispatch request in workspace/instance context
+  Session->>Provider: Build messages and stream model response
+  Provider-->>Session: Text, tool calls, usage, finish events
+  Session->>Tools: Resolve available tools and permission checks
+  Tools-->>Session: Tool results or approval requirements
+  Session->>Store: Persist message parts, events, cost, and state
+  Store-->>Client: Stream updates for rendering
+  Client-->>User: Show text, tool activity, errors, and completion

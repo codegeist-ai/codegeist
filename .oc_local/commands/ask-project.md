@@ -36,16 +36,37 @@ docs/third-party/<project-name>/
 ```
 
 3. If no analysis exists, stop and ask whether to run `/analyse-project` first.
-4. Read the available artifacts before answering:
-   - `analysis-manifest.json`
+4. Treat `analysis-manifest.json` as optional because it is ignored and
+   regenerable. If it is missing, derive the source checkout from
+   `docs/third-party/<project-name>/source`.
+5. Check graph artifacts:
+   - Prefer existing `graphify-out/GRAPH_REPORT.md`,
+     `graphify-out/COMMUNITIES_BY_FILE.md`, and `graphify-out/graph.json` when
+     they are present.
+   - If `graphify-out/GRAPH_REPORT.md` or `graphify-out/graph.json` is missing
+     and the request needs graph, cluster, route, architecture, or cross-file
+     evidence, run or delegate to `/analyse-project <source-path-or-url>
+     --project <project-name>` before answering.
+   - Do not invoke Graphify directly from `/ask-project`; `/analyse-project`
+     owns Graphify generation and must use `@.opencode/skills/graphify/SKILL.md`.
+   - Keep `graphify-out/` ignored but local when present; it is the graph cache
+     used by `/ask-project`, not a durable documentation file.
+6. Read the available artifacts before answering:
+   - `analysis-manifest.json` when present
    - `ANALYSIS_REPORT.md`
    - `graphify-out/GRAPH_REPORT.md`
+   - `graphify-out/COMMUNITIES_BY_FILE.md`
    - `graphify-out/graph.json`
    - `features/*.md`
    - `developer/*.md`
    - `user/*.md`
    - `repomix-output.xml` only when needed for source-level details and present
-5. Determine the request type:
+7. For source-level implementation questions that require broad code context,
+   prefer delegating to the `@repomix` subagent or to
+   `/ask-project-repomix <project-name> "<question>"` when
+   `repomix-output.xml` exists. This keeps the large packed-output context in a
+   child agent session instead of the parent `/ask-project` context.
+8. Determine the request type:
    - explanation
    - feature deep dive
    - workflow diagram
@@ -54,23 +75,23 @@ docs/third-party/<project-name>/
    - user documentation
    - developer documentation
    - migration assessment
-6. If the request is ambiguous, ask one concise clarification question. Example:
+9. If the request is ambiguous, ask one concise clarification question. Example:
 
 ```text
 I found several parser candidates: CLI argument parsing, AI response parsing,
 and document parsing. Which one should the diagram cover?
 ```
 
-7. Use source, graph, docs, tests, and runtime evidence as the basis for the
+10. Use source, graph, docs, tests, and runtime evidence as the basis for the
    answer. Mark assumptions explicitly.
-8. If creating Mermaid:
+11. If creating Mermaid:
    - write `.mmd` under `docs/third-party/<project-name>/diagrams/source/`
    - render SVG under `docs/third-party/<project-name>/diagrams/rendered/`
    - use `.oc_local/ai-scripts/render-mermaid.sh` when available
    - reference the rendered SVG from any generated markdown when SVG handoff is needed
-9. Verify generated files and report rendering failures.
-10. Return a concise answer with paths to created or updated artifacts.
-11. Ask whether the user wants a targeted follow-up.
+12. Verify generated files and report rendering failures.
+13. Return a concise answer with paths to created or updated artifacts.
+14. Ask whether the user wants a targeted follow-up.
 
 ## Diagram Output Rules
 
@@ -116,6 +137,12 @@ Keep the follow-up specific to the user's request.
   evidence.
 - Do not use Graphify communities as final feature boundaries without checking
   code and documentation.
+- Do not invoke the Graphify skill directly from `/ask-project`. If graph output
+  is missing or incomplete, regenerate it via `/analyse-project` so Graphify
+  ownership stays centralized.
+- Do not load large `repomix-output.xml` content into the parent context. Use
+  the `@repomix` subagent or `/ask-project-repomix` for broad source-level
+  questions so the packed-output context stays isolated.
 - Prefer focused feature or cluster diagrams over huge system diagrams.
 - Keep Mermaid sources editable and render SVGs when `mmdc` is available.
 - If rendering fails, keep the `.mmd` source and report the exact failure.

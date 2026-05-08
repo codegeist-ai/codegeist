@@ -9,10 +9,10 @@
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
   Submodul eingebunden; es folgt dem `release`-Branch von
-  `codegeist-agent-kit` und zeigt aktuell auf `cb111ed`.
+  `codegeist-agent-kit` und zeigt aktuell auf `d441527`.
 - `.devcontainer/` ist als eigenes Git-Submodul eingebunden, folgt in
   `.gitmodules` dem `release`-Branch von `codegeist-devcontainer-kit` und zeigt
-  aktuell auf `e551e56`.
+  aktuell auf `c715224`.
 - `start.sh` ist entfernt; der Devcontainer wird direkt ueber VS Code Dev
   Containers oder `devcontainer up --workspace-folder .` gestartet.
 - `.devcontainer/initialize.sh` aus dem Kit erzeugt root `.local.env`,
@@ -30,10 +30,23 @@
 - Der Nix-Profil-Hook wird global ueber `/etc/profile.d/nix.sh` eingebunden,
   damit `nix` auch in Login-Shells im Container im `PATH` liegt.
 - Das lokale OpenCode-Overlay `.oc_local/` enthaelt jetzt die Commands
-  `/analyse-project` und `/ask-project`, den Skill `/repository-analysis` sowie
-  die AI-Scripts `analyse-project.sh` und `render-mermaid.sh` fuer
-  reproduzierbare Third-Party-Repository-Analyse, Feature-/Cluster-
-  Dokumentation und Mermaid-SVG-Rendering.
+  `/analyse-project`, `/ask-project` und `/ask-project-repomix`, den Skill
+  `/repository-analysis`, den Subagent `@repomix` sowie das AI-Script
+  `render-mermaid.sh` fuer Mermaid-SVG-Rendering.
+- `docs/third-party/opencode/source` ist als Submodul fuer
+  `https://github.com/anomalyco/opencode.git` auf Branch `dev` eingebunden und
+  zeigt aktuell auf `22e64ca`.
+- `docs/third-party/opencode/` enthaelt jetzt die initiale Third-Party-
+  Dokumentations-Workspace fuer OpenCode: `README.md`, `ANALYSIS_REPORT.md`,
+  `REGENERATE.md`, Feature-, User-, Developer-Notizen und Mermaid-Quellen.
+- Die `opencode`-Analyse nutzt fuer Graphify eine fokussierte Runtime-Corpus
+  statt des ganzen Repos. Der letzte Graphify-Lauf erzeugte 1.247 Nodes, 2.008
+  Edges und 78 Communities; Graphify-, Repomix- und Verify-Ausgaben bleiben
+  regenerierbar und ignoriert.
+- Source-nahe Fragen zu Third-Party-Projekten sollen ueber
+  `/ask-project-repomix <project> "<frage>"` oder direkt `@repomix` laufen.
+  Der Subagent laedt `docs/third-party/<project>/repomix-output.xml` in seinem
+  eigenen Kontext ueber Repomix-Tools, damit der Hauptkontext klein bleibt.
 
 ## Wichtige Entscheidungen
 
@@ -60,6 +73,10 @@
   Regenerierbare schwere Artefakte wie `repomix-output.*`, `graphify-out/`,
   Logs, Manifeste, Verify-Reports und gerenderte SVGs bleiben per `.gitignore`
   aus Git heraus und werden ueber `REGENERATE.md` neu erzeugt.
+- `/analyse-project` nutzt kein eigenes Analyse-Shellscript mehr. Die alte
+  `.oc_local/ai-scripts/analyse-project.sh`-Orchestrierung ist entfernt;
+  Graph-Erzeugung laeuft ueber den geteilten `graphify`-Skill auf einer
+  gefilterten Code-/Dokumentations-Corpus.
 
 ## Offene Punkte
 

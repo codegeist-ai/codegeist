@@ -6,15 +6,11 @@ Project-specific helper scripts for repeatable OpenCode workflows.
 
 - `render-mermaid.sh` - renders `.mmd` files from a diagram `source/`
   directory into sibling `rendered/*.svg` files using `mmdc`.
-- `analyse-project.sh` - prepares `docs/third-party/<project-name>/` from a
-  local directory or GitHub repository URL, runs Repomix and Graphify when
-  available, and writes regeneration instructions.
 
 ## Usage
 
 ```bash
 bash ".oc_local/ai-scripts/render-mermaid.sh" "docs/third-party/<project>/diagrams"
-bash ".oc_local/ai-scripts/analyse-project.sh" "https://github.com/owner/repo"
 ```
 
 Set `ARG_FAIL_FAST=1` to stop on the first Mermaid rendering failure.

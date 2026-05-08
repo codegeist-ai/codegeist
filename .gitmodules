@@ -6,3 +6,7 @@
 	path = .devcontainer
 	url = https://github.com/codegeist-ai/codegeist-devcontainer-kit.git
 	branch = release
+[submodule "docs/third-party/opencode/source"]
+	path = docs/third-party/opencode/source
+	url = https://github.com/anomalyco/opencode.git
+	branch = dev

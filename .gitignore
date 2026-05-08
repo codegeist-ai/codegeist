@@ -11,5 +11,6 @@
 /docs/third-party/**/repomix-output.*
 /docs/third-party/**/repomix.log
 /docs/third-party/**/graphify.log
+/docs/third-party/**/graphify-corpus*/
 /docs/third-party/**/graphify-out/
 /docs/third-party/**/diagrams/rendered/

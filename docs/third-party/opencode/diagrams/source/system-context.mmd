@@ -1,0 +1,23 @@
+flowchart LR
+  User[Developer] --> CLI[opencode CLI]
+  User --> TUI[Terminal UI]
+  User --> Web[Web UI]
+  User --> Desktop[Desktop App]
+  SDK[Generated SDK Consumers] --> Server[OpenCode Server]
+  Plugins[Plugins] --> Runtime[Core Runtime]
+
+  CLI --> Runtime
+  TUI --> Runtime
+  Web --> Server
+  Desktop --> Server
+  Server --> Runtime
+
+  Runtime --> Sessions[Sessions and Events]
+  Runtime --> Providers[AI Providers and Models]
+  Runtime --> Tools[Tool Registry and Permissions]
+  Runtime --> Storage[SQLite and Project State]
+  Runtime --> Filesystem[Workspace Files, Git, LSP, PTY]
+
+  Tools --> Filesystem
+  Sessions --> Storage
+  Providers --> Models[External Model APIs]
