@@ -9,10 +9,10 @@
 
 - `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
   Submodul eingebunden; es folgt dem `release`-Branch von
-  `codegeist-agent-kit` und zeigt aktuell auf `d441527`.
+  `codegeist-agent-kit` und zeigt aktuell auf `ccdfe68`.
 - `.devcontainer/` ist als eigenes Git-Submodul eingebunden, folgt in
   `.gitmodules` dem `release`-Branch von `codegeist-devcontainer-kit` und zeigt
-  aktuell auf `c715224`.
+  aktuell auf `9ce8459`.
 - `start.sh` ist entfernt; der Devcontainer wird direkt ueber VS Code Dev
   Containers oder `devcontainer up --workspace-folder .` gestartet.
 - `.devcontainer/initialize.sh` aus dem Kit erzeugt root `.local.env`,
@@ -30,9 +30,9 @@
 - Der Nix-Profil-Hook wird global ueber `/etc/profile.d/nix.sh` eingebunden,
   damit `nix` auch in Login-Shells im Container im `PATH` liegt.
 - Das lokale OpenCode-Overlay `.oc_local/` enthaelt jetzt die Commands
-  `/analyse-project`, `/ask-project` und `/ask-project-repomix`, den Skill
-  `/repository-analysis`, den Subagent `@repomix` sowie das AI-Script
-  `render-mermaid.sh` fuer Mermaid-SVG-Rendering.
+  `/analyse-project`, `/ask-project`, `/ask-project-repomix` und
+  `/specify-task`, den Skill `/repository-analysis`, den Subagent `@repomix`
+  sowie das AI-Script `render-mermaid.sh` fuer Mermaid-SVG-Rendering.
 - `docs/third-party/opencode/source` ist als Submodul fuer
   `https://github.com/anomalyco/opencode.git` auf Branch `dev` eingebunden und
   zeigt aktuell auf `22e64ca`.
@@ -44,7 +44,16 @@
   feingranulare Dokumentations-Tasks unter `tasks/` zerlegt.
 - `docs/developer/codegeist-opencode-parity.md` haelt die beginnende
   Architektur fest: Codegeist wird nicht als OpenCode/Bun/TypeScript-Kopie
-  geplant, sondern auf den Java-first Stack abgebildet.
+  geplant, sondern auf den Java-first Stack abgebildet. Ausgearbeitet sind
+  bisher Technologie-Baseline, OpenCode-Java-Mapping, Modulgrenzen,
+  CLI/Shell-Architektur, Agent-Modi, Session-Modell, Event-Modell und
+  Provider-Architektur.
+- Alle 25 Child-Tasks unter
+  `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` wurden
+  mit `/specify-task` geprueft. `T001_01` bis `T001_08` waren bereits tief
+  genug oder wurden vorher vertieft; `T001_09` bis `T001_25` enthalten jetzt
+  Codegeist-spezifische Migrationsfragen, Boundary-Regeln, Non-Goals und
+  Implementation-Readiness-Fragen fuer die spaetere Architekturarbeit.
 - Die `opencode`-Analyse nutzt fuer Graphify eine fokussierte Runtime-Corpus
   statt des ganzen Repos. Der letzte Graphify-Lauf erzeugte 1.247 Nodes, 2.008
   Edges und 78 Communities; Graphify-, Repomix- und Verify-Ausgaben bleiben
@@ -86,13 +95,30 @@
 - Die gesetzte Codegeist-Technologie-Baseline lautet: Java, GraalVM, Spring,
   Spring AI, Vaadin, JBang und PF4J. OpenCode-Konzepte sollen in Architekturdocs
   explizit auf diesen Stack gemappt werden.
+- Codegeist-Sessions sind Runtime-eigene Aggregate. CLI, Server, Vaadin und
+  kuenftige TUI-Clients duerfen Sessions erzeugen, fortsetzen, inspizieren und
+  rendern, aber keine Session-State-Transitions selbst besitzen. `T001_06`
+  beantwortet jetzt explizit die OpenCode-zu-Java-Migrationsfragen fuer
+  Session, Turn, MessagePart, Lifecycle, Streaming-Abgrenzung und spaetere
+  Storage-Projektionen.
+- Codegeist-Events sind typed Runtime-Events fuer CLI-Ausgabe und spaetere
+  Server-/Vaadin-/TUI-Streams. Sie trennen user-visible Rendering von
+  audit-relevanten Ereignissen; Transport, Event-Sourcing und Storage-Schema
+  bleiben spaetere Entscheidungen. `T001_07` beantwortet jetzt explizit die
+  OpenCode-zu-Java-Migrationsfragen fuer RuntimeEvent, Envelope, Ordering,
+  Correlation, Event-Familien, Audit-Relevanz und spaetere Projektionen.
+- Spring AI ist der Standardpfad fuer Provider-Integration, bleibt aber hinter
+  Codegeist-eigenen Runtime-/Provider-Policies. Provider-Auswahl,
+  Modellfaehigkeiten, Tool-Freigabe, Events und Fehler bleiben Codegeist-
+  Entscheidungen, nicht CLI- oder SDK-Details.
+- `/specify-task <task-ref>` ist der lokale, wiederholbare Workflow, um bereits
+  beschriebene Codegeist-Architektur-Tasks gegen OpenCode-zu-Java-
+  Migrationsfragen zu pruefen und bei Bedarf ohne Implementierung nachzuschaerfen.
+  Die lokale Regel `.oc_local/rules/codegeist-task-specification.md` haelt diese
+  Konvention fest.
 
 ## Offene Punkte
 
-- Die 25 Child-Tasks unter
-  `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` sollen
-  nacheinander die Technologie-Baseline, OpenCode-zu-Java-Mappings,
-  Modulgrenzen, Agent-/Session-/Event-/Tool-/Permission-Modelle, Kontextladen,
-  PF4J, JBang, Vaadin, Server, Storage, GraalVM-Risiken, Feature-Matrix,
-  MVP-Schnitt, Prompt-Flow, Risiko-Register und Implementierungs-Backlog
-  ausarbeiten.
+- Die naechsten aktiven Architekturarbeiten koennen die spezifizierten Tasks
+  nacheinander in `docs/developer/codegeist-opencode-parity.md` ausarbeiten,
+  beginnend mit `T001_09` Tool Architecture.
