@@ -7,10 +7,39 @@ Use the local `/solve-task <task-ref>` command when an existing task should be
 solved collaboratively with the user. It may receive zero or more hint files
 after the task reference.
 
-Use the local `/create-implementation-task <source-task-ref-or-file>
-[focus/context]` command when an architecture, planning, backlog, or solution
+Use the local `/plan-task <source-task-ref-or-file> [focus/context]` command when
+an architecture, planning, backlog, or solution
 task should become one concrete implementation task. The first argument may be a
 task id, repo-relative task file, task filename, or task folder.
+
+## Standard Task-To-Implementation Workflow
+
+Use this workflow when an architecture, planning, backlog, or solution task needs
+to become implementation work. The preparation steps are intentionally iterative:
+run `/specify-task` and `/plan-task` as often as needed while
+new information, user instructions, or scope decisions are still arriving.
+
+1. Run `/specify-task <source-task-ref> [context/instructions]` to sharpen the
+   source task without creating or implementing anything.
+2. Run `/plan-task <source-task-ref-or-file> [focus/context]`
+   only when no suitable implementation task already exists. This creates one
+   concrete implementation task and stops before code changes.
+3. Re-run `/specify-task <source-task-ref> <context/instructions>` or
+   `/specify-task <implementation-task-ref> <context/instructions>` when new
+   information should sharpen the source or implementation task before solving.
+4. Re-run `/plan-task <source-task-ref-or-file>
+   [focus/context]` when the implementation slice needs to be refined from the
+   source context. If a matching implementation task already exists, update that
+   task instead of creating a duplicate unless the user explicitly asks for a new
+   distinct task.
+5. Run `/solve-task <implementation-task-ref> [context/instructions]` only after
+   the implementation task is specified enough to build. This implements the
+   existing implementation task, updates tests and docs, and records the solution
+   state.
+
+Skip new task creation when a suitable implementation task already exists. In
+that case, use repeated `/specify-task` or `/plan-task` passes to
+sharpen that existing task, then proceed to `/solve-task`.
 
 ## Rules
 
@@ -18,38 +47,63 @@ task id, repo-relative task file, task filename, or task folder.
   OpenCode-to-Java migration questions, boundary rules, non-goals, or
   implementation-readiness criteria.
 - Do not use `/specify-task` to create, solve, or implement a task.
-- Use `/create-implementation-task` to derive one `T002+` implementation task
-  interactively with the user before code changes start.
-- `/create-implementation-task` must propose concrete implementation options
+- Repeated `/specify-task` passes should include context or instructions that say
+  what changed or what should be sharpened. Ask for a focused instruction when a
+  repeated pass has no clear reason.
+- Use `/plan-task` to derive one concrete implementation task
+  interactively with the user before code changes start when no suitable
+  implementation task already exists.
+- Re-running `/plan-task` with new information may sharpen an
+  existing matching implementation task. It must not create a duplicate unless
+  the user explicitly confirms the duplicate is distinct.
+- Every workflow step accepts context or instructions after the task reference.
+  Use those arguments to focus the pass, record relevant context in the task when
+  it affects durable handoff, and avoid generic churn.
+- Every workflow step may update the target task or directly affected task files
+  when decisions change, new instructions arrive, or acceptance criteria,
+  non-goals, implementation plans, dependencies, or follow-up boundaries need to
+  stay current.
+- Every workflow step must discover applicable hint files from the task docs it
+  reads, including parent tasks, child tasks, dependencies, `Default Solve Hints`,
+  `Hints`, `Guidance`, and repo-relative `docs/tasks/hints/` references. Do not
+  rely only on explicit hint-file arguments.
+- `/plan-task` must propose concrete implementation options
   when the source allows multiple slices, ask for user decisions on material
   scope or contract choices, and create at most one task unless the user
   explicitly asks for more.
-- Implementation tasks created by `/create-implementation-task` must include a
-  concrete solution direction, target files or packages, acceptance criteria,
-  verification, dependencies, non-goals, and a creation note that records the
-  selected option or user decision.
-- `/create-implementation-task` creates task documentation only. Runtime code,
+- Implementation tasks created or sharpened by `/plan-task`
+  must include a concrete solution direction, planned classes, interfaces,
+  records, configuration files, packages, tests, documentation targets, ordered
+  implementation steps, acceptance criteria, verification plan, dependencies,
+  non-goals, and a planning note that records the selected option or user
+  decision.
+- Implementation tasks created by `/plan-task` must also keep
+  the plan workflow handoff inside the task file: resolved source task,
+  source parent `task.md`, user focus or context, selected option, duplicate
+  check result, discovered hints, related context files read, and the recommended
+  next command.
+- `/plan-task` creates task documentation only. Runtime code,
   tests, build-file changes, and task solution work belong in a later
   `/solve-task <new-task>` pass.
-- `/specify-task`, `/solve-task`, and `/create-implementation-task` must treat
+- `/specify-task`, `/plan-task`, and `/solve-task` must treat
   task directories as canonical only when they contain `task.md`. When a
   referenced task directory has no `task.md`, stop and report the broken task
   structure instead of guessing.
 - When a task belongs to a parent task directory, these commands should read the
   parent `task.md` before proposing specifications, solutions, or
   implementation-task options.
-- `/specify-task` should honor a parent task's `Default Solve Hints` section as
-  specification guidance, using those hints to sharpen scope, boundaries,
-  dependencies, verification, and implementation-readiness questions while
-  staying non-implementation.
-- `/solve-task` should honor a parent task's `Default Solve Hints` section as
-  implicit hint files, reading those hints before proposing solution options.
+- `/specify-task` should use discovered hints as specification guidance, using
+  those hints to sharpen scope, boundaries, dependencies, verification, and
+  implementation-readiness questions while staying non-implementation.
+- `/solve-task` should use discovered hints as implicit hint files, reading those
+  hints before proposing solution options.
 - Re-run `/specify-task` safely when related architecture decisions change; if
   the task is already current, leave it unchanged and report the no-op.
 - Keep the central parity document and `docs/memory-bank/chat.md` synchronized
   when the specification changes durable architecture state.
-- Start future T001 architecture expansion from the next specified child task,
-  currently `T001_09_define-tool-architecture.md`.
+- Start current MVP implementation work from
+  `T002_01_align-codegeist-build-baseline.md`, then continue through the `T002`
+  child tasks in dependency order.
 - Keep `/solve-task` generic. Put Codegeist-specific task-solving guidance in
   this rule instead of hard-coding architecture paths or domain assumptions into
   the command.

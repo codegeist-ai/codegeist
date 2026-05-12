@@ -20,7 +20,7 @@ $ARGUMENTS
 Expected syntax:
 
 ```text
-/specify-task <task-ref>
+/specify-task <task-ref> [context/instructions]
 ```
 
 Examples:
@@ -28,6 +28,7 @@ Examples:
 ```text
 /specify-task T001_07
 /specify-task docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/T001_07_define-event-model.md
+/specify-task T002_01 focus on Maven dependency constraints from the latest review
 ```
 
 ## Purpose
@@ -38,9 +39,17 @@ goal, or scope. This command deepens and checks the task against current
 Codegeist/OpenCode migration decisions; it does not create, solve, or implement
 the task.
 
+In the standard task-to-implementation workflow, this is usually the first step
+before `/plan-task` and `/solve-task`. It may be run again after
+implementation-task creation when new information, user instructions, or changed
+scope should sharpen either the source task or the implementation task before
+solving.
+
 ## Workflow
 
-1. Parse the first argument as the target task reference. Stop if it is missing.
+1. Parse the first argument as the target task reference and treat remaining
+   arguments as user-provided context or instructions for this specification
+   pass. Stop if the task reference is missing.
 2. Resolve the task reference by exact repo-relative path, exact task filename,
    exact task folder name, or exact task id such as `T001` or `T001_07`. Stop and
    list options if the reference is ambiguous. When the resolved reference is a
@@ -54,22 +63,25 @@ the task.
 4. Read the target task first. If the task is only a stub without a meaningful
    description, goal, or scope, stop and ask the user to describe the intended
    task before specifying it further.
-5. Read the directly relevant parent task and architecture docs before editing,
+5. Apply any user-provided context or instructions as the main reason for this
+   pass. When the command is run repeatedly, do not perform a generic rewrite;
+   focus on the requested clarification, new information, or changed boundary.
+6. Read the directly relevant parent task and architecture docs before editing,
    especially:
    - `docs/developer/codegeist-opencode-parity.md`
    - the target task's parent `task.md` when present
    - directly adjacent child tasks when they define dependencies or boundaries
-6. If the target task or its parent `task.md` contains a `Default Solve Hints`
-   section, treat every listed hint file as default task guidance for this
-   specification pass. Resolve and read those hints before deciding whether the
-   task needs sharpening. Use them to clarify scope, boundaries, dependencies,
-   verification, and implementation-readiness questions only; do not solve or
-   implement the task from hint content.
-7. Treat this command as a Codegeist-specific specification pass, not an
+7. Scan the target task, its parent `task.md`, and directly relevant task docs
+   for hint references, including `Default Solve Hints`, `Hints`, `Guidance`, and
+   repo-relative paths under `docs/tasks/hints/`. Resolve and read those hints
+   before deciding whether the task needs sharpening. Use them to clarify scope,
+   boundaries, dependencies, verification, and implementation-readiness questions
+   only; do not solve or implement the task from hint content.
+8. Treat this command as a Codegeist-specific specification pass, not an
    implementation pass.
-8. Preserve the task's intended scope. Do not solve it, add runtime code, change
+9. Preserve the task's intended scope. Do not solve it, add runtime code, change
    build files, or implement the described behavior.
-9. Check whether the task answers the Codegeist/OpenCode migration questions
+10. Check whether the task answers the Codegeist/OpenCode migration questions
    relevant to its topic:
    - What OpenCode concept is being translated?
    - What is the Java/Spring/Spring AI/Vaadin/JBang/PF4J equivalent?
@@ -78,25 +90,34 @@ the task.
    - What is MVP and what is later scope?
    - What must stay independent from OpenCode's Bun/TypeScript/API/storage shape?
    - What decisions are required before implementation can start?
-10. Deepen the task where needed:
+11. Deepen the task where needed:
    - sharpen goal, context, scope, non-goals, deliverable, acceptance criteria,
      verification, dependencies, and open questions
    - add migration questions and answers when useful
-   - add Codegeist-specific architecture decisions and boundary rules
-   - add implementation-readiness questions, but keep them at specification depth
-11. If the task changes a central architecture document, update that document in
+    - add Codegeist-specific architecture decisions and boundary rules
+    - add implementation-readiness questions, but keep them at specification depth
+    - update the task when decisions changed, new instructions arrived, or
+      acceptance criteria, dependencies, non-goals, or follow-up boundaries need
+      to stay current
+12. If the task changes a central architecture document, update that document in
    the same pass so task and architecture docs stay consistent.
-12. Update `docs/memory-bank/chat.md` only when the specification changes durable
+13. Update `docs/memory-bank/chat.md` only when the specification changes durable
     project state or current task focus.
-13. Run a targeted documentation check, at minimum:
+14. Run a targeted documentation check, at minimum:
 
 ```bash
 git --no-pager diff --check
 ```
 
-14. Report updated files, parent `task.md` considered, default hints considered,
-    what was clarified, what remains open, and any follow-up task that should be
-    specified next.
+15. Report updated files, user context or instructions considered, parent
+    `task.md` considered, discovered hints considered,
+    what was clarified, what remains open, and the next workflow command. When no
+    suitable implementation task exists yet, recommend
+    `/plan-task <task-ref>`; when one already exists but needs
+    more source-derived refinement, recommend another
+    `/plan-task <source-task-ref-or-file> [focus/context]` pass;
+    when the implementation task is ready, recommend
+    `/solve-task <implementation-task-ref>`.
 
 ## Repeatability
 
@@ -104,8 +125,12 @@ This command must be safe to run repeatedly on the same task.
 
 - On each run, re-read the current task and related architecture docs before
   deciding whether changes are needed.
-- On each run, re-read any parent-declared `Default Solve Hints` and use them as
-  specification guidance when they apply.
+- On each run, re-scan the target task, parent task, and directly relevant task
+  docs for hint references and use discovered hints as specification guidance
+  when they apply.
+- On repeated runs, use the provided context or instructions to decide what has
+  changed and what should be sharpened; ask for a focused instruction when the
+  reason for another pass is unclear.
 - If the task already answers the Codegeist-specific specification questions, do
   not rewrite it just for style or churn. Report that no changes were needed.
 - If repository context, architecture decisions, parent task scope, or related

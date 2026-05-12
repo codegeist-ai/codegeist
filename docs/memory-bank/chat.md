@@ -34,7 +34,7 @@
   `nix` is available on `PATH` in container login shells.
 - The local OpenCode overlay `.oc_local/` contains the commands
   `/analyse-project`, `/ask-project`, `/ask-project-repomix`,
-  `/create-implementation-task`, `/specify-task`, and `/solve-task`, the
+  `/plan-task`, `/specify-task`, and `/solve-task`, the
   `/repository-analysis` skill, the `@repomix` subagent, and the AI script
   `render-mermaid.sh` for Mermaid SVG rendering.
 - `docs/third-party/opencode/source` is a submodule for
@@ -127,31 +127,56 @@
   Codegeist-owned runtime/provider policies. Provider selection, model
   capabilities, tool exposure, events, and errors remain Codegeist decisions, not
   CLI or SDK details.
-- `/specify-task <task-ref>` is the local repeatable workflow for checking
-  existing Codegeist architecture tasks against OpenCode-to-Java migration
-  questions and sharpening them when needed without implementation. The local
-  rule `.oc_local/rules/codegeist-task-specification.md` records this
-  convention.
-- `/solve-task <task-ref> [hint-file ...]` is the local generic workflow for
-  solving an existing task collaboratively with the user. After the task
-  reference, zero or more hint files may be passed. Every run must record in the
-  target task what should happen in Plan Mode, which decisions are open, what was
-  implemented in Build Mode, what remains, and the next step. Project-specific
-  solution guidance stays in `.oc_local/rules/`, while the command only records
-  the generic flow for task resolution, options, implementation, affected tasks,
-  and verification.
-- `/create-implementation-task <source-task-ref-or-file> [focus/context]` is the
-  local interactive workflow for deriving one concrete `T002+` implementation
-  task from an existing architecture, planning, backlog, or solution task. It
-  may take a task id, repo-relative task file, task filename, or task folder as
-  its first argument. It collaborates with the user before writing the new task,
-  records a concrete solution direction, and leaves implementation for a later
-  `/solve-task <new-task>` pass.
-- `/specify-task`, `/solve-task`, and `/create-implementation-task` now require
-  canonical `task.md` files for referenced task directories and read parent
-  `task.md` files when working with child tasks. `specify-task` treats parent
-  `Default Solve Hints` as specification guidance, while `solve-task` treats them
-  as implicit hint files.
+- The local task-to-implementation workflow is iterative: run
+  `/specify-task <source-task-ref> [context/instructions]` to sharpen a source
+  task, run
+  `/plan-task <source-task-ref-or-file> [focus/context]` when no
+  suitable implementation task exists, then repeat `specify` and
+  `plan-task` passes as new information or user instructions
+  arrive. Repeated implementation-task planning passes should sharpen the
+  matching existing task instead of duplicating it unless the user explicitly
+  asks for a distinct new task. Run
+  `/solve-task <implementation-task-ref> [context/instructions]` only after the
+  implementation task is ready to build.
+- Repeated workflow passes should receive context or instructions that say what
+  changed or what the pass should focus on. The command should ask for a focused
+  instruction instead of doing generic churn when a repeated pass has no clear
+  reason.
+- Every workflow step now discovers applicable hints from task descriptions,
+  parent tasks, child tasks, dependencies, `Default Solve Hints`, `Hints`,
+  `Guidance`, and `docs/tasks/hints/` references instead of relying only on
+  explicit hint-file arguments.
+- Every workflow step may update the target task or directly affected task files
+  when decisions change, new instructions arrive, or acceptance criteria,
+  non-goals, implementation plans, dependencies, or follow-up boundaries need to
+  stay current.
+- `/specify-task <task-ref> [context/instructions]` is the local repeatable
+  workflow for checking existing Codegeist architecture tasks against
+  OpenCode-to-Java migration questions and sharpening them when needed without
+  implementation. The local rule `.oc_local/rules/codegeist-task-specification.md`
+  records this convention.
+- `/solve-task <task-ref> [hint-file ...] [context/instructions]` is the local
+  generic workflow for solving an existing task collaboratively with the user.
+  After the task reference, zero or more hint files may be passed. Every run must
+  record in the target task what should happen in Plan Mode, which decisions are
+  open, what was implemented in Build Mode, what remains, and the next step.
+  Project-specific solution guidance stays in `.oc_local/rules/`, while the
+  command only records the generic flow for task resolution, options,
+  implementation, affected tasks, and verification.
+- `/plan-task <source-task-ref-or-file> [focus/context]` is the local interactive
+  workflow for planning one concrete implementation task from an existing
+  architecture, planning, backlog, or solution task. It may take a task id,
+  repo-relative task file, task filename, or task folder as its first argument.
+  It collaborates with the user before writing or sharpening the task, records a
+  concrete solution direction, stores the plan workflow handoff in the task file,
+  and leaves implementation for a later `/solve-task <new-task>` pass. This
+  command is the detailed planning phase: it should identify expected classes,
+  interfaces, records, files, packages, tests, implementation order, acceptance
+  criteria, and verification before runtime code changes start.
+- `/specify-task`, `/plan-task`, and `/solve-task` now require canonical
+  `task.md` files for referenced task directories, read parent `task.md` files
+  when working with child tasks, and discover applicable hints from task docs
+  instead of relying only on explicit hint arguments.
 - `docs/tasks/hints/opencode-solving-guidance.md` is the reusable hint for
   OpenCode-related `/solve-task` runs. It reminds solvers to use OpenCode as a
   feature reference rather than an implementation blueprint. Hint files are
