@@ -73,3 +73,20 @@ GraalVM constraints.
 
 - Specified PF4J as packaged extension mediation, not a replacement for runtime
   services.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Plugin Architecture With PF4J` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines PF4J as the
+packaged plugin boundary, extension points, runtime mediation, plugin metadata,
+trust/capability classification, lifecycle posture, and GraalVM/native-image
+risk.
+
+No user decision is pending. Built-in functionality remains independent of PF4J,
+and plugin tools/commands must pass through runtime-owned tool, permission,
+workspace, event, and storage policies.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+PF4J is not assumed native-image compatible and no plugin APIs were implemented.

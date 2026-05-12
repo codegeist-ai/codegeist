@@ -92,3 +92,19 @@ The section should cover at least:
   Spring Boot/Spring AI version posture, boundaries for Vaadin/JBang/PF4J, and
   explicit non-implementation scope.
 - No further task reshaping was needed during the `/specify-task` pass.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the smallest documentation-first path. The central parity
+document already contained the required technology baseline, so the implemented
+change aligned technology labels with this task's exact baseline terms while
+leaving runtime and build files untouched.
+
+No user decision is pending because the task already fixes the architecture
+decision: Java-first, Spring Boot `3.5.x` for stable Spring AI `1.1.x`, and Java
+`25` only while compatibility remains valid.
+
+Verification passed with `git --no-pager diff --check`. A final diff review
+confirmed `app/codegeist/pom.xml` remains unchanged by this task.

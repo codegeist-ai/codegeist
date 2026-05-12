@@ -296,3 +296,21 @@ Add `## Session Model` to `docs/developer/codegeist-opencode-parity.md` with:
   of the session aggregate.
 - Expanded the task with migration questions, Java domain shape, lifecycle rules,
   message part strategy, and implementation-readiness acceptance questions.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the narrow documentation-first path because
+`docs/developer/codegeist-opencode-parity.md` already contains the required
+`Session Model` section. That section defines runtime-owned sessions, turns,
+message parts, lifecycle rules, first-model fields, persistence candidates,
+boundary rules, open questions, and non-goals.
+
+No user decision is pending. The section keeps sessions as Java domain objects
+owned by the runtime and leaves persistence, storage schema, exact tool schemas,
+and client DTOs to their dedicated tasks.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+session state transitions remain outside CLI, server, Vaadin, provider, tool,
+permission, and storage adapters.

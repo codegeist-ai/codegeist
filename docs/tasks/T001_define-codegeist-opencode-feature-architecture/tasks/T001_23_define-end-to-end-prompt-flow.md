@@ -83,3 +83,20 @@ verification mapping.
 
 - Specified required prompt-flow shape, boundaries, and implementation-readiness
   questions.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## End-To-End Prompt Flow` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines the MVP prompt
+path, approval/denied/provider-failure branches, component owners, later-stage
+branches, and verification mapping.
+
+No user decision is pending. CLI is the first adapter, but the flow remains
+runtime-owned and client-agnostic so server and Vaadin can drive the same
+semantics later.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the flow uses session, event, tool, permission, provider, workspace, and context
+concepts without implementing orchestration.

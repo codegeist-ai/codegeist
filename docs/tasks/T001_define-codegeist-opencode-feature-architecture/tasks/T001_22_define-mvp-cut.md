@@ -70,3 +70,21 @@ features, out-of-scope items, rationale, dependencies, and verification mapping.
 
 - Specified MVP selection rules, migration framing, and implementation-readiness
   criteria.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## MVP Cut` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines the smallest
+CLI-first MVP, included features, deferred features with reasons, out-of-scope
+items, rationale, dependencies, and verification mapping.
+
+No user decision is pending. The MVP can start from the current Spring
+Boot/Spring Shell bootstrap and preserves runtime/client separation,
+session/event/tool/permission/workspace/provider boundaries, and native-aware
+packaging choices.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+each MVP item can map to an implementation backlog candidate without pulling in
+server, Vaadin, PF4J, broad provider parity, or desktop work.

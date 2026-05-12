@@ -78,3 +78,21 @@ status.
 ## Verification Result
 
 - Specified risk-register structure, required areas, and blocking-risk criteria.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Risk Register` to
+`docs/developer/codegeist-opencode-parity.md`. The section records risks across
+dependency baseline, Java compatibility, provider behavior, permissions,
+workspace safety, shell execution, patch conflicts, PF4J, JBang, server auth,
+storage/redaction, scope creep, and runtime-unverified OpenCode assumptions.
+
+No user decision is pending. Each risk has a mitigation or validation path,
+verification idea, affected area, and blocking status without turning risks into
+implementation tasks.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+GraalVM, PF4J, Spring AI provider behavior, permissions, and server security
+risks are represented.

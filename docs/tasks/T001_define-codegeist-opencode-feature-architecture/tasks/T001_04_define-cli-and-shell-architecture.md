@@ -135,3 +135,25 @@ Add `## CLI And Shell Architecture` to
 - Already specifies Spring Shell as the MVP client, keeps runtime orchestration
   out of CLI commands, and defers full-screen TUI behavior.
 - No further task reshaping was needed during the `/specify-task` pass.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the narrow documentation-first path because
+`docs/developer/codegeist-opencode-parity.md` already contains the required
+`CLI And Shell Architecture` section. That section records the Spring
+Shell-first decision, OpenCode reference behaviors, Codegeist entrypoint matrix,
+command categories, runtime boundary rules, streaming and approval expectations,
+and explicit non-goals.
+
+No user decision is pending. The current `app/codegeist` application is still a
+minimal Spring Boot bootstrap with the Spring Shell starter dependency and no
+implemented shell commands, so the documented CLI contract remains
+documentation-only and does not require command implementation, dependency
+changes, or runtime code changes.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+that CLI, server, Vaadin, and future TUI surfaces remain clients of the runtime,
+Plan and Build remain runtime modes, and approval prompts stay separate from
+permission decisions and audit events.

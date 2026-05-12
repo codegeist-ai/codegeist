@@ -347,3 +347,20 @@ Add `## Event Model` to `docs/developer/codegeist-opencode-parity.md` with:
 - Expanded the task with migration questions, Java event shape, ordering and
   correlation rules, event families, boundary rules, persistence candidates, and
   implementation-readiness acceptance questions.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the narrow documentation-first path because
+`docs/developer/codegeist-opencode-parity.md` already contains the required
+`Event Model` section. That section defines the event envelope, Java event shape,
+ordering and correlation rules, event families, initial event types, prompt-flow
+examples, visibility/audit rules, persistence candidates, and non-goals.
+
+No user decision is pending. Transport choices such as callbacks, Spring events,
+SSE, WebSocket, Reactor, Vaadin push, replay, and event sourcing remain deferred
+while runtime events stay the shared client-rendering contract.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+clients consume events and do not publish session or tool state transitions.

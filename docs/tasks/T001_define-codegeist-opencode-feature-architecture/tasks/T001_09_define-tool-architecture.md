@@ -88,3 +88,21 @@ boundaries.
 
 - Specified the Codegeist tool architecture questions and boundaries for later
   Java implementation.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Tool Architecture` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines the
+runtime-owned tool registry, descriptors, request/result model, Spring AI adapter
+boundary, built-in/PF4J/JBang tool sources, initial tool categories, and
+documentation-only non-goals.
+
+No user decision is pending. Spring AI tool callbacks are explicitly adapters
+around Codegeist tool descriptors and cannot bypass mode, permission, workspace,
+event, or session policies.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+tool results can feed the session and event models without implementing concrete
+tools.

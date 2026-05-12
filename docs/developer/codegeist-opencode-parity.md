@@ -26,11 +26,11 @@ records the target architecture baseline only.
 
 | Technology | Decision | Role | Boundary | Validation needed |
 | --- | --- | --- | --- | --- |
-| Java | Prefer Java `25` while compatible | Primary language and domain model | Owns core types, tool contracts, events, and workspace abstractions | Verify with Spring Boot `3.5.x`, Spring AI `1.1.x`, Spring Shell, Maven, and GraalVM |
+| Java 25 | Preferred while compatible | Primary language and domain model | Owns core types, tool contracts, events, and workspace abstractions | Verify with Spring Boot `3.5.x`, Spring AI `1.1.x`, Spring Shell, Maven, and GraalVM |
 | Maven | Baseline build system | Dependency management, build lifecycle, tests, JVM jar, native profile | Does not define runtime architecture | Verify Spring Boot `3.5.x` and Spring AI `1.1.x` BOM alignment |
-| Spring Boot | Target `3.5.x` | Application baseline, auto-configuration, lifecycle | Should not own agent-specific domain decisions | Verify downgrade path from current `4.0.3` bootstrap |
+| Spring Boot 3.5.x | Target for stable Spring AI support | Application baseline, auto-configuration, lifecycle | Should not own agent-specific domain decisions | Verify downgrade path from current `4.0.3` bootstrap |
 | Spring Shell | Keep as initial CLI/shell layer | Interactive and non-interactive command entrypoints | Must remain a client of the runtime | Verify compatibility with Spring Boot `3.5.x` and Java `25` |
-| Spring AI | Target stable `1.1.x` | Primary model/provider, chat, tool-calling, and AI integration layer | Does not replace Codegeist runtime, permissions, or tool policy | Verify required providers, streaming, tool calling, and native constraints |
+| Spring AI 1.1.x | Target stable line | Primary model/provider, chat, tool-calling, and AI integration layer | Does not replace Codegeist runtime, permissions, or tool policy | Verify required providers, streaming, tool calling, and native constraints |
 | GraalVM | Native-image target | Runtime optimization and distributable native executable goal | Native compatibility may lag behind JVM-first prototyping | Verify Spring AI, PF4J, Vaadin, reflection, dynamic loading, and JBang execution |
 | Vaadin | Future Java-native web client | Presents sessions, approvals, events, and tool results | Must not own runtime orchestration | Verify fit after server/runtime boundaries exist |
 | JBang | Lightweight user extension runtime | Enables repository-local Java scripts as simple user extensions | Must not bypass tool registry, permissions, workspace boundaries, or audit logging | Verify metadata, dependency trust, script cache, remote-loading policy, and native behavior |
@@ -904,43 +904,660 @@ Non-goals for this architecture step:
 - Do not decide final MVP defaults for `codegeist run`; that belongs to
   `T001_22`.
 
+## Tool Architecture
+
+Codegeist tools are runtime services registered through a runtime-owned
+`ToolRegistry`. They are not CLI callbacks, Vaadin actions, provider SDK helpers,
+or plugin-owned policy objects. A tool descriptor exposes the tool name,
+capability category, mode compatibility, permission requirements, workspace
+requirements, input summary/redaction policy, result type, and event/audit
+classification.
+
+Spring AI may be used as the model-facing tool-call integration point, but Spring
+AI callbacks must adapt to Codegeist tool descriptors. The runtime still owns
+mode checks, permission checks, workspace validation, tool execution policy,
+events, and session result parts.
+
+The conceptual execution path is:
+
+```text
+runtime -> tool registry -> mode check -> permission -> workspace/executor
+  -> runtime events -> session result parts
+```
+
+Tool sources:
+
+| Source | Role | Boundary |
+| --- | --- | --- |
+| Built-in Spring services | First-class tools for context, file, patch, shell, provider diagnostics, and later verification flows | Must still pass through mode, permission, workspace, event, and session policies. |
+| PF4J plugins | Packaged tools contributed through extension metadata | Runtime classifies and enables them; plugins do not define trust. |
+| JBang scripts | Lightweight repo-local script tools or commands | Treated as untrusted until classified and approved. |
+| Spring AI tool calls | Provider-facing tool-call representation | Adapter only; cannot bypass Codegeist policy. |
+
+Request and result model:
+
+- Tool requests identify the tool, capability category, session/turn, redacted
+  argument summary, workspace scope, provider correlation id when relevant, and
+  required permission class.
+- Tool results include status, redacted summary, structured result metadata,
+  artifact/output references for large payloads, timing, and recoverable failure
+  information.
+- Tool failures are typed and event-producing, not raw exceptions leaking to
+  clients.
+- Session parts store tool request/result summaries and references, not unbounded
+  command output, file contents, or provider-native payloads.
+
+Initial tool categories are read-only context/file inspection, patch/write,
+shell/process execution, network/fetch, plugin/PF4J, JBang, LSP/code
+intelligence, and nested task/subagent orchestration. MVP should start with
+built-in read-only context/file inspection plus the contracts for patch/write
+and shell tools. Plugin tools, JBang tools, LSP, network fetch, and subagents are
+later unless `T001_22` explicitly pulls them into the first implementation cut.
+
+Non-goals for this architecture step:
+
+- Do not implement concrete tools yet.
+- Do not define exact JSON schemas or Java APIs for every tool here.
+- Do not implement permission storage, shell execution, patch application, PF4J,
+  JBang, LSP, network fetch, or subagents here.
+- Do not make provider/model support the only source of tool availability.
+
+## Permission Architecture
+
+Permissions are the central gate between tool requests and side effects. Mode
+checks happen first; permission approval cannot grant a capability that the
+active mode denies. CLI, server, Vaadin, and future TUI clients may collect user
+approval decisions, but the runtime/permission boundary owns decision scope,
+cache behavior, audit events, and policy evaluation.
+
+Permission categories:
+
+| Category | Default posture | Notes |
+| --- | --- | --- |
+| Read project files | Allowed in Plan and Build when workspace policy permits | Secret-like and ignored paths may still be denied. |
+| Read generated analysis artifacts | Allowed on demand | Large artifacts should be summarized or loaded through dedicated workflows. |
+| Write or patch files | Denied in Plan, approval-gated in Build | Workspace validation still runs after approval. |
+| Shell/process execution | Denied in Plan, approval-gated in Build | Destructive commands require explicit user intent. |
+| Network/web/fetch | Denied by default in Plan, approval-gated in Build | Provider calls are separate runtime/provider behavior. |
+| PF4J tools | Denied until registered and classified | Plugin trust is not implicit. |
+| JBang scripts | Denied until registered and classified | Script dependencies and remote loading are untrusted by default. |
+| External integrations or credentials | Approval and config-policy gated | Secrets are never displayed as approval payloads. |
+
+An approval request should carry enough redacted context for informed decisions:
+session, turn, tool, capability, target path/command/network host or integration,
+argument summary, requested scope, expiry, and expected side effect. An approval
+decision records allow/deny, scope, source client, deciding actor when known,
+timestamp, expiry, and audit relevance.
+
+Boundary rules:
+
+- Permission checks happen after mode checks and before tool side effects.
+- Tool implementations cannot decide their own trust level.
+- Workspace validates paths after approval and before file or process side
+  effects.
+- Approval request and decision facts become runtime events and later audit
+  storage candidates.
+- Server authentication is separate from tool permission policy; authenticated
+  users still need side-effect approvals according to policy.
+
+Non-goals for this architecture step:
+
+- Do not implement approval UI, caches, storage, auth, or revocation yet.
+- Do not decide final default allow/deny policy for every tool here.
+- Do not implement security sandboxing.
+
+## Workspace And File Access
+
+The workspace boundary owns repository root identity, canonical path validation,
+ignored/generated-file policy, and symlink escape checks. Tools and clients must
+not validate paths independently or receive unchecked model/user paths for side
+effects.
+
+The first workspace model should include:
+
+| Concept | Purpose |
+| --- | --- |
+| `WorkspaceRef` | Stable identity for the active repository or worktree root. |
+| Allowed root | Canonical root path for reads, writes, and command working directories. |
+| Path policy | Read/write classification, ignore rules, generated-artifact handling, and secret-like path rules. |
+| Validation result | Allowed, denied, ignored/generated, outside workspace, symlink escape, missing path, or ambiguous path. |
+| Output reference | Stable reference to large outputs or artifacts without embedding them in sessions. |
+
+Read policy allows Plan and Build to inspect approved workspace files and
+repo-owned architecture context. Write policy is stricter: writes flow through
+patch/edit or write tools after mode checks, permission approval, and workspace
+validation. Generated or ignored outputs such as `target/`, class files, jars,
+heavy Graphify/Repomix outputs, dependency directories, and secret-like files are
+skipped or denied with explainable warning events unless an explicit later policy
+allows them.
+
+Symlink traversal must not escape the workspace by default. Multi-workspace,
+remote workspace, and worktree-management behavior are later server/storage
+topics, but the first model should not prevent them.
+
+Boundary rules:
+
+- Workspace policy applies equally to built-ins, PF4J plugins, and JBang scripts.
+- Shell working directories and file tool targets are validated by the same
+  service.
+- Sessions store workspace identity and output references, not raw unchecked
+  paths in every part.
+
+Non-goals for this architecture step:
+
+- Do not implement file reads, writes, patch application, or worktree creation.
+- Do not define final ignore syntax beyond current repo conventions.
+- Do not implement secret scanning or remote workspace support.
+
+## Shell Execution Architecture
+
+Shell execution is a high-risk tool contract mediated by runtime, permission,
+workspace, and event services. It is not a CLI implementation detail, and it is
+denied in Plan mode by default.
+
+The command request model should represent:
+
+- Command shape as argv or an explicitly marked shell snippet.
+- Workspace-validated working directory.
+- Environment policy, including inherited, removed, and redacted variables.
+- Timeout, cancellation, stdin policy, output limits, and expected purpose.
+- Permission classification, including verification, build, destructive,
+  networked, or external-integration command.
+
+Execution result should represent exit code, duration, status, output summary,
+stdout/stderr artifact references, truncation, timeout, cancellation, non-zero
+exit, and typed failure details. Output can stream as user-visible events, but
+durable session and audit records should keep summaries and references instead
+of unlimited logs.
+
+Safety rules:
+
+- Runtime requests permission before starting a process.
+- Workspace validates the working directory before execution.
+- Environment variables are controlled and redacted in events, logs, and stored
+  summaries.
+- Destructive commands require explicit user intent and cannot be inferred from a
+  generic approval.
+- Verification commands should be distinguishable from mutation or deployment
+  commands.
+
+Non-goals for this architecture step:
+
+- Do not implement process execution, PTY support, streaming transport, or
+  terminal UI here.
+- Do not define a full command sandbox.
+
+## Patch And Edit Architecture
+
+Codegeist should prefer patch-shaped writes for reviewability. A file mutation is
+first represented as an edit proposal, then permission-approved, workspace-
+validated, applied, and recorded as events plus session result parts. Direct
+writes are a later explicit exception for trusted built-ins, not the default
+architecture.
+
+Patch/edit concepts:
+
+| Concept | Purpose |
+| --- | --- |
+| Edit proposal | Reviewable description of target paths, hunks, created/deleted files, and expected changes. |
+| Approval | Permission decision for the proposed write scope before mutation. |
+| Apply result | Success, partial apply, conflict, already-modified, missing-file, ignored/generated target, or denied path. |
+| Artifact reference | Pointer to full diff or generated content when too large for session parts. |
+| Failure | Typed recoverable or non-recoverable reason for display and later audit. |
+
+Events should expose proposal creation, approval request, approval decision,
+apply start, apply result, and apply failure summaries. Sessions should store
+small summaries and artifact references instead of complete file contents.
+
+Open questions for implementation are the Java diff/patch library choice,
+partial-apply strategy, rollback/snapshot timing, formatter integration, and how
+future Vaadin or CLI views should render the same patch proposal.
+
+Non-goals for this architecture step:
+
+- Do not implement patch parsing or file writes yet.
+- Do not choose a Java diff/patch library here.
+- Do not implement rollback or snapshots.
+- Do not make direct writes the default.
+
+## Context Loading Architecture
+
+Context loading is deterministic and explainable. The runtime asks a context
+loader to gather bounded, ordered context for a session or turn; context loading
+does not call providers, execute tools, mutate workspace state, or bypass
+workspace/secret-like file policy.
+
+First-class context sources:
+
+| Priority | Source | Loading posture |
+| --- | --- | --- |
+| 1 | Active user prompt, selected mode, session metadata, and workspace identity | Automatic. |
+| 2 | Repo rules from `.opencode/rules/` and local overlays from `.oc_local/rules/` | Automatic when relevant to the task. |
+| 3 | Repo memory under `docs/memory-bank/` | Automatic summary-level context. |
+| 4 | Active task files under `docs/tasks/` | Automatic for task workflows, on demand otherwise. |
+| 5 | Developer docs such as this parity document | On demand or task-driven. |
+| 6 | Source snippets from workspace files | Focused and on demand. |
+| 7 | Third-party analysis artifacts under `docs/third-party/**` | On demand; large Repomix/Graphify outputs are not blindly loaded. |
+| 8 | Future indexes, embeddings, LSP, user profiles, and server caches | Later. |
+
+Every turn should be able to produce a context manifest: included sources,
+reason for inclusion, size/summary, redaction status, skipped sources, and stale
+or missing artifact warnings. Plan and Build use the same selection machinery;
+mode affects available tools, not whether context selection is deterministic.
+
+Plugins and JBang may contribute context sources later only through runtime
+mediation, metadata, workspace policy, and permission classification when needed.
+
+Non-goals for this architecture step:
+
+- Do not implement embeddings, vector search, RAG, LSP indexing, or graph
+  generation.
+- Do not run Graphify or Repomix from this task.
+- Do not define final token budgeting policy.
+
+## Plugin Architecture With PF4J
+
+PF4J is the packaged plugin boundary for Codegeist extension points. It does not
+replace runtime services. Built-in functionality must work without plugins, and
+plugin loading can remain JVM-first until native-image behavior is verified.
+
+PF4J extension points may include tools, commands, skills, hooks, provider or
+context integrations, diagnostics, and later UI/server integrations. Plugin
+commands are adapters over runtime APIs, not independent runtimes. Plugin tools
+flow through the same tool, mode, permission, workspace, event, and storage
+policies as built-ins.
+
+Plugin metadata should eventually describe plugin id/version, Codegeist API
+compatibility, contributed extension points, capability categories, required
+permissions, workspace access needs, provider/network needs, trust source, and
+native-image support status.
+
+Risk and lifecycle posture:
+
+- PF4J owns class loading and plugin lifecycle; Codegeist owns trust,
+  capability, registration, enablement, and policy decisions.
+- Plugin errors should become typed runtime events instead of crashing clients.
+- Native-image support for dynamic plugin loading is unproven and must not be
+  promised before verification.
+- A native distribution may disable PF4J loading or support only built-in/static
+  extensions until a plugin strategy is proven.
+
+Non-goals for this architecture step:
+
+- Do not implement PF4J or plugin APIs yet.
+- Do not decide plugin packaging, distribution, or marketplace behavior.
+- Do not allow plugins to bypass core runtime services.
+
+## JBang Role
+
+JBang is a lightweight Java scripting path for repo-local helper commands,
+migration aids, and simple user extensions. It is not the core runtime and not a
+replacement for PF4J packaged plugins. Any JBang script invoked as a Codegeist
+command or tool is mediated by runtime, mode, permission, workspace, event, and
+audit policy.
+
+Use cases that fit JBang:
+
+- Repo-local migration or analysis helpers that are too small for a plugin.
+- Developer workflow helpers that benefit from Java dependencies but do not own
+  long-running runtime state.
+- Simple user extensions that can expose metadata, arguments, output, exit
+  status, timeout, and permission needs.
+
+Use cases that do not fit JBang:
+
+- Session state, provider calls, permission policy, storage, or workspace policy
+  ownership.
+- Packaged, versioned extension APIs better served by PF4J.
+- Remote scripts or dependencies before trust and caching policy exists.
+
+Open questions are script locations, metadata format, dependency trust, remote
+loading policy, cache behavior, JVM versus native-image distribution behavior,
+and which workflows should graduate from scripts into Spring services or PF4J
+plugins.
+
+## Vaadin Web Client Role
+
+Vaadin is a future Java web client over the same runtime concepts used by CLI
+and future server adapters. It presents sessions, runtime events, approval
+requests, tool results, diffs, context manifests, and provider/settings views,
+but it does not own runtime orchestration, permission policy, workspace policy,
+or session state transitions.
+
+Vaadin can start in-process only if it uses contracts that can later be exposed
+through HTTP APIs. It should consume session/event projections and submit
+runtime requests or approval decisions through ports. Approval screens are
+presentation; permission service owns decision scope, cache, and audit events.
+
+Likely later views:
+
+- Session list and current session timeline.
+- Current turn/event stream view.
+- Approval queue and decision details.
+- Tool result, patch, diff, and artifact views.
+- Context manifest inspection.
+- Provider/configuration diagnostics.
+
+Non-local browser access requires server authentication and security review.
+Vaadin is later-stage unless the MVP cut explicitly changes that.
+
+## Headless Server Architecture
+
+The headless server is a future Spring Boot HTTP adapter over the shared
+runtime. It maps requests, responses, authentication, authorization context, and
+streaming transport to runtime APIs; it does not implement agent modes,
+provider calls, tools, permissions, workspace policy, storage behavior, or event
+semantics itself.
+
+API families to design after runtime contracts stabilize:
+
+| API family | Purpose | Timing |
+| --- | --- | --- |
+| Session APIs | Create, continue, list, inspect, abort, and later compact/share/revert sessions | Later/MVP candidate after runtime/session exists. |
+| Event stream | Expose typed runtime events through SSE, WebSocket, or another transport | Later; preserve event semantics. |
+| Approval APIs | Submit decisions and inspect pending approvals | Later; requires auth/audit decisions. |
+| Tool result APIs | Fetch summaries, artifacts, diffs, and logs | Later; depends on storage/artifact refs. |
+| Provider/config APIs | Validate provider config and list models/capabilities | Later; depends on provider policy. |
+| OpenAPI/SDK | Generate stable client contracts | Later, after API churn slows. |
+
+Non-local exposure requires authentication and security review first. Localhost-
+only unauthenticated development mode remains an open question. Server DTOs are
+projections of runtime/session/event models, not the domain source of truth.
+
+## Storage Architecture
+
+Storage persists runtime projections and records through ports; it does not own
+runtime behavior. Event sourcing is optional. The first CLI workflow may use
+in-memory or simple file-backed storage if it does not block migration to a
+richer backend later.
+
+Persistence categories:
+
+| Category | MVP posture | Later posture |
+| --- | --- | --- |
+| Sessions and turns | In-memory or file-backed when needed for continue/list | Durable projections with lifecycle operations. |
+| Runtime/audit events | Persist only audit-critical facts if MVP needs them | Event log, replay/sync, retention policy. |
+| Configuration | Explicit provider/model/workspace defaults without raw secrets | User/project profiles and validation status. |
+| Tool artifacts | Summaries plus local references | Artifact store, retention, redaction, deletion. |
+| Permission decisions | Runtime facts and optional short-lived cache | Persistent cache, revocation, audit views. |
+| Provider telemetry | Optional identifiers and errors | Cost/token summaries and diagnostics. |
+| Credentials | Special secret handling outside ordinary session storage | Secure credential integration to decide. |
+
+Storage ports should keep adapters replaceable. File-backed local storage is
+acceptable for early CLI use, but server/Vaadin concurrency, multi-workspace
+operation, durable audit retention, sharing, or search may trigger Spring Data or
+another database-backed adapter.
+
+Sensitive data rules:
+
+- Credentials and secrets are special cases and must not be stored with ordinary
+  session/tool output.
+- Large outputs should be artifact references plus summaries.
+- Redaction, retention, deletion, and audit requirements must be explicit before
+  broad persistence is added.
+
+## GraalVM Constraints
+
+GraalVM matters because Codegeist targets Java/GraalVM packaging instead of
+OpenCode's Bun/Node distribution model. The core CLI/runtime should be
+native-aware, but not every later feature must be native-compatible immediately.
+Plugin loading, Vaadin, JBang execution, and some provider integrations may be
+JVM-first until verified.
+
+Risk areas:
+
+| Area | Constraint |
+| --- | --- |
+| Spring Boot/Spring Shell | Must be tested with the selected Boot/Shell baseline and native profile. |
+| Spring AI providers | Provider clients, streaming, tool callbacks, reflection, resources, and HTTP clients need verification. |
+| PF4J | Dynamic class loading and plugin discovery are high native-image risks. |
+| Vaadin/server push | UI dependencies and push transports may need JVM-first treatment. |
+| JBang | Script execution from native distributions is uncertain. |
+| Serialization/events | JSON binding, sealed types, records, proxies, and reflection hints need validation. |
+| File/process/LSP | File watching, process execution, LSP, and native libraries require focused checks. |
+
+Native constraints should influence dependency choices and adapter boundaries,
+not block JVM-first architecture work. Claims of native compatibility require a
+later native-image build and smoke test. Features not yet native-compatible must
+be labeled JVM-only or later-stage.
+
+Verification candidates include the current native Maven profile, a minimal CLI
+startup, one provider path, event serialization, basic file/path operations, and
+the decision to disable or defer PF4J/JBang/Vaadin in native mode if needed.
+
+## Feature Parity Matrix
+
+Parity compares OpenCode feature concepts with Codegeist Java-first target
+behavior, not implementation packages one-to-one. Static-analysis-only claims
+remain marked as unverified until runtime behavior is tested.
+
+| OpenCode feature | Evidence/source | Codegeist target behavior | Owner | Classification | Dependencies | Risks/open questions | Verification idea |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CLI entrypoint | Analysis/user docs | Spring Shell `codegeist` shell and one-shot commands | CLI adapter | MVP | Runtime API | Exact command list | Run CLI smoke commands. |
+| Full-screen TUI | Feature/user notes, runtime unverified | Later richer terminal client over events | Future TUI adapter | Later | Event/session contracts | Spring Shell vs custom TUI | Prototype after CLI works. |
+| Plan mode | Feature/user notes | Runtime read-only capability profile | Agent/runtime | MVP | Permissions/tools | Safe read-only tool set | Mode-denied side-effect test. |
+| Build mode | Feature/user notes | Permission-gated implementation mode | Agent/runtime | MVP | Tools/permissions/workspace | Approval granularity | Approved edit/test flow. |
+| Sessions/messages | Analysis docs | Runtime-owned sessions, turns, message parts | Session/runtime | MVP | Events/storage later | Persistence timing | Create/continue/list contract tests. |
+| Events/streaming | Analysis docs | Typed runtime events for CLI/server/Vaadin | Event/runtime | MVP | Session/provider/tools | Transport choice | Render prompt event sequence. |
+| Providers/models | Feature notes | Spring AI-backed provider policy | Provider/runtime | MVP | Spring AI baseline | First provider and tool-calling control | One provider streaming smoke. |
+| Tool registry | Feature notes | Runtime-owned tool registry and descriptors | Tool/runtime | MVP | Permissions/workspace/events | Spring AI callback boundary | Tool request/result contract tests. |
+| File tools | Feature notes | Workspace-scoped read/write contracts | Workspace/tool | MVP | Workspace/patch | Symlink/ignored handling | Path validation tests. |
+| Shell tools | Feature notes | Approval-gated process execution contract | Shell tool | MVP candidate | Permission/events | Destructive command safety | Non-destructive command smoke. |
+| Patch/edit tools | Feature notes | Reviewable patch proposal/apply flow | Patch tool | MVP | Workspace/permissions | Conflict/rollback behavior | Apply success/failure tests. |
+| Web/fetch tools | Feature notes | Permissioned network tool | Tool/runtime | Later | Permission/network policy | Plan-mode access | Local mocked fetch test later. |
+| LSP/code intelligence | User notes | Optional code-intelligence adapter | Tool/plugin | Later | LSP dependency/native review | MVP necessity | Prototype after tool registry. |
+| Subagents/tasks | Feature notes | Nested runtime child runs | Runtime/tool | Later | Session/events/storage | Shared vs child session | Design spike later. |
+| Plugins | Analysis docs | PF4J packaged extensions | Extension mediation | Later | Tool/permission APIs | Native-image risk | JVM plugin smoke later. |
+| Commands/skills | Source/workflow notes | Built-ins plus PF4J/JBang metadata | CLI/runtime/extension | MVP for built-ins, later for external | Runtime APIs | Metadata shape | Built-in command contract tests. |
+| JBang scripts | Codegeist decision | Lightweight mediated Java scripts | Extension mediation | Later/MVP candidate | Permission/shell/workspace | Dependency trust/native behavior | Repo-local script smoke later. |
+| Repository context | Analysis and repo workflow | Deterministic context loader | Context/runtime | MVP | Workspace/memory/tasks | Token budgeting | Context manifest test. |
+| Headless server | Analysis docs | Spring Boot HTTP adapter | Server adapter | Later | Runtime/session/events/auth | Auth before non-local | Local API smoke later. |
+| Vaadin web UI | Analysis/user notes | Java web client over runtime projections | Vaadin client | Later | Server/events/auth | Scope creep | View prototype after API. |
+| Desktop app | Analysis docs | No committed target | To decide | Out/Unknown | Product decision | Need unclear | Reassess after CLI/web. |
+| SDK/OpenAPI | Feature notes | Generated clients after stable server API | Server adapter | Later | HTTP API stability | Client languages | Generate after API exists. |
+| Storage | Analysis docs | Session/event/config/audit ports | Storage | MVP minimal, richer later | Session/events | Retention/redaction | File-backed smoke. |
+| Authentication | User notes | Required before non-local server/web | Server/security | Later blocker for remote | Server/Vaadin | Localhost exception | Security review. |
+| Packaging | OpenCode install notes | Maven jar and GraalVM native target | Build/runtime | MVP | GraalVM profile | Native compatibility | JVM and native smoke. |
+| Dev/runtime command equivalence | Feature notes | Taskfile/Maven commands exercise production entrypoints | Build/CLI | Later | CLI implementation | Command drift | Compare dev/prod entrypoints. |
+
+## MVP Cut
+
+The smallest useful Codegeist MVP is a CLI-first Java runtime that can process a
+prompt through shared runtime boundaries while preserving the architecture needed
+for later OpenCode parity. It should start from the current Spring Boot/Spring
+Shell bootstrap and remain small enough for incremental implementation.
+
+Included MVP scope:
+
+| MVP item | Why included | Dependencies | Verification mapping |
+| --- | --- | --- | --- |
+| Spring Boot/Spring Shell CLI entrypoint | First usable user surface | Build baseline, CLI adapter | CLI startup and one-shot command smoke. |
+| Runtime request path | Prevents CLI from becoming the runtime | Component boundaries | Runtime service contract tests. |
+| Plan and Build modes | Core OpenCode-inspired behavior and safety boundary | Agent, permission, tools | Mode-denied side-effect tests. |
+| Session/turn/message model | Stable history for prompt work | Session/events | Create/append/render tests. |
+| Typed runtime events | CLI rendering and future server/Vaadin compatibility | Event model | Event sequence test for prompt flow. |
+| One verified Spring AI provider path | Required for model calls | Provider config | Provider streaming smoke with selected backend. |
+| Deterministic context loading | Makes repo rules, memory, tasks, docs usable | Workspace/context | Context manifest test. |
+| Minimal tool registry contracts | Enables safe tool mediation | Tool/permission/workspace | Descriptor/request/result tests. |
+| Workspace-scoped file read and patch/write contracts | Needed for useful coding workflows | Workspace/patch/permission | Path and patch proposal tests. |
+| Permission-gated shell/verification contract | Needed for test/build verification | Shell/permission/events | Approved non-destructive command smoke. |
+| Minimal storage or in-memory persistence decision | Needed for session continuation only if selected | Storage | Restart/continue test if file-backed. |
+| JVM jar and native-aware packaging posture | Keeps GraalVM target visible | Build/GraalVM | JVM build and later native smoke. |
+
+Deferred features with reasons:
+
+| Deferred feature | Reason |
+| --- | --- |
+| Full-screen TUI | Spring Shell is enough for first workflow; richer terminal UI can consume events later. |
+| Vaadin web client | Requires server/API/auth and would expand MVP scope. |
+| Headless server and SDK/OpenAPI | Runtime contracts should stabilize first. |
+| PF4J plugins and marketplace behavior | Extension APIs and native-image risks need validation. |
+| JBang script execution | Useful but not required before built-in runtime/tool flow works. |
+| LSP/code intelligence, web/fetch, subagents | Quality/later parity features after core tool registry. |
+| Broad provider ecosystem | One verified provider path should prove the architecture first. |
+| Advanced storage, sharing, compaction, replay | Not needed for first prompt workflow unless session continuation is selected. |
+| Desktop app | No current product requirement. |
+
+Out of scope for the MVP are remote unauthenticated server exposure, plugin
+marketplace/distribution, desktop packaging, broad multi-provider parity, remote
+workspace execution, and runtime parity claims that have not been verified.
+
+## End-To-End Prompt Flow
+
+The primary prompt flow is runtime-owned and client-agnostic. CLI is the first
+adapter, but the same flow must later support server and Vaadin clients.
+
+MVP path:
+
+```text
+user
+  -> CLI/Shell adapter parses input and selected mode
+  -> runtime request
+  -> session/turn creation or continuation
+  -> mode policy
+  -> context loader and context manifest
+  -> provider adapter through Spring AI
+  -> assistant delta/message events
+  -> optional tool request
+  -> mode check and permission request
+  -> workspace validation and tool execution
+  -> tool result/failure events and session parts
+  -> assistant completion
+  -> turn/session completion
+  -> CLI renders events and final summary
+```
+
+Approval branch:
+
+```text
+tool.requested -> permission.requested -> client renders approval
+  -> permission.decided(allow) -> workspace/executor -> tool.result
+```
+
+Denied or failed branch:
+
+```text
+tool.requested -> permission.requested -> permission.decided(deny)
+  -> warning.raised or tool.failed -> assistant.message? -> turn.completed
+```
+
+Provider failure branch:
+
+```text
+provider.requested -> error.raised(provider) -> turn.completed(error)
+```
+
+Component ownership:
+
+| Step | Owner |
+| --- | --- |
+| Parse/render | CLI, later server/Vaadin projections. |
+| Orchestration | Runtime. |
+| History | Session model. |
+| Mode checks | Agent mode policy. |
+| Context | Context loader plus workspace policy. |
+| Model call | Provider adapter and Spring AI. |
+| Tool request/result | Tool registry and executors. |
+| Approval | Permission service and client presentation. |
+| Events | Runtime event publisher. |
+| Persistence | Optional storage ports, as selected by MVP/storage decisions. |
+
+Later branches include async runs, cancellation, server/Vaadin streaming,
+subagents, plugin tools, JBang tools, event replay, sharing, and richer UI diff
+rendering.
+
+## Risk Register
+
+Architecture risks are tracked separately from implementation tasks. A risk
+becomes a backlog item only when the MVP cut or implementation sequence needs a
+validation task.
+
+| Risk | Area | Impact | Uncertainty | Affected tasks/components | Mitigation or decision path | Verification idea | Blocking status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Spring Boot/Spring AI compatibility | Dependency baseline | Wrong baseline could block provider work | Medium | Technology, provider, build | Keep Spring AI stability as baseline driver | Build with selected Boot/Spring AI BOM | Blocks provider implementation. |
+| Java 25 compatibility | Runtime/build | Java baseline may conflict with Spring ecosystem | Medium | Build, GraalVM | Verify before changing architecture assumptions | Maven test/build smoke | Blocks release claim if failing. |
+| Provider streaming/tool calling control | Provider/tool | Spring AI may not expose enough policy hooks | High | Provider, tool, permission | Prototype one provider before broad support | Streaming/tool-call spike | Blocks tool-capable provider MVP. |
+| Permission bypass | Security/runtime | Unsafe side effects or audit gaps | High | Tool, permission, shell, patch | Centralize mode/permission/workspace gates | Denied side-effect tests | Blocks any write/shell MVP. |
+| Workspace escape | Security/files | Path traversal, symlink, ignored-file writes | High | Workspace, tools, patch, shell | Canonical validation service | Path/symlink tests | Blocks file tools. |
+| Shell execution safety | Security/runtime | Destructive or leaking commands | High | Shell, permission, events | Explicit approval and output redaction | Non-destructive command smoke plus deny tests | Blocks shell MVP. |
+| Patch conflicts/data loss | File edits | Corrupt edits or unreviewable writes | Medium | Patch, workspace, storage | Patch proposals and typed failures | Conflict/partial apply tests | Blocks write MVP. |
+| PF4J native-image support | Extension/packaging | Dynamic plugins may not work in native | High | Plugin, GraalVM | Treat PF4J as JVM-first until proven | JVM plugin smoke and native review | Does not block core MVP. |
+| JBang trust/dependencies | Extension/security | Remote/dependency execution risk | High | JBang, shell, permission | Repo-local only until trust policy exists | Local script smoke later | Does not block core MVP. |
+| Server authentication | Security/server | Unsafe non-local exposure | High | Server, Vaadin, approvals | Require auth review before remote mode | Security design review | Blocks non-local server/web. |
+| Storage redaction/audit retention | Storage/compliance | Leaked secrets or insufficient audit | Medium | Storage, events, tools | Store summaries/refs, define retention | Redaction tests | Blocks durable audit features. |
+| Vaadin/server scope creep | Product/scope | MVP grows beyond CLI foundation | Medium | Vaadin, server, MVP | Keep CLI-first MVP and defer UI/server | MVP review | Does not block core MVP. |
+| Runtime-unverified OpenCode assumptions | Research | Incorrect parity target | Medium | Feature matrix, backlog | Mark static-analysis-only claims | Runtime comparison later | Blocks parity claims, not MVP. |
+
+## Implementation Backlog
+
+The next implementation work should validate the MVP cut and highest blocking
+risks in narrow, independently verifiable slices. This section defines backlog
+candidates only; it does not create `T002+` task files automatically.
+
+| Order | Backlog candidate | Outcome | Target areas | Verification idea | Maps to MVP/risk |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Align build baseline | Move `app/codegeist` toward Spring Boot `3.5.x` and Spring AI `1.1.x` compatibility while preserving Java/GraalVM posture | `app/codegeist/pom.xml`, Taskfile/tests | `task test` or Maven test/build | Baseline compatibility risks. |
+| 2 | Introduce runtime/session/event contracts | Add minimal Java packages and tests for runtime request, sessions, turns, message parts, and events | `ai.codegeist.runtime`, `session`, `event` | Unit tests for create/append/event sequence | Runtime, session, event MVP. |
+| 3 | Add deterministic context loading slice | Load rules, memory, active task/docs, and focused source snippets with a context manifest | `context`, `workspace` | Context manifest test with fixture workspace | Context MVP and workspace risk. |
+| 4 | Add provider configuration and one Spring AI path | Configure and smoke one provider with streaming mapped to events | `provider`, config docs/tests | Provider streaming smoke with safe test config | Provider risk and model MVP. |
+| 5 | Add tool/permission/workspace contracts | Define descriptors, approval requests, workspace path validation, and result model before concrete side effects | `tool`, `permission`, `workspace` | Deny/allow/path validation tests | Permission bypass and workspace risks. |
+| 6 | Add patch/edit proposal flow | Represent reviewable edits, approval, apply result, and typed failures | `tool`, `workspace`, `event`, `session` | Patch proposal and conflict tests | Write MVP and data-loss risk. |
+| 7 | Add controlled shell verification tool | Execute bounded, approved non-destructive commands with output summaries | `tool`, `permission`, `event` | Approved test command and denied destructive command tests | Shell MVP/risk. |
+| 8 | Decide minimal storage | Choose in-memory only or file-backed sessions/config for first CLI continuation | `storage`, config | Restart/continue test if file-backed | Storage MVP and redaction risk. |
+
+The first three to five implementation tasks should be created explicitly when
+work begins. Do not mix dependency migration, runtime contracts, provider
+integration, tool implementation, and UI/server surfaces into one broad task.
+
+Follow-up task creation policy:
+
+- Create `T002+` task files only when the user or project workflow asks for
+  tracked implementation handoff.
+- Each task should list target packages/files, acceptance criteria, and the
+  narrow verification command.
+- Later-stage Vaadin, server, PF4J, JBang, LSP, SDK, desktop, and marketplace
+  work should wait until the CLI/runtime MVP validates the shared boundaries.
+
 ## Concept Mapping To The Java Stack
 
 OpenCode should be used as a feature reference, not as an implementation shape
 to copy. Codegeist concepts must be translated into the selected Java-first
 technology stack.
 
+`Extension path` uses only broad ownership labels from this architecture pass:
+`built-in`, `PF4J`, `JBang`, `later`, or `none`.
+
 | OpenCode concept | OpenCode evidence | Codegeist concept | Primary owner | Extension path | MVP relevance | Follow-up task | Open questions |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| CLI | `ANALYSIS_REPORT.md` names the `opencode` binary as the CLI surface. | Spring Boot application with Spring Shell command surface | Spring Boot `3.5.x`, Spring Shell | Built-in | MVP | `T001_04` | Which commands are required before a full interactive loop exists? |
-| TUI | Feature notes describe terminal UI as the default product experience. | Shell-first terminal UX, with full-screen TUI deferred | Spring Shell, later JLine detail | Built-in | Later | `T001_04` | Is Spring Shell enough for first user workflows, or is a richer TUI required earlier? |
-| Plan agent | User notes describe read-only or analysis-oriented plan workflow. | Read-only agent mode | Runtime services, Spring AI `1.1.x` | Built-in | MVP | `T001_05` | Which tools are safe in Plan mode by default? |
-| Build agent | Feature notes describe build agent mode for implementation work. | Implementation-capable agent mode | Runtime services, Spring AI `1.1.x` | Built-in | MVP | `T001_05` | Which write/shell actions require per-call versus session-level approval? |
-| Sessions | Analysis says the central runtime path is session oriented. | Codegeist Session aggregate | Java domain model, Spring services | None | MVP | `T001_06` | Which session fields are required before persistence exists? |
-| Message parts | Feature notes mention prompts, message parts, events, costs, tokens, snapshots, and state projection. | Typed message model | Java records/classes | None | MVP | `T001_06` | Do costs/tokens belong in the first model or later telemetry? |
-| Events | Analysis says messages, events, costs, and state are persisted or projected for clients. | Runtime event stream and audit events | Java event types, Spring application services | None | MVP | `T001_07` | Should initial events be synchronous callbacks, Spring events, or an internal stream abstraction? |
-| Provider/model configuration | Feature notes describe provider-agnostic model access and model ecosystem. | Spring AI-backed provider policy | Spring AI `1.1.x`, Codegeist provider policy | Built-in, later PF4J providers possible | MVP | `T001_08` | Which Spring AI provider should be verified first? |
-| Tool execution | Feature notes list file, shell, patch, web, LSP, task/subagent, and plugin tools mediated by permissions. | Codegeist Tool Registry | Spring services, Spring AI tool binding where useful | Built-in, PF4J, JBang | MVP | `T001_09` | How much of Spring AI tool calling should be exposed directly versus wrapped by Codegeist policy? |
-| File tools | Feature notes list file tools. | Workspace-scoped file access service | Java NIO, Spring services | Built-in, later PF4J/JBang wrappers | MVP | `T001_11` | How are symlinks, ignored files, and generated files handled? |
-| Shell tools | Feature notes list shell tools mediated by permissions. | Controlled process execution tool | Java Process API, Spring services | Built-in, JBang as separate extension execution | Later | `T001_12` | What approval granularity and timeout defaults are safe? |
-| Patch/edit tools | Feature notes list patch tools. | Patch-shaped edit proposal and apply flow | Java NIO, diff/patch library to decide | Built-in | MVP | `T001_13` | Should all writes be patch-shaped, or are direct writes allowed for trusted built-ins? |
-| Web/fetch tools | Feature notes list web tools. | Permissioned network fetch tool | Spring WebClient or Java HTTP client | Built-in, later PF4J | Later | `T001_09` | Are network calls allowed in Plan mode? |
-| LSP/code intelligence | User notes say built-in LSP support is opt-in. | Later code-intelligence adapter | LSP4J or adapter to decide | Later/PF4J possible | Later | `T001_09` | Is LSP needed for MVP correctness or only quality? |
-| Subagents/tasks | Feature notes mention general subagent and task/subagent tools. | Nested runtime orchestration and task runs | Codegeist runtime services | Built-in first, PF4J later | Later | `T001_09` | Should subagents share session state or create child sessions? |
+| CLI | `ANALYSIS_REPORT.md` names the `opencode` binary as the CLI surface. | Spring Boot application with Spring Shell command surface | Spring Boot `3.5.x`, Spring Shell | built-in | MVP | `T001_04` | Which commands are required before a full interactive loop exists? |
+| TUI | Feature notes describe terminal UI as the default product experience. | Shell-first terminal UX, with full-screen TUI deferred | Spring Shell, later JLine detail | built-in | Later | `T001_04` | Is Spring Shell enough for first user workflows, or is a richer TUI required earlier? |
+| Plan agent | User notes describe read-only or analysis-oriented plan workflow. | Read-only agent mode | Runtime services, Spring AI `1.1.x` | built-in | MVP | `T001_05` | Which tools are safe in Plan mode by default? |
+| Build agent | Feature notes describe build agent mode for implementation work. | Implementation-capable agent mode | Runtime services, Spring AI `1.1.x` | built-in | MVP | `T001_05` | Which write/shell actions require per-call versus session-level approval? |
+| Sessions | Analysis says the central runtime path is session oriented. | Codegeist Session aggregate | Java domain model, Spring services | none | MVP | `T001_06` | Which session fields are required before persistence exists? |
+| Message parts | Feature notes mention prompts, message parts, events, costs, tokens, snapshots, and state projection. | Typed message model | Java records/classes | none | MVP | `T001_06` | Do costs/tokens belong in the first model or later telemetry? |
+| Events | Analysis says messages, events, costs, and state are persisted or projected for clients. | Runtime event stream and audit events | Java event types, Spring application services | none | MVP | `T001_07` | Should initial events be synchronous callbacks, Spring events, or an internal stream abstraction? |
+| Provider/model configuration | Feature notes describe provider-agnostic model access and model ecosystem. | Spring AI-backed provider policy | Spring AI `1.1.x`, Codegeist provider policy | built-in, PF4J, later | MVP | `T001_08` | Which Spring AI provider should be verified first? |
+| Tool execution | Feature notes list file, shell, patch, web, LSP, task/subagent, and plugin tools mediated by permissions. | Codegeist Tool Registry | Spring services, Spring AI tool binding where useful | built-in, PF4J, JBang | MVP | `T001_09` | How much of Spring AI tool calling should be exposed directly versus wrapped by Codegeist policy? |
+| File tools | Feature notes list file tools. | Workspace-scoped file access service | Java NIO, Spring services | built-in, PF4J, JBang, later | MVP | `T001_11` | How are symlinks, ignored files, and generated files handled? |
+| Shell tools | Feature notes list shell tools mediated by permissions. | Controlled process execution tool | Java Process API, Spring services | built-in, JBang | Later | `T001_12` | What approval granularity and timeout defaults are safe? |
+| Patch/edit tools | Feature notes list patch tools. | Patch-shaped edit proposal and apply flow | Java NIO, diff/patch library to decide | built-in | MVP | `T001_13` | Should all writes be patch-shaped, or are direct writes allowed for trusted built-ins? |
+| Web/fetch tools | Feature notes list web tools. | Permissioned network fetch tool | Spring WebClient or Java HTTP client | built-in, PF4J, later | Later | `T001_09` | Are network calls allowed in Plan mode? |
+| LSP/code intelligence | User notes say built-in LSP support is opt-in. | Later code-intelligence adapter | LSP4J or adapter to decide | PF4J, later | Later | `T001_09` | Is LSP needed for MVP correctness or only quality? |
+| Subagents/tasks | Feature notes mention general subagent and task/subagent tools. | Nested runtime orchestration and task runs | Codegeist runtime services | built-in, PF4J, later | Later | `T001_09` | Should subagents share session state or create child sessions? |
 | Plugins | Analysis names plugin API for extensions, hooks, tools, and TUI integration. | Packaged plugin system | PF4J | PF4J | Later | `T001_15` | Is PF4J JVM-only at first because of native-image constraints? |
-| Commands | OpenCode source includes repo-local command concepts and command workflows. | Runtime command extension | Spring Shell built-ins, PF4J, JBang | Built-in, PF4J, JBang | MVP | `T001_15` | Which commands require runtime state and which can be JBang scripts? |
+| Commands | OpenCode source includes repo-local command concepts and command workflows. | Runtime command extension | Spring Shell built-ins, PF4J, JBang | built-in, PF4J, JBang | MVP | `T001_15` | Which commands require runtime state and which can be JBang scripts? |
 | Skills | OpenCode analysis and repo workflow use skills as reusable instructions/workflows. | Skill-like extension metadata and execution policy | Runtime services, PF4J/JBang | PF4J, JBang | Later | `T001_15` | Are skills declarative metadata, executable extensions, or both? |
 | User scripts | Codegeist decision extends beyond OpenCode by using JBang for simple user extensions. | Repository-local JBang user extensions | JBang runner mediated by Codegeist | JBang | MVP | `T001_16` | Where do scripts live, and when are remote scripts allowed? |
-| Permissions | Analysis says tool execution is mediated by permissions. | Central permission policy gate | Spring services, Java policy model | None | MVP | `T001_10` | How are approvals cached, scoped, revoked, and audited? |
-| Repository context | Analysis references workspace and instance contexts; repo memory/rules are Codegeist-specific context sources. | Deterministic context loader for rules, memory, tasks, docs, source, and third-party analysis | Java NIO, Spring services | Built-in, JBang/PF4J may contribute sources later | MVP | `T001_14` | What context is loaded automatically versus on demand? |
-| Headless server | Analysis names `opencode serve` and client/server architecture. | Spring Boot HTTP API adapter over runtime | Spring Boot Web, later Spring Security | Built-in | Later | `T001_18` | Which API endpoints are needed before Vaadin or SDK exists? |
-| Web UI | Analysis names `opencode web` and Solid web app. | Vaadin web client over runtime/server APIs | Vaadin | Built-in client | Later | `T001_17` | Should Vaadin connect in-process first or only through HTTP APIs? |
-| Desktop app | Analysis names Electron desktop app. | Later desktop/client decision | To decide | Later | Out/Unknown | `T001_21` | Is a desktop app necessary once CLI and Vaadin exist? |
-| SDK/OpenAPI | Feature notes mention generated SDK/OpenAPI. | Generated client contract after server API exists | Springdoc/OpenAPI to evaluate | Later | Later | `T001_18` | Which client languages matter for Codegeist? |
-| Storage | Analysis says message parts, events, costs, and state are persisted or projected. | Session, event, config, audit, cache storage | File storage first or Spring Data later | None | MVP | `T001_19` | What must persist in MVP versus remain in memory? |
-| Authentication | User notes warn server deployments need password/auth review. | Server security before non-local exposure | Spring Security | None | Later | `T001_18` | Is localhost-only server mode allowed without auth? |
-| Packaging | OpenCode has many install paths; Codegeist baseline is Java packaging. | JVM jar and GraalVM native executable target | Maven, GraalVM | None | MVP | `T001_20` | Is native image required for first release or only a target constraint? |
-| Development/runtime command equivalence | Feature notes say `bun dev` mirrors `opencode` commands for local development. | Maven/Taskfile commands should exercise the same Spring runtime entrypoints | Maven, Taskfile, Spring Boot | Built-in | Later | `T001_25` | Which local dev commands must match production CLI behavior? |
+| Permissions | Analysis says tool execution is mediated by permissions. | Central permission policy gate | Spring services, Java policy model | none | MVP | `T001_10` | How are approvals cached, scoped, revoked, and audited? |
+| Repository context | Analysis references workspace and instance contexts; repo memory/rules are Codegeist-specific context sources. | Deterministic context loader for rules, memory, tasks, docs, source, and third-party analysis | Java NIO, Spring services | built-in, PF4J, JBang, later | MVP | `T001_14` | What context is loaded automatically versus on demand? |
+| Headless server | Analysis names `opencode serve` and client/server architecture. | Spring Boot HTTP API adapter over runtime | Spring Boot Web, later Spring Security | built-in | Later | `T001_18` | Which API endpoints are needed before Vaadin or SDK exists? |
+| Web UI | Analysis names `opencode web` and Solid web app. | Vaadin web client over runtime/server APIs | Vaadin | built-in | Later | `T001_17` | Should Vaadin connect in-process first or only through HTTP APIs? |
+| Desktop app | Analysis names Electron desktop app. | Later desktop/client decision | To decide | later | Out/Unknown | `T001_21` | Is a desktop app necessary once CLI and Vaadin exist? |
+| SDK/OpenAPI | Feature notes mention generated SDK/OpenAPI. | Generated client contract after server API exists | Springdoc/OpenAPI to evaluate | later | Later | `T001_18` | Which client languages matter for Codegeist? |
+| Storage | Analysis says message parts, events, costs, and state are persisted or projected. | Session, event, config, audit, cache storage | File storage first or Spring Data later | none | MVP | `T001_19` | What must persist in MVP versus remain in memory? |
+| Authentication | User notes warn server deployments need password/auth review. | Server security before non-local exposure | Spring Security | none | Later | `T001_18` | Is localhost-only server mode allowed without auth? |
+| Packaging | OpenCode has many install paths; Codegeist baseline is Java packaging. | JVM jar and GraalVM native executable target | Maven, GraalVM | none | MVP | `T001_20` | Is native image required for first release or only a target constraint? |
+| Development/runtime command equivalence | Feature notes say `bun dev` mirrors `opencode` commands for local development. | Maven/Taskfile commands should exercise the same Spring runtime entrypoints | Maven, Taskfile, Spring Boot | built-in | Later | `T001_25` | Which local dev commands must match production CLI behavior? |
 
 ## Technology Ownership
 

@@ -70,3 +70,20 @@ deferral, and Vaadin dependencies.
 ## Verification Result
 
 - Specified headless server as a Spring Boot adapter over the shared runtime.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Headless Server Architecture` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines the future
+Spring Boot HTTP adapter, API families, runtime boundaries, event streaming
+posture, authentication assumptions, OpenAPI/SDK deferral, and Vaadin
+dependencies.
+
+No user decision is pending. Server controllers remain DTO/request-response
+adapters over the runtime, and non-local exposure is blocked on authentication
+and security review.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the CLI can remain independent of server mode and no HTTP routes were added.

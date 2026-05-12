@@ -73,3 +73,22 @@ create follow-up `T002+` task files.
 
 - Specified backlog derivation rules, likely first themes, and constraints for
   creating implementation follow-up tasks.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Implementation Backlog` to
+`docs/developer/codegeist-opencode-parity.md`. The section derives narrow
+implementation candidates from the MVP cut and risk register, covering build
+baseline alignment, runtime/session/event contracts, context loading, provider
+configuration, tool/permission/workspace contracts, patch/edit proposal flow,
+controlled shell verification, and minimal storage decisions.
+
+No user decision is pending. No `T002+` task files were created because this
+architecture task only defines backlog candidates; tracked follow-up task
+creation remains explicit.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the backlog candidates map back to MVP features and blocking risks and no
+implementation was performed.

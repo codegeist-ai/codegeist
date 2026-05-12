@@ -74,3 +74,21 @@ timeouts, cancellation, and audit boundaries.
 
 - Specified shell execution as a controlled high-risk tool with approval,
   workspace, event, and audit boundaries.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Shell Execution Architecture` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines shell
+execution as a high-risk tool call, command request fields, permission and
+workspace requirements, environment/output redaction, timeouts, cancellation,
+typed results, and destructive-command constraints.
+
+No user decision is pending. Plan mode denies shell execution by default, while
+Build-mode shell execution remains explicit-approval work with bounded output and
+runtime events.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the section is consistent with permission and event models and does not implement
+a process runner.

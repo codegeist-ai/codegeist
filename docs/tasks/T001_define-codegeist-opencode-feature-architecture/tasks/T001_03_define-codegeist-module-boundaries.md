@@ -158,3 +158,23 @@ Add `## Component Model And Module Boundaries` to
 - Already specifies Codegeist runtime ownership, Java package targets,
   dependency direction, physical module split triggers, and explicit non-goals.
 - No further task reshaping was needed during the `/specify-task` pass.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the narrow documentation-first path because
+`docs/developer/codegeist-opencode-parity.md` already contains the required
+`Component Model And Module Boundaries` section. That section records the
+one-Maven-module MVP decision, the component responsibility table, the proposed
+Java package map, dependency direction rules, module split triggers, and explicit
+non-goals.
+
+No user decision is pending. The current `app/codegeist` layout has a single
+Maven module, so the documented logical package boundaries can start there
+without requiring immediate Maven module creation, package moves, dependency
+changes, or runtime implementation.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the parity document keeps this task documentation-only and preserves runtime
+ownership outside CLI, server, Vaadin, PF4J, and JBang adapters.

@@ -82,3 +82,22 @@ open compatibility questions.
 
 - Specified GraalVM risk areas and native/JVM-first boundaries for later
   verification.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## GraalVM Constraints` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines native-image
+risk areas, native/JVM-first split, dependency implications, verification
+candidates, and open compatibility questions for Spring, Spring AI, Vaadin,
+PF4J, JBang, reflection, serialization, HTTP clients, file/process work, and
+LSP/native libraries.
+
+No user decision is pending. Core CLI/runtime stays native-aware, while PF4J,
+Vaadin, JBang, and provider-specific integrations may remain JVM-first until
+verified.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+native compatibility claims require later verification and no Maven/native config
+was changed.

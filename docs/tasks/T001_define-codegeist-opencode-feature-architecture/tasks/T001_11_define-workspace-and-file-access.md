@@ -75,3 +75,20 @@ symlink risks, and tool boundaries.
 
 - Specified workspace ownership, path validation, and file-access boundaries for
   later Java implementation.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Workspace And File Access` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines workspace
+identity, canonical path validation, read/write policy, ignored/generated
+handling, symlink escape risks, output references, and shared tool boundaries.
+
+No user decision is pending. Built-in tools, PF4J plugins, and JBang scripts all
+pass through the same workspace policy, with writes tied to mode, permission,
+and patch/edit validation.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the policy is compatible with Plan-mode reads and does not implement file tools
+or patch application.

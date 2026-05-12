@@ -173,3 +173,22 @@ Add `## Provider Architecture` to
   Codegeist runtime/provider policy.
 - Listed tool-calling and streaming as explicit open questions for later
   implementation verification.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the narrow documentation-first path because
+`docs/developer/codegeist-opencode-parity.md` already contains the required
+`Provider Architecture` section. That section records Spring AI as the default
+integration path, Codegeist-owned provider policy, provider/model/capability
+concepts, selection rules, first provider candidates, open questions, and
+non-goals.
+
+No user decision is pending. The first verified provider remains a later
+implementation choice, and Spring AI tool-calling control remains an explicit
+verification question before tool-capable provider work starts.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+provider selection stays in runtime/provider policy and does not leak into CLI,
+server, Vaadin, sessions, or raw provider SDK code.

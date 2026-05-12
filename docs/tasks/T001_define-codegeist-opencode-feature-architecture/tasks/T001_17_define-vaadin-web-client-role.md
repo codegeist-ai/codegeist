@@ -72,3 +72,21 @@ security assumptions.
 ## Verification Result
 
 - Specified Vaadin as a future Java web client over runtime events and APIs.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Vaadin Web Client Role` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines Vaadin as a
+future client surface, lists likely session/event/approval/tool/context/provider
+views, preserves runtime and permission ownership, and identifies server/API/auth
+dependencies.
+
+No user decision is pending. Vaadin remains later-stage unless the MVP cut is
+changed, and non-local browser access requires server authentication and security
+review.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+Vaadin consumes runtime projections/events and does not own session or permission
+state.

@@ -76,3 +76,20 @@ workspace boundaries, and later retrieval options.
 
 - Specified deterministic context loading sources, boundaries, on-demand artifact
   handling, and implementation-readiness questions.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Context Loading Architecture` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines deterministic
+context sources, priority and loading posture, context manifests, large artifact
+handling, workspace boundaries, and later retrieval options.
+
+No user decision is pending. Repo rules, local overlays, memory, task docs,
+developer docs, source snippets, and third-party analysis artifacts are
+first-class sources, while Graphify/Repomix outputs stay on-demand.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+context loading remains explainable and does not execute tools, call providers,
+or mutate workspace state.

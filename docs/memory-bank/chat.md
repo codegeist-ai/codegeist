@@ -42,18 +42,20 @@
 - `docs/tasks/T001_define-codegeist-opencode-feature-architecture/` ist der
   aktive Architektur-Epic fuer Codegeist/OpenCode-Paritaet. Der Epic ist in 25
   feingranulare Dokumentations-Tasks unter `tasks/` zerlegt.
-- `docs/developer/codegeist-opencode-parity.md` haelt die beginnende
-  Architektur fest: Codegeist wird nicht als OpenCode/Bun/TypeScript-Kopie
-  geplant, sondern auf den Java-first Stack abgebildet. Ausgearbeitet sind
-  bisher Technologie-Baseline, OpenCode-Java-Mapping, Modulgrenzen,
-  CLI/Shell-Architektur, Agent-Modi, Session-Modell, Event-Modell und
-  Provider-Architektur.
+- `docs/developer/codegeist-opencode-parity.md` haelt die Codegeist/OpenCode-
+  Paritaetsarchitektur fest: Codegeist wird nicht als OpenCode/Bun/TypeScript-
+  Kopie geplant, sondern auf den Java-first Stack abgebildet. Ausgearbeitet sind
+  jetzt die Technologie-Baseline, OpenCode-Java-Mapping, Modulgrenzen,
+  CLI/Shell-Architektur, Agent-Modi, Session-Modell, Event-Modell,
+  Provider-Architektur, Tool-/Permission-/Workspace-Grenzen, Shell- und
+  Patch/Edit-Architektur, Context Loading, PF4J/JBang/Vaadin/Server/Storage-
+  Rollen, GraalVM-Constraints, Feature-Matrix, MVP-Cut, Prompt-Flow,
+  Risk-Register und Implementation Backlog.
 - Alle 25 Child-Tasks unter
   `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` wurden
-  mit `/specify-task` geprueft. `T001_01` bis `T001_08` waren bereits tief
-  genug oder wurden vorher vertieft; `T001_09` bis `T001_25` enthalten jetzt
-  Codegeist-spezifische Migrationsfragen, Boundary-Regeln, Non-Goals und
-  Implementation-Readiness-Fragen fuer die spaetere Architekturarbeit.
+  mit `/specify-task` geprueft und mit `/solve-task` geloest. Jeder Child-Task
+  hat jetzt eine `Solution Note`, die auf den entsprechenden Abschnitt in
+  `docs/developer/codegeist-opencode-parity.md` verweist.
 - Die `opencode`-Analyse nutzt fuer Graphify eine fokussierte Runtime-Corpus
   statt des ganzen Repos. Der letzte Graphify-Lauf erzeugte 1.247 Nodes, 2.008
   Edges und 78 Communities; Graphify-, Repomix- und Verify-Ausgaben bleiben
@@ -134,6 +136,7 @@
 
 ## Offene Punkte
 
-- Die naechsten aktiven Architekturarbeiten koennen die spezifizierten Tasks
-  nacheinander in `docs/developer/codegeist-opencode-parity.md` ausarbeiten,
-  beginnend mit `T001_09` Tool Architecture.
+- Der naechste sinnvolle Schritt ist, aus dem `Implementation Backlog` in
+  `docs/developer/codegeist-opencode-parity.md` explizite `T002+`-
+  Implementierungstasks abzuleiten, beginnend mit der Build-Baseline und den
+  Runtime/Session/Event-Vertraegen.

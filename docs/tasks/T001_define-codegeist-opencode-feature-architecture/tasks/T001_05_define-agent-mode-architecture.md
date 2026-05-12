@@ -134,3 +134,20 @@ Add `## Agent Mode Architecture` to
 - Already specifies Plan and Build as runtime capability profiles, not CLI flags,
   and preserves mode, permission, tool, and client boundaries.
 - No further task reshaping was needed during the `/specify-task` pass.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the narrow documentation-first path because
+`docs/developer/codegeist-opencode-parity.md` already contains the required
+`Agent Mode Architecture` section. That section defines Plan and Build as
+runtime modes, records capability defaults, mode semantics, initial mode
+selection rules, and explicit non-goals.
+
+No user decision is pending. The final default behavior for `codegeist run`
+remains intentionally deferred to `T001_22`, while Plan and Build mode ownership
+is already fixed at the runtime boundary.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+consistency with CLI boundaries, tool contracts, and permission architecture.

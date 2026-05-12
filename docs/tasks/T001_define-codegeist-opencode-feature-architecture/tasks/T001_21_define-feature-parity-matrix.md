@@ -82,3 +82,21 @@ classification, risks/open questions, and verification ideas.
 
 - Specified matrix structure, classification rules, evidence requirements, and
   implementation-readiness checks.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Feature Parity Matrix` to
+`docs/developer/codegeist-opencode-parity.md`. The matrix covers the OpenCode
+feature groups from the parent epic and maps each to Codegeist target behavior,
+component ownership, MVP/later/out-of-scope classification, dependencies,
+risks/open questions, and verification ideas.
+
+No user decision is pending. Runtime-unverified OpenCode claims remain framed as
+analysis-derived targets, and MVP classifications are ready to feed `T001_22`
+without copying OpenCode implementation technology.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the rows use Java/Spring-stack terminology and no feature implementation was
+added.

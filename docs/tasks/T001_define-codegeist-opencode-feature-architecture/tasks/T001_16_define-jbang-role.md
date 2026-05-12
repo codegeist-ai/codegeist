@@ -70,3 +70,21 @@ runtime mediation, PF4J boundaries, security questions, and native-image risks.
 ## Verification Result
 
 - Specified JBang as a lightweight, mediated, optional scripting extension path.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## JBang Role` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines JBang as an
+optional lightweight Java scripting path, identifies fitting and non-fitting use
+cases, preserves PF4J as the packaged plugin boundary, and lists trust,
+dependency, metadata, caching, and native-image questions.
+
+No user decision is pending. JBang does not own runtime state, sessions,
+provider calls, permissions, storage, or workspace policy, and script execution
+cannot bypass runtime mediation.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+the task remains role definition only and does not implement script discovery or
+execution.

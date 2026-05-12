@@ -76,3 +76,19 @@ event/audit choices, and migration triggers for Spring Data or another backend.
 
 - Specified storage categories, MVP/later split, sensitive-data concerns, and
   adapter boundaries.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Storage Architecture` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines persistence
+categories, MVP/later posture, file-backed option, sensitive-data handling,
+event/audit choices, and migration triggers for Spring Data or another backend.
+
+No user decision is pending. Event sourcing remains optional, storage ports stay
+separate from runtime orchestration, and credentials/secrets are called out as
+special cases outside ordinary session/tool output.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+storage choices do not block the first CLI MVP.

@@ -72,3 +72,21 @@ boundaries.
 
 - Specified patch/edit as a reviewable, permission-gated, workspace-scoped write
   flow.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Patch And Edit Architecture` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines reviewable
+edit proposals, permission approval, workspace validation, apply results,
+conflict/failure handling, events, artifact references, and direct-write
+constraints.
+
+No user decision is pending. Patch-shaped writes are the default architectural
+direction, while direct writes remain an explicit later exception for trusted
+built-ins only.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+file changes are reviewable before application and no patch parsing or write
+implementation was added.

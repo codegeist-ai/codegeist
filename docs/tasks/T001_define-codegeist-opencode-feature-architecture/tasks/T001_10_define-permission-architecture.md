@@ -86,3 +86,20 @@ boundaries.
 
 - Specified permission categories, mode interaction, approval boundaries, and
   implementation-readiness questions.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass added `## Permission Architecture` to
+`docs/developer/codegeist-opencode-parity.md`. The section defines permission
+categories, approval request/decision concepts, mode interaction, audit/event
+behavior, and client presentation boundaries.
+
+No user decision is pending. Permission approval cannot override mode-denied
+capabilities, and CLI/server/Vaadin remain approval presentation surfaces rather
+than policy owners.
+
+Verification passed with `git --no-pager diff --check`. A final review confirmed
+permission checks sit between tool requests and side effects and stay consistent
+with shell, patch, workspace, and event boundaries.

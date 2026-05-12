@@ -138,3 +138,21 @@ The table must cover at least these OpenCode concept groups:
   map to Codegeist ownership, extension path, MVP relevance, follow-up task, and
   open questions.
 - No further task reshaping was needed during the `/specify-task` pass.
+
+## Solution Note
+
+Status: completed.
+
+The solution pass used the narrow documentation-first path because the central
+parity document already contained the required OpenCode-to-Java mapping table.
+The implemented change tightened that table against this task's contract by
+making the allowed `Extension path` labels explicit and normalizing mapped rows
+to the broad labels `built-in`, `PF4J`, `JBang`, `later`, and `none`.
+
+No user decision is pending. This task intentionally keeps MVP labels broad and
+leaves the final MVP cut to `T001_22`; uncertain mappings remain captured as
+open questions in the table.
+
+Verification passed with `git --no-pager diff --check`. A final diff review
+confirmed that only documentation files changed and no runtime or build
+configuration was touched.
