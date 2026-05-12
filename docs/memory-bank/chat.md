@@ -30,8 +30,8 @@
 - Der Nix-Profil-Hook wird global ueber `/etc/profile.d/nix.sh` eingebunden,
   damit `nix` auch in Login-Shells im Container im `PATH` liegt.
 - Das lokale OpenCode-Overlay `.oc_local/` enthaelt jetzt die Commands
-  `/analyse-project`, `/ask-project`, `/ask-project-repomix` und
-  `/specify-task`, den Skill `/repository-analysis`, den Subagent `@repomix`
+  `/analyse-project`, `/ask-project`, `/ask-project-repomix`, `/specify-task`
+  und `/solve-task`, den Skill `/repository-analysis`, den Subagent `@repomix`
   sowie das AI-Script `render-mermaid.sh` fuer Mermaid-SVG-Rendering.
 - `docs/third-party/opencode/source` ist als Submodul fuer
   `https://github.com/anomalyco/opencode.git` auf Branch `dev` eingebunden und
@@ -116,6 +116,21 @@
   Migrationsfragen zu pruefen und bei Bedarf ohne Implementierung nachzuschaerfen.
   Die lokale Regel `.oc_local/rules/codegeist-task-specification.md` haelt diese
   Konvention fest.
+- `/solve-task <task-ref> [hint-file ...]` ist der lokale, generisch gehaltene
+  Workflow, um einen vorhandenen Task gemeinsam mit dem Benutzer zu loesen. Nach
+  der Task-Referenz koennen null oder mehr Hinweisdateien uebergeben werden.
+  Jeder Lauf muss im Zieltask selbst penibel festhalten, was im Plan Mode getan
+  werden soll, welche Entscheidungen offen sind, was im Build Mode umgesetzt
+  wurde, was noch fehlt und welcher naechste Schritt gilt. Projektspezifische
+  Loesungshinweise bleiben in `.oc_local/rules/`, waehrend das Command nur den
+  allgemeinen Ablauf fuer Task-Aufloesung, Optionen, Umsetzung, betroffene Tasks
+  und Verifikation beschreibt.
+- `docs/tasks/hints/opencode-solving-guidance.md` ist der wiederverwendbare Hint
+  fuer OpenCode-bezogene `/solve-task`-Aufrufe. Er erinnert daran, OpenCode als
+  Feature-Referenz und nicht als Implementierungs-Blueprint zu nutzen. Hint-
+  Dateien sind dynamisch: Wenn beim Loesen eines Tasks wiederverwendbare
+  Erkenntnisse entstehen, sollen sie generisch nachgezogen werden, ohne
+  task-spezifische Protokolle oder enge Implementierungsdetails aufzunehmen.
 
 ## Offene Punkte
 
