@@ -52,20 +52,26 @@ change build files, or solve the newly created task.
    is missing.
 2. Resolve the source by exact repo-relative path, exact task filename, exact
    task folder name, or exact task id such as `T001` or `T001_25`. If the source
-   is a directory, use its `task.md`. Stop and list options if the reference is
-   ambiguous.
+   is a directory, require and use its canonical `task.md`. Stop and list options
+   if the reference is ambiguous, and stop if a referenced task directory has no
+   `task.md`.
 3. Treat remaining arguments as user-provided implementation focus or context.
-4. Read the source task before proposing any task. Also read directly relevant
-   task docs, including the parent task, child tasks when the source is an epic,
-   dependency tasks, adjacent open tasks, and task templates or README files when
-   present.
-5. Read central architecture or planning docs named by the source task. For
+4. If the resolved source is a task file under a task directory, check whether
+   that task directory or its nearest owning task directory has a canonical
+   `task.md`. Read that parent `task.md` before deriving implementation options.
+   If a referenced task directory has a `tasks/` child directory but no `task.md`,
+   stop and report the broken task structure instead of guessing the parent.
+5. Read the source task before proposing any task. Also read directly relevant
+   task docs, including the parent `task.md`, child tasks when the source is an
+   epic, dependency tasks, adjacent open tasks, and task templates or README files
+   when present.
+6. Read central architecture or planning docs named by the source task. For
    Codegeist/OpenCode implementation work, read
    `docs/developer/codegeist-opencode-parity.md` when it exists.
-6. Inspect existing top-level tasks under `docs/tasks/` so the new task uses the
+7. Inspect existing top-level tasks under `docs/tasks/` so the new task uses the
    next available `TNNN` id and does not duplicate an existing implementation
    task.
-7. Start collaboratively. If the source can produce more than one safe slice,
+8. Start collaboratively. If the source can produce more than one safe slice,
    present 2-3 concrete implementation options before writing files. Each option
    should include:
    - proposed task title
@@ -74,19 +80,21 @@ change build files, or solve the newly created task.
    - target files or packages
    - verification command or strategy
    - dependencies and tradeoffs
-8. Ask focused questions only when the implementation slice, public contract,
+9. Ask focused questions only when the implementation slice, public contract,
    target files, verification depth, or boundary with later tasks is materially
    unclear. Otherwise choose the smallest correct details from repo conventions.
-9. If the user chooses an option, a variant, or provides a clearer focus, refine
+10. If the user chooses an option, a variant, or provides a clearer focus, refine
    exactly one implementation task. Do not silently create multiple tasks.
-10. If a matching `T002+` implementation task already exists, offer to sharpen
+11. If a matching `T002+` implementation task already exists, offer to sharpen
     that task instead of creating a duplicate. Create a duplicate only when the
     user explicitly confirms the distinction.
-11. Create the next top-level implementation task as
+12. Create the next top-level implementation task as
     `docs/tasks/TNNN_<slug>.md` unless the user explicitly asks for a child task
-    under a parent. Use recursive task placement rules from
-    @.opencode/rules/task-workflow.md if a child task is requested.
-12. Make the task self-contained. Include at least:
+    under a parent. When creating under a parent task directory, require the
+    parent directory's canonical `task.md` before writing under `tasks/`. If the
+    intended parent still exists as a flat `TNNN_<slug>.md` file, migrate it to
+    `TNNN_<slug>/task.md` first according to @.opencode/rules/task-workflow.md.
+13. Make the task self-contained. Include at least:
     - title and source reference
     - goal
     - context
@@ -99,16 +107,17 @@ change build files, or solve the newly created task.
     - non-goals
     - open questions, or `None` when no decision is pending
     - creation note with the selected option and any user decision
-13. Keep durable documentation in English even when the chat is not in English.
-14. Update `docs/memory-bank/chat.md` when creating the task changes the active
+14. Keep durable documentation in English even when the chat is not in English.
+15. Update `docs/memory-bank/chat.md` when creating the task changes the active
     project focus, current task set, or durable workflow state.
-15. Run targeted verification after writing the task. At minimum, run:
+16. Run targeted verification after writing the task. At minimum, run:
 
 ```bash
 git --no-pager diff --check
 ```
 
-16. Report the source task, created task file, selected option, concrete
+17. Report the source task, source parent `task.md` considered, created task file,
+    selected option, concrete
     solution, verification result, user decisions, and the recommended next
     command such as `/solve-task TNNN`.
 

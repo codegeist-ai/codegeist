@@ -60,6 +60,18 @@
   been checked with `/specify-task` and solved with `/solve-task`. Each child
   task now has a `Solution Note` that points to the corresponding section in
   `docs/developer/codegeist-opencode-parity.md`.
+- `docs/tasks/T002_implement-codegeist-mvp-foundation/` is the active
+  implementation parent for the first Codegeist MVP foundation work. It contains
+  `T002_01_align-codegeist-build-baseline.md` from `T001_01` and
+  `T002_02_introduce-runtime-vocabulary-contracts.md` from `T001_02`, plus
+  grouped implementation slices through `T002_12` for runtime/session/events,
+  CLI mode wiring, context/workspace loading, provider configuration,
+  tool/permission/workspace contracts, patch/edit, shell verification, storage,
+  native packaging, and later extension/client readiness gates.
+- The T002 parent and all `T002_*` child tasks have been rechecked with
+  `/specify-task` semantics after adding parent default hints. Each task now has a
+  `Specification Check Result` clarifying scope, dependencies, OpenCode source
+  research expectations, and non-implementation boundaries.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -135,14 +147,25 @@
   its first argument. It collaborates with the user before writing the new task,
   records a concrete solution direction, and leaves implementation for a later
   `/solve-task <new-task>` pass.
+- `/specify-task`, `/solve-task`, and `/create-implementation-task` now require
+  canonical `task.md` files for referenced task directories and read parent
+  `task.md` files when working with child tasks. `specify-task` treats parent
+  `Default Solve Hints` as specification guidance, while `solve-task` treats them
+  as implicit hint files.
 - `docs/tasks/hints/opencode-solving-guidance.md` is the reusable hint for
   OpenCode-related `/solve-task` runs. It reminds solvers to use OpenCode as a
   feature reference rather than an implementation blueprint. Hint files are
   dynamic: when solving a task reveals reusable lessons, update them generically
   without task-specific logs or narrow implementation details.
+- `docs/tasks/hints/opencode-source-solving-guidance.md` is the source-focused
+  hint for using `/ask-project opencode ...` and `/ask-project-repomix opencode
+  ...` during solve passes that need evidence from
+  `docs/third-party/opencode/source/`, especially provider, tool, MCP,
+  permission, session, event, context, shell, patch/edit, extension, and storage
+  tasks.
 
 ## Open Points
 
-- The next useful step is to derive explicit `T002+` implementation tasks from
-  the `Implementation Backlog` in `docs/developer/codegeist-opencode-parity.md`,
-  starting with the build baseline and the runtime/session/event contracts.
+- The next useful step is to solve `T002_01_align-codegeist-build-baseline.md`,
+  then solve `T002_02_introduce-runtime-vocabulary-contracts.md` and continue
+  through the `T002` child tasks in dependency order.

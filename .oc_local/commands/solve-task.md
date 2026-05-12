@@ -52,58 +52,71 @@ state and related docs when needed.
    reference is missing.
 2. Resolve the task reference by exact repo-relative path, exact task filename,
    exact task folder name, or exact task id such as `T001` or `T001_07`. Stop and
-   list options if the reference is ambiguous.
-3. Read the target task before making changes. Also read directly relevant task
-   docs, including the parent task, child tasks, dependency tasks, adjacent open
-   tasks, and task templates or README files when present.
-4. Read every hint file after resolving the task and before proposing solution
+   list options if the reference is ambiguous. When the resolved reference is a
+   directory, require `<directory>/task.md` and use that file as the target task;
+   stop if the directory has no canonical `task.md`.
+3. If the resolved target is a task file under a task directory, check whether
+   that task directory or its nearest owning task directory has a canonical
+   `task.md`. Read that parent `task.md` before proposing solution options. If a
+   referenced task directory has a `tasks/` child directory but no `task.md`, stop
+   and report the broken task structure instead of guessing the parent.
+4. Read the target task before making changes. Also read directly relevant task
+   docs, including the parent `task.md`, child tasks, dependency tasks, adjacent
+   open tasks, and task templates or README files when present.
+5. If the target task or its parent `task.md` contains a `Default Solve Hints`
+   section, treat every listed hint file as an implicit hint file for this solve
+   pass. Resolve and read those implicit hints before proposing solution options,
+   together with any explicit hint-file arguments.
+6. Read every hint file after resolving the task and before proposing solution
    options. Hint files are living guidance and can contain user notes, design
    sketches, research, review feedback, or examples for how similar tasks should
    be solved. Stop and ask for clarification if a hint-file argument is
-   ambiguous, unreadable, or appears to point outside the workspace.
-5. Read relevant repo and project-specific rules before implementation,
+   ambiguous, unreadable, appears to point outside the workspace, or is listed in
+   `Default Solve Hints` but does not exist.
+7. Read relevant repo and project-specific rules before implementation,
    especially local overlays under `@.oc_local/rules/`.
-6. Prefer solving leaf tasks. If the target has open child tasks that should stay
+8. Prefer solving leaf tasks. If the target has open child tasks that should stay
    separate, stop and report the next child task instead of silently collapsing
    that structure.
-7. Inspect the files named by the task, hint files, acceptance criteria,
+9. Inspect the files named by the task, hint files, acceptance criteria,
    dependencies, and project-specific rules. Do not assume the task text is fully
    current.
-8. Maintain a precise working note inside the target task throughout the
+10. Maintain a precise working note inside the target task throughout the
    solution pass. In Plan Mode, document exactly what should be done, which
    options were proposed, which user decisions are needed, and what should happen
    once Build Mode starts. In Build Mode, document what was done, why decisions
    were made, what changed, what remains open, and what the next agent or user
    must do. Keep this note current after each meaningful interactive decision.
-9. Start collaboratively unless the task is trivial and already has a single
+11. Start collaboratively unless the task is trivial and already has a single
    obvious implementation path. Offer 2-3 concrete starting options derived from
    the current task, hint files, and repo context. Include tradeoffs when they
    matter.
-10. Ask focused questions only for decisions that materially affect scope,
+12. Ask focused questions only for decisions that materially affect scope,
    behavior, public contracts, task boundaries, or other open tasks. Otherwise,
    choose the smallest correct path and continue.
-11. Implement the chosen solution with the smallest reasonable change. Update
+13. Implement the chosen solution with the smallest reasonable change. Update
    tests, documentation, task status, and implementation notes according to the
    task's acceptance criteria and the repo rules.
-12. When a decision affects other open tasks, update those task files in the same
+14. When a decision affects other open tasks, update those task files in the same
     pass so their scope, dependencies, acceptance criteria, or non-goals remain
     accurate. Do not rewrite unrelated tasks for style.
-13. If solving the task reveals a reusable insight that would help solve future
+15. If solving the task reveals a reusable insight that would help solve future
     tasks, update the relevant hint file in the same pass. Keep hint updates
     concise and broadly applicable; avoid task-specific conclusions, temporary
     details, or duplicating task status.
-14. If solving the task reveals a reusable workflow gap, minimally update this
+16. If solving the task reveals a reusable workflow gap, minimally update this
     command or the most relevant project-specific rule. Keep generic workflow in
     this command and project-specific guidance in `@.oc_local/rules/`.
-15. Update `docs/memory-bank/chat.md` only when the solution changes durable
+17. Update `docs/memory-bank/chat.md` only when the solution changes durable
     project state or future sessions would otherwise miss important context.
-16. Run targeted verification that matches the task. At minimum, run:
+18. Run targeted verification that matches the task. At minimum, run:
 
 ```bash
 git --no-pager diff --check
 ```
 
-17. Report the updated files, hint files considered or updated, implemented
+19. Report the updated files, hint files considered or updated, implicit
+    `Default Solve Hints` considered, implemented
     solution, verification result,
     decisions made with the user, affected tasks, and remaining follow-ups.
 

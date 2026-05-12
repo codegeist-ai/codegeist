@@ -31,6 +31,19 @@ task id, repo-relative task file, task filename, or task folder.
 - `/create-implementation-task` creates task documentation only. Runtime code,
   tests, build-file changes, and task solution work belong in a later
   `/solve-task <new-task>` pass.
+- `/specify-task`, `/solve-task`, and `/create-implementation-task` must treat
+  task directories as canonical only when they contain `task.md`. When a
+  referenced task directory has no `task.md`, stop and report the broken task
+  structure instead of guessing.
+- When a task belongs to a parent task directory, these commands should read the
+  parent `task.md` before proposing specifications, solutions, or
+  implementation-task options.
+- `/specify-task` should honor a parent task's `Default Solve Hints` section as
+  specification guidance, using those hints to sharpen scope, boundaries,
+  dependencies, verification, and implementation-readiness questions while
+  staying non-implementation.
+- `/solve-task` should honor a parent task's `Default Solve Hints` section as
+  implicit hint files, reading those hints before proposing solution options.
 - Re-run `/specify-task` safely when related architecture decisions change; if
   the task is already current, leave it unchanged and report the no-op.
 - Keep the central parity document and `docs/memory-bank/chat.md` synchronized
@@ -58,6 +71,9 @@ task id, repo-relative task file, task filename, or task folder.
   its parent epic, directly adjacent open tasks, and
   `docs/developer/codegeist-opencode-parity.md` before proposing solution
   options.
+- For `T002` implementation tasks, the parent task declares default solve hints
+  for OpenCode translation and source-evidence workflows. Use those parent hints
+  automatically instead of requiring the user to pass them on every solve call.
 - When a Codegeist architecture decision affects later child tasks, update those
   task files in the same solution pass so their dependencies, non-goals,
   acceptance criteria, and implementation-readiness questions stay current.
