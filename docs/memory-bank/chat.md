@@ -1,142 +1,148 @@
 # Chat Memory
 
-## Zielbild
+## Target State
 
-- `codegeist.ai` soll als anpassbarer Coding-Agent fuer CLI, TUI und Web wachsen.
-- Die Entwicklungsumgebung bleibt repo-lokal: Devcontainer, Regeln, Kommandos und Projekt-Memory liegen im Repository.
+- `codegeist.ai` should grow into a customizable coding agent for CLI, TUI, and
+  web use.
+- The development environment remains repo-local: devcontainer configuration,
+  rules, commands, and project memory live in the repository.
 
-## Aktueller Stand
+## Current State
 
-- `main` enthaelt den aktuellen Projektstand und `.opencode` ist als Git-
-  Submodul eingebunden; es folgt dem `release`-Branch von
-  `codegeist-agent-kit` und zeigt aktuell auf `ccdfe68`.
-- `.devcontainer/` ist als eigenes Git-Submodul eingebunden, folgt in
-  `.gitmodules` dem `release`-Branch von `codegeist-devcontainer-kit` und zeigt
-  aktuell auf `9ce8459`.
-- `start.sh` ist entfernt; der Devcontainer wird direkt ueber VS Code Dev
-  Containers oder `devcontainer up --workspace-folder .` gestartet.
-- `.devcontainer/initialize.sh` aus dem Kit erzeugt root `.local.env`,
-  `compose.local.yml`, root `.oc_local/`, `.devcontainer/.env` und
-  `.devcontainer/compose.local.gen.yml` bei Bedarf und kann per `BRANCH` einen
-  Worktree unter `.worktrees/<branch>` als `/workspace` auswaehlen.
-- `app/codegeist` ist ein Spring-Boot- und Spring-Shell-Bootstrap mit Java 25, Maven und vorbereitetem GraalVM-Native-Build.
-- `app/codegeist/Taskfile.yml` bietet `test`, `build`, `run` und `native`.
-- `.devcontainer/Dockerfile` installiert zusaetzlich `nix`, ohne die bisherige
-  apt-basierte Toolchain oder den Devcontainer-Workflow schon auf Nix umzustellen.
-- `.devcontainer/Dockerfile` installiert jetzt auch `@devcontainers/cli` im
-  bestehenden globalen npm-Toolblock.
-- `.devcontainer/tests.sh` liegt jetzt im ausgelagerten `.devcontainer`-
-  Submodul und bleibt dort der Devcontainer-Selbsttest.
-- Der Nix-Profil-Hook wird global ueber `/etc/profile.d/nix.sh` eingebunden,
-  damit `nix` auch in Login-Shells im Container im `PATH` liegt.
-- Das lokale OpenCode-Overlay `.oc_local/` enthaelt jetzt die Commands
-  `/analyse-project`, `/ask-project`, `/ask-project-repomix`, `/specify-task`
-  und `/solve-task`, den Skill `/repository-analysis`, den Subagent `@repomix`
-  sowie das AI-Script `render-mermaid.sh` fuer Mermaid-SVG-Rendering.
-- `docs/third-party/opencode/source` ist als Submodul fuer
-  `https://github.com/anomalyco/opencode.git` auf Branch `dev` eingebunden und
-  zeigt aktuell auf `22e64ca`.
-- `docs/third-party/opencode/` enthaelt jetzt die initiale Third-Party-
-  Dokumentations-Workspace fuer OpenCode: `README.md`, `ANALYSIS_REPORT.md`,
-  `REGENERATE.md`, Feature-, User-, Developer-Notizen und Mermaid-Quellen.
-- `docs/tasks/T001_define-codegeist-opencode-feature-architecture/` ist der
-  aktive Architektur-Epic fuer Codegeist/OpenCode-Paritaet. Der Epic ist in 25
-  feingranulare Dokumentations-Tasks unter `tasks/` zerlegt.
-- `docs/developer/codegeist-opencode-parity.md` haelt die Codegeist/OpenCode-
-  Paritaetsarchitektur fest: Codegeist wird nicht als OpenCode/Bun/TypeScript-
-  Kopie geplant, sondern auf den Java-first Stack abgebildet. Ausgearbeitet sind
-  jetzt die Technologie-Baseline, OpenCode-Java-Mapping, Modulgrenzen,
-  CLI/Shell-Architektur, Agent-Modi, Session-Modell, Event-Modell,
-  Provider-Architektur, Tool-/Permission-/Workspace-Grenzen, Shell- und
-  Patch/Edit-Architektur, Context Loading, PF4J/JBang/Vaadin/Server/Storage-
-  Rollen, GraalVM-Constraints, Feature-Matrix, MVP-Cut, Prompt-Flow,
-  Risk-Register und Implementation Backlog.
-- Alle 25 Child-Tasks unter
-  `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` wurden
-  mit `/specify-task` geprueft und mit `/solve-task` geloest. Jeder Child-Task
-  hat jetzt eine `Solution Note`, die auf den entsprechenden Abschnitt in
-  `docs/developer/codegeist-opencode-parity.md` verweist.
-- Die `opencode`-Analyse nutzt fuer Graphify eine fokussierte Runtime-Corpus
-  statt des ganzen Repos. Der letzte Graphify-Lauf erzeugte 1.247 Nodes, 2.008
-  Edges und 78 Communities; Graphify-, Repomix- und Verify-Ausgaben bleiben
-  regenerierbar und ignoriert.
-- Source-nahe Fragen zu Third-Party-Projekten sollen ueber
-  `/ask-project-repomix <project> "<frage>"` oder direkt `@repomix` laufen.
-  Der Subagent laedt `docs/third-party/<project>/repomix-output.xml` in seinem
-  eigenen Kontext ueber Repomix-Tools, damit der Hauptkontext klein bleibt.
+- `main` contains the current project state. `.opencode` is configured as a git
+  submodule that tracks the `release` branch of `codegeist-agent-kit` and points
+  to `aa5f258`.
+- `.devcontainer/` is configured as a git submodule that tracks the `release`
+  branch of `codegeist-devcontainer-kit` in `.gitmodules` and points to
+  `35f46d9`.
+- `start.sh` has been removed; the devcontainer is started directly through VS
+  Code Dev Containers or `devcontainer up --workspace-folder .`.
+- `.devcontainer/initialize.sh` from the kit creates root `.local.env`,
+  `compose.local.yml`, root `.oc_local/`, `.devcontainer/.env`, and
+  `.devcontainer/compose.local.gen.yml` when needed, and can select a worktree
+  under `.worktrees/<branch>` as `/workspace` via `BRANCH`.
+- `app/codegeist` is a Spring Boot and Spring Shell bootstrap with Java 25,
+  Maven, and a prepared GraalVM native build.
+- `app/codegeist/Taskfile.yml` provides `test`, `build`, `run`, and `native`.
+- `.devcontainer/Dockerfile` installs `nix` in addition to the existing
+  apt-based toolchain without migrating the devcontainer workflow to Nix.
+- `.devcontainer/Dockerfile` also installs `@devcontainers/cli` in the existing
+  global npm tools block.
+- `.devcontainer/tests.sh` now lives in the extracted `.devcontainer` submodule
+  and remains the devcontainer self-test.
+- The Nix profile hook is wired globally through `/etc/profile.d/nix.sh` so
+  `nix` is available on `PATH` in container login shells.
+- The local OpenCode overlay `.oc_local/` contains the commands
+  `/analyse-project`, `/ask-project`, `/ask-project-repomix`,
+  `/create-implementation-task`, `/specify-task`, and `/solve-task`, the
+  `/repository-analysis` skill, the `@repomix` subagent, and the AI script
+  `render-mermaid.sh` for Mermaid SVG rendering.
+- `docs/third-party/opencode/source` is a submodule for
+  `https://github.com/anomalyco/opencode.git` on branch `dev` and points to
+  `22e64ca`.
+- `docs/third-party/opencode/` contains the initial third-party documentation
+  workspace for OpenCode: `README.md`, `ANALYSIS_REPORT.md`, `REGENERATE.md`,
+  feature, user, and developer notes, plus Mermaid sources.
+- `docs/tasks/T001_define-codegeist-opencode-feature-architecture/` is the active
+  architecture epic for Codegeist/OpenCode parity. The epic is split into 25
+  granular documentation tasks under `tasks/`.
+- `docs/developer/codegeist-opencode-parity.md` records the Codegeist/OpenCode
+  parity architecture. Codegeist is mapped onto the Java-first stack instead of
+  being planned as an OpenCode/Bun/TypeScript copy. The document now covers the
+  technology baseline, OpenCode-to-Java mapping, module boundaries, CLI/Shell
+  architecture, agent modes, session model, event model, provider architecture,
+  tool/permission/workspace boundaries, shell and patch/edit architecture,
+  context loading, PF4J/JBang/Vaadin/server/storage roles, GraalVM constraints,
+  feature matrix, MVP cut, prompt flow, risk register, and implementation
+  backlog.
+- All 25 child tasks under
+  `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` have
+  been checked with `/specify-task` and solved with `/solve-task`. Each child
+  task now has a `Solution Note` that points to the corresponding section in
+  `docs/developer/codegeist-opencode-parity.md`.
+- The `opencode` analysis uses a focused runtime corpus for Graphify instead of
+  the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
+  and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
+  and ignored.
+- Source-close questions about third-party projects should use
+  `/ask-project-repomix <project> "<question>"` or the `@repomix` subagent
+  directly. The subagent loads `docs/third-party/<project>/repomix-output.xml`
+  into its own context through Repomix tools so the main context stays small.
 
-## Wichtige Entscheidungen
+## Important Decisions
 
-- Build-Artefakte wie `target/`, `bin/`, `.class` und `.jar` bleiben aus Git heraus.
-- Lokale Devcontainer-Umgebungswerte bleiben in root `.local.env`; root
-  `compose.local.yml` ist der versionierte lokale Compose-Override, den
-  `devcontainer.json` immer einbindet.
-- Repo-Memory wird unter `docs/memory-bank/chat.md` gepflegt.
-- Nix wird vorerst nur als zusaetzlicher Paketmanager installiert; es gibt noch
-  keine Flakes und noch keine Migration der Toolchain auf Nix-Pakete.
-- Checkouts ohne rekursive Submodule werden mit
-  `git submodule update --init --recursive` repariert, nicht mehr ueber einen
-  repo-lokalen Launcher.
-- `.opencode` und `.devcontainer` sollen im Parent-Repo ueber ihre
-  `release`-Branches aktualisiert werden, nicht ueber die frueher genutzten
-  `main`-Branches oder repo-lokale Launcher-Skripte.
-- Fuer gemeinsame Kit-Updates gibt es jetzt den OpenCode-Workflow
-  `/update-submodules`, der `.opencode` und `.devcontainer` auf die in
-  `.gitmodules` konfigurierten Branches setzt.
-- Projektspezifische Analyse-Workflows gehoeren ins lokale Overlay `.oc_local/`,
-  nicht in das geteilte `.opencode`-Submodul. Third-Party-Analyseartefakte werden
-  unter `docs/third-party/<project-name>/` abgelegt; Mermaid-Quellen liegen dort
-  unter `diagrams/source/` und gerenderte SVGs unter `diagrams/rendered/`.
-  Regenerierbare schwere Artefakte wie `repomix-output.*`, `graphify-out/`,
-  Logs, Manifeste, Verify-Reports und gerenderte SVGs bleiben per `.gitignore`
-  aus Git heraus und werden ueber `REGENERATE.md` neu erzeugt.
-- `/analyse-project` nutzt kein eigenes Analyse-Shellscript mehr. Die alte
-  `.oc_local/ai-scripts/analyse-project.sh`-Orchestrierung ist entfernt;
-  Graph-Erzeugung laeuft ueber den geteilten `graphify`-Skill auf einer
-  gefilterten Code-/Dokumentations-Corpus.
-- Die gesetzte Codegeist-Technologie-Baseline lautet: Java, GraalVM, Spring,
-  Spring AI, Vaadin, JBang und PF4J. OpenCode-Konzepte sollen in Architekturdocs
-  explizit auf diesen Stack gemappt werden.
-- Codegeist-Sessions sind Runtime-eigene Aggregate. CLI, Server, Vaadin und
-  kuenftige TUI-Clients duerfen Sessions erzeugen, fortsetzen, inspizieren und
-  rendern, aber keine Session-State-Transitions selbst besitzen. `T001_06`
-  beantwortet jetzt explizit die OpenCode-zu-Java-Migrationsfragen fuer
-  Session, Turn, MessagePart, Lifecycle, Streaming-Abgrenzung und spaetere
-  Storage-Projektionen.
-- Codegeist-Events sind typed Runtime-Events fuer CLI-Ausgabe und spaetere
-  Server-/Vaadin-/TUI-Streams. Sie trennen user-visible Rendering von
-  audit-relevanten Ereignissen; Transport, Event-Sourcing und Storage-Schema
-  bleiben spaetere Entscheidungen. `T001_07` beantwortet jetzt explizit die
-  OpenCode-zu-Java-Migrationsfragen fuer RuntimeEvent, Envelope, Ordering,
-  Correlation, Event-Familien, Audit-Relevanz und spaetere Projektionen.
-- Spring AI ist der Standardpfad fuer Provider-Integration, bleibt aber hinter
-  Codegeist-eigenen Runtime-/Provider-Policies. Provider-Auswahl,
-  Modellfaehigkeiten, Tool-Freigabe, Events und Fehler bleiben Codegeist-
-  Entscheidungen, nicht CLI- oder SDK-Details.
-- `/specify-task <task-ref>` ist der lokale, wiederholbare Workflow, um bereits
-  beschriebene Codegeist-Architektur-Tasks gegen OpenCode-zu-Java-
-  Migrationsfragen zu pruefen und bei Bedarf ohne Implementierung nachzuschaerfen.
-  Die lokale Regel `.oc_local/rules/codegeist-task-specification.md` haelt diese
-  Konvention fest.
-- `/solve-task <task-ref> [hint-file ...]` ist der lokale, generisch gehaltene
-  Workflow, um einen vorhandenen Task gemeinsam mit dem Benutzer zu loesen. Nach
-  der Task-Referenz koennen null oder mehr Hinweisdateien uebergeben werden.
-  Jeder Lauf muss im Zieltask selbst penibel festhalten, was im Plan Mode getan
-  werden soll, welche Entscheidungen offen sind, was im Build Mode umgesetzt
-  wurde, was noch fehlt und welcher naechste Schritt gilt. Projektspezifische
-  Loesungshinweise bleiben in `.oc_local/rules/`, waehrend das Command nur den
-  allgemeinen Ablauf fuer Task-Aufloesung, Optionen, Umsetzung, betroffene Tasks
-  und Verifikation beschreibt.
-- `docs/tasks/hints/opencode-solving-guidance.md` ist der wiederverwendbare Hint
-  fuer OpenCode-bezogene `/solve-task`-Aufrufe. Er erinnert daran, OpenCode als
-  Feature-Referenz und nicht als Implementierungs-Blueprint zu nutzen. Hint-
-  Dateien sind dynamisch: Wenn beim Loesen eines Tasks wiederverwendbare
-  Erkenntnisse entstehen, sollen sie generisch nachgezogen werden, ohne
-  task-spezifische Protokolle oder enge Implementierungsdetails aufzunehmen.
+- Build artifacts such as `target/`, `bin/`, `.class`, and `.jar` stay out of
+  git.
+- Local devcontainer environment values stay in root `.local.env`; root
+  `compose.local.yml` is the versioned local Compose override that
+  `devcontainer.json` always includes.
+- Repo memory is maintained in `docs/memory-bank/chat.md`.
+- Nix is only installed as an additional package manager for now; there are no
+  flakes and no migration of the toolchain to Nix packages yet.
+- Checkouts without recursive submodules are repaired with
+  `git submodule update --init --recursive`, not through a repo-local launcher.
+- `.opencode` and `.devcontainer` should be updated in the parent repo through
+  their `release` branches, not through the previously used `main` branches or
+  repo-local launcher scripts.
+- Shared kit updates use the OpenCode workflow `/update-submodules`, which sets
+  `.opencode` and `.devcontainer` to the branches configured in `.gitmodules`.
+- Project-specific analysis workflows belong in the local overlay `.oc_local/`,
+  not in the shared `.opencode` submodule. Third-party analysis artifacts are
+  stored under `docs/third-party/<project-name>/`; Mermaid sources live under
+  `diagrams/source/` and rendered SVGs under `diagrams/rendered/`. Regenerable
+  heavy artifacts such as `repomix-output.*`, `graphify-out/`, logs, manifests,
+  verify reports, and rendered SVGs stay out of git via `.gitignore` and are
+  regenerated through `REGENERATE.md`.
+- `/analyse-project` no longer uses its own analysis shell script. The old
+  `.oc_local/ai-scripts/analyse-project.sh` orchestration was removed; graph
+  generation runs through the shared `graphify` skill on a filtered code and
+  documentation corpus.
+- The selected Codegeist technology baseline is Java, GraalVM, Spring,
+  Spring AI, Vaadin, JBang, and PF4J. Architecture docs should map OpenCode
+  concepts explicitly onto this stack.
+- Codegeist sessions are runtime-owned aggregates. CLI, server, Vaadin, and
+  future TUI clients may create, continue, inspect, and render sessions, but they
+  must not own session state transitions. `T001_06` answers the OpenCode-to-Java
+  migration questions for session, turn, message part, lifecycle, streaming
+  boundaries, and later storage projections.
+- Codegeist events are typed runtime events for CLI output and later server,
+  Vaadin, and TUI streams. They separate user-visible rendering from
+  audit-relevant events; transport, event sourcing, and storage schema remain
+  later decisions. `T001_07` answers the OpenCode-to-Java migration questions for
+  `RuntimeEvent`, envelope, ordering, correlation, event families, audit
+  relevance, and later projections.
+- Spring AI is the default provider integration path, but it remains behind
+  Codegeist-owned runtime/provider policies. Provider selection, model
+  capabilities, tool exposure, events, and errors remain Codegeist decisions, not
+  CLI or SDK details.
+- `/specify-task <task-ref>` is the local repeatable workflow for checking
+  existing Codegeist architecture tasks against OpenCode-to-Java migration
+  questions and sharpening them when needed without implementation. The local
+  rule `.oc_local/rules/codegeist-task-specification.md` records this
+  convention.
+- `/solve-task <task-ref> [hint-file ...]` is the local generic workflow for
+  solving an existing task collaboratively with the user. After the task
+  reference, zero or more hint files may be passed. Every run must record in the
+  target task what should happen in Plan Mode, which decisions are open, what was
+  implemented in Build Mode, what remains, and the next step. Project-specific
+  solution guidance stays in `.oc_local/rules/`, while the command only records
+  the generic flow for task resolution, options, implementation, affected tasks,
+  and verification.
+- `/create-implementation-task <source-task-ref-or-file> [focus/context]` is the
+  local interactive workflow for deriving one concrete `T002+` implementation
+  task from an existing architecture, planning, backlog, or solution task. It
+  may take a task id, repo-relative task file, task filename, or task folder as
+  its first argument. It collaborates with the user before writing the new task,
+  records a concrete solution direction, and leaves implementation for a later
+  `/solve-task <new-task>` pass.
+- `docs/tasks/hints/opencode-solving-guidance.md` is the reusable hint for
+  OpenCode-related `/solve-task` runs. It reminds solvers to use OpenCode as a
+  feature reference rather than an implementation blueprint. Hint files are
+  dynamic: when solving a task reveals reusable lessons, update them generically
+  without task-specific logs or narrow implementation details.
 
-## Offene Punkte
+## Open Points
 
-- Der naechste sinnvolle Schritt ist, aus dem `Implementation Backlog` in
-  `docs/developer/codegeist-opencode-parity.md` explizite `T002+`-
-  Implementierungstasks abzuleiten, beginnend mit der Build-Baseline und den
-  Runtime/Session/Event-Vertraegen.
+- The next useful step is to derive explicit `T002+` implementation tasks from
+  the `Implementation Backlog` in `docs/developer/codegeist-opencode-parity.md`,
+  starting with the build baseline and the runtime/session/event contracts.

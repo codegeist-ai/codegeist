@@ -7,12 +7,30 @@ Use the local `/solve-task <task-ref>` command when an existing task should be
 solved collaboratively with the user. It may receive zero or more hint files
 after the task reference.
 
+Use the local `/create-implementation-task <source-task-ref-or-file>
+[focus/context]` command when an architecture, planning, backlog, or solution
+task should become one concrete implementation task. The first argument may be a
+task id, repo-relative task file, task filename, or task folder.
+
 ## Rules
 
 - Use `/specify-task` for already-described tasks that need Codegeist-specific
   OpenCode-to-Java migration questions, boundary rules, non-goals, or
   implementation-readiness criteria.
 - Do not use `/specify-task` to create, solve, or implement a task.
+- Use `/create-implementation-task` to derive one `T002+` implementation task
+  interactively with the user before code changes start.
+- `/create-implementation-task` must propose concrete implementation options
+  when the source allows multiple slices, ask for user decisions on material
+  scope or contract choices, and create at most one task unless the user
+  explicitly asks for more.
+- Implementation tasks created by `/create-implementation-task` must include a
+  concrete solution direction, target files or packages, acceptance criteria,
+  verification, dependencies, non-goals, and a creation note that records the
+  selected option or user decision.
+- `/create-implementation-task` creates task documentation only. Runtime code,
+  tests, build-file changes, and task solution work belong in a later
+  `/solve-task <new-task>` pass.
 - Re-run `/specify-task` safely when related architecture decisions change; if
   the task is already current, leave it unchanged and report the no-op.
 - Keep the central parity document and `docs/memory-bank/chat.md` synchronized
