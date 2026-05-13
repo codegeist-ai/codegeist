@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.3</version>
+        <version>3.5.14</version>
         <relativePath/>
     </parent>
 
@@ -16,16 +16,24 @@
     <name>${project.artifactId}</name>
     <description>Bootstrap application for codegeist.ai</description>
 
-    <!-- Java 25 is the pinned baseline for the current Spring Boot stack. -->
+    <!-- Java 25 is the pinned baseline for the current Spring Boot 3.5 stack. -->
     <properties>
         <java.version>25</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <graalvm.buildtools.version>0.10.6</graalvm.buildtools.version>
-        <spring-shell.version>4.0.1</spring-shell.version>
+        <spring-ai.version>1.1.6</spring-ai.version>
+        <spring-shell.version>3.4.2</spring-shell.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.shell</groupId>
                 <artifactId>spring-shell-dependencies</artifactId>

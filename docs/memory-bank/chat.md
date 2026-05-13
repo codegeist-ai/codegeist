@@ -11,7 +11,7 @@
 
 - `main` contains the current project state. `.opencode` is configured as a git
   submodule that tracks the `release` branch of `codegeist-agent-kit` and points
-  to `aa5f258`.
+  to `1da9126`.
 - `.devcontainer/` is configured as a git submodule that tracks the `release`
   branch of `codegeist-devcontainer-kit` in `.gitmodules` and points to
   `35f46d9`.
@@ -55,6 +55,11 @@
   context loading, PF4J/JBang/Vaadin/server/storage roles, GraalVM constraints,
   feature matrix, MVP cut, prompt flow, risk register, and implementation
   backlog.
+- `docs/developer/architecture.md` is the current-state architecture map for
+  coding agents. It describes only what exists now in `app/codegeist`, including
+  the single Maven module, Spring Boot entrypoint, configuration, context-load
+  test, Taskfile commands, current build baseline, and not-yet-implemented
+  boundaries.
 - All 25 child tasks under
   `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` have
   been checked with `/specify-task` and solved with `/solve-task`. Each child
@@ -72,6 +77,10 @@
   `/specify-task` semantics after adding parent default hints. Each task now has a
   `Specification Check Result` clarifying scope, dependencies, OpenCode source
   research expectations, and non-implementation boundaries.
+- `T002_01_align-codegeist-build-baseline.md` has been sharpened with
+  `/plan-task`: it selects Spring Boot `3.5.14`, Spring AI `1.1.6` BOM posture,
+  Spring Shell `3.4.2`, Java `25`, and a JVM-first verification boundary before
+  deeper runtime or provider work.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -134,6 +143,10 @@
 - `.oc_local/rules/codegeist-task-specification.md` is now a thin Codegeist
   overlay. It only records Codegeist/OpenCode parity guidance, T002 dependency
   order, Java-first architecture mapping, and OpenCode source-evidence hints.
+- `.oc_local/rules/architecture-doc.md` defines how to use and maintain
+  `docs/developer/architecture.md`: keep it current-state focused, update it with
+  architecture-relevant code changes, and leave future parity planning in
+  `docs/developer/codegeist-opencode-parity.md`.
 - Shared task phases use one argument contract,
   `<task-ref> [context/instructions]`, discover hints from task docs, optionally
   use `docs/tasks/hints/` when it exists, record phase status in the task, and
@@ -157,6 +170,6 @@
 
 ## Open Points
 
-- The next useful step is to solve `T002_01_align-codegeist-build-baseline.md`,
-  then solve `T002_02_introduce-runtime-vocabulary-contracts.md` and continue
-  through the `T002` child tasks in dependency order.
+- The next useful step is `/solve-task T002_01` to verify and finalize the build
+  baseline alignment, then solve `T002_02_introduce-runtime-vocabulary-contracts.md`
+  and continue through the `T002` child tasks in dependency order.

@@ -20,17 +20,17 @@ Boot `3.5.x`, Spring AI `1.1.x`, Spring Shell, Maven, and GraalVM. If Java `25`
 causes compatibility issues, the Java version must be decided separately
 instead of silently changing the Spring AI stability decision.
 
-The current `app/codegeist/pom.xml` still uses Spring Boot `4.0.3`. Updating the
-build belongs to a later implementation or configuration task; this document
-records the target architecture baseline only.
+The `app/codegeist/pom.xml` build is aligned to Spring Boot `3.5.14`, Spring AI
+`1.1.6` dependency management, and Spring Shell `3.4.2` while keeping Java `25`
+and the GraalVM native profile as the project posture.
 
 | Technology | Decision | Role | Boundary | Validation needed |
 | --- | --- | --- | --- | --- |
-| Java 25 | Preferred while compatible | Primary language and domain model | Owns core types, tool contracts, events, and workspace abstractions | Verify with Spring Boot `3.5.x`, Spring AI `1.1.x`, Spring Shell, Maven, and GraalVM |
-| Maven | Baseline build system | Dependency management, build lifecycle, tests, JVM jar, native profile | Does not define runtime architecture | Verify Spring Boot `3.5.x` and Spring AI `1.1.x` BOM alignment |
-| Spring Boot 3.5.x | Target for stable Spring AI support | Application baseline, auto-configuration, lifecycle | Should not own agent-specific domain decisions | Verify downgrade path from current `4.0.3` bootstrap |
-| Spring Shell | Keep as initial CLI/shell layer | Interactive and non-interactive command entrypoints | Must remain a client of the runtime | Verify compatibility with Spring Boot `3.5.x` and Java `25` |
-| Spring AI 1.1.x | Target stable line | Primary model/provider, chat, tool-calling, and AI integration layer | Does not replace Codegeist runtime, permissions, or tool policy | Verify required providers, streaming, tool calling, and native constraints |
+| Java 25 | Preferred while compatible | Primary language and domain model | Owns core types, tool contracts, events, and workspace abstractions | Verified for the current JVM test/build baseline with Spring Boot `3.5.14`, Spring AI `1.1.6`, Spring Shell `3.4.2`, Maven, and GraalVM posture |
+| Maven | Baseline build system | Dependency management, build lifecycle, tests, JVM jar, native profile | Does not define runtime architecture | Manages Spring Boot `3.5.14` and Spring AI `1.1.6` BOM alignment |
+| Spring Boot 3.5.x | Target for stable Spring AI support | Application baseline, auto-configuration, lifecycle | Should not own agent-specific domain decisions | Current build uses `3.5.14` instead of the previous `4.0.3` bootstrap |
+| Spring Shell | Keep as initial CLI/shell layer | Interactive and non-interactive command entrypoints | Must remain a client of the runtime | Current build uses Spring Shell `3.4.2` with Spring Boot `3.5.14` and Java `25` |
+| Spring AI 1.1.x | Target stable line | Primary model/provider, chat, tool-calling, and AI integration layer | Does not replace Codegeist runtime, permissions, or tool policy | Current build imports the Spring AI `1.1.6` BOM without provider starters |
 | GraalVM | Native-image target | Runtime optimization and distributable native executable goal | Native compatibility may lag behind JVM-first prototyping | Verify Spring AI, PF4J, Vaadin, reflection, dynamic loading, and JBang execution |
 | Vaadin | Future Java-native web client | Presents sessions, approvals, events, and tool results | Must not own runtime orchestration | Verify fit after server/runtime boundaries exist |
 | JBang | Lightweight user extension runtime | Enables repository-local Java scripts as simple user extensions | Must not bypass tool registry, permissions, workspace boundaries, or audit logging | Verify metadata, dependency trust, script cache, remote-loading policy, and native behavior |
@@ -40,9 +40,9 @@ records the target architecture baseline only.
 
 - The runtime should stay Java-native instead of copying OpenCode's Bun and
   TypeScript runtime shape.
-- The current Spring Boot and Spring Shell bootstrap under `app/codegeist` is a
-  valid starting point for the CLI and runtime foundation, but its Spring Boot
-  `4.0.3` parent is no longer the target baseline.
+- The current Spring Boot and Spring Shell bootstrap under `app/codegeist` is
+  aligned to the target Boot `3.5.x` and Spring AI `1.1.x` posture and remains a
+  valid starting point for the CLI and runtime foundation.
 - GraalVM support should influence dependency choices early, especially for
   reflection-heavy libraries, dynamic loading, and plugin boundaries.
 - Spring AI should be evaluated as the default provider abstraction before

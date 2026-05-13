@@ -20,8 +20,11 @@ slice.
 
 The current bootstrap is intentionally small:
 
-- `app/codegeist/pom.xml` uses `spring-boot-starter-parent` `4.0.3`, Java `25`,
-  Spring Shell `4.0.1`, and the GraalVM native Maven plugin.
+- `app/codegeist/pom.xml` originally used `spring-boot-starter-parent` `4.0.3`,
+  Java `25`, Spring Shell `4.0.1`, and the GraalVM native Maven plugin.
+- At the planning pass, the active worktree already contains an uncommitted
+  candidate alignment to Spring Boot `3.5.14`, Spring AI `1.1.6` dependency
+  management, and Spring Shell `3.4.2`.
 - `app/codegeist/Taskfile.yml` exposes `test`, `build`, `native`, and `run`.
 - The application has a Spring Boot entrypoint and one context-load test.
 
@@ -30,11 +33,12 @@ The current bootstrap is intentionally small:
 Update the Maven build so it can use the architecture baseline without expanding
 runtime features yet:
 
-1. Change the Spring Boot parent to a compatible `3.5.x` release.
-2. Add Spring AI `1.1.x` dependency management only if it is needed to verify BOM
-   compatibility in this slice; do not add provider starters or model calls.
-3. Choose a Spring Shell version that works with the selected Spring Boot line and
-   Java `25`.
+1. Change the Spring Boot parent to `3.5.14` unless verification exposes a
+   concrete compatibility blocker.
+2. Import Spring AI `1.1.6` dependency management to prove the BOM posture while
+   avoiding provider starters and model calls.
+3. Use Spring Shell `3.4.2` with the selected Spring Boot line and Java `25`
+   unless verification proves the version combination is invalid.
 4. Keep the current Java `25` property unless verification proves it is
    incompatible; if it fails, document the compatibility blocker instead of
    silently changing Java.
@@ -118,10 +122,11 @@ git --no-pager diff --check
 
 ## Open Questions
 
-- Which exact Spring Boot `3.5.x`, Spring AI `1.1.x`, and Spring Shell versions
-  are mutually compatible with Java `25` in the current Maven setup?
-- Is `task native` practical enough for this slice, or should native-image remain
-  a documented later smoke check after JVM test/build passes?
+- None for the implementation slice. The plan selects Spring Boot `3.5.14`,
+  Spring AI `1.1.6`, and Spring Shell `3.4.2`; `/solve-task` should verify or
+  record the exact blocker.
+- Native-image remains a posture check in this task. A deep native packaging pass
+  belongs to `T002_11_validate_native_packaging_posture.md`.
 
 ## Specification Check Result
 
@@ -131,9 +136,63 @@ git --no-pager diff --check
 - No OpenCode source lookup is required before implementation unless dependency
   choices need comparison with OpenCode packaging behavior.
 
+## Plan Workflow Handoff
+
+- Phase: `/plan-task` run for
+  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_01_align-codegeist-build-baseline.md`.
+- Source task considered:
+  `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/T001_01_define-technology-baseline.md`.
+- Source parent considered:
+  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+- User focus: plan the referenced existing implementation task; no extra context
+  or variant was provided.
+- Selected option: sharpen the existing build-baseline implementation task instead
+  of creating a duplicate top-level task.
+- Duplicate check result: this file is already the matching concrete
+  implementation task under the active `T002` parent.
+- Hints considered:
+  `docs/tasks/hints/opencode-solving-guidance.md` and
+  `docs/tasks/hints/opencode-source-solving-guidance.md` from the T002 parent.
+- Related context files read:
+  `docs/developer/codegeist-opencode-parity.md`, `app/codegeist/pom.xml`,
+  `app/codegeist/Taskfile.yml`, and
+  `app/codegeist/src/test/java/ai/codegeist/app/CodegeistApplicationTests.java`.
+- Current worktree observation: an uncommitted candidate already aligns
+  `app/codegeist/pom.xml` and the parity document to Spring Boot `3.5.14`, Spring
+  AI `1.1.6`, and Spring Shell `3.4.2`; `/solve-task` should validate and either
+  keep that candidate or record the precise compatibility blocker.
+- Recommended next command: `/solve-task T002_01`.
+
+## Planning Note
+
+Status: planned.
+
+This pass confirmed the task is already the correct first implementation slice for
+the MVP foundation. The implementation should stay narrow: finalize the Maven
+baseline alignment, keep Java `25`, avoid provider starters or model calls, keep
+Taskfile command names stable unless verification requires a tiny compatibility
+adjustment, and update only documentation that would otherwise contradict the
+verified build baseline.
+
+The required verification is `task test` and `task build` from `app/codegeist`,
+followed by `git --no-pager diff --check` from the repository root. Run
+`task native` only as a practical posture check; do not let native-image issues
+expand this task beyond the build-baseline decision.
+
+## Phase Status
+
+- `/specify-task` dependency: satisfied by the existing `Specification Check
+  Result`; no additional specification pass is needed before solving.
+- `/plan-task` result: planned and sharpened this existing task with exact target
+  versions, duplicate-check outcome, hint discovery, related files, and solve
+  verification boundaries.
+- Decisions remaining: none for planning. Any version incompatibility discovered
+  during solving should be recorded with the narrow failing command.
+- Next dependency: `/solve-task T002_01`.
+
 ## Creation Note
 
-Status: open.
+Status: planned.
 
 Created interactively from `T001_01_define-technology-baseline.md`. The user
 selected the `Build baseline` option over narrower Java-compatibility or
