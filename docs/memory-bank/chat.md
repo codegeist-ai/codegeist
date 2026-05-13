@@ -130,13 +130,12 @@
 - The local task-to-implementation workflow is iterative: run
   `/specify-task <source-task-ref> [context/instructions]` to sharpen a source
   task, run
-  `/plan-task <source-task-ref-or-file> [focus/context]` when no
-  suitable implementation task exists, then repeat `specify` and
-  `plan-task` passes as new information or user instructions
-  arrive. Repeated implementation-task planning passes should sharpen the
-  matching existing task instead of duplicating it unless the user explicitly
-  asks for a distinct new task. Run
-  `/solve-task <implementation-task-ref> [context/instructions]` only after the
+  `/plan-task <task-ref> [context/instructions]` when no suitable implementation
+  task exists, then repeat `specify` and `plan-task` passes as new information or
+  user instructions arrive. Repeated implementation-task planning passes should
+  sharpen the matching existing task instead of duplicating it unless the user
+  explicitly asks for a distinct new task. Run
+  `/solve-task <task-ref> [context/instructions]` only after the
   implementation task is ready to build.
 - Repeated workflow passes should receive context or instructions that say what
   changed or what the pass should focus on. The command should ask for a focused
@@ -145,34 +144,41 @@
 - Every workflow step now discovers applicable hints from task descriptions,
   parent tasks, child tasks, dependencies, `Default Solve Hints`, `Hints`,
   `Guidance`, and `docs/tasks/hints/` references instead of relying only on
-  explicit hint-file arguments.
+  explicit command arguments.
 - Every workflow step may update the target task or directly affected task files
   when decisions change, new instructions arrive, or acceptance criteria,
   non-goals, implementation plans, dependencies, or follow-up boundaries need to
   stay current.
+- Every workflow step records its own phase status in the target task. The phase
+  status should name the phase, context or instructions considered, discovered
+  hints, upstream phase dependency, outcome, open decisions, and next recommended
+  phase.
+- Phase dependencies are explicit: `/specify-task` has no prior dependency,
+  `/plan-task` depends on a current `/specify-task` status, and `/solve-task`
+  depends on a current `/plan-task` status.
 - `/specify-task <task-ref> [context/instructions]` is the local repeatable
   workflow for checking existing Codegeist architecture tasks against
   OpenCode-to-Java migration questions and sharpening them when needed without
   implementation. The local rule `.oc_local/rules/codegeist-task-specification.md`
   records this convention.
-- `/solve-task <task-ref> [hint-file ...] [context/instructions]` is the local
-  generic workflow for solving an existing task collaboratively with the user.
-  After the task reference, zero or more hint files may be passed. Every run must
+- `/solve-task <task-ref> [context/instructions]` is the local generic workflow
+  for solving an existing task collaboratively with the user. Every run must
   record in the target task what should happen in Plan Mode, which decisions are
   open, what was implemented in Build Mode, what remains, and the next step.
   Project-specific solution guidance stays in `.oc_local/rules/`, while the
   command only records the generic flow for task resolution, options,
   implementation, affected tasks, and verification.
-- `/plan-task <source-task-ref-or-file> [focus/context]` is the local interactive
+- `/plan-task <task-ref> [context/instructions]` is the local interactive
   workflow for planning one concrete implementation task from an existing
   architecture, planning, backlog, or solution task. It may take a task id,
   repo-relative task file, task filename, or task folder as its first argument.
   It collaborates with the user before writing or sharpening the task, records a
   concrete solution direction, stores the plan workflow handoff in the task file,
-  and leaves implementation for a later `/solve-task <new-task>` pass. This
-  command is the detailed planning phase: it should identify expected classes,
-  interfaces, records, files, packages, tests, implementation order, acceptance
-  criteria, and verification before runtime code changes start.
+  and leaves implementation for a later
+  `/solve-task <task-ref> [context/instructions]` pass. This command is the
+  detailed planning phase: it should identify expected classes, interfaces,
+  records, files, packages, tests, implementation order, acceptance criteria, and
+  verification before runtime code changes start.
 - `/specify-task`, `/plan-task`, and `/solve-task` now require canonical
   `task.md` files for referenced task directories, read parent `task.md` files
   when working with child tasks, and discover applicable hints from task docs

@@ -1,16 +1,16 @@
 # Codegeist Task Workflows
 
-Use the local `/specify-task <task-ref>` command when an existing Codegeist
-architecture task under `docs/tasks/` needs another specification pass.
+Use the local `/specify-task <task-ref> [context/instructions]` command when an
+existing Codegeist architecture task under `docs/tasks/` needs another
+specification pass.
 
-Use the local `/solve-task <task-ref>` command when an existing task should be
-solved collaboratively with the user. It may receive zero or more hint files
-after the task reference.
+Use the local `/solve-task <task-ref> [context/instructions]` command when an
+existing task should be solved collaboratively with the user.
 
-Use the local `/plan-task <source-task-ref-or-file> [focus/context]` command when
-an architecture, planning, backlog, or solution
-task should become one concrete implementation task. The first argument may be a
-task id, repo-relative task file, task filename, or task folder.
+Use the local `/plan-task <task-ref> [context/instructions]` command when an
+architecture, planning, backlog, or solution task should become one concrete
+implementation task. The first argument may be a task id, repo-relative task
+file, task filename, or task folder.
 
 ## Standard Task-To-Implementation Workflow
 
@@ -20,22 +20,24 @@ run `/specify-task` and `/plan-task` as often as needed while
 new information, user instructions, or scope decisions are still arriving.
 
 1. Run `/specify-task <source-task-ref> [context/instructions]` to sharpen the
-   source task without creating or implementing anything.
-2. Run `/plan-task <source-task-ref-or-file> [focus/context]`
+   source task without creating or implementing anything. This phase has no prior
+   dependency and records the specification status in the task.
+2. Run `/plan-task <task-ref> [context/instructions]`
    only when no suitable implementation task already exists. This creates one
-   concrete implementation task and stops before code changes.
-3. Re-run `/specify-task <source-task-ref> <context/instructions>` or
-   `/specify-task <implementation-task-ref> <context/instructions>` when new
-   information should sharpen the source or implementation task before solving.
-4. Re-run `/plan-task <source-task-ref-or-file>
-   [focus/context]` when the implementation slice needs to be refined from the
-   source context. If a matching implementation task already exists, update that
-   task instead of creating a duplicate unless the user explicitly asks for a new
-   distinct task.
-5. Run `/solve-task <implementation-task-ref> [context/instructions]` only after
+   concrete implementation task and stops before code changes. This phase depends
+   on a current `/specify-task` status and records the planning status in the
+   task.
+3. Re-run `/specify-task <task-ref> [context/instructions]` when new information
+   should sharpen the source or implementation task before solving.
+4. Re-run `/plan-task <task-ref> [context/instructions]` when the implementation
+   slice needs to be refined from the source context. If a matching
+   implementation task already exists, update that task instead of creating a
+   duplicate unless the user explicitly asks for a new distinct task.
+5. Run `/solve-task <task-ref> [context/instructions]` only after
    the implementation task is specified enough to build. This implements the
    existing implementation task, updates tests and docs, and records the solution
-   state.
+   state. This phase depends on a current `/plan-task` status and records the
+   solve status in the task.
 
 Skip new task creation when a suitable implementation task already exists. In
 that case, use repeated `/specify-task` or `/plan-task` passes to
@@ -63,10 +65,17 @@ sharpen that existing task, then proceed to `/solve-task`.
   when decisions change, new instructions arrive, or acceptance criteria,
   non-goals, implementation plans, dependencies, or follow-up boundaries need to
   stay current.
+- Every workflow step must record its own phase status in the target task. Status
+  entries should name the phase, context or instructions considered, discovered
+  hints, upstream phase dependency, outcome, open decisions, and next recommended
+  phase.
+- `/specify-task` has no prior phase dependency. `/plan-task` depends on a
+  current `/specify-task` status. `/solve-task` depends on a current `/plan-task`
+  status.
 - Every workflow step must discover applicable hint files from the task docs it
   reads, including parent tasks, child tasks, dependencies, `Default Solve Hints`,
   `Hints`, `Guidance`, and repo-relative `docs/tasks/hints/` references. Do not
-  rely only on explicit hint-file arguments.
+  rely only on explicit command arguments.
 - `/plan-task` must propose concrete implementation options
   when the source allows multiple slices, ask for user decisions on material
   scope or contract choices, and create at most one task unless the user
@@ -84,7 +93,7 @@ sharpen that existing task, then proceed to `/solve-task`.
   next command.
 - `/plan-task` creates task documentation only. Runtime code,
   tests, build-file changes, and task solution work belong in a later
-  `/solve-task <new-task>` pass.
+  `/solve-task <task-ref> [context/instructions]` pass.
 - `/specify-task`, `/plan-task`, and `/solve-task` must treat
   task directories as canonical only when they contain `task.md`. When a
   referenced task directory has no `task.md`, stop and report the broken task
@@ -107,9 +116,6 @@ sharpen that existing task, then proceed to `/solve-task`.
 - Keep `/solve-task` generic. Put Codegeist-specific task-solving guidance in
   this rule instead of hard-coding architecture paths or domain assumptions into
   the command.
-- Treat hint files passed to `/solve-task` as task-solving input. Read them
-  before proposing solution options, and let them override stale assumptions in
-  older task text when they clearly document a newer decision.
 - During every `/solve-task` run, keep the target task itself as the precise
   handoff record. In Plan Mode, record what should be done and which decisions
   are pending. In Build Mode, record what was done, what changed, what remains

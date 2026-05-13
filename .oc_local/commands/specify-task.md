@@ -45,6 +45,10 @@ implementation-task creation when new information, user instructions, or changed
 scope should sharpen either the source task or the implementation task before
 solving.
 
+Phase dependency: none. This phase is the normal entry point for the workflow and
+may also be repeated later when new information changes the source or planned
+implementation task.
+
 ## Workflow
 
 1. Parse the first argument as the target task reference and treat remaining
@@ -94,30 +98,34 @@ solving.
    - sharpen goal, context, scope, non-goals, deliverable, acceptance criteria,
      verification, dependencies, and open questions
    - add migration questions and answers when useful
-    - add Codegeist-specific architecture decisions and boundary rules
-    - add implementation-readiness questions, but keep them at specification depth
-    - update the task when decisions changed, new instructions arrived, or
-      acceptance criteria, dependencies, non-goals, or follow-up boundaries need
-      to stay current
-12. If the task changes a central architecture document, update that document in
+   - add Codegeist-specific architecture decisions and boundary rules
+   - add implementation-readiness questions, but keep them at specification depth
+   - update the task when decisions changed, new instructions arrived, or
+     acceptance criteria, dependencies, non-goals, or follow-up boundaries need
+     to stay current
+12. Record or update this phase's status in the target task. The task should say
+    that `/specify-task` was run, which context or instructions drove the pass,
+    which hints were considered, what changed, what remains open, and whether the
+    next dependency is `/plan-task` or `/solve-task`.
+13. If the task changes a central architecture document, update that document in
    the same pass so task and architecture docs stay consistent.
-13. Update `docs/memory-bank/chat.md` only when the specification changes durable
+14. Update `docs/memory-bank/chat.md` only when the specification changes durable
     project state or current task focus.
-14. Run a targeted documentation check, at minimum:
+15. Run a targeted documentation check, at minimum:
 
 ```bash
 git --no-pager diff --check
 ```
 
-15. Report updated files, user context or instructions considered, parent
+16. Report updated files, user context or instructions considered, parent
     `task.md` considered, discovered hints considered,
     what was clarified, what remains open, and the next workflow command. When no
     suitable implementation task exists yet, recommend
-    `/plan-task <task-ref>`; when one already exists but needs
-    more source-derived refinement, recommend another
-    `/plan-task <source-task-ref-or-file> [focus/context]` pass;
+    `/plan-task <task-ref> [context/instructions]`; when one already exists but
+    needs more source-derived refinement, recommend another
+    `/plan-task <task-ref> [context/instructions]` pass;
     when the implementation task is ready, recommend
-    `/solve-task <implementation-task-ref>`.
+    `/solve-task <task-ref> [context/instructions]`.
 
 ## Repeatability
 
@@ -147,6 +155,8 @@ This command must be safe to run repeatedly on the same task.
 
 - Do not create a new task.
 - Do not solve the task.
+- Do record this phase's status in the task file whenever the pass changes or
+  confirms durable workflow state.
 - Do not split the task unless the current task is clearly too broad to remain
   safe or executable.
 - Do not write task docs outside `docs/tasks/`.

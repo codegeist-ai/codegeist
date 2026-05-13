@@ -24,7 +24,7 @@ $ARGUMENTS
 Expected syntax:
 
 ```text
-/solve-task <task-ref> [hint-file ...] [context/instructions]
+/solve-task <task-ref> [context/instructions]
 ```
 
 Examples:
@@ -32,7 +32,7 @@ Examples:
 ```text
 /solve-task T001_07
 /solve-task docs/tasks/T001_example/tasks/T001_07_define-event-model.md
-/solve-task T001_07 docs/notes/event-model-review.md
+/solve-task T001_07 include the event model review findings
 /solve-task T001_07 focus on the smallest documentation change first
 /solve-task T002_01 implement only the Maven baseline and defer package moves
 ```
@@ -50,12 +50,16 @@ In the standard task-to-implementation workflow, this is the implementation step
 after any needed iterative `/specify-task` and `/plan-task`
 preparation passes.
 
+Phase dependency: `/plan-task`. Before solving, the target implementation task
+should contain a current implementation plan from `/plan-task`. If the plan is
+missing, stale, or contradicted by the provided context, update the task first or
+recommend `/plan-task <task-ref> [context/instructions]` before implementation.
+
 ## Workflow
 
-1. Parse the first argument as the target task reference. Treat any remaining
-   arguments that resolve to existing files as optional hint files for the
-   solution pass, and treat the rest as user-provided context or implementation
-   instructions. Stop if the task reference is missing.
+1. Parse the first argument as the target task reference and treat remaining
+   arguments as user-provided context or implementation instructions. Stop if the
+   task reference is missing.
 2. Resolve the task reference by exact repo-relative path, exact task filename,
    exact task folder name, or exact task id such as `T001` or `T001_07`. Stop and
    list options if the reference is ambiguous. When the resolved reference is a
@@ -73,13 +77,13 @@ preparation passes.
    adjacent or dependency tasks for hint references, including `Default Solve
    Hints`, `Hints`, `Guidance`, and repo-relative paths under
    `docs/tasks/hints/`. Treat every discovered hint file as an implicit hint file
-   for this solve pass, together with any explicit hint-file arguments.
-6. Read every discovered or explicit hint file after resolving the task and
-   before proposing solution options. Hint files are living guidance and can
-   contain user notes, design sketches, research, review feedback, or examples
-   for how similar tasks should be solved. Stop and ask for clarification if a
-   hint-file argument or discovered hint is ambiguous, unreadable, appears to
-   point outside the workspace, or does not exist.
+   for this solve pass.
+6. Read every discovered hint file after resolving the task and before proposing
+   solution options. Hint files are living guidance and can contain user notes,
+   design sketches, research, review feedback, or examples for how similar tasks
+   should be solved. Stop and ask for clarification if a discovered hint is
+   ambiguous, unreadable, appears to point outside the workspace, or does not
+   exist.
 7. Read relevant repo and project-specific rules before implementation,
    especially local overlays under `@.oc_local/rules/`.
 8. Prefer solving leaf tasks. If the target has open child tasks that should stay
@@ -92,47 +96,55 @@ preparation passes.
    focus for this solve pass. If the instruction changes scope materially,
    update the task first or recommend another `/specify-task` pass before
    implementation.
-11. Maintain a precise working note inside the target task throughout the
-   solution pass. In Plan Mode, document exactly what should be done, which
-   options were proposed, which user decisions are needed, and what should happen
-   once Build Mode starts. In Build Mode, document what was done, why decisions
-   were made, what changed, what remains open, and what the next agent or user
-   must do. Keep this note current after each meaningful interactive decision.
-12. Start collaboratively unless the task is trivial and already has a single
-   obvious implementation path. Offer 2-3 concrete starting options derived from
-   the current task, hint files, and repo context. Include tradeoffs when they
-   matter.
-13. Ask focused questions only for decisions that materially affect scope,
-   behavior, public contracts, task boundaries, or other open tasks. Otherwise,
-   choose the smallest correct path and continue.
-14. Implement the chosen solution with the smallest reasonable change. Update
-   tests, documentation, task status, and implementation notes according to the
-   task's acceptance criteria and the repo rules. If decisions change while
-   solving, update the task plan, acceptance criteria, non-goals, or affected
-   follow-up tasks before continuing.
-15. When a decision affects other open tasks, update those task files in the same
-    pass so their scope, dependencies, acceptance criteria, or non-goals remain
-    accurate. Do not rewrite unrelated tasks for style.
-16. If solving the task reveals a reusable insight that would help solve future
-    tasks, update the relevant hint file in the same pass. Keep hint updates
-    concise and broadly applicable; avoid task-specific conclusions, temporary
-    details, or duplicating task status.
-17. If solving the task reveals a reusable workflow gap, minimally update this
-    command or the most relevant project-specific rule. Keep generic workflow in
-    this command and project-specific guidance in `@.oc_local/rules/`.
-18. Update `docs/memory-bank/chat.md` only when the solution changes durable
-    project state or future sessions would otherwise miss important context.
-19. Run comprehensive verification for the task, including every relevant command
-    named by the task and enough additional checks to prove all acceptance
-    criteria are satisfied. At minimum, run:
+11. Verify the task has a current `/plan-task` status and implementation plan.
+    Stop or return to `/plan-task` when planned classes, files, steps,
+    acceptance criteria, or verification are missing enough to make solving
+    unsafe.
+12. Maintain a precise working note inside the target task throughout the
+    solution pass. In Plan Mode, document exactly what should be done, which
+    options were proposed, which user decisions are needed, and what should happen
+    once Build Mode starts. In Build Mode, document what was done, why decisions
+    were made, what changed, what remains open, and what the next agent or user
+    must do. Keep this note current after each meaningful interactive decision.
+13. Start collaboratively unless the task is trivial and already has a single
+    obvious implementation path. Offer 2-3 concrete starting options derived from
+    the current task, hint files, and repo context. Include tradeoffs when they
+    matter.
+14. Ask focused questions only for decisions that materially affect scope,
+    behavior, public contracts, task boundaries, or other open tasks. Otherwise,
+    choose the smallest correct path and continue.
+15. Implement the chosen solution with the smallest reasonable change. Update
+    tests, documentation, task status, and implementation notes according to the
+    task's acceptance criteria and the repo rules. If decisions change while
+    solving, update the task plan, acceptance criteria, non-goals, or affected
+    follow-up tasks before continuing.
+16. When a decision affects other open tasks, update those task files in the same
+     pass so their scope, dependencies, acceptance criteria, or non-goals remain
+     accurate. Do not rewrite unrelated tasks for style.
+17. If solving the task reveals a reusable insight that would help solve future
+     tasks, update the relevant hint file in the same pass. Keep hint updates
+     concise and broadly applicable; avoid task-specific conclusions, temporary
+     details, or duplicating task status.
+18. If solving the task reveals a reusable workflow gap, minimally update this
+     command or the most relevant project-specific rule. Keep generic workflow in
+     this command and project-specific guidance in `@.oc_local/rules/`.
+19. Update `docs/memory-bank/chat.md` only when the solution changes durable
+     project state or future sessions would otherwise miss important context.
+20. Run comprehensive verification for the task, including every relevant command
+     named by the task and enough additional checks to prove all acceptance
+     criteria are satisfied. At minimum, run:
 
 ```bash
 git --no-pager diff --check
 ```
 
-20. Report the updated files, explicit and discovered hint files considered or
-    updated, user context or implementation instructions considered, implemented
-    solution, verification commands and results,
+21. Record or update this phase's status in the target task. The task should say
+    that `/solve-task` was run, which `/plan-task` status it depended on, what was
+    implemented, which verification commands passed or failed, whether every
+    acceptance criterion is satisfied, and what remains open.
+22. Report the updated files, discovered hint files considered or updated, user
+    context or implementation instructions considered, implemented solution,
+    verification commands and results,
     acceptance criteria status, decisions made with the user, affected tasks, and
     remaining follow-ups.
 
@@ -163,6 +175,9 @@ task file itself, not only from chat history.
 - Do not leave the target task without an up-to-date solution note. The task
   must say whether work is planned, in progress, completed, blocked, or awaiting
   user decision.
+- Do record this phase's status in the task file, including the plan status it
+  depends on, implementation result, verification result, and acceptance criteria
+  status.
 - Update the target task when solving changes decisions, scope, acceptance
   criteria, implementation plan, or follow-up work. The task file is the durable
   handoff, not just a static input.

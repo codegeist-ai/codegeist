@@ -24,7 +24,7 @@ $ARGUMENTS
 Expected syntax:
 
 ```text
-/plan-task <source-task-ref-or-file> [focus/context]
+/plan-task <task-ref> [context/instructions]
 ```
 
 Examples:
@@ -49,6 +49,11 @@ implementation slice is still being prepared; when a matching implementation
 task already exists, sharpen that task instead of creating a duplicate unless the
 user explicitly confirms a distinct new task.
 
+Phase dependency: `/specify-task`. Before planning, the source or existing
+implementation task should have a specification pass recorded. If no current
+specification status exists and the missing context affects planning safety,
+stop and recommend `/specify-task <task-ref> [context/instructions]` first.
+
 This command creates or updates task documentation only. It does not implement
 runtime code, change build files, or solve the planned task. It may update an
 existing implementation task when new decisions, constraints, classes, files,
@@ -63,10 +68,10 @@ verification requirements, or user instructions change the plan.
    is a directory, require and use its canonical `task.md`. Stop and list options
    if the reference is ambiguous, and stop if a referenced task directory has no
    `task.md`.
-3. Treat remaining arguments as user-provided implementation focus or context.
-   When this command is run repeatedly, use that focus or context as the reason
-   for sharpening the existing implementation task; ask for a focused instruction
-   when the reason for another pass is unclear.
+3. Treat remaining arguments as user-provided context or instructions. When this
+   command is run repeatedly, use that context as the reason for sharpening the
+   existing implementation task; ask for a focused instruction when the reason for
+   another pass is unclear.
 4. If the resolved source is a task file under a task directory, check whether
    that task directory or its nearest owning task directory has a canonical
    `task.md`. Read that parent `task.md` before deriving implementation options.
@@ -131,16 +136,22 @@ verification requirements, or user instructions change the plan.
       `task.md`, user focus or context, selected option, duplicate check result,
       discovered hints, related context files read, and recommended next command
     - planning note with the selected option and any user decision
-15. Keep durable documentation in English even when the chat is not in English.
-16. Update `docs/memory-bank/chat.md` when creating the task changes the active
+15. Record or update this phase's status in the target implementation task. The
+    task should say that `/plan-task` was run, which `/specify-task` status it
+    depends on, which context or instructions drove the pass, which hints and
+    source files were considered, what plan changed, what decisions remain open,
+    and whether the next dependency is another `/specify-task` pass or
+    `/solve-task`.
+16. Keep durable documentation in English even when the chat is not in English.
+17. Update `docs/memory-bank/chat.md` when creating the task changes the active
     project focus, current task set, or durable workflow state.
-17. Run targeted verification after writing the task. At minimum, run:
+18. Run targeted verification after writing the task. At minimum, run:
 
 ```bash
 git --no-pager diff --check
 ```
 
-18. Report the source task, user focus or context considered, source parent
+19. Report the source task, user context or instructions considered, source parent
     `task.md` considered, created or sharpened task file, selected option,
     discovered hints considered, detailed implementation plan, verification
     result, user decisions, and the recommended next command such as
@@ -166,6 +177,8 @@ are expected, where to build them, how to verify them, and what not to include.
 
 - Create or update planning documentation only; do not implement source code or
   tests in this command.
+- Do record this phase's status in the target implementation task, including the
+  specification status it depends on and the next recommended phase.
 - Treat repeated runs as plan refinement. Update the matching task when decisions
   changed, new instructions arrived, or class/file/test expectations became more
   precise.
