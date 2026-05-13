@@ -12,6 +12,10 @@ architecture, planning, backlog, or solution task should become one concrete
 implementation task. The first argument may be a task id, repo-relative task
 file, task filename, or task folder.
 
+Use the local `/work-task <task-ref> [context/instructions]` command when the
+user wants one command to orchestrate the full specify, plan, specify, and solve
+workflow for a task.
+
 ## Standard Task-To-Implementation Workflow
 
 Use this workflow when an architecture, planning, backlog, or solution task needs
@@ -43,6 +47,23 @@ Skip new task creation when a suitable implementation task already exists. In
 that case, use repeated `/specify-task` or `/plan-task` passes to
 sharpen that existing task, then proceed to `/solve-task`.
 
+## Full Workflow Orchestration
+
+Use `/work-task <task-ref> [context/instructions]` when the user asks to run the
+whole workflow with one command. It forwards the same task reference and context
+through these phases:
+
+1. `/specify-task <task-ref> [context/instructions]`
+2. `/plan-task <task-ref> [context/instructions]`
+3. `/specify-task <task-ref> [context/instructions]` on the concrete
+   implementation task selected or sharpened by planning
+4. `/solve-task <task-ref> [context/instructions]` on that concrete
+   implementation task
+
+`/work-task` must stop before solving when planning leaves multiple possible
+implementation tasks, unresolved material decisions, or a task that lacks the
+plan detail needed by `/solve-task`.
+
 ## Rules
 
 - Use `/specify-task` for already-described tasks that need Codegeist-specific
@@ -61,6 +82,10 @@ sharpen that existing task, then proceed to `/solve-task`.
 - Every workflow step accepts context or instructions after the task reference.
   Use those arguments to focus the pass, record relevant context in the task when
   it affects durable handoff, and avoid generic churn.
+- `/work-task` uses the same `<task-ref> [context/instructions]` contract and
+  passes that context through every phase. It may switch from the initial source
+  task to the concrete implementation task selected by `/plan-task`, but it must
+  report that switch.
 - Every workflow step may update the target task or directly affected task files
   when decisions change, new instructions arrive, or acceptance criteria,
   non-goals, implementation plans, dependencies, or follow-up boundaries need to

@@ -34,7 +34,7 @@
   `nix` is available on `PATH` in container login shells.
 - The local OpenCode overlay `.oc_local/` contains the commands
   `/analyse-project`, `/ask-project`, `/ask-project-repomix`,
-  `/plan-task`, `/specify-task`, and `/solve-task`, the
+  `/plan-task`, `/specify-task`, `/solve-task`, and `/work-task`, the
   `/repository-analysis` skill, the `@repomix` subagent, and the AI script
   `render-mermaid.sh` for Mermaid SVG rendering.
 - `docs/third-party/opencode/source` is a submodule for
@@ -156,6 +156,12 @@
 - Phase dependencies are explicit: `/specify-task` has no prior dependency,
   `/plan-task` depends on a current `/specify-task` status, and `/solve-task`
   depends on a current `/plan-task` status.
+- `/work-task <task-ref> [context/instructions]` orchestrates the complete flow
+  when the user wants one command: specify the initial task, plan the concrete
+  implementation task, specify the planned task again, then solve it. It passes
+  the same context through every phase, may switch from the source task to the
+  concrete implementation task selected by `/plan-task`, and stops before solving
+  when planning leaves multiple choices or open material decisions.
 - `/specify-task <task-ref> [context/instructions]` is the local repeatable
   workflow for checking existing Codegeist architecture tasks against
   OpenCode-to-Java migration questions and sharpening them when needed without
