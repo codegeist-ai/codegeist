@@ -37,7 +37,7 @@ provider, tool, permission, and storage tasks.
 - `ai.codegeist.session`
 - `ai.codegeist.agent`
 - `ai.codegeist.event`
-- focused tests under `app/codegeist/src/test/java/ai/codegeist/`
+- focused tests under `app/codegeist/cli/src/test/java/ai/codegeist/`
 
 ## Acceptance Criteria
 

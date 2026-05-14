@@ -33,7 +33,7 @@ extensions that must call into the runtime instead of owning agent behavior.
 
 ## Architecture Decision
 
-The MVP implementation should start as one Maven module under `app/codegeist`.
+The MVP implementation should start as one Maven module under `app/codegeist/cli`.
 Strict logical boundaries must be defined now through package ownership,
 interfaces, dependency direction, tests, and documentation. Physical Maven
 modules are deferred until the core runtime contracts are stable enough to split
@@ -143,12 +143,12 @@ Add `## Component Model And Module Boundaries` to
 - Physical module timing is explicitly decided: one Maven module for MVP
   planning, physical module split deferred until runtime contracts stabilize.
 - Dependency direction rules prevent adapter-to-runtime inversion.
-- Proposed package boundaries can start from current `app/codegeist` without a
+- Proposed package boundaries can start from current `app/codegeist/cli` without a
   full rewrite.
 
 ## Verification
 
-- Confirm the component model can start from current `app/codegeist` without a
+- Confirm the component model can start from current `app/codegeist/cli` without a
   full rewrite.
 - Confirm `docs/developer/codegeist-opencode-parity.md` keeps the task
   documentation-only and does not require immediate Maven or package moves.
@@ -170,7 +170,7 @@ one-Maven-module MVP decision, the component responsibility table, the proposed
 Java package map, dependency direction rules, module split triggers, and explicit
 non-goals.
 
-No user decision is pending. The current `app/codegeist` layout has a single
+No user decision is pending. The current `app/codegeist/cli` layout has a single
 Maven module, so the documented logical package boundaries can start there
 without requiring immediate Maven module creation, package moves, dependency
 changes, or runtime implementation.

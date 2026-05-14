@@ -21,9 +21,9 @@
   `compose.local.yml`, root `.oc_local/`, `.devcontainer/.env`, and
   `.devcontainer/compose.local.gen.yml` when needed, and can select a worktree
   under `.worktrees/<branch>` as `/workspace` via `BRANCH`.
-- `app/codegeist` is a Spring Boot and Spring Shell bootstrap with Java 25,
-  Maven, and a prepared GraalVM native build.
-- `app/codegeist/Taskfile.yml` provides `test`, `build`, `run`, and `native`.
+- `app/codegeist/cli` is a Spring Boot and Spring Shell CLI bootstrap with Java
+  25, Maven, and a prepared GraalVM native build.
+- `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, and `native`.
 - `.devcontainer/Dockerfile` installs `nix` in addition to the existing
   apt-based toolchain without migrating the devcontainer workflow to Nix.
 - `.devcontainer/Dockerfile` also installs `@devcontainers/cli` in the existing
@@ -56,8 +56,8 @@
   feature matrix, MVP cut, prompt flow, risk register, and implementation
   backlog.
 - `docs/developer/architecture.md` is the current-state architecture map for
-  coding agents. It describes only what exists now in `app/codegeist`, including
-  the single Maven module, Spring Boot entrypoint, configuration, context-load
+  coding agents. It describes only what exists now in `app/codegeist/cli`,
+  including the single Maven module, Spring Boot entrypoint, configuration, context-load
   test, Taskfile commands, current build baseline, and not-yet-implemented
   boundaries.
 - All 25 child tasks under
@@ -77,10 +77,12 @@
   `/specify-task` semantics after adding parent default hints. Each task now has a
   `Specification Check Result` clarifying scope, dependencies, OpenCode source
   research expectations, and non-implementation boundaries.
-- `T002_01_align-codegeist-build-baseline.md` has been sharpened with
-  `/plan-task`: it selects Spring Boot `3.5.14`, Spring AI `1.1.6` BOM posture,
-  Spring Shell `3.4.2`, Java `25`, and a JVM-first verification boundary before
-  deeper runtime or provider work.
+- `T002_01_align-codegeist-build-baseline.md` was expanded into a build and CLI
+  layout baseline: the tracked Spring Boot CLI Maven project moved from
+  `app/codegeist` to `app/codegeist/cli`, while future `server`, customization
+  storage, model access, and deployment-artifact boundaries remain documented but
+  not implemented. `task test`, `task build`, and `task native` pass from
+  `app/codegeist/cli`.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -170,6 +172,6 @@
 
 ## Open Points
 
-- The next useful step is `/solve-task T002_01` to verify and finalize the build
-  baseline alignment, then solve `T002_02_introduce-runtime-vocabulary-contracts.md`
-  and continue through the `T002` child tasks in dependency order.
+- The next useful step is to solve
+  `T002_02_introduce-runtime-vocabulary-contracts.md`, then continue through the
+  `T002` child tasks in dependency order.

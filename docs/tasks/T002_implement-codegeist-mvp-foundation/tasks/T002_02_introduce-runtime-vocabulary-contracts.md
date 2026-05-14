@@ -29,7 +29,7 @@ mapping without implementing prompt execution, provider calls, tools, storage, o
 UI behavior:
 
 1. Create package placeholders or minimal contracts for the first MVP boundary
-   names under `app/codegeist/src/main/java/ai/codegeist/`.
+   names under `app/codegeist/cli/src/main/java/ai/codegeist/`.
 2. Prefer small Java records, enums, interfaces, or package documentation only
    when they express a real boundary from the concept mapping.
 3. Start with runtime vocabulary that later tasks need immediately:
@@ -46,25 +46,25 @@ UI behavior:
 
 ## Scope
 
-- Minimal Java source files under `app/codegeist/src/main/java/ai/codegeist/` for
-  concept vocabulary and package ownership.
-- Minimal tests under `app/codegeist/src/test/java/ai/codegeist/` that compile and
-  exercise the contracts at a shallow level.
+- Minimal Java source files under `app/codegeist/cli/src/main/java/ai/codegeist/`
+  for concept vocabulary and package ownership.
+- Minimal tests under `app/codegeist/cli/src/test/java/ai/codegeist/` that compile
+  and exercise the contracts at a shallow level.
 - Documentation updates only when a package name or boundary differs from
   `docs/developer/codegeist-opencode-parity.md`.
 
 ## Target Files And Packages
 
-- `app/codegeist/src/main/java/ai/codegeist/runtime/`
-- `app/codegeist/src/main/java/ai/codegeist/session/`
-- `app/codegeist/src/main/java/ai/codegeist/agent/`
-- `app/codegeist/src/main/java/ai/codegeist/context/`
-- `app/codegeist/src/main/java/ai/codegeist/provider/`
-- `app/codegeist/src/main/java/ai/codegeist/tool/`
-- `app/codegeist/src/main/java/ai/codegeist/permission/`
-- `app/codegeist/src/main/java/ai/codegeist/workspace/`
-- `app/codegeist/src/main/java/ai/codegeist/event/`
-- `app/codegeist/src/test/java/ai/codegeist/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/runtime/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/session/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/agent/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/context/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/provider/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/tool/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/permission/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/workspace/`
+- `app/codegeist/cli/src/main/java/ai/codegeist/event/`
+- `app/codegeist/cli/src/test/java/ai/codegeist/`
 - `docs/developer/codegeist-opencode-parity.md` only if the implemented package
   names intentionally differ from the current architecture map
 
@@ -133,6 +133,9 @@ If `task test` cannot run because `T002_01` is not solved yet, stop and solve
   implementation.
 - OpenCode source evidence is optional here; source lookups become more valuable
   in later session, event, provider, tool, and MCP-oriented tasks.
+- Rechecked after `T002_01` was expanded to move the CLI Maven project to
+  `app/codegeist/cli`; all implementation paths in this task now target the new
+  CLI project location.
 
 ## Creation Note
 

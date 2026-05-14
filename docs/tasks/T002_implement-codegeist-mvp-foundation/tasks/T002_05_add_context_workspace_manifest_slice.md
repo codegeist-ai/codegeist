@@ -32,7 +32,7 @@ safety.
 
 - `ai.codegeist.context`
 - `ai.codegeist.workspace`
-- test fixtures under `app/codegeist/src/test/resources/` when needed
+- test fixtures under `app/codegeist/cli/src/test/resources/` when needed
 - focused context/workspace tests
 
 ## Acceptance Criteria

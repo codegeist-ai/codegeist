@@ -32,7 +32,7 @@ permissions, workspace policy, and events.
 - `ai.codegeist.cli`
 - `ai.codegeist.runtime` boundary usage
 - Spring Shell command tests where practical
-- `app/codegeist/Taskfile.yml` only if a new smoke command is needed
+- `app/codegeist/cli/Taskfile.yml` only if a new smoke command is needed
 
 ## Acceptance Criteria
 

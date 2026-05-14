@@ -28,13 +28,13 @@ instead of silently changing the Spring AI stability decision.
 - Record the role of Java 25, Maven, Spring Boot 3.5.x, Spring Shell, Spring AI
   1.1.x, GraalVM, Vaadin, JBang, and PF4J.
 - Separate fixed decisions from technologies that still require validation.
-- Document that the current `app/codegeist/pom.xml` still uses Spring Boot
+- Document that the current `app/codegeist/cli/pom.xml` still uses Spring Boot
   `4.0.3`, and that changing it belongs to a later implementation or
   configuration task.
 
 ## Out Of Scope
 
-- Changing `app/codegeist/pom.xml`.
+- Changing `app/codegeist/cli/pom.xml`.
 - Adding Spring AI dependencies.
 - Downgrading or validating Spring Boot at runtime.
 - Running compatibility spikes.
@@ -84,7 +84,7 @@ The section should cover at least:
 - Confirm no technology is described only as a vague preference.
 - Confirm no OpenCode runtime technology is treated as a Codegeist runtime
   requirement.
-- Confirm `app/codegeist/pom.xml` remains unchanged by this specification task.
+- Confirm `app/codegeist/cli/pom.xml` remains unchanged by this specification task.
 
 ## Specification Check Result
 
@@ -107,4 +107,4 @@ decision: Java-first, Spring Boot `3.5.x` for stable Spring AI `1.1.x`, and Java
 `25` only while compatibility remains valid.
 
 Verification passed with `git --no-pager diff --check`. A final diff review
-confirmed `app/codegeist/pom.xml` remains unchanged by this task.
+confirmed `app/codegeist/cli/pom.xml` remains unchanged by this task.

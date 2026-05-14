@@ -12,7 +12,7 @@ documentation-only and split into small child tasks.
 ## Context
 
 The repository currently contains a minimal Codegeist bootstrap under
-`app/codegeist` using Spring Boot and Spring Shell. OpenCode has been analyzed as
+`app/codegeist/cli` using Spring Boot and Spring Shell. OpenCode has been analyzed as
 a third-party reference under `docs/third-party/opencode/`, but the analysis is
 based on static source inspection and generated analysis artifacts only. Runtime
 behavior has not been verified yet.
@@ -27,7 +27,7 @@ Java-first stack instead of copying OpenCode's Bun/TypeScript runtime shape.
 - `docs/third-party/opencode/features/README.md`
 - `docs/third-party/opencode/user/README.md`
 - `docs/third-party/opencode/developer/README.md`
-- `app/codegeist/`
+- `app/codegeist/cli/`
 - `docs/memory-bank/chat.md`
 
 ## Technology Baseline
@@ -102,5 +102,5 @@ open questions, MVP scope, later-stage capabilities, and out-of-scope items.
 - Review all child task files for single-responsibility scope.
 - Confirm the old flat `T001` task file no longer exists next to the parent
   directory.
-- Confirm the proposed architecture can start from the current `app/codegeist`
+- Confirm the proposed architecture can start from the current `app/codegeist/cli`
   Spring Boot/Spring Shell bootstrap without requiring a full rewrite first.

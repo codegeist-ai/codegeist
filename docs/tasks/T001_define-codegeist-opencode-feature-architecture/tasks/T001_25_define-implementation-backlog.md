@@ -36,7 +36,7 @@ It does not implement backlog items.
 
 ## Likely First Backlog Themes
 
-- Align `app/codegeist` build baseline with the chosen Spring Boot/Spring AI
+- Align `app/codegeist/cli` build baseline with the chosen Spring Boot/Spring AI
   target.
 - Introduce runtime/session/event domain contracts.
 - Add provider configuration and one verified Spring AI provider path.

@@ -20,7 +20,7 @@ Boot `3.5.x`, Spring AI `1.1.x`, Spring Shell, Maven, and GraalVM. If Java `25`
 causes compatibility issues, the Java version must be decided separately
 instead of silently changing the Spring AI stability decision.
 
-The `app/codegeist/pom.xml` build is aligned to Spring Boot `3.5.14`, Spring AI
+The `app/codegeist/cli/pom.xml` build is aligned to Spring Boot `3.5.14`, Spring AI
 `1.1.6` dependency management, and Spring Shell `3.4.2` while keeping Java `25`
 and the GraalVM native profile as the project posture.
 
@@ -40,7 +40,7 @@ and the GraalVM native profile as the project posture.
 
 - The runtime should stay Java-native instead of copying OpenCode's Bun and
   TypeScript runtime shape.
-- The current Spring Boot and Spring Shell bootstrap under `app/codegeist` is
+- The current Spring Boot and Spring Shell bootstrap under `app/codegeist/cli` is
   aligned to the target Boot `3.5.x` and Spring AI `1.1.x` posture and remains a
   valid starting point for the CLI and runtime foundation.
 - GraalVM support should influence dependency choices early, especially for
@@ -96,7 +96,7 @@ User
 
 ## Component Model And Module Boundaries
 
-Codegeist should start as one Maven module under `app/codegeist` for MVP
+Codegeist should start as one CLI Maven module under `app/codegeist/cli` for MVP
 planning. The current codebase is only a Spring Boot and Spring Shell bootstrap,
 so an early multi-module split would force physical structure before the runtime
 contracts are stable. The architecture still needs strict logical boundaries
@@ -144,6 +144,34 @@ ai.codegeist.storage          persistence ports and later adapters
 ai.codegeist.extension        PF4J and JBang mediation
 ai.codegeist.server           HTTP adapter later
 ai.codegeist.ui.vaadin        Vaadin client later
+```
+
+The following component diagram records the current CLI placement and a possible
+later physical split and deployment view. The current repository has one Maven
+module under `app/codegeist/cli`. Future paths such as `app/codegeist/server` and
+deployment artifacts such as Helm charts are candidate boundaries to revisit only
+after runtime, provider, storage, authentication, and customization contracts are
+stable.
+
+```mermaid
+flowchart TD
+    User[User]
+    CurrentCli["app/codegeist/cli<br/>current CLI Maven module"]
+    FutureServer["app/codegeist/server<br/>future authenticated server"]
+    Runtime["Codegeist Runtime<br/>sessions, events, tools, permissions"]
+    Provider["Provider adapters<br/>Spring AI model access"]
+    Customization["Global customization store<br/>commands, skills, agent settings"]
+    Deploy["Deployment artifacts<br/>future Helm charts or service manifests"]
+
+    User --> CurrentCli
+    User --> FutureServer
+    CurrentCli -. later sibling .-> FutureServer
+    CurrentCli --> Runtime
+    FutureServer --> Runtime
+    FutureServer -. later auth boundary .-> Customization
+    Runtime --> Provider
+    Runtime -. later reads approved customizations .-> Customization
+    FutureServer -. later packaged by .-> Deploy
 ```
 
 Dependency direction rules:
@@ -255,7 +283,7 @@ Non-goals for this architecture step:
 - Do not implement full-screen TUI behavior yet.
 - Do not implement provider calls, tool execution, permission storage, or event
   streaming here.
-- Do not add dependencies or change `app/codegeist` code in this documentation
+- Do not add dependencies or change `app/codegeist/cli` code in this documentation
   task.
 - Do not decide the final MVP command list here; that belongs to `T001_22` and
   implementation backlog tasks.
@@ -831,7 +859,7 @@ Open questions:
 
 Non-goals for this architecture step:
 
-- Do not add Spring AI dependencies or change `app/codegeist/pom.xml` here.
+- Do not add Spring AI dependencies or change `app/codegeist/cli/pom.xml` here.
 - Do not implement provider calls, credentials, model listing, or tool calling.
 - Do not define final config file syntax.
 - Do not expose provider behavior in CLI/server/Vaadin clients yet.
@@ -1496,7 +1524,7 @@ candidates only; it does not create `T002+` task files automatically.
 
 | Order | Backlog candidate | Outcome | Target areas | Verification idea | Maps to MVP/risk |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Align build baseline | Move `app/codegeist` toward Spring Boot `3.5.x` and Spring AI `1.1.x` compatibility while preserving Java/GraalVM posture | `app/codegeist/pom.xml`, Taskfile/tests | `task test` or Maven test/build | Baseline compatibility risks. |
+| 1 | Align build baseline | Move `app/codegeist/cli` toward Spring Boot `3.5.x` and Spring AI `1.1.x` compatibility while preserving Java/GraalVM posture | `app/codegeist/cli/pom.xml`, Taskfile/tests | `task test` or Maven test/build | Baseline compatibility risks. |
 | 2 | Introduce runtime/session/event contracts | Add minimal Java packages and tests for runtime request, sessions, turns, message parts, and events | `ai.codegeist.runtime`, `session`, `event` | Unit tests for create/append/event sequence | Runtime, session, event MVP. |
 | 3 | Add deterministic context loading slice | Load rules, memory, active task/docs, and focused source snippets with a context manifest | `context`, `workspace` | Context manifest test with fixture workspace | Context MVP and workspace risk. |
 | 4 | Add provider configuration and one Spring AI path | Configure and smoke one provider with streaming mapped to events | `provider`, config docs/tests | Provider streaming smoke with safe test config | Provider risk and model MVP. |

@@ -76,7 +76,7 @@ open compatibility questions.
 
 ## Verification
 
-- Compare against current `app/codegeist` native Maven profile.
+- Compare against current `app/codegeist/cli` native Maven profile.
 
 ## Verification Result
 

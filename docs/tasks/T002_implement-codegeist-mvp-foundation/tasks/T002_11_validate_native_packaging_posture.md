@@ -29,8 +29,8 @@ some provider integrations may remain JVM-first until proven.
 
 ## Scope
 
-- `app/codegeist/pom.xml`
-- `app/codegeist/Taskfile.yml`
+- `app/codegeist/cli/pom.xml`
+- `app/codegeist/cli/Taskfile.yml`
 - GraalVM native profile verification notes
 - docs only if native/JVM-only posture changes
 

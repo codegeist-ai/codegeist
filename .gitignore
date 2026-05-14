@@ -2,6 +2,8 @@
 /.worktrees/
 /app/codegeist/.settings/
 /app/codegeist/target/
+/app/codegeist/cli/.settings/
+/app/codegeist/cli/target/
 **/bin/**
 *.log
 *.project

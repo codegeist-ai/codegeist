@@ -45,7 +45,7 @@ Every mapping should preserve these boundaries:
 
 ## Out Of Scope
 
-- Changing `app/codegeist/pom.xml`.
+- Changing `app/codegeist/cli/pom.xml`.
 - Adding dependencies.
 - Implementing CLI, TUI, provider, tool, plugin, server, Vaadin, or JBang
   behavior.

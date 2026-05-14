@@ -16,7 +16,7 @@ Use this rule when creating, reading, or updating
 ## What Belongs In `architecture.md`
 
 - Current implemented system structure.
-- Current Java/Spring Boot application layout under `app/codegeist`.
+- Current Java/Spring Boot CLI application layout under `app/codegeist/cli`.
 - Current Maven, Spring Boot, Spring Shell, Spring AI BOM, Java, GraalVM, and
   Taskfile build posture.
 - Implemented packages, classes, configuration files, tests, and entrypoints.

@@ -134,7 +134,7 @@ Codegeist policy without exposing raw Spring AI tool execution directly.
 
 ## Non-Goals
 
-- Do not add Spring AI dependencies or change `app/codegeist/pom.xml` here.
+- Do not add Spring AI dependencies or change `app/codegeist/cli/pom.xml` here.
 - Do not implement provider calls, credentials, model listing, or tool calling.
 - Do not define final config file syntax.
 - Do not expose provider behavior in CLI/server/Vaadin clients yet.

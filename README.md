@@ -18,7 +18,7 @@ The repository now contains the first runnable application bootstrap for that
 vision:
 
 - a compose-based devcontainer setup mounted from the `.devcontainer/` submodule
-- a Spring Boot application under `app/codegeist` built in the devcontainer with Java 25 and GraalVM Community 25
+- a Spring Boot CLI application under `app/codegeist/cli` built in the devcontainer with Java 25 and GraalVM Community 25
 - a Spring Shell bootstrap application with the built-in shell commands enabled
 - a GraalVM native-image Maven profile prepared for the next build step
 - repo-local agent workflow rules, commands, and configuration
@@ -43,14 +43,14 @@ Key properties:
 ## Repository Layout
 
 - `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
-- `app/codegeist/` - Spring Boot bootstrap application, Maven project files, and local `Taskfile.yml`
+- `app/codegeist/cli/` - Spring Boot CLI bootstrap application, Maven project files, and local `Taskfile.yml`
 - `docs/memory-bank/chat.md` - lightweight project memory for the repository
 - `README.md` - project overview
 
 ## Application Bootstrap
 
 The first application milestone is an executable Spring Boot jar that can be
-built and started inside `app/codegeist/` with:
+built and started inside `app/codegeist/cli/` with:
 
 ```bash
 task run
@@ -59,7 +59,7 @@ task run
 From the repository root, the equivalent command is:
 
 ```bash
-task -t app/codegeist/Taskfile.yml run
+task -t app/codegeist/cli/Taskfile.yml run
 ```
 
 To build a GraalVM native executable instead, use:
@@ -71,16 +71,16 @@ task native
 From the repository root:
 
 ```bash
-task -t app/codegeist/Taskfile.yml native
+task -t app/codegeist/cli/Taskfile.yml native
 ```
 
 What this does:
 
-1. builds `app/codegeist/target/codegeist.jar`
+1. builds `app/codegeist/cli/target/codegeist.jar`
 2. starts the Spring Shell application
 3. exposes the built-in shell commands such as `help`, `version`, and `quit`
 
-The native build writes the executable to `app/codegeist/target/codegeist`.
+The native build writes the executable to `app/codegeist/cli/target/codegeist`.
 
 Implementation notes:
 
@@ -90,7 +90,7 @@ Implementation notes:
 - the Maven build already includes a `native` profile with the GraalVM native
   build tools for the later native-image step
 - the application currently relies on the built-in Spring Shell commands only
-- the runtime configuration lives in `app/codegeist/src/main/resources/application.yaml`
+- the runtime configuration lives in `app/codegeist/cli/src/main/resources/application.yaml`
 
 ## Getting Started
 
@@ -100,8 +100,8 @@ Implementation notes:
 3. Let `.devcontainer/initialize.sh` create root `.local.env`,
    `compose.local.yml`, and the generated compose overlay when they are missing.
 4. Verify that `java -version` and `native-image --version` work inside the workspace.
-5. Run `task -t app/codegeist/Taskfile.yml run` from the repo root, or `task run` inside `app/codegeist/`.
-6. Run `java -jar app/codegeist/target/codegeist.jar help` to verify the built-in shell commands are available.
+5. Run `task -t app/codegeist/cli/Taskfile.yml run` from the repo root, or `task run` inside `app/codegeist/cli/`.
+6. Run `java -jar app/codegeist/cli/target/codegeist.jar help` to verify the built-in shell commands are available.
 
 If the repository was cloned without `--recurse-submodules`, Git does not let the
 repository force that clone behavior afterward. Run

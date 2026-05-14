@@ -36,7 +36,7 @@ backlog tasks by default, or pull later-stage clients into the first release.
 
 ## Implementation-Readiness Questions
 
-- Can the MVP be implemented incrementally from current `app/codegeist`?
+- Can the MVP be implemented incrementally from current `app/codegeist/cli`?
 - Does every MVP feature map to an existing architecture section?
 - Does every MVP side effect have permission and workspace coverage?
 - Is the MVP small enough for the next three to five implementation tasks?

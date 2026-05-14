@@ -14,8 +14,8 @@ For target architecture and future design decisions, see
 
 ## Current System State
 
-Codegeist currently contains one Java/Spring Boot application under
-`app/codegeist`. The implemented runtime behavior is limited to Spring Boot
+Codegeist currently contains one Java/Spring Boot CLI application under
+`app/codegeist/cli`. The implemented runtime behavior is limited to Spring Boot
 application startup. Spring Shell is present as a dependency and configuration
 surface, but no shell commands are implemented yet.
 
@@ -26,11 +26,11 @@ application code yet.
 
 ## Build Baseline
 
-The current application build is defined by `app/codegeist/pom.xml`.
+The current application build is defined by `app/codegeist/cli/pom.xml`.
 
 | Area | Current state |
 | --- | --- |
-| Module shape | Single Maven module under `app/codegeist` |
+| Module shape | Single Maven module under `app/codegeist/cli` |
 | Group/artifact | `ai.codegeist:codegeist` |
 | Java | `25` through `java.version` and `maven.compiler.release` |
 | Spring Boot | Parent `spring-boot-starter-parent` `3.5.14` |
@@ -46,7 +46,7 @@ dependency-management posture for later provider work.
 ## Implemented File Layout
 
 ```text
-app/codegeist/
+app/codegeist/cli/
   pom.xml
   Taskfile.yml
   src/main/java/ai/codegeist/app/CodegeistApplication.java
@@ -83,7 +83,7 @@ The current implemented component graph is intentionally small.
 ```mermaid
 flowchart LR
     User[User or task command]
-    Taskfile[app/codegeist/Taskfile.yml]
+    Taskfile[app/codegeist/cli/Taskfile.yml]
     Maven[Maven]
     App[Spring Boot app]
     Test[Context-load test]
@@ -160,7 +160,7 @@ native-image compatibility, or packaging output.
 
 ## Taskfile Verification Flow
 
-`app/codegeist/Taskfile.yml` provides the current developer entrypoints.
+`app/codegeist/cli/Taskfile.yml` provides the current developer entrypoints.
 
 | Task | Command | Proves |
 | --- | --- | --- |
@@ -181,7 +181,7 @@ flowchart TD
 
 ## Configuration
 
-`app/codegeist/src/main/resources/application.yaml` currently contains only the
+`app/codegeist/cli/src/main/resources/application.yaml` currently contains only the
 application name and Spring Shell interactive setting:
 
 ```yaml

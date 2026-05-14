@@ -40,7 +40,7 @@ specification task list.
 
 | Child task | Primary source tasks | Purpose |
 | --- | --- | --- |
-| `T002_01` | `T001_01`, `T001_20`, `T001_24`, `T001_25` | Align build/dependency baseline. |
+| `T002_01` | `T001_01`, `T001_20`, `T001_24`, `T001_25` | Align build/dependency and CLI layout baseline. |
 | `T002_02` | `T001_02`, `T001_03` | Establish package vocabulary before behavior. |
 | `T002_03` | `T001_03`, `T001_05`, `T001_06`, `T001_07`, `T001_22`, `T001_23` | Add runtime/session/event contracts. |
 | `T002_04` | `T001_04`, `T001_05`, `T001_22`, `T001_23` | Wire CLI commands to runtime modes. |
@@ -67,8 +67,8 @@ tasks that benefit from targeted OpenCode source evidence.
 
 ## Scope
 
-- Align the `app/codegeist` build with the selected Spring Boot `3.5.x`, Spring
-  AI `1.1.x`, Java `25`, Spring Shell, Maven, and GraalVM posture.
+- Align the `app/codegeist/cli` build with the selected Spring Boot `3.5.x`,
+  Spring AI `1.1.x`, Java `25`, Spring Shell, Maven, and GraalVM posture.
 - Introduce initial Codegeist-owned Java package boundaries and vocabulary
   contracts after the build baseline is solved.
 - Implement core runtime/session/event, CLI mode, context, provider, tool,
@@ -112,6 +112,9 @@ tasks that benefit from targeted OpenCode source evidence.
 - Dependency order is explicit enough to start with `T002_01`, continue through
   vocabulary and runtime contracts, and defer extension/client surfaces behind
   readiness gates.
+- `T002_01` now includes the narrow CLI layout baseline: the current Spring Boot
+  CLI Maven project lives under `app/codegeist/cli` before follow-up tasks add
+  runtime vocabulary or later server/deployment surfaces.
 
 ## Creation Note
 

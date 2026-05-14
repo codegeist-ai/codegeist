@@ -97,7 +97,7 @@ Define these entrypoint classes:
 - Do not implement full-screen TUI behavior.
 - Do not implement provider calls, tool execution, permission storage, or event
   streaming.
-- Do not add dependencies or change `app/codegeist` code in this task.
+- Do not add dependencies or change `app/codegeist/cli` code in this task.
 - Do not decide final MVP command list; that belongs to `T001_22` and backlog
   tasks.
 
@@ -126,7 +126,7 @@ Add `## CLI And Shell Architecture` to
 
 ## Verification
 
-- Review current `app/codegeist` Spring Shell bootstrap assumptions.
+- Review current `app/codegeist/cli` Spring Shell bootstrap assumptions.
 - Confirm the parity document keeps this task documentation-only and does not
   require immediate command implementation.
 
@@ -147,7 +147,7 @@ Shell-first decision, OpenCode reference behaviors, Codegeist entrypoint matrix,
 command categories, runtime boundary rules, streaming and approval expectations,
 and explicit non-goals.
 
-No user decision is pending. The current `app/codegeist` application is still a
+No user decision is pending. The current `app/codegeist/cli` application is still a
 minimal Spring Boot bootstrap with the Spring Shell starter dependency and no
 implemented shell commands, so the documented CLI contract remains
 documentation-only and does not require command implementation, dependency
