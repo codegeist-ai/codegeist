@@ -1,4 +1,4 @@
-# T002_05 Add Context Workspace Manifest Slice
+# T002_05 Describe Context Workspace Manifest Slice
 
 Parent: `T002_implement-codegeist-mvp-foundation`
 
@@ -6,8 +6,9 @@ Sources: `T001_11`, `T001_14`, `T001_22`, `T001_23`
 
 ## Goal
 
-Implement a deterministic context-loading slice that reads safe repo-local inputs
-through a workspace boundary and produces an explainable context manifest.
+Describe a deterministic context-loading contract that reads safe repo-local
+inputs through a workspace boundary and produces an explainable context manifest,
+without adding Java source yet.
 
 ## Context
 
@@ -18,38 +19,50 @@ safety.
 
 ## Concrete Solution
 
-1. Add a workspace service contract for root identity, canonical path validation,
-   generated/ignored posture, and read eligibility.
-2. Add a context loader that can include selected rules, memory, active task docs,
-   developer docs, and explicitly requested source snippets.
-3. Produce a context manifest listing included sources, skipped sources, reasons,
-   and ordering.
-4. Keep Graphify/Repomix outputs on-demand by path, not automatically loaded.
-5. Add fixture-based tests for deterministic ordering, skipped generated paths,
-   missing optional docs, and manifest content.
+1. Create or update `docs/developer/context-workspace-manifest.md` as the future
+   context/workspace contract blueprint.
+2. Define the workspace service responsibilities for root identity, canonical path
+   validation, generated/ignored posture, secret-like path posture, symlink escape
+   handling, missing paths, and read eligibility.
+3. Define the context loader request shape for selected rules, memory, active task
+   docs, developer docs, third-party artifacts by explicit path, and source
+   snippets by explicit path.
+4. Define the context manifest fields for included sources, skipped sources,
+   reasons, ordering, summaries, sizes, redaction status, and warnings.
+5. Document deterministic source ordering and why Graphify/Repomix outputs remain
+   on-demand references rather than automatic context.
+6. Include future file maps, class/sequence diagrams, and illustrative Java
+   snippets in markdown only.
 
 ## Scope
 
-- `ai.codegeist.context`
-- `ai.codegeist.workspace`
-- test fixtures under `app/codegeist/cli/src/test/resources/` when needed
-- focused context/workspace tests
+- `docs/developer/context-workspace-manifest.md`
+- `docs/developer/README.md` if a new developer document is added
+- `docs/developer/architecture.md` only to keep current-state notes accurate
+- this task file
 
 ## Acceptance Criteria
 
-- Context loading is deterministic and explainable through a manifest.
-- Workspace validation is centralized and used before file reads.
-- Rules, memory, tasks, and docs can be selected without loading heavy generated
-  artifacts by default.
-- Tests cover ordering and skip reasons.
+- Context loading is specified as deterministic and explainable through a
+  manifest.
+- Workspace validation responsibilities are centralized and described as a
+  prerequisite before future file reads.
+- Rules, memory, tasks, developer docs, third-party artifacts, and source snippets
+  have explicit selection posture and ordering.
+- Skip reasons cover generated, ignored, heavy, missing optional, outside-root,
+  symlink escape, secret-like, and unsupported source cases.
+- Future implementation tests are described, but no Java source, test fixtures, or
+  package directories are created by this task.
 - No provider calls, embeddings, RAG, Graphify, Repomix, or tool execution occurs.
 
 ## Verification
 
 ```bash
-task test
 git --no-pager diff --check
 ```
+
+`task test` is not required unless Java source or build files change. This task is
+a documentation and diagram slice.
 
 ## Dependencies
 
@@ -58,6 +71,8 @@ git --no-pager diff --check
 
 ## Non-Goals
 
+- Do not create Java source files, empty package directories, test fixtures, or
+  contract tests.
 - Do not implement embeddings, indexing, LSP, graph generation, or token-budget
   optimization.
 - Do not mutate workspace state.
@@ -65,7 +80,13 @@ git --no-pager diff --check
 ## Open Questions
 
 - Which initial command or runtime request should pass the active task path to the
-  context loader?
+   context loader?
+
+## Specification Decision
+
+- This task is documentation-only by user decision. It should leave a precise
+  handoff for a later implementation task instead of creating `ai.codegeist.context`
+  or `ai.codegeist.workspace` source packages now.
 
 ## Dependency Impact Notes
 
@@ -88,4 +109,4 @@ git --no-pager diff --check
 Status: open.
 
 Derived by grouping workspace/file-access and context-loading architecture into
-one independently testable implementation slice.
+one independently reviewable documentation/specification slice.

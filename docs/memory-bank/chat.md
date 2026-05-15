@@ -65,14 +65,12 @@
   been checked with `/specify-task` and solved with `/solve-task`. Each child
   task now has a `Solution Note` that points to the corresponding section in
   `docs/developer/codegeist-opencode-parity.md`.
-- `docs/tasks/T002_implement-codegeist-mvp-foundation/` is the active
-  implementation parent for the first Codegeist MVP foundation work. It contains
-  `T002_01_align-codegeist-build-baseline.md` from `T001_01` and
-  `T002_02_introduce-runtime-vocabulary-contracts.md` from `T001_02`, plus
-  grouped implementation slices through `T002_12` for runtime/session/events,
-  CLI mode wiring, context/workspace loading, provider configuration,
-  tool/permission/workspace contracts, patch/edit, shell verification, storage,
-  native packaging, and later extension/client readiness gates.
+- `docs/tasks/T002_implement-codegeist-mvp-foundation/` is the active foundation
+  specification parent for the first Codegeist MVP work. `T002_01` remains the
+  completed build/layout baseline exception. `T002_02` and later are
+  documentation/specification slices, not Java implementation tasks: they should
+  define developer docs, diagrams, future file maps, contract sketches, and
+  handoff checklists before later implementation tasks are created.
 - The T002 parent and all `T002_*` child tasks have been rechecked with
   `/specify-task` semantics after adding parent default hints. Each task now has a
   `Specification Check Result` clarifying scope, dependencies, OpenCode source
@@ -116,6 +114,11 @@
   a future acceptance checklist. It intentionally created no Java source, tests,
   packages, or build changes. Finalization confirmed that `T002_05` still owns
   active-task path, context-source, and workspace-policy decisions.
+- By user decision, the remaining open `T002_05` through `T002_12` tasks have been
+  reframed as documentation/specification slices. They must not create Java source
+  files, tests, empty package directories, provider calls, tool execution,
+  Graphify/Repomix runs, storage adapters, process executors, or runtime behavior
+  unless explicitly reopened as implementation work.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -211,7 +214,7 @@
 
 ## Open Points
 
-- The next useful step is to continue with
-  `T002_05_add_context_workspace_manifest_slice.md`, using the finalized `T002_04`
-  boundary that CLI prompt-mode wiring does not choose active task paths or
-  context sources.
+- The next useful step is to solve
+  `T002_05_add_context_workspace_manifest_slice.md` as a documentation-only
+  specification, using the finalized `T002_04` boundary that CLI prompt-mode
+  wiring does not choose active task paths or context sources.

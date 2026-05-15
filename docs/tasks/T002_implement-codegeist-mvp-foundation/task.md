@@ -5,9 +5,11 @@
 Create the first implementation foundation for the Codegeist MVP from the
 completed OpenCode parity architecture.
 
-This parent task groups the narrow implementation slices that must happen before
-runtime behavior, provider calls, tools, permissions, UI, plugins, or storage are
-implemented.
+This parent task groups the narrow foundation slices that must be specified
+before runtime behavior, provider calls, tools, permissions, UI, plugins, or
+storage are implemented. `T002_01` is the completed build/layout baseline
+exception; the remaining child tasks are documentation and specification handoff
+slices, not Java implementation tasks.
 
 ## Context
 
@@ -34,9 +36,10 @@ is added.
 
 ## Derivation Map
 
-The child tasks are grouped implementation slices derived from the completed
-`T001` architecture tasks. They are intentionally not a one-to-one copy of the
-specification task list.
+The child tasks are grouped foundation slices derived from the completed `T001`
+architecture tasks. They are intentionally not a one-to-one copy of the
+specification task list. After the completed `T002_01` build/layout baseline,
+the remaining slices are documentation-first specifications.
 
 | Child task | Primary source tasks | Purpose |
 | --- | --- | --- |
@@ -44,11 +47,11 @@ specification task list.
 | `T002_02` | `T001_02`, `T001_03` | Document runtime vocabulary before behavior. |
 | `T002_03` | `T001_03`, `T001_05`, `T001_06`, `T001_07`, `T001_22`, `T001_23` | Add runtime/session/event contracts. |
 | `T002_04` | `T001_04`, `T001_05`, `T001_22`, `T001_23` | Wire CLI commands to runtime modes. |
-| `T002_05` | `T001_11`, `T001_14`, `T001_22`, `T001_23` | Add context loading through workspace policy. |
-| `T002_06` | `T001_08`, `T001_20`, `T001_22`, `T001_24` | Add provider configuration and Spring AI adapter boundary. |
-| `T002_07` | `T001_09`, `T001_10`, `T001_11`, `T001_22`, `T001_24` | Add tool/permission/workspace contracts. |
-| `T002_08` | `T001_13`, `T001_10`, `T001_11`, `T001_22`, `T001_24` | Add patch/edit proposal flow. |
-| `T002_09` | `T001_12`, `T001_10`, `T001_11`, `T001_22`, `T001_24` | Add controlled shell verification tool. |
+| `T002_05` | `T001_11`, `T001_14`, `T001_22`, `T001_23` | Describe context loading through workspace policy. |
+| `T002_06` | `T001_08`, `T001_20`, `T001_22`, `T001_24` | Describe provider configuration and Spring AI adapter boundary. |
+| `T002_07` | `T001_09`, `T001_10`, `T001_11`, `T001_22`, `T001_24` | Describe tool/permission/workspace contracts. |
+| `T002_08` | `T001_13`, `T001_10`, `T001_11`, `T001_22`, `T001_24` | Describe patch/edit proposal flow. |
+| `T002_09` | `T001_12`, `T001_10`, `T001_11`, `T001_22`, `T001_24` | Describe controlled shell verification tool. |
 | `T002_10` | `T001_19`, `T001_06`, `T001_07`, `T001_22`, `T001_24` | Decide minimal storage ports. |
 | `T002_11` | `T001_20`, `T001_01`, `T001_24`, `T001_25` | Validate JVM/native packaging posture. |
 | `T002_12` | `T001_15`, `T001_16`, `T001_17`, `T001_18`, `T001_21`, `T001_22`, `T001_24` | Define later extension/client readiness gates. |
@@ -67,21 +70,28 @@ tasks that benefit from targeted OpenCode source evidence.
 
 ## Scope
 
-- Align the `app/codegeist/cli` build with the selected Spring Boot `3.5.x`,
-  Spring AI `1.1.x`, Java `25`, Spring Shell, Maven, and GraalVM posture.
+- Keep the completed `app/codegeist/cli` build baseline with the selected Spring
+  Boot `3.5.x`, Spring AI `1.1.x`, Java `25`, Spring Shell, Maven, and GraalVM
+  posture as historical foundation state.
 - Document initial Codegeist-owned runtime vocabulary and boundary direction
   after the build baseline is solved.
-- Implement core runtime/session/event, CLI mode, context, provider, tool,
+- Specify core runtime/session/event, CLI mode, context, provider, tool,
   permission, workspace, patch/edit, shell, storage, and packaging foundation
-  slices in dependency order.
+  slices in dependency order through developer documentation, diagrams, future
+  file maps, and illustrative Java examples in markdown.
 - Keep PF4J, JBang, server, and Vaadin as readiness-gated later surfaces until
   the CLI/runtime foundation is validated.
 - Keep each child task independently verifiable and small enough for `/solve-task`.
+  For `T002_02` and later, verification should stay documentation-focused unless
+  a task is explicitly reopened as an implementation task.
 
 ## Non-Goals
 
 - Do not implement provider calls, tools, permissions, storage, server APIs,
   Vaadin views, PF4J plugins, or JBang execution in this parent task.
+- Do not add Java source files, empty package directories, contract tests, or
+  runtime behavior for `T002_02` and later child tasks unless the user explicitly
+  reopens a child task as implementation work.
 - Do not collapse child tasks into one broad implementation pass.
 - Do not split Maven modules before the runtime boundaries are stable.
 

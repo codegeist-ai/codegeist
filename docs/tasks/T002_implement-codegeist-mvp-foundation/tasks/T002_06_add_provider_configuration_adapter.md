@@ -1,4 +1,4 @@
-# T002_06 Add Provider Configuration Adapter
+# T002_06 Describe Provider Configuration Adapter
 
 Parent: `T002_implement-codegeist-mvp-foundation`
 
@@ -6,8 +6,9 @@ Sources: `T001_08`, `T001_20`, `T001_22`, `T001_24`
 
 ## Goal
 
-Add the first Codegeist provider configuration and Spring AI adapter boundary
-without broad provider parity or tool-calling behavior.
+Describe the first Codegeist provider configuration and Spring AI adapter
+boundary without adding provider code, broad provider parity, or tool-calling
+behavior.
 
 ## Context
 
@@ -17,38 +18,46 @@ The architecture calls for one verified provider path before broad provider work
 
 ## Concrete Solution
 
-1. Add provider config records/properties for provider id, model id, credential
-   source reference, capabilities, and verification status.
-2. Add a Spring AI adapter boundary that can be wired later to one provider path
-   without exposing Spring AI types to runtime/session contracts.
-3. Add a safe validation or dry-run path that reports missing configuration as a
-   typed provider error, not a raw SDK exception.
-4. Add tests for config binding, missing credentials, capability classification,
-   and runtime-facing typed errors.
-5. Defer live network calls unless a safe local/test provider path exists.
+1. Create or update `docs/developer/provider-configuration-contracts.md` as the
+   future provider configuration and adapter blueprint.
+2. Define future provider config records/properties for provider id, model id,
+   credential source reference, capabilities, and verification status.
+3. Define a Spring AI adapter boundary that can be wired later to one provider
+   path without exposing Spring AI types to runtime/session contracts.
+4. Define safe validation or dry-run behavior that reports missing configuration
+   as typed provider errors, not raw SDK exceptions.
+5. Document future tests for config binding, missing credentials, capability
+   classification, and runtime-facing typed errors.
+6. Include OpenCode source evidence, future file maps, diagrams, and illustrative
+   Java snippets in markdown only.
 
 ## Scope
 
-- `ai.codegeist.provider`
-- application configuration classes/properties
-- provider-focused tests
-- documentation only if the chosen first provider differs from the architecture
+- `docs/developer/provider-configuration-contracts.md`
+- `docs/developer/README.md` if a new developer document is added
+- `docs/developer/architecture.md` only to keep current-state notes accurate
+- this task file
 
 ## Acceptance Criteria
 
-- Runtime-facing code depends on Codegeist provider contracts, not provider SDK
-  details.
-- Provider/model/capability configuration can be represented and validated.
-- Missing or invalid provider config produces typed errors.
+- Runtime-facing provider contracts are specified as Codegeist-owned and isolated
+  from provider SDK details.
+- Provider/model/capability configuration and validation posture are fully
+  described.
+- Missing or invalid provider config has typed error shapes in the blueprint.
 - No live model calls are required unless explicitly safe in the test setup.
 - Tool-calling exposure remains disabled until tool/permission contracts exist.
+- No Java source files, tests, provider starters, credentials, or package
+  directories are created by this task.
 
 ## Verification
 
 ```bash
-task test
 git --no-pager diff --check
 ```
+
+`task test` is not required unless Java source or build files change. This task is
+a documentation and diagram slice.
 
 ## Dependencies
 
@@ -58,6 +67,8 @@ git --no-pager diff --check
 
 ## Non-Goals
 
+- Do not create Java source files, empty package directories, provider tests, or
+  provider configuration classes.
 - Do not implement broad provider ecosystems, model listing, persistent secrets,
   or Spring AI tool callbacks.
 - Do not require network-dependent tests.
@@ -65,7 +76,13 @@ git --no-pager diff --check
 ## Open Questions
 
 - Which provider path should be verified first: OpenAI-compatible, Anthropic, or
-  local/Ollama-style?
+   local/Ollama-style?
+
+## Specification Decision
+
+- This task is documentation-only by user decision. It should leave a precise
+  handoff for a later provider implementation task instead of creating
+  `ai.codegeist.provider` source packages now.
 
 ## Specification Check Result
 
@@ -82,4 +99,4 @@ git --no-pager diff --check
 Status: open.
 
 Derived from provider architecture, GraalVM constraints, MVP cut, and risk
-register tasks as one provider-boundary implementation slice.
+register tasks as one provider-boundary documentation/specification slice.

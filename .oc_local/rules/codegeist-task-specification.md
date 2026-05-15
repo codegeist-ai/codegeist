@@ -14,9 +14,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 
 - Treat `T001` child tasks as documentation-first Codegeist/OpenCode parity
   architecture work unless a task explicitly asks for runtime implementation.
-- Start current MVP implementation work from
-  `T002_01_align-codegeist-build-baseline.md`, then continue through the `T002`
-  child tasks in dependency order.
+- Treat `T002_01_align-codegeist-build-baseline.md` as the completed build/layout
+  baseline exception. For `T002_02` and later, solve child tasks as
+  documentation/specification handoffs unless the user explicitly reopens a task
+  as implementation work.
 - For Codegeist architecture and implementation tasks, read
   `docs/developer/codegeist-opencode-parity.md` when the target task references
   OpenCode parity, runtime boundaries, provider behavior, tools, permissions,
@@ -24,8 +25,8 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - Use OpenCode as a feature and behavior reference, not as an implementation
   blueprint. Map decisions onto Codegeist's Java-first architecture: Java,
   GraalVM, Spring, Spring AI, Spring Shell, Vaadin, JBang, and PF4J.
-- For `T002` implementation tasks, the parent task declares default solve hints
-  for OpenCode translation and source-evidence workflows. Use those parent hints
+- For `T002` foundation tasks, the parent task declares default solve hints for
+  OpenCode translation and source-evidence workflows. Use those parent hints
   automatically through the shared hint discovery behavior.
 - For vocabulary or boundary slices, do not create empty Java package directories
   only to reserve names. Git does not version empty directories, and premature

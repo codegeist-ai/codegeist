@@ -1,4 +1,4 @@
-# T002_07 Add Tool Permission Workspace Contracts
+# T002_07 Describe Tool Permission Workspace Contracts
 
 Parent: `T002_implement-codegeist-mvp-foundation`
 
@@ -6,8 +6,9 @@ Sources: `T001_09`, `T001_10`, `T001_11`, `T001_22`, `T001_24`
 
 ## Goal
 
-Implement the first tool descriptor, tool request/result, permission request, and
-workspace validation contracts before concrete side-effecting tools exist.
+Describe the first tool descriptor, tool request/result, permission request, and
+workspace validation contracts before concrete side-effecting tools exist, without
+adding Java source yet.
 
 ## Context
 
@@ -18,38 +19,45 @@ these contracts instead of bypassing them.
 
 ## Concrete Solution
 
-1. Add `ToolDescriptor`, `ToolRequest`, `ToolResult`, `ToolFailure`, capability
-   category, and result summary contracts.
-2. Add `PermissionRequest`, `PermissionDecision`, decision scope, and audit
-   metadata contracts.
-3. Connect tool request evaluation to mode compatibility and permission need, but
-   do not execute concrete file/shell/network actions.
-4. Use workspace validation contracts for path-scoped requests.
-5. Add tests for mode denial, permission-required decisions, allowed read-only
-   descriptors, and workspace path validation calls.
+1. Create or update `docs/developer/tool-permission-workspace-contracts.md` as
+   the future tool, permission, and workspace contract blueprint.
+2. Define future `ToolDescriptor`, `ToolRequest`, `ToolResult`, `ToolFailure`,
+   capability category, and result summary shapes.
+3. Define future `PermissionRequest`, `PermissionDecision`, decision scope, and
+   audit metadata shapes.
+4. Describe mode compatibility, permission need, and workspace validation flow
+   without executing concrete file, shell, or network actions.
+5. Document future tests for mode denial, permission-required decisions,
+   read-only descriptors, and workspace path validation calls.
+6. Include OpenCode source evidence, future file maps, diagrams, and illustrative
+   Java snippets in markdown only.
 
 ## Scope
 
-- `ai.codegeist.tool`
-- `ai.codegeist.permission`
-- `ai.codegeist.workspace`
-- `ai.codegeist.event` references only through contracts
-- focused tests
+- `docs/developer/tool-permission-workspace-contracts.md`
+- `docs/developer/README.md` if a new developer document is added
+- `docs/developer/architecture.md` only to keep current-state notes accurate
+- this task file
 
 ## Acceptance Criteria
 
-- Tool descriptors can be classified before execution.
-- Permission approval cannot override mode-denied capabilities.
-- Workspace-scoped tool requests require centralized path validation.
-- Tool results can be summarized without unbounded output in session contracts.
-- Tests cover deny/allow/path-validation contract behavior.
+- Tool descriptors, permission decisions, workspace path validation, and event
+  metadata are specified as future contracts before execution.
+- Permission approval is specified as unable to override mode-denied capabilities.
+- Workspace-scoped tool requests are specified to require centralized path
+  validation.
+- Tool results are specified to summarize output without unbounded session data.
+- Future deny/allow/path-validation tests are described, but no Java source or
+  tests are created by this task.
 
 ## Verification
 
 ```bash
-task test
 git --no-pager diff --check
 ```
+
+`task test` is not required unless Java source or build files change. This task is
+a documentation and diagram slice.
 
 ## Dependencies
 
@@ -58,6 +66,7 @@ git --no-pager diff --check
 
 ## Non-Goals
 
+- Do not create Java source files, empty package directories, or contract tests.
 - Do not implement actual file edits, shell commands, network fetches, PF4J,
   JBang, LSP, or subagents.
 - Do not implement approval UI or persistent approval caches.
@@ -65,7 +74,13 @@ git --no-pager diff --check
 ## Open Questions
 
 - Should permission decisions be represented as events directly in this task or
-  only through event-ready metadata?
+   only through event-ready metadata?
+
+## Specification Decision
+
+- This task is documentation-only by user decision. It should leave a precise
+  handoff for a later implementation task instead of creating `ai.codegeist.tool`,
+  `ai.codegeist.permission`, or `ai.codegeist.workspace` source packages now.
 
 ## Specification Check Result
 
@@ -82,4 +97,4 @@ git --no-pager diff --check
 Status: open.
 
 Derived by grouping tool, permission, workspace, MVP, and risk-register tasks into
-one contract-first implementation slice.
+one contract-first documentation/specification slice.

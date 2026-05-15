@@ -1,4 +1,4 @@
-# T002_09 Add Controlled Shell Verification Tool
+# T002_09 Describe Controlled Shell Verification Tool
 
 Parent: `T002_implement-codegeist-mvp-foundation`
 
@@ -6,8 +6,8 @@ Sources: `T001_12`, `T001_10`, `T001_11`, `T001_22`, `T001_24`
 
 ## Goal
 
-Implement the first controlled shell verification tool contract for approved,
-bounded, non-destructive commands.
+Describe the first controlled shell verification tool contract for approved,
+bounded, non-destructive commands without adding a process executor yet.
 
 ## Context
 
@@ -17,38 +17,43 @@ explicit user intent.
 
 ## Concrete Solution
 
-1. Add shell command request/result contracts with argv or snippet, cwd, env
-   policy, timeout, stdin posture, output limit, exit code, and failure reason.
-2. Require Build mode, permission approval, workspace-validated cwd, and bounded
-   output before execution.
-3. Implement only a safe executor port or a minimal local executor for tests with
-   non-destructive commands.
-4. Add tests for Plan-mode denial, approval-required behavior, timeout/failure
-   result shape, output truncation metadata, and cwd validation.
+1. Create or update `docs/developer/shell-verification-contracts.md` as the
+   future controlled shell verification blueprint.
+2. Define future shell command request/result contracts with argv or snippet, cwd,
+   env policy, timeout, stdin posture, output limit, exit code, and failure
+   reason.
+3. Describe the required Build mode, permission approval, workspace-validated cwd,
+   and bounded output before execution.
+4. Document future tests for Plan-mode denial, approval-required behavior,
+   timeout/failure result shape, output truncation metadata, and cwd validation.
+5. Include OpenCode source evidence, future file maps, diagrams, and illustrative
+   Java snippets in markdown only.
 
 ## Scope
 
-- `ai.codegeist.tool` shell tool contracts
-- `ai.codegeist.permission`
-- `ai.codegeist.workspace`
-- optional process executor adapter if kept small and testable
-- focused tests
+- `docs/developer/shell-verification-contracts.md`
+- `docs/developer/README.md` if a new developer document is added
+- `docs/developer/architecture.md` only to keep current-state notes accurate
+- this task file
 
 ## Acceptance Criteria
 
-- Shell execution is represented as a permission-gated tool request.
-- Plan mode shell execution is denied by default.
+- Shell execution is specified as a permission-gated tool request.
+- Plan mode shell execution is specified as denied by default.
 - Command results include exit code, summary, output reference/truncation, and
-  typed failure information.
+  typed failure information in the blueprint.
 - Destructive commands are not inferred as safe from generic approval.
-- Tests cover non-destructive approved and denied paths.
+- Future non-destructive approved and denied tests are described, but no Java
+  source, tests, process runner, or executor port is created by this task.
 
 ## Verification
 
 ```bash
-task test
 git --no-pager diff --check
 ```
+
+`task test` is not required unless Java source or build files change. This task is
+a documentation and diagram slice.
 
 ## Dependencies
 
@@ -56,13 +61,21 @@ git --no-pager diff --check
 
 ## Non-Goals
 
+- Do not create Java source files, empty package directories, shell tests, process
+  executor ports, or local process runners.
 - Do not implement PTY, live terminal UI, remote execution, JBang execution,
   sandboxing, or broad command allowlists.
 
 ## Open Questions
 
 - Should the first implementation include a real process runner or only executor
-  contracts plus a fake test executor?
+   contracts plus a fake test executor?
+
+## Specification Decision
+
+- This task is documentation-only by user decision. It should leave a precise
+  handoff for a later shell-tool implementation task instead of creating shell
+  execution source packages now.
 
 ## Specification Check Result
 

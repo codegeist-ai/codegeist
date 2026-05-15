@@ -1,4 +1,4 @@
-# T002_08 Add Patch Edit Proposal Flow
+# T002_08 Describe Patch Edit Proposal Flow
 
 Parent: `T002_implement-codegeist-mvp-foundation`
 
@@ -6,8 +6,8 @@ Sources: `T001_13`, `T001_10`, `T001_11`, `T001_22`, `T001_24`
 
 ## Goal
 
-Implement the first reviewable patch/edit proposal and apply-result contracts for
-workspace-scoped file changes.
+Describe the first reviewable patch/edit proposal and apply-result contracts for
+workspace-scoped file changes without adding patch/edit implementation yet.
 
 ## Context
 
@@ -16,36 +16,41 @@ deferred as an explicit later exception for trusted built-ins only.
 
 ## Concrete Solution
 
-1. Add contracts for edit proposal, target file, patch hunk or text replacement,
-   apply request, apply result, and typed apply failure.
-2. Require permission and workspace validation before any apply contract can move
+1. Create or update `docs/developer/patch-edit-proposal-contracts.md` as the
+   future patch/edit proposal blueprint.
+2. Define future edit proposal, target file, patch hunk or text replacement,
+   apply request, apply result, and typed apply failure shapes.
+3. Describe permission and workspace validation before any apply contract can move
    from proposed to applied.
-3. Add tests for proposal construction, workspace-denied targets, conflict or
-   stale-file failure representation, and result summaries.
-4. Keep actual patch parsing/apply logic minimal or stubbed behind a port unless a
-   tiny safe implementation is needed for tests.
+4. Document future tests for proposal construction, workspace-denied targets,
+   conflict or stale-file failure representation, and result summaries.
+5. Include OpenCode source evidence, future file maps, diagrams, and illustrative
+   Java snippets in markdown only.
 
 ## Scope
 
-- `ai.codegeist.tool` patch/edit contracts
-- `ai.codegeist.workspace` integration points
-- `ai.codegeist.permission` integration points
-- focused tests
+- `docs/developer/patch-edit-proposal-contracts.md`
+- `docs/developer/README.md` if a new developer document is added
+- `docs/developer/architecture.md` only to keep current-state notes accurate
+- this task file
 
 ## Acceptance Criteria
 
-- File changes are represented as reviewable proposals before application.
+- File changes are specified as reviewable proposals before application.
 - Apply results include success, partial/failure, conflict, missing target, and
-  stale input concepts.
-- Permission and workspace gates are visible in the contract.
-- Tests cover proposal and failure shape without broad file mutation behavior.
+  stale input concepts in the blueprint.
+- Permission and workspace gates are visible in the documented contract.
+- Future proposal and failure-shape tests are described, but no Java source,
+  tests, or patch application behavior is created by this task.
 
 ## Verification
 
 ```bash
-task test
 git --no-pager diff --check
 ```
+
+`task test` is not required unless Java source or build files change. This task is
+a documentation and diagram slice.
 
 ## Dependencies
 
@@ -53,13 +58,21 @@ git --no-pager diff --check
 
 ## Non-Goals
 
+- Do not create Java source files, empty package directories, patch tests, patch
+  parser code, or apply logic.
 - Do not implement rollback, multi-file transactions, rich diff UI, formatter
   integration, or direct-write defaults.
 
 ## Open Questions
 
 - Which Java patch/diff library, if any, should be introduced after the contract
-  shape is stable?
+   shape is stable?
+
+## Specification Decision
+
+- This task is documentation-only by user decision. It should leave a precise
+  handoff for a later patch/edit implementation task instead of creating
+  patch/edit source packages now.
 
 ## Specification Check Result
 
@@ -74,5 +87,6 @@ git --no-pager diff --check
 
 Status: open.
 
-Derived from patch/edit architecture as a separate implementation slice because
-write safety and data-loss risk should not be mixed into generic tool contracts.
+Derived from patch/edit architecture as a separate documentation/specification
+slice because write safety and data-loss risk should not be mixed into generic
+tool contracts.

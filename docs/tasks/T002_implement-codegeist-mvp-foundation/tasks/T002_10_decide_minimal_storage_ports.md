@@ -1,4 +1,4 @@
-# T002_10 Decide Minimal Storage Ports
+# T002_10 Describe Minimal Storage Ports
 
 Parent: `T002_implement-codegeist-mvp-foundation`
 
@@ -6,8 +6,8 @@ Sources: `T001_19`, `T001_06`, `T001_07`, `T001_22`, `T001_24`
 
 ## Goal
 
-Choose and implement the minimal storage port shape needed for early CLI session
-continuation without committing to event sourcing or a database.
+Choose and describe the minimal storage port shape needed for early CLI session
+continuation without implementing storage, event sourcing, or a database.
 
 ## Context
 
@@ -18,40 +18,46 @@ workspace policy, or provider selection.
 
 ## Concrete Solution
 
-1. Decide whether the first implementation needs in-memory only or file-backed
-   session/config storage.
-2. Add storage port interfaces for sessions and optional audit/event projection
-   metadata.
-3. Provide an in-memory adapter first unless a file-backed continuation test is
-   explicitly selected.
-4. Add tests for save/load or in-memory lifecycle behavior, redaction boundaries,
-   and separation from runtime orchestration.
-5. Document the decision if file-backed storage is deferred.
+1. Create or update `docs/developer/storage-port-posture.md` as the future storage
+   posture and port blueprint.
+2. Decide whether the first implementation should be in-memory only or file-backed
+   for a narrow session-continuation reason.
+3. Define future storage port shapes for sessions and optional audit/event
+   projection metadata.
+4. Describe a future in-memory adapter first unless a file-backed continuation
+   reason is explicitly selected.
+5. Document future tests for save/load or in-memory lifecycle behavior, redaction
+   boundaries, and separation from runtime orchestration.
+6. Include OpenCode source evidence, future file maps, diagrams, and illustrative
+   Java snippets in markdown only.
 
 ## Scope
 
-- `ai.codegeist.storage`
-- `ai.codegeist.session` storage-facing ports
-- optional file-backed adapter only if selected
-- focused tests
+- `docs/developer/storage-port-posture.md`
+- `docs/developer/README.md` if a new developer document is added
 - `docs/developer/codegeist-opencode-parity.md` only if the storage decision
   changes architecture posture
+- `docs/developer/architecture.md` only to keep current-state notes accurate
+- this task file
 
 ## Acceptance Criteria
 
 - The initial storage posture is explicit: in-memory only or file-backed for a
   narrow reason.
-- Storage ports do not orchestrate runtime behavior.
+- Storage ports are specified as not owning runtime orchestration.
 - Sensitive data and credentials are not treated as ordinary session/tool output.
-- Tests prove the selected minimal persistence behavior.
+- Future tests for the selected minimal persistence behavior are described, but no
+  Java source, tests, or adapters are created by this task.
 - Event sourcing remains optional and unimplemented.
 
 ## Verification
 
 ```bash
-task test
 git --no-pager diff --check
 ```
+
+`task test` is not required unless Java source or build files change. This task is
+a documentation and diagram slice.
 
 ## Dependencies
 
@@ -60,13 +66,21 @@ git --no-pager diff --check
 
 ## Non-Goals
 
+- Do not create Java source files, empty package directories, storage tests,
+  storage ports, or adapters.
 - Do not implement database schemas, migrations, encryption, durable audit log,
   sharing, compaction, or event replay.
 
 ## Open Questions
 
 - Does the first CLI workflow need restart/continue behavior, or can it stay
-  in-memory until prompt execution works?
+   in-memory until prompt execution works?
+
+## Specification Decision
+
+- This task is documentation-only by user decision. It should leave a precise
+  handoff for a later storage implementation task instead of creating
+  `ai.codegeist.storage` or storage-facing session source packages now.
 
 ## Specification Check Result
 

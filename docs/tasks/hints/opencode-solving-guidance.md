@@ -27,10 +27,11 @@ implementation logs, or one-off decisions.
   `docs/developer/codegeist-opencode-parity.md`.
 - If a decision affects later `T001` child tasks, update those tasks in the same
   pass.
-- When a T002 slice is intentionally narrowed to documentation-only, solve it as
-  a detailed handoff: include concrete future file maps, boundary rules, sequence
-  or class diagrams, and realistic Java examples inside markdown, but do not add
-  source files, tests, empty packages, or build changes.
+- For `T002_02` and later foundation slices, solve them as detailed
+  documentation/specification handoffs unless the user explicitly reopens a slice
+  as implementation work: include concrete future file maps, boundary rules,
+  sequence or class diagrams, and realistic Java examples inside markdown, but do
+  not add source files, tests, empty packages, or build changes.
 - For documentation-only solve passes, keep current-state docs such as
   `docs/developer/architecture.md` accurate by not claiming planned packages or
   commands already exist.

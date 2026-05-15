@@ -1,4 +1,4 @@
-# T002_12 Define Extension And Client Readiness Gates
+# T002_12 Describe Extension And Client Readiness Gates
 
 Parent: `T002_implement-codegeist-mvp-foundation`
 
@@ -6,7 +6,7 @@ Sources: `T001_15`, `T001_16`, `T001_17`, `T001_18`, `T001_21`, `T001_22`, `T001
 
 ## Goal
 
-Create implementation-readiness gates for later PF4J, JBang, server, and Vaadin
+Describe implementation-readiness gates for later PF4J, JBang, server, and Vaadin
 work so the CLI/runtime MVP does not accidentally absorb later-stage scope.
 
 ## Context
@@ -19,21 +19,25 @@ architecture.
 
 ## Concrete Solution
 
-1. Add a short readiness document or task-local checklist that defines prerequisites
-   for PF4J, JBang, headless server, Vaadin, SDK/OpenAPI, and future TUI work.
+1. Create or update `docs/developer/extension-client-readiness-gates.md` as the
+   readiness-gate blueprint for PF4J, JBang, headless server, Vaadin, SDK/OpenAPI,
+   and future TUI work.
 2. Tie each gate to concrete core contracts: runtime API, session/event model,
    tool/permission/workspace contracts, storage posture, auth posture, and native
    compatibility posture.
 3. Identify which later surfaces are JVM-only until proven native-compatible.
-4. Do not add dependencies or implement adapters; this is a handoff/gate task for
+4. Include future task split guidance, diagrams if useful, and readiness
+   checklists in markdown only.
+5. Do not add dependencies or implement adapters; this is a handoff/gate task for
    later implementation work.
 
 ## Scope
 
-- `docs/developer/codegeist-opencode-parity.md` or a focused developer note if a
-  separate readiness checklist is clearer
-- no source implementation unless a tiny marker interface already exists and is
-  necessary to prevent naming drift
+- `docs/developer/extension-client-readiness-gates.md`
+- `docs/developer/README.md` if a new developer document is added
+- `docs/developer/codegeist-opencode-parity.md` only if readiness gates change
+  architecture decisions
+- this task file
 
 ## Acceptance Criteria
 
@@ -44,6 +48,9 @@ architecture.
 - Later surfaces stay deferred and do not block `T002_01` through `T002_11`.
 - Future implementation tasks can reference the gates instead of reopening broad
   architecture decisions.
+- No Java source files, marker interfaces, dependencies, adapters, tests, server
+  routes, Vaadin views, PF4J plugins, or JBang integrations are created by this
+  task.
 
 ## Verification
 
@@ -60,11 +67,19 @@ git --no-pager diff --check
 
 - Do not implement PF4J, JBang, server routes, Vaadin views, auth, SDK/OpenAPI,
   desktop, marketplace behavior, or a full-screen TUI.
+- Do not create Java source files, empty package directories, marker interfaces,
+  dependencies, adapters, or tests.
 
 ## Open Questions
 
 - Should readiness gates live in the parity architecture document or in a separate
-  developer note once implementation begins?
+   developer note once implementation begins?
+
+## Specification Decision
+
+- This task is documentation-only by user decision. It should leave a precise
+  readiness-gate handoff for later extension and client implementation tasks
+  instead of creating extension/client source packages now.
 
 ## Specification Check Result
 
@@ -81,5 +96,5 @@ git --no-pager diff --check
 Status: open.
 
 Derived by grouping the later-stage plugin/script/server/Vaadin/parity/risk tasks
-into one scope-control implementation-readiness task rather than creating one
-premature implementation task per deferred surface.
+into one scope-control readiness specification rather than creating one premature
+implementation task per deferred surface.
