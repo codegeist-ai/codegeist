@@ -14,8 +14,8 @@ implemented.
 `T001_define-codegeist-opencode-feature-architecture` completed the architecture
 and backlog definition for evolving Codegeist toward OpenCode feature parity. The
 first implementation work should validate the build baseline and establish
-Codegeist-owned Java vocabulary before deeper runtime/session/event behavior is
-added.
+Codegeist-owned runtime vocabulary before deeper runtime/session/event behavior
+is added.
 
 ## Child Tasks
 
@@ -41,7 +41,7 @@ specification task list.
 | Child task | Primary source tasks | Purpose |
 | --- | --- | --- |
 | `T002_01` | `T001_01`, `T001_20`, `T001_24`, `T001_25` | Align build/dependency and CLI layout baseline. |
-| `T002_02` | `T001_02`, `T001_03` | Establish package vocabulary before behavior. |
+| `T002_02` | `T001_02`, `T001_03` | Document runtime vocabulary before behavior. |
 | `T002_03` | `T001_03`, `T001_05`, `T001_06`, `T001_07`, `T001_22`, `T001_23` | Add runtime/session/event contracts. |
 | `T002_04` | `T001_04`, `T001_05`, `T001_22`, `T001_23` | Wire CLI commands to runtime modes. |
 | `T002_05` | `T001_11`, `T001_14`, `T001_22`, `T001_23` | Add context loading through workspace policy. |
@@ -69,8 +69,8 @@ tasks that benefit from targeted OpenCode source evidence.
 
 - Align the `app/codegeist/cli` build with the selected Spring Boot `3.5.x`,
   Spring AI `1.1.x`, Java `25`, Spring Shell, Maven, and GraalVM posture.
-- Introduce initial Codegeist-owned Java package boundaries and vocabulary
-  contracts after the build baseline is solved.
+- Document initial Codegeist-owned runtime vocabulary and boundary direction
+  after the build baseline is solved.
 - Implement core runtime/session/event, CLI mode, context, provider, tool,
   permission, workspace, patch/edit, shell, storage, and packaging foundation
   slices in dependency order.

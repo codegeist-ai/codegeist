@@ -10,7 +10,8 @@ Use it as the compact current-state map before changing Codegeist source,
 configuration, build, or verification behavior.
 
 For target architecture and future design decisions, see
-`docs/developer/codegeist-opencode-parity.md`.
+`docs/developer/codegeist-opencode-parity.md`. For the Codegeist-owned runtime
+vocabulary and boundary diagram, see `docs/developer/runtime-vocabulary.md`.
 
 ## Current System State
 
@@ -22,7 +23,8 @@ surface, but no shell commands are implemented yet.
 The repository also contains planning documentation for a broader coding-agent
 runtime. Those future runtime, session, event, provider, tool, permission,
 workspace, storage, extension, server, and UI concepts are not implemented in the
-application code yet.
+application code yet. Their current vocabulary and ownership boundaries are
+documented in `docs/developer/runtime-vocabulary.md`.
 
 ## Build Baseline
 
@@ -135,7 +137,8 @@ flowchart TD
 
 The dotted nodes are planned architecture concepts documented elsewhere. They are
 included here only to prevent coding agents from assuming those packages already
-exist.
+exist. The vocabulary and dependency direction for those concepts are documented
+in `docs/developer/runtime-vocabulary.md`.
 
 ## Test Architecture
 
@@ -227,6 +230,9 @@ future coding agents can distinguish current code from future architecture.
 
 - `docs/developer/codegeist-opencode-parity.md` records target architecture,
   OpenCode parity mapping, planned boundaries, MVP cut, risks, and backlog.
+- `docs/developer/runtime-vocabulary.md` records the Codegeist-owned runtime
+  vocabulary and boundary diagram without requiring Java packages or classes to
+  exist.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

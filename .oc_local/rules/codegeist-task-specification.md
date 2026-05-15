@@ -27,6 +27,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - For `T002` implementation tasks, the parent task declares default solve hints
   for OpenCode translation and source-evidence workflows. Use those parent hints
   automatically through the shared hint discovery behavior.
+- For vocabulary or boundary slices, do not create empty Java package directories
+  only to reserve names. Git does not version empty directories, and premature
+  classes can imply unstable contracts. Prefer a focused developer document or
+  diagram until a later task is ready to define behavior-free Java contracts.
 - When a Codegeist architecture decision affects later child tasks, update those
   task files in the same phase pass so dependencies, non-goals, acceptance
   criteria, and implementation-readiness questions stay current.

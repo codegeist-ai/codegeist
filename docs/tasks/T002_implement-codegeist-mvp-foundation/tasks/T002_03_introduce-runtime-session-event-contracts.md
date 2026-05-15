@@ -15,9 +15,10 @@ The architecture defines Runtime as the central orchestrator, Plan and Build as
 runtime modes, Session as the user-work aggregate, and RuntimeEvent as the shared
 observation contract for CLI now and later server/Vaadin clients.
 
-This task follows `T002_02`, which introduces vocabulary/package boundaries. It
-adds the first behavior-free but usable contracts needed by later prompt flow,
-provider, tool, permission, and storage tasks.
+This task follows `T002_02`, which documents the Codegeist-owned runtime
+vocabulary and boundary direction in `docs/developer/runtime-vocabulary.md`. It
+adds the first behavior-free but usable Java contracts needed by later prompt
+flow, provider, tool, permission, and storage tasks.
 
 ## Concrete Solution
 
@@ -61,6 +62,8 @@ git --no-pager diff --check
 ## Dependencies
 
 - Depends on `T002_01` and `T002_02`.
+- Use `docs/developer/runtime-vocabulary.md` as the naming and ownership
+  reference before creating Java packages or contracts.
 - Feeds context, provider, tool, permission, storage, and CLI prompt-flow tasks.
 
 ## Non-Goals

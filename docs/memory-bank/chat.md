@@ -57,9 +57,9 @@
   backlog.
 - `docs/developer/architecture.md` is the current-state architecture map for
   coding agents. It describes only what exists now in `app/codegeist/cli`,
-  including the single Maven module, Spring Boot entrypoint, configuration, context-load
-  test, Taskfile commands, current build baseline, and not-yet-implemented
-  boundaries.
+  including the single Maven module, Spring Boot entrypoint, configuration,
+  context-load test, Taskfile commands, current build baseline, and
+  not-yet-implemented boundaries.
 - All 25 child tasks under
   `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` have
   been checked with `/specify-task` and solved with `/solve-task`. Each child
@@ -83,6 +83,11 @@
   storage, model access, and deployment-artifact boundaries remain documented but
   not implemented. `task test`, `task build`, and `task native` pass from
   `app/codegeist/cli`.
+- `T002_02_introduce-runtime-vocabulary-contracts.md` is finalized as a
+  documentation and diagram slice. It created
+  `docs/developer/runtime-vocabulary.md` for Codegeist-owned runtime terms,
+  boundary direction, deferred surfaces, and non-ownership rules without creating
+  Java packages, classes, or empty directories.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -169,9 +174,12 @@
   `docs/third-party/opencode/source/`, especially provider, tool, MCP,
   permission, session, event, context, shell, patch/edit, extension, and storage
   tasks.
+- Codegeist vocabulary or boundary slices should not create empty Java package
+  directories just to reserve names. Use focused developer documentation or
+  diagrams until a later task is ready for behavior-free Java contracts.
 
 ## Open Points
 
-- The next useful step is to solve
-  `T002_02_introduce-runtime-vocabulary-contracts.md`, then continue through the
-  `T002` child tasks in dependency order.
+- The next useful step is to run `/plan-task` for
+  `T002_03_introduce-runtime-session-event-contracts.md`, using
+  `docs/developer/runtime-vocabulary.md` as the naming and ownership reference.

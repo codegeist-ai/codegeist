@@ -94,6 +94,11 @@ User
   -> Spring AI / Tools / Permissions / Context / Storage / Extensions
 ```
 
+The Codegeist-owned Runtime vocabulary and boundary diagram are maintained in
+`docs/developer/runtime-vocabulary.md`. That document is the compact reference
+for concept names and dependency direction before the corresponding Java
+contracts are implemented.
+
 ## Component Model And Module Boundaries
 
 Codegeist should start as one CLI Maven module under `app/codegeist/cli` for MVP
