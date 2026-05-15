@@ -11,7 +11,7 @@
 
 - `main` contains the current project state. `.opencode` is configured as a git
   submodule that tracks the `release` branch of `codegeist-agent-kit` and points
-  to `1da9126`.
+  to `c43c353`.
 - `.devcontainer/` is configured as a git submodule that tracks the `release`
   branch of `codegeist-devcontainer-kit` in `.gitmodules` and points to
   `35f46d9`.
@@ -101,6 +101,21 @@
   OpenCode-focused class diagrams for identity, session service, session events,
   session messages, sync/bus/projectors, and a concept reference table mapping
   each OpenCode implementation idea to the Codegeist blueprint.
+- `T002_04_wire_cli_prompt_mode_contract.md` is finalized as a documentation-only
+  solution-design slice with OpenCode reference
+  evidence for CLI/TUI prompt input, agent/mode selection, session prompt
+  delegation, and command-template boundaries. The relevant OpenCode files are
+  `cli/cmd/tui/thread.ts`, `config/config.ts`, `config/agent.ts`,
+  `agent/agent.ts`, `server/routes/instance/httpapi/groups/session.ts`,
+  `server/routes/instance/httpapi/handlers/session.ts`, and `session/prompt.ts`.
+  The Codegeist translation is a minimal Spring Shell adapter that maps explicit
+  Plan/Build input to runtime request contracts without owning provider, tool,
+  permission, storage, session lifecycle, or event behavior. The task now includes
+  a future file map, command-flow sequence, boundary rules, deep Java examples for
+  runtime records/ports, Spring Shell adapter examples, adapter test examples, and
+  a future acceptance checklist. It intentionally created no Java source, tests,
+  packages, or build changes. Finalization confirmed that `T002_05` still owns
+  active-task path, context-source, and workspace-policy decisions.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -180,19 +195,23 @@
   OpenCode-related `/solve-task` runs. It reminds solvers to use OpenCode as a
   feature reference rather than an implementation blueprint. Hint files are
   dynamic: when solving a task reveals reusable lessons, update them generically
-  without task-specific logs or narrow implementation details.
+  without task-specific logs or narrow implementation details. It now records the
+  documentation-only T002 handoff pattern: future file maps, boundary rules,
+  diagrams, and realistic Java examples in markdown without source/build changes.
 - `docs/tasks/hints/opencode-source-solving-guidance.md` is the source-focused
   hint for using `/ask-project opencode ...` and `/ask-project-repomix opencode
   ...` during solve passes that need evidence from
   `docs/third-party/opencode/source/`, especially provider, tool, MCP,
   permission, session, event, context, shell, patch/edit, extension, and storage
-  tasks.
+  tasks. It now tells CLI/prompt-flow tasks to separate adapter evidence from
+  runtime-owned behavior evidence.
 - Codegeist vocabulary or boundary slices should not create empty Java package
   directories just to reserve names. Use focused developer documentation or
   diagrams until a later task is ready for behavior-free Java contracts.
 
 ## Open Points
 
-- The next useful step is to run `/plan-task` for
-  `T002_04_wire_cli_prompt_mode_contract.md`, treating `T002_03` as a blueprint
-  rather than an implemented Java contract dependency.
+- The next useful step is to continue with
+  `T002_05_add_context_workspace_manifest_slice.md`, using the finalized `T002_04`
+  boundary that CLI prompt-mode wiring does not choose active task paths or
+  context sources.

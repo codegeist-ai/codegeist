@@ -27,6 +27,13 @@ implementation logs, or one-off decisions.
   `docs/developer/codegeist-opencode-parity.md`.
 - If a decision affects later `T001` child tasks, update those tasks in the same
   pass.
+- When a T002 slice is intentionally narrowed to documentation-only, solve it as
+  a detailed handoff: include concrete future file maps, boundary rules, sequence
+  or class diagrams, and realistic Java examples inside markdown, but do not add
+  source files, tests, empty packages, or build changes.
+- For documentation-only solve passes, keep current-state docs such as
+  `docs/developer/architecture.md` accurate by not claiming planned packages or
+  commands already exist.
 
 ## Non-Goals
 
@@ -34,6 +41,8 @@ implementation logs, or one-off decisions.
 - Do not treat OpenCode storage, SSE, Bus, or TypeScript schemas as mandatory
   Codegeist architecture.
 - Do not add runtime implementation unless the task explicitly asks for it.
+- Do not run `task test` for documentation-only solves unless Java, test, build,
+  or runtime files changed; `git --no-pager diff --check` is the required minimum.
 
 ## Example Usage
 

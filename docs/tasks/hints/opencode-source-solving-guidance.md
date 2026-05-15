@@ -29,6 +29,10 @@ OpenCode-to-Codegeist translation posture.
 - Translate findings into Codegeist's Java-first runtime boundaries: Spring,
   Spring AI, Spring Shell, Java domain contracts, workspace policy, permissions,
   events, PF4J, and JBang.
+- For CLI, prompt-flow, or client-adapter tasks, separate OpenCode adapter evidence
+  from runtime evidence: CLI/TUI/HTTP route files show input collection and
+  delegation, while session, agent, provider, tool, permission, and event files
+  show runtime-owned behavior that should usually stay out of the client slice.
 - Do not copy Bun, TypeScript, Hono, Effect, Solid, storage schemas, API routes,
   or package layout unless a later Codegeist decision explicitly chooses an
   equivalent concept.
@@ -43,6 +47,7 @@ Use focused questions like these during `/solve-task` runs:
 /ask-project opencode "How does permission approval flow from tool request to user decision to execution? Cite source files and diagram the sequence if useful."
 /ask-project opencode "How are sessions, message parts, and runtime events connected during a prompt run? Cite source files and create a sequence diagram if useful."
 /ask-project opencode "Where are MCP servers configured, connected, and exposed as tools? Cite source files and identify policy boundaries."
+/ask-project opencode "How does CLI, TUI, or HTTP input collect prompt, agent, model, session, and command data before delegating to session prompt handling? Cite adapter and runtime files separately."
 ```
 
 ## Diagram Guidance

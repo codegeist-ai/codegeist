@@ -67,6 +67,14 @@ git --no-pager diff --check
 - Which initial command or runtime request should pass the active task path to the
   context loader?
 
+## Dependency Impact Notes
+
+- Finalized `T002_04_wire_cli_prompt_mode_contract.md` keeps CLI prompt-mode input
+  limited to prompt text, explicit Plan/Build mode, optional session id, source,
+  and request/correlation metadata. It intentionally does not pass active task
+  paths, select context sources, or own workspace policy, so this task still owns
+  the first context/workspace manifest decision.
+
 ## Specification Check Result
 
 - Rechecked with the T002 parent default hints.
