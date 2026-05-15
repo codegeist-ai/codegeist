@@ -11,7 +11,9 @@ configuration, build, or verification behavior.
 
 For target architecture and future design decisions, see
 `docs/developer/codegeist-opencode-parity.md`. For the Codegeist-owned runtime
-vocabulary and boundary diagram, see `docs/developer/runtime-vocabulary.md`.
+vocabulary and boundary diagram, see `docs/developer/runtime-vocabulary.md`. For
+the future runtime/session/event contract blueprint and diagrams, see
+`docs/developer/runtime-session-event-contracts.md`.
 
 ## Current System State
 
@@ -24,7 +26,9 @@ The repository also contains planning documentation for a broader coding-agent
 runtime. Those future runtime, session, event, provider, tool, permission,
 workspace, storage, extension, server, and UI concepts are not implemented in the
 application code yet. Their current vocabulary and ownership boundaries are
-documented in `docs/developer/runtime-vocabulary.md`.
+documented in `docs/developer/runtime-vocabulary.md`; the future
+runtime/session/event contract shape is described in
+`docs/developer/runtime-session-event-contracts.md`.
 
 ## Build Baseline
 
@@ -138,7 +142,8 @@ flowchart TD
 The dotted nodes are planned architecture concepts documented elsewhere. They are
 included here only to prevent coding agents from assuming those packages already
 exist. The vocabulary and dependency direction for those concepts are documented
-in `docs/developer/runtime-vocabulary.md`.
+in `docs/developer/runtime-vocabulary.md`, and their future contract blueprint is
+documented in `docs/developer/runtime-session-event-contracts.md`.
 
 ## Test Architecture
 
@@ -233,6 +238,9 @@ future coding agents can distinguish current code from future architecture.
 - `docs/developer/runtime-vocabulary.md` records the Codegeist-owned runtime
   vocabulary and boundary diagram without requiring Java packages or classes to
   exist.
+- `docs/developer/runtime-session-event-contracts.md` records the planned
+  runtime/session/event contract shape, OpenCode source evidence, diagrams, and
+  illustrative Java snippets without implementing Java source.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

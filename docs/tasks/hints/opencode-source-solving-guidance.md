@@ -11,6 +11,11 @@ OpenCode-to-Codegeist translation posture.
 
 - Use OpenCode source as evidence for behavior, boundaries, and data flow, not as
   a Codegeist implementation blueprint.
+- For OpenCode implementation analysis, use the local `/ask-project opencode ...`
+  workflow from `.oc_local/commands/ask-project.md`. It reads the prepared
+  analysis workspace under `docs/third-party/opencode/` and uses the current
+  source checkout at `docs/third-party/opencode/source/` when source-level
+  behavior must be verified.
 - Prefer `/ask-project opencode "<question>"` for targeted source questions that
   can benefit from analysis artifacts, source paths, and Mermaid diagrams.
 - Prefer `/ask-project-repomix opencode "<question>"` for broad source-level

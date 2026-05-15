@@ -15,6 +15,13 @@ The architecture makes Spring Shell the first client surface. CLI commands parse
 input and render output, but runtime owns sessions, modes, provider calls, tools,
 permissions, workspace policy, and events.
 
+`T002_03` now provides a documentation blueprint for runtime/session/event
+contracts rather than implemented Java contracts. This task must therefore treat
+that blueprint as the naming and boundary reference. If command wiring needs real
+Java contracts such as `PromptRequest` or `AgentMode`, the implementation plan for
+this task must introduce only the smallest concrete types required by the CLI
+adapter tests.
+
 ## Concrete Solution
 
 1. Add minimal `plan`, `build`, and possibly `run` command stubs that construct a
@@ -51,8 +58,10 @@ git --no-pager diff --check
 
 ## Dependencies
 
-- Depends on `T002_02` for package vocabulary and `T002_03` for runtime and mode
-  contracts.
+- Depends on `T002_02` for package vocabulary and `T002_03` for the documented
+  runtime/session/event contract blueprint.
+- Must not assume `T002_03` created Java source files, packages, services, or
+  tests.
 
 ## Non-Goals
 
@@ -71,6 +80,9 @@ git --no-pager diff --check
   must not own session, mode, provider, tool, permission, or event behavior.
 - `codegeist run` should stay explicit or deferred until a default mode policy is
   chosen during implementation.
+- Rechecked after `T002_03` was narrowed to a documentation blueprint. This task
+  remains the likely first slice that may need concrete Java request/mode types,
+  but only if its implementation plan keeps them minimal and adapter-focused.
 
 ## Creation Note
 

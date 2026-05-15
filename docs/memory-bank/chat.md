@@ -88,6 +88,19 @@
   `docs/developer/runtime-vocabulary.md` for Codegeist-owned runtime terms,
   boundary direction, deferred surfaces, and non-ownership rules without creating
   Java packages, classes, or empty directories.
+- `T002_03_introduce-runtime-session-event-contracts.md` is specified as a
+  documentation and diagram slice after the user narrowed it away from Java
+  implementation. It created
+  `docs/developer/runtime-session-event-contracts.md` as the future Java contract
+  blueprint for prompt requests, agent modes, sessions, turns, message parts,
+  runtime event envelopes, event families, sequencing, and event-to-session
+  projection. It used OpenCode source evidence from `session/schema.ts`,
+  `v2/session.ts`, `v2/session-event.ts`, `v2/session-message.ts`,
+  `sync/index.ts`, `bus/index.ts`, and `session/projectors-next.ts`, but did not
+  create Java source files or empty packages. The blueprint now includes
+  OpenCode-focused class diagrams for identity, session service, session events,
+  session messages, sync/bus/projectors, and a concept reference table mapping
+  each OpenCode implementation idea to the Codegeist blueprint.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -181,5 +194,5 @@
 ## Open Points
 
 - The next useful step is to run `/plan-task` for
-  `T002_03_introduce-runtime-session-event-contracts.md`, using
-  `docs/developer/runtime-vocabulary.md` as the naming and ownership reference.
+  `T002_04_wire_cli_prompt_mode_contract.md`, treating `T002_03` as a blueprint
+  rather than an implemented Java contract dependency.
