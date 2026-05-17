@@ -94,6 +94,20 @@ a documentation and diagram slice.
 - Live network calls remain out of scope unless a safe local or test provider is
   explicitly selected.
 
+## Dependency Impact Notes
+
+- Finalized `T002_05_add_context_workspace_manifest_slice.md` keeps context
+  selection, context profiles, workspace path validation, context manifests,
+  redaction posture, and external-analysis exclusion outside provider
+  configuration. This task should describe provider config and adapter boundaries
+  only; it must not make the provider layer choose workspace context sources,
+  load Graphify or Repomix artifacts, or bypass context manifest redaction and
+  skip reasons.
+- Provider validation may later emit typed provider errors or diagnostics that
+  reference context/request metadata, but the provider adapter should consume a
+  runtime request boundary rather than own context profile creation or workspace
+  reads.
+
 ## Creation Note
 
 Status: open.

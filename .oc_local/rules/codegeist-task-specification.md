@@ -35,6 +35,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - When a Codegeist architecture decision affects later child tasks, update those
   task files in the same phase pass so dependencies, non-goals, acceptance
   criteria, and implementation-readiness questions stay current.
+- Keep repo-specific context paths such as task docs, memory docs, local rules, and
+  developer docs as context-profile data owned by repo commands and rules. Do not
+  hard-code this repository's `docs/` layout or external analysis artifacts as
+  Codegeist core runtime context sources.
 - Keep Codegeist-specific source evidence under `docs/third-party/opencode/` and
   prefer `/ask-project opencode ...` or `/ask-project-repomix opencode ...` when
   a phase needs source-backed OpenCode behavior details.

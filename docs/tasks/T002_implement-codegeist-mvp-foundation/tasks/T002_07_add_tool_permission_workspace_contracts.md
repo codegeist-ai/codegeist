@@ -92,6 +92,18 @@ a documentation and diagram slice.
 - Scope remains contract-first; concrete file, shell, network, PF4J, JBang, LSP,
   and subagent execution stays out of this task.
 
+## Dependency Impact Notes
+
+- Finalized `T002_05_add_context_workspace_manifest_slice.md` defines workspace
+  path classification as deterministic validation that runs before context reads
+  and records denied or skipped candidates in a manifest. This task should reuse
+  that boundary when describing tool-scoped path validation instead of redefining
+  workspace identity from scratch.
+- Permission approval belongs above deterministic workspace validation. A later
+  permission policy may ask users to approve tool behavior or external-directory
+  access, but it must not silently override mode-denied capabilities or default
+  context loader denials.
+
 ## Creation Note
 
 Status: open.

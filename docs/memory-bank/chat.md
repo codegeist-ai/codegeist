@@ -114,20 +114,32 @@
   a future acceptance checklist. It intentionally created no Java source, tests,
   packages, or build changes. Finalization confirmed that `T002_05` still owns
   active-task path, context-source, and workspace-policy decisions.
-- `T002_05_add_context_workspace_manifest_slice.md` is solved as a
-  documentation-only context/workspace blueprint. It created
+- `T002_05_add_context_workspace_manifest_slice.md` is finalized as a
+  documentation-only context/workspace architecture task, with no child task and no
+  Java implementation work. It created and then deepened
   `docs/developer/context-workspace-manifest.md`, which defines future workspace
   path-validation responsibilities, explicit context loader request fields,
   deterministic source ordering, context manifest fields, skip reasons,
-  Graphify/Repomix on-demand posture, future Java file maps, illustrative Java
+  external-analysis exclusion posture, OpenCode lessons, permission boundaries,
+  deferred implementation slices, future Java file maps, illustrative Java
   snippets, and future test handoff notes. It created no Java source, tests,
   package directories, provider calls, embeddings, Graphify/Repomix runs, or
-  runtime behavior.
+  runtime behavior. Later corrections clarified that the whole `docs/` layout is
+  repository-specific context-profile input maintained by repo rules and commands,
+  not a Codegeist hard-coded constant, and that third-party analysis artifacts are
+  not a core context source kind.
 - By user decision, the remaining open `T002_06` through `T002_12` tasks have been
   reframed as documentation/specification slices. They must not create Java source
   files, tests, empty package directories, provider calls, tool execution,
   Graphify/Repomix runs, storage adapters, process executors, or runtime behavior
   unless explicitly reopened as implementation work.
+- A follow-up audit confirmed the T002 task set matches that posture: `T002_01` is
+  the only completed build/layout implementation exception, while `T002_02` through
+  `T002_12` remain documentation/design/specification slices.
+- Finalization propagated `T002_05` impact notes to the parent task, `T002_06`, and
+  `T002_07`: provider configuration must not own context profiles, workspace
+  reads, or external analysis ingestion, and tool/permission contracts should layer
+  permission approval above deterministic workspace validation.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -189,7 +201,8 @@
   and `.opencode/rules/task-workflow.md`.
 - `.oc_local/rules/codegeist-task-specification.md` is now a thin Codegeist
   overlay. It only records Codegeist/OpenCode parity guidance, T002 dependency
-  order, Java-first architecture mapping, and OpenCode source-evidence hints.
+  order, Java-first architecture mapping, context-profile ownership guidance, and
+  OpenCode source-evidence hints.
 - `.oc_local/rules/architecture-doc.md` defines how to use and maintain
   `docs/developer/architecture.md`: keep it current-state focused, update it with
   architecture-relevant code changes, and leave future parity planning in
@@ -223,7 +236,5 @@
 
 ## Open Points
 
-- The next useful step is to solve
-  `T002_05_add_context_workspace_manifest_slice.md` as a documentation-only
-  specification, using the finalized `T002_04` boundary that CLI prompt-mode
-  wiring does not choose active task paths or context sources.
+- The next useful T002 documentation/specification slice is
+  `T002_06_add_provider_configuration_adapter.md`.

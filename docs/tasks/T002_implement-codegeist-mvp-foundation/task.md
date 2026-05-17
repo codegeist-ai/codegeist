@@ -126,6 +126,22 @@ tasks that benefit from targeted OpenCode source evidence.
   CLI Maven project lives under `app/codegeist/cli` before follow-up tasks add
   runtime vocabulary or later server/deployment surfaces.
 
+## Design And Specification Audit
+
+- `T002_01` is the completed build/layout baseline exception and may reference
+  real Maven, Taskfile, source-layout, and verification changes.
+- `T002_02` through `T002_12` match the current design/specification approach:
+  they create or deepen developer documentation, diagrams, future file maps,
+  illustrative Java snippets, and handoff checklists instead of implementing Java
+  source, tests, package directories, runtime behavior, providers, tools,
+  permissions, storage, Graphify, or Repomix workflows.
+- `T002_05` is finalized as a single documentation-only context/workspace
+  architecture task; it has no child tasks and should not spawn Java
+  implementation work until the user explicitly requests that next phase.
+- Open `T002_06` through `T002_12` should continue through specification, plan,
+  solve, and finalization as documentation-first slices unless explicitly reopened
+  as implementation tasks.
+
 ## Creation Note
 
 Status: open.

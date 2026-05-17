@@ -218,7 +218,8 @@ are not implemented in the current Java application:
 - Session domain model.
 - Runtime event model.
 - Agent modes such as Plan and Build.
-- Context loading from rules, memory, tasks, docs, source, or analysis artifacts.
+- Context loading from profile-selected instructions, state, work items,
+  repository knowledge, or bounded source snippets.
 - Spring AI provider adapter or model calls.
 - Tool registry or tool execution.
 - Permission approval flow.
