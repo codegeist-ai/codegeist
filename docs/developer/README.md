@@ -13,3 +13,5 @@ constraints here.
   diagram for later implementation tasks.
 - `runtime-session-event-contracts.md` - architecture blueprint and diagrams for
   future Runtime, Session, Turn, MessagePart, and RuntimeEvent contracts.
+- `context-workspace-manifest.md` - architecture blueprint for future deterministic
+  context loading, workspace path validation, and explainable context manifests.

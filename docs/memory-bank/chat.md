@@ -114,7 +114,16 @@
   a future acceptance checklist. It intentionally created no Java source, tests,
   packages, or build changes. Finalization confirmed that `T002_05` still owns
   active-task path, context-source, and workspace-policy decisions.
-- By user decision, the remaining open `T002_05` through `T002_12` tasks have been
+- `T002_05_add_context_workspace_manifest_slice.md` is solved as a
+  documentation-only context/workspace blueprint. It created
+  `docs/developer/context-workspace-manifest.md`, which defines future workspace
+  path-validation responsibilities, explicit context loader request fields,
+  deterministic source ordering, context manifest fields, skip reasons,
+  Graphify/Repomix on-demand posture, future Java file maps, illustrative Java
+  snippets, and future test handoff notes. It created no Java source, tests,
+  package directories, provider calls, embeddings, Graphify/Repomix runs, or
+  runtime behavior.
+- By user decision, the remaining open `T002_06` through `T002_12` tasks have been
   reframed as documentation/specification slices. They must not create Java source
   files, tests, empty package directories, provider calls, tool execution,
   Graphify/Repomix runs, storage adapters, process executors, or runtime behavior

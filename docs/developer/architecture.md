@@ -13,7 +13,9 @@ For target architecture and future design decisions, see
 `docs/developer/codegeist-opencode-parity.md`. For the Codegeist-owned runtime
 vocabulary and boundary diagram, see `docs/developer/runtime-vocabulary.md`. For
 the future runtime/session/event contract blueprint and diagrams, see
-`docs/developer/runtime-session-event-contracts.md`.
+`docs/developer/runtime-session-event-contracts.md`. For the future
+context-loading and workspace-manifest blueprint, see
+`docs/developer/context-workspace-manifest.md`.
 
 ## Current System State
 
@@ -28,7 +30,9 @@ workspace, storage, extension, server, and UI concepts are not implemented in th
 application code yet. Their current vocabulary and ownership boundaries are
 documented in `docs/developer/runtime-vocabulary.md`; the future
 runtime/session/event contract shape is described in
-`docs/developer/runtime-session-event-contracts.md`.
+`docs/developer/runtime-session-event-contracts.md`; and the future
+context/workspace manifest shape is described in
+`docs/developer/context-workspace-manifest.md`.
 
 ## Build Baseline
 
@@ -241,6 +245,9 @@ future coding agents can distinguish current code from future architecture.
 - `docs/developer/runtime-session-event-contracts.md` records the planned
   runtime/session/event contract shape, OpenCode source evidence, diagrams, and
   illustrative Java snippets without implementing Java source.
+- `docs/developer/context-workspace-manifest.md` records the planned deterministic
+  context-loading and workspace-validation manifest contract without implementing
+  Java source, readers, provider calls, embeddings, Graphify, or Repomix.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

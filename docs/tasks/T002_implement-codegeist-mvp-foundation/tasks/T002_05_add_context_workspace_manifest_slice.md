@@ -4,6 +4,8 @@ Parent: `T002_implement-codegeist-mvp-foundation`
 
 Sources: `T001_11`, `T001_14`, `T001_22`, `T001_23`
 
+Status: solved
+
 ## Goal
 
 Describe a deterministic context-loading contract that reads safe repo-local
@@ -106,7 +108,16 @@ a documentation and diagram slice.
 
 ## Creation Note
 
-Status: open.
-
 Derived by grouping workspace/file-access and context-loading architecture into
 one independently reviewable documentation/specification slice.
+
+## Solution Note
+
+Solved as a documentation-only handoff in
+`docs/developer/context-workspace-manifest.md`. The developer document now defines
+the future workspace path-validation responsibilities, explicit context loader
+request shape, deterministic source ordering, manifest fields, skip reasons,
+Graphify/Repomix on-demand posture, future Java file map, illustrative Java
+snippets, and future test checklist without adding Java source, tests, fixtures,
+package directories, provider behavior, embeddings, tool execution, Graphify, or
+Repomix runs.
