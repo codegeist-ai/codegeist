@@ -138,7 +138,12 @@ tasks that benefit from targeted OpenCode source evidence.
 - `T002_05` is finalized as a single documentation-only context/workspace
   architecture task; it has no child tasks and should not spawn Java
   implementation work until the user explicitly requests that next phase.
-- Open `T002_06` through `T002_12` should continue through specification, plan,
+- `T002_06` is finalized as a documentation-only provider configuration and
+  Spring AI adapter blueprint. It created
+  `docs/developer/provider-configuration-contracts.md` and did not add Java
+  source, tests, provider starters, credentials, live model calls, tool callbacks,
+  Graphify, Repomix, or runtime behavior.
+- Open `T002_07` through `T002_12` should continue through specification, plan,
   solve, and finalization as documentation-first slices unless explicitly reopened
   as implementation tasks.
 

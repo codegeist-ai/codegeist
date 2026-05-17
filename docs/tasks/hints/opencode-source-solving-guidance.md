@@ -29,6 +29,17 @@ OpenCode-to-Codegeist translation posture.
 - Translate findings into Codegeist's Java-first runtime boundaries: Spring,
   Spring AI, Spring Shell, Java domain contracts, workspace policy, permissions,
   events, PF4J, and JBang.
+- When a task maps OpenCode behavior onto Spring AI, use Context7 or the official
+  Spring AI reference before naming Spring-side counterparts. For provider tasks,
+  check concepts such as `ChatModel`, `StreamingChatModel`, `Prompt`,
+  `ChatOptions`, `ChatResponse`, provider-specific `spring.ai.*` configuration
+  properties, `ToolCallback`, and tool execution controls before drawing adapter
+  boundaries.
+- For Codegeist provider tasks, treat OpenAI-compatible/OpenAI and Ollama as the
+  first provider targets unless a newer task decision overrides that. Still design
+  the Codegeist provider boundary to support all Spring AI-supported providers as
+  later adapters without changing runtime, session, event, CLI, or
+  tool/permission contracts.
 - For CLI, prompt-flow, or client-adapter tasks, separate OpenCode adapter evidence
   from runtime evidence: CLI/TUI/HTTP route files show input collection and
   delegation, while session, agent, provider, tool, permission, and event files

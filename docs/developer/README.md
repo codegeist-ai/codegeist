@@ -15,3 +15,6 @@ constraints here.
   future Runtime, Session, Turn, MessagePart, and RuntimeEvent contracts.
 - `context-workspace-manifest.md` - architecture blueprint for future deterministic
   context loading, workspace path validation, and explainable context manifests.
+- `provider-configuration-contracts.md` - architecture blueprint for future
+  provider configuration, validation, typed provider errors, and Spring AI adapter
+  boundaries.

@@ -32,6 +32,13 @@ implementation logs, or one-off decisions.
   as implementation work: include concrete future file maps, boundary rules,
   sequence or class diagrams, and realistic Java examples inside markdown, but do
   not add source files, tests, empty packages, or build changes.
+- For documentation-only foundation slices, diagrams may be concrete and detailed.
+  UML class diagrams are appropriate when they make future Java contract
+  relationships, adapter ports, typed errors, and value objects clear before code
+  exists.
+- Documentation-only slices may mention future tests as handoff guidance. Keep the
+  tests descriptive and contract-focused; do not create test source, fixtures, or
+  build changes unless the task is explicitly reopened as implementation work.
 - For documentation-only solve passes, keep current-state docs such as
   `docs/developer/architecture.md` accurate by not claiming planned packages or
   commands already exist.

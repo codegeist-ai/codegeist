@@ -103,6 +103,15 @@ a documentation and diagram slice.
   permission policy may ask users to approve tool behavior or external-directory
   access, but it must not silently override mode-denied capabilities or default
   context loader denials.
+- Finalized `T002_06_add_provider_configuration_adapter.md` defines provider
+  configuration and Spring AI adapters as Codegeist-owned boundaries. This task
+  should treat Spring AI `ToolCallback` and provider-emitted tool-call signals as
+  adapter-side inputs that remain disabled or externally mediated until tool,
+  permission, and workspace contracts are defined here.
+- Tool availability must be the intersection of provider/model capability,
+  Codegeist tool descriptors, active agent mode, permission policy, and workspace
+  validation. A model's tool-calling capability must not directly execute tools or
+  bypass Codegeist permission and workspace checks.
 
 ## Creation Note
 

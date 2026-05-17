@@ -11,7 +11,7 @@
 
 - `main` contains the current project state. `.opencode` is configured as a git
   submodule that tracks the `release` branch of `codegeist-agent-kit` and points
-  to `c43c353`.
+  to `c79edf1`.
 - `.devcontainer/` is configured as a git submodule that tracks the `release`
   branch of `codegeist-devcontainer-kit` in `.gitmodules` and points to
   `35f46d9`.
@@ -140,6 +140,14 @@
   `T002_07`: provider configuration must not own context profiles, workspace
   reads, or external analysis ingestion, and tool/permission contracts should layer
   permission approval above deterministic workspace validation.
+- `T002_06_add_provider_configuration_adapter.md` is finalized as a
+  documentation-only provider configuration and Spring AI adapter blueprint. It
+  created `docs/developer/provider-configuration-contracts.md` with UML class
+  diagrams, Spring AI counterpart mapping, future file maps, first-wave
+  OpenAI-compatible/OpenAI and Ollama support, later Spring AI provider extension
+  rules, typed provider errors, validation posture, and future test handoff notes.
+  It created no Java source, tests, provider starters, credentials, or live model
+  calls.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -237,4 +245,4 @@
 ## Open Points
 
 - The next useful T002 documentation/specification slice is
-  `T002_06_add_provider_configuration_adapter.md`.
+  `T002_07_add_tool_permission_workspace_contracts.md`.
