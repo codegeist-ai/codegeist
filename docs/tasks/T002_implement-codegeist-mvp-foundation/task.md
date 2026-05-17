@@ -165,7 +165,14 @@ tasks that benefit from targeted OpenCode source evidence.
   tests, package directories, storage ports, adapters, database schemas,
   migrations, encryption, durable audit logs, compaction, event replay, Graphify,
   Repomix, or runtime behavior.
-- Open `T002_11` through `T002_12` should continue through specification, plan,
+- `T002_11` is finalized as a documentation-only native packaging posture
+  blueprint. It created `docs/developer/native-packaging-posture.md`, kept the MVP
+  foundation JVM-first and native-aware, defined future JVM jar and native-image
+  verification ladders, and required native status to be reported as `passed`,
+  `skipped` with reason, or `failed` with a concrete blocker. It did not add Java
+  source, tests, package directories, Maven changes, Taskfile commands, provider
+  dependencies, PF4J, JBang, Vaadin, server, or runtime behavior.
+- Open `T002_12` should continue through specification, plan,
   solve, and finalization as documentation-first slices unless explicitly reopened
   as implementation tasks.
 

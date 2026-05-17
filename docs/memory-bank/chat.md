@@ -199,7 +199,17 @@
   directories, storage ports, storage adapters, database schemas, migrations,
   encryption, durable audit logs, compaction, event replay, Graphify, Repomix, or
   runtime behavior. Finalization propagated storage readiness notes to `T002_12`.
-  The next phase is `/specify-task T002_11` or `/work-task T002_11`.
+- `T002_11_validate_native_packaging_posture.md` is finalized as a
+  documentation-only native packaging posture blueprint. It created
+  `docs/developer/native-packaging-posture.md`, which keeps the MVP foundation
+  JVM-first and native-aware, defines future JVM jar and GraalVM native-image
+  verification ladders, requires native status to be reported as `passed`,
+  `skipped` with reason, or `failed` with a concrete blocker, and treats PF4J,
+  JBang, Vaadin, server, broad providers, shell/process, and storage surfaces as
+  JVM-first until their own tasks prove native compatibility. It created no Java
+  source, tests, package directories, Maven changes, Taskfile commands, provider
+  dependencies, PF4J, JBang, Vaadin, server, or runtime behavior. The next phase is
+  `/specify-task T002_12` or `/work-task T002_12`.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -298,4 +308,4 @@
 ## Open Points
 
 - The next useful T002 documentation/specification slice is
-  `T002_11_validate_native_packaging_posture.md`.
+  `T002_12_define_extension_and_client_readiness_gates.md`.

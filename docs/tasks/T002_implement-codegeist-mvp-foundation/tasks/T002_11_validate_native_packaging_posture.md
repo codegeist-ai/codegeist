@@ -4,6 +4,8 @@ Parent: `T002_implement-codegeist-mvp-foundation`
 
 Sources: `T001_20`, `T001_01`, `T001_24`, `T001_25`
 
+Status: finalized
+
 ## Goal
 
 Describe the JVM and GraalVM native packaging posture after the build baseline and
@@ -72,8 +74,55 @@ slice unless build files change.
 
 ## Open Questions
 
-- Should native packaging become release-blocking for the first CLI MVP or remain
-   a tracked compatibility target until provider/tool dependencies settle?
+- None for this documentation slice. The posture keeps JVM jar packaging as the
+  required baseline and native-image validation as an explicit compatibility
+  target with `passed`, `skipped`, or `failed` status until later release tasks
+  decide whether native packaging is release-blocking.
+
+## Work Task Phase Status
+
+- `/specify-task` result: specified. The existing goal, scope, non-goals,
+  acceptance criteria, and open question were clear enough for a documentation-only
+  packaging posture task after rechecking the T002 parent default hints.
+- `/plan-task` result: planned. The existing task is the concrete implementation
+  task; no duplicate task or child task is needed. Target files are
+  `docs/developer/native-packaging-posture.md`, `docs/developer/README.md`,
+  `docs/developer/architecture.md`, `docs/memory-bank/chat.md`, this task file,
+  and the T002 parent/T002_12 task only for finalization impact notes.
+- `/solve-task` result: solved. Created the native packaging posture blueprint as
+  markdown only, with no Java source, Maven, Taskfile, test, package-directory,
+  provider, PF4J, JBang, Vaadin, server, or runtime behavior changes.
+- `/finalize-task` result: finalized. Documentation impact was reviewed through
+  the update-documentation workflow requirements; developer indexes and current
+  architecture references were updated, and native-readiness impact was propagated
+  to the parent task and `T002_12`.
+- Context or instructions considered: no extra user context beyond the task
+  reference.
+- Hints considered: T002 parent `Default Solve Hints`,
+  `docs/tasks/hints/opencode-solving-guidance.md`,
+  `docs/tasks/hints/opencode-source-solving-guidance.md`,
+  `.oc_local/rules/codegeist-task-specification.md`, and
+  `.oc_local/rules/architecture-doc.md`.
+- Upstream phase dependency: satisfied by completed `T002_01` build/layout
+  baseline and finalized `T002_03` runtime/session/event contracts. `T002_11` also
+  consumed finalized provider, tool/permission/workspace, shell, and storage
+  posture docs for blocker categories.
+- Open decisions or blockers: none for this slice.
+- Next recommended phase: work `T002_12_define_extension_and_client_readiness_gates.md`.
+
+## Solution Note
+
+Status: finalized.
+
+Created `docs/developer/native-packaging-posture.md` as the JVM jar and GraalVM
+native-image verification posture blueprint. The document defines JVM-first and
+native-aware release posture, future packaging commands, `passed`/`skipped`/`failed`
+native status reporting, native blocker categories, surface-specific native claims,
+illustrative diagnostic Java sketches, and future test handoff notes.
+
+This task intentionally did not change Java source, Maven build configuration,
+Taskfile commands, tests, provider dependencies, PF4J/JBang/Vaadin/server surfaces,
+or runtime behavior.
 
 ## Specification Decision
 
@@ -91,7 +140,7 @@ slice unless build files change.
 
 ## Creation Note
 
-Status: open.
+Status: finalized.
 
 Derived from the GraalVM constraints, technology baseline, risk register, and
 implementation backlog as one packaging posture documentation/specification slice.

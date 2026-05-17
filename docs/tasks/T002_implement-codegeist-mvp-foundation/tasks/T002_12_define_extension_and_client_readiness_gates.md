@@ -109,6 +109,11 @@ git --no-pager diff --check
   first behind replaceable ports. Server and Vaadin readiness gates should require
   an explicit storage adapter, retention, redaction, concurrency, and auth posture
   before depending on durable session, event, audit, or artifact persistence.
+- Finalized `T002_11_validate_native_packaging_posture.md` keeps the MVP
+  foundation JVM-first and native-aware. PF4J, JBang, server, Vaadin, broad
+  provider, shell/process, and storage surfaces must be treated as JVM-first until
+  their own tasks prove native compatibility and record native status as `passed`,
+  `skipped` with reason, or `failed` with a concrete blocker.
 
 ## Creation Note
 

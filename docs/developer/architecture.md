@@ -23,7 +23,9 @@ permission, and workspace execution blueprint, see
 proposal blueprint, see `docs/developer/patch-edit-proposal-contracts.md`. For the
 future controlled shell verification blueprint, see
 `docs/developer/shell-verification-contracts.md`. For the future storage port
-posture blueprint, see `docs/developer/storage-port-posture.md`.
+posture blueprint, see `docs/developer/storage-port-posture.md`. For the future
+JVM jar and GraalVM native-image packaging posture, see
+`docs/developer/native-packaging-posture.md`.
 
 ## Current System State
 
@@ -49,7 +51,9 @@ proposal contracts are described in
 `docs/developer/patch-edit-proposal-contracts.md`; and future controlled shell
 verification contracts are described in
 `docs/developer/shell-verification-contracts.md`; and future storage port posture
-is described in `docs/developer/storage-port-posture.md`.
+is described in `docs/developer/storage-port-posture.md`; future JVM jar and
+GraalVM native-image verification posture is described in
+`docs/developer/native-packaging-posture.md`.
 
 ## Build Baseline
 
@@ -287,6 +291,10 @@ future coding agents can distinguish current code from future architecture.
   storage port posture, session/message projection boundaries, redaction rules,
   and later file/database adapter gates without implementing Java source, tests,
   storage ports, storage adapters, database schemas, migrations, or event sourcing.
+- `docs/developer/native-packaging-posture.md` records the planned JVM jar and
+  GraalVM native-image verification posture, native status reporting, and blocker
+  classification without changing Java source, Maven configuration, Taskfile
+  commands, tests, or packaging behavior.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

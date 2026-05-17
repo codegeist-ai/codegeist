@@ -30,3 +30,6 @@ constraints here.
 - `storage-port-posture.md` - architecture blueprint for future storage ports,
   in-memory-first session projections, redaction boundaries, and later persistence
   adapters.
+- `native-packaging-posture.md` - architecture blueprint for future JVM jar and
+  GraalVM native-image verification posture, status reporting, and blocker
+  classification.
