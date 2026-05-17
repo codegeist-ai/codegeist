@@ -19,7 +19,10 @@ context-loading and workspace-manifest blueprint, see
 configuration and Spring AI adapter blueprint, see
 `docs/developer/provider-configuration-contracts.md`. For the future tool,
 permission, and workspace execution blueprint, see
-`docs/developer/tool-permission-workspace-contracts.md`.
+`docs/developer/tool-permission-workspace-contracts.md`. For the future patch/edit
+proposal blueprint, see `docs/developer/patch-edit-proposal-contracts.md`. For the
+future controlled shell verification blueprint, see
+`docs/developer/shell-verification-contracts.md`.
 
 ## Current System State
 
@@ -40,7 +43,11 @@ context/workspace manifest shape is described in
 validation, and Spring AI adapter boundaries are described in
 `docs/developer/provider-configuration-contracts.md`; future tool descriptors,
 permission decisions, workspace validation, and bounded tool results are described
-in `docs/developer/tool-permission-workspace-contracts.md`.
+in `docs/developer/tool-permission-workspace-contracts.md`; future patch/edit
+proposal contracts are described in
+`docs/developer/patch-edit-proposal-contracts.md`; and future controlled shell
+verification contracts are described in
+`docs/developer/shell-verification-contracts.md`.
 
 ## Build Baseline
 
@@ -269,6 +276,11 @@ future coding agents can distinguish current code from future architecture.
   reviewable patch/edit proposal, apply request, typed apply failure, workspace
   validation, and bounded result boundary without implementing Java source, patch
   parsing, apply logic, file writes, rollback, formatter integration, or tests.
+- `docs/developer/shell-verification-contracts.md` records the planned controlled
+  shell verification request, permission gate, workspace-cwd validation, typed
+  shell failure, and bounded output boundary without implementing Java source,
+  tests, process execution, PTY support, terminal UI, remote execution, JBang
+  execution, or shell sandboxing.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

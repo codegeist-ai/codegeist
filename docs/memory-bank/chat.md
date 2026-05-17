@@ -173,7 +173,20 @@
   executor, file writes, or runtime behavior. Finalization propagated the bounded
   result, typed failure, permission, workspace, and event/session summary posture
   to `T002_09` while keeping shell execution separate from patch/edit apply
-  behavior. The next phase is `/specify-task T002_09` or `/work-task T002_09`.
+  behavior.
+- `T002_09_add_controlled_shell_verification_tool.md` is finalized as a
+  documentation-only controlled shell verification blueprint. It created
+  `docs/developer/shell-verification-contracts.md`, which specializes finalized
+  `T002_07` tool/permission/workspace contracts for Plan-mode shell denial,
+  Build-mode approval-gated verification commands, destructive-command safety
+  posture, workspace-cwd validation, env/stdin policy, timeout/cancellation,
+  exit-code and typed failure results, bounded stdout/stderr summaries,
+  `OutputRef` values, and event/session projection. It created no Java source,
+  tests, package directories, process executor, PTY support, terminal UI, remote
+  execution, JBang execution, shell sandboxing, Graphify, Repomix, or runtime
+  behavior. Finalization propagated shell-output and process-execution readiness
+  notes to `T002_10` and `T002_12`. The next phase is `/specify-task T002_10` or
+  `/work-task T002_10`.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -247,9 +260,10 @@
   keep phase dependencies explicit: `specify` has no prior dependency, `plan`
   depends on `specify`, and `solve` depends on `plan`.
 - `/work-task <task-ref> [context/instructions]` from the shared kit orchestrates
-  specify, plan, specify, and solve. It may switch from a source task to the
-  concrete implementation task selected by planning, and stops before solving
-  when planning leaves multiple choices or material open decisions.
+  specify, plan, solve, and finalize. It may switch from a source task to the
+  concrete implementation task selected by planning, and stops before solving or
+  finalizing when a phase leaves multiple choices, material open decisions, failed
+  verification, or unresolved documentation impact.
 - `docs/tasks/hints/opencode-solving-guidance.md` is the reusable hint for
   OpenCode-related `/solve-task` runs. It reminds solvers to use OpenCode as a
   feature reference rather than an implementation blueprint. Hint files are
@@ -271,4 +285,4 @@
 ## Open Points
 
 - The next useful T002 documentation/specification slice is
-  `T002_08_add_patch_edit_proposal_flow.md`.
+  `T002_10_decide_minimal_storage_ports.md`.

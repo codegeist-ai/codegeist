@@ -154,7 +154,12 @@ tasks that benefit from targeted OpenCode source evidence.
   `docs/developer/patch-edit-proposal-contracts.md` and did not add Java source,
   tests, package directories, patch parser code, apply logic, file writes,
   rollback, formatter integration, Graphify, Repomix, or runtime behavior.
-- Open `T002_09` through `T002_12` should continue through specification, plan,
+- `T002_09` is finalized as a documentation-only controlled shell verification
+  blueprint. It created `docs/developer/shell-verification-contracts.md` and did
+  not add Java source, tests, package directories, process execution, PTY support,
+  terminal UI, remote execution, JBang execution, shell sandboxing, Graphify,
+  Repomix, or runtime behavior.
+- Open `T002_10` through `T002_12` should continue through specification, plan,
   solve, and finalization as documentation-first slices unless explicitly reopened
   as implementation tasks.
 

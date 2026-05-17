@@ -24,3 +24,6 @@ constraints here.
 - `patch-edit-proposal-contracts.md` - architecture blueprint for future
   reviewable patch/edit proposals, apply requests, typed apply failures, and
   bounded result summaries.
+- `shell-verification-contracts.md` - architecture blueprint for future controlled
+  shell verification requests, permission-gated execution, typed shell failures,
+  and bounded output summaries.

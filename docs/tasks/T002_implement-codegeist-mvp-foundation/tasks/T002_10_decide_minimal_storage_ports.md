@@ -91,6 +91,17 @@ a documentation and diagram slice.
 - Source research may inspect how OpenCode relates sessions, events, and storage,
   but Codegeist should keep event sourcing optional.
 
+## Dependency Impact Notes
+
+- Finalized `T002_09_add_controlled_shell_verification_tool.md` defines shell
+  results as bounded summaries, typed failures, and `OutputRef` values. This
+  storage posture task should treat shell logs, stdout/stderr, command payloads,
+  and environment values as sensitive or potentially large artifacts, not ordinary
+  session text.
+- Storage ports may later persist shell result projections or output references,
+  but they must not own shell execution, permission policy, workspace-cwd
+  validation, environment redaction, or process lifecycle behavior.
+
 ## Creation Note
 
 Status: open.

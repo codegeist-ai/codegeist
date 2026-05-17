@@ -100,6 +100,11 @@ git --no-pager diff --check
   must still keep PF4J, JBang, server, Vaadin, SDK/OpenAPI, desktop, marketplace,
   and TUI implementation deferred until the remaining readiness gates are also
   satisfied.
+- Finalized `T002_09_add_controlled_shell_verification_tool.md` defines shell and
+  process execution as a high-risk, permission-gated, workspace-cwd-validated,
+  bounded-output contract. Later JBang script tools, PF4J process-like tools,
+  server-triggered verification, and client approval UIs should satisfy that shell
+  readiness posture instead of introducing independent process execution paths.
 
 ## Creation Note
 
