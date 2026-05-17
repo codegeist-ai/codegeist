@@ -22,7 +22,8 @@ permission, and workspace execution blueprint, see
 `docs/developer/tool-permission-workspace-contracts.md`. For the future patch/edit
 proposal blueprint, see `docs/developer/patch-edit-proposal-contracts.md`. For the
 future controlled shell verification blueprint, see
-`docs/developer/shell-verification-contracts.md`.
+`docs/developer/shell-verification-contracts.md`. For the future storage port
+posture blueprint, see `docs/developer/storage-port-posture.md`.
 
 ## Current System State
 
@@ -47,7 +48,8 @@ in `docs/developer/tool-permission-workspace-contracts.md`; future patch/edit
 proposal contracts are described in
 `docs/developer/patch-edit-proposal-contracts.md`; and future controlled shell
 verification contracts are described in
-`docs/developer/shell-verification-contracts.md`.
+`docs/developer/shell-verification-contracts.md`; and future storage port posture
+is described in `docs/developer/storage-port-posture.md`.
 
 ## Build Baseline
 
@@ -281,6 +283,10 @@ future coding agents can distinguish current code from future architecture.
   shell failure, and bounded output boundary without implementing Java source,
   tests, process execution, PTY support, terminal UI, remote execution, JBang
   execution, or shell sandboxing.
+- `docs/developer/storage-port-posture.md` records the planned in-memory-first
+  storage port posture, session/message projection boundaries, redaction rules,
+  and later file/database adapter gates without implementing Java source, tests,
+  storage ports, storage adapters, database schemas, migrations, or event sourcing.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

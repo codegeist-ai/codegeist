@@ -27,3 +27,6 @@ constraints here.
 - `shell-verification-contracts.md` - architecture blueprint for future controlled
   shell verification requests, permission-gated execution, typed shell failures,
   and bounded output summaries.
+- `storage-port-posture.md` - architecture blueprint for future storage ports,
+  in-memory-first session projections, redaction boundaries, and later persistence
+  adapters.

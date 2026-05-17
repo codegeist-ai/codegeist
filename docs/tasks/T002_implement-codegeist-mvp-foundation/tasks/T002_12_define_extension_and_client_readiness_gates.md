@@ -105,6 +105,10 @@ git --no-pager diff --check
   bounded-output contract. Later JBang script tools, PF4J process-like tools,
   server-triggered verification, and client approval UIs should satisfy that shell
   readiness posture instead of introducing independent process execution paths.
+- Finalized `T002_10_decide_minimal_storage_ports.md` selects in-memory storage
+  first behind replaceable ports. Server and Vaadin readiness gates should require
+  an explicit storage adapter, retention, redaction, concurrency, and auth posture
+  before depending on durable session, event, audit, or artifact persistence.
 
 ## Creation Note
 

@@ -185,8 +185,21 @@
   tests, package directories, process executor, PTY support, terminal UI, remote
   execution, JBang execution, shell sandboxing, Graphify, Repomix, or runtime
   behavior. Finalization propagated shell-output and process-execution readiness
-  notes to `T002_10` and `T002_12`. The next phase is `/specify-task T002_10` or
-  `/work-task T002_10`.
+  notes to `T002_10` and `T002_12`.
+- `T002_10_decide_minimal_storage_ports.md` is finalized as a documentation-only
+  minimal storage posture blueprint. It created
+  `docs/developer/storage-port-posture.md`, which selects in-memory storage first
+  behind replaceable ports and defers file-backed restart/continue/list persistence
+  until a concrete CLI workflow requires it. The blueprint keeps event sourcing
+  optional, excludes credentials and sensitive tool/shell/provider artifacts from
+  ordinary session storage, defines future session/message projection/event
+  projection/artifact-reference/health ports, and records future in-memory,
+  redaction, projection, artifact-reference, file-backed continuation, and
+  event-sourcing optionality tests. It created no Java source, tests, package
+  directories, storage ports, storage adapters, database schemas, migrations,
+  encryption, durable audit logs, compaction, event replay, Graphify, Repomix, or
+  runtime behavior. Finalization propagated storage readiness notes to `T002_12`.
+  The next phase is `/specify-task T002_11` or `/work-task T002_11`.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -285,4 +298,4 @@
 ## Open Points
 
 - The next useful T002 documentation/specification slice is
-  `T002_10_decide_minimal_storage_ports.md`.
+  `T002_11_validate_native_packaging_posture.md`.

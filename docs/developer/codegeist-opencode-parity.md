@@ -1300,15 +1300,15 @@ projections of runtime/session/event models, not the domain source of truth.
 ## Storage Architecture
 
 Storage persists runtime projections and records through ports; it does not own
-runtime behavior. Event sourcing is optional. The first CLI workflow may use
-in-memory or simple file-backed storage if it does not block migration to a
-richer backend later.
+runtime behavior. Event sourcing is optional. The selected T002 MVP posture is
+in-memory storage first, with file-backed storage deferred until a concrete CLI
+restart/continue/list workflow needs persistence across process restarts.
 
 Persistence categories:
 
 | Category | MVP posture | Later posture |
 | --- | --- | --- |
-| Sessions and turns | In-memory or file-backed when needed for continue/list | Durable projections with lifecycle operations. |
+| Sessions and turns | In-memory first behind ports; file-backed only when restart/continue/list is selected | Durable projections with lifecycle operations. |
 | Runtime/audit events | Persist only audit-critical facts if MVP needs them | Event log, replay/sync, retention policy. |
 | Configuration | Explicit provider/model/workspace defaults without raw secrets | User/project profiles and validation status. |
 | Tool artifacts | Summaries plus local references | Artifact store, retention, redaction, deletion. |
@@ -1316,10 +1316,10 @@ Persistence categories:
 | Provider telemetry | Optional identifiers and errors | Cost/token summaries and diagnostics. |
 | Credentials | Special secret handling outside ordinary session storage | Secure credential integration to decide. |
 
-Storage ports should keep adapters replaceable. File-backed local storage is
-acceptable for early CLI use, but server/Vaadin concurrency, multi-workspace
-operation, durable audit retention, sharing, or search may trigger Spring Data or
-another database-backed adapter.
+Storage ports should keep adapters replaceable. File-backed local storage remains
+acceptable for later CLI continuation, but server/Vaadin concurrency,
+multi-workspace operation, durable audit retention, sharing, or search may trigger
+Spring Data or another database-backed adapter.
 
 Sensitive data rules:
 

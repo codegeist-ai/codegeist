@@ -159,7 +159,13 @@ tasks that benefit from targeted OpenCode source evidence.
   not add Java source, tests, package directories, process execution, PTY support,
   terminal UI, remote execution, JBang execution, shell sandboxing, Graphify,
   Repomix, or runtime behavior.
-- Open `T002_10` through `T002_12` should continue through specification, plan,
+- `T002_10` is finalized as a documentation-only minimal storage posture
+  blueprint. It created `docs/developer/storage-port-posture.md`, selected
+  in-memory storage first behind replaceable ports, and did not add Java source,
+  tests, package directories, storage ports, adapters, database schemas,
+  migrations, encryption, durable audit logs, compaction, event replay, Graphify,
+  Repomix, or runtime behavior.
+- Open `T002_11` through `T002_12` should continue through specification, plan,
   solve, and finalization as documentation-first slices unless explicitly reopened
   as implementation tasks.
 
