@@ -17,7 +17,9 @@ the future runtime/session/event contract blueprint and diagrams, see
 context-loading and workspace-manifest blueprint, see
 `docs/developer/context-workspace-manifest.md`. For the future provider
 configuration and Spring AI adapter blueprint, see
-`docs/developer/provider-configuration-contracts.md`.
+`docs/developer/provider-configuration-contracts.md`. For the future tool,
+permission, and workspace execution blueprint, see
+`docs/developer/tool-permission-workspace-contracts.md`.
 
 ## Current System State
 
@@ -36,7 +38,9 @@ runtime/session/event contract shape is described in
 context/workspace manifest shape is described in
 `docs/developer/context-workspace-manifest.md`. Future provider configuration,
 validation, and Spring AI adapter boundaries are described in
-`docs/developer/provider-configuration-contracts.md`.
+`docs/developer/provider-configuration-contracts.md`; future tool descriptors,
+permission decisions, workspace validation, and bounded tool results are described
+in `docs/developer/tool-permission-workspace-contracts.md`.
 
 ## Build Baseline
 
@@ -257,6 +261,10 @@ future coding agents can distinguish current code from future architecture.
   provider configuration, validation, typed provider error, and Spring AI adapter
   boundary without implementing Java source, provider starters, credentials, live
   model calls, or tests.
+- `docs/developer/tool-permission-workspace-contracts.md` records the planned tool
+  descriptor, permission decision, workspace validation, and bounded result
+  boundary without implementing Java source, tool execution, permission UI,
+  provider callbacks, shell execution, patch/edit behavior, or tests.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

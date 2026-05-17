@@ -86,6 +86,20 @@ a documentation and diagram slice.
 - Source research should focus on OpenCode shell/tool permission flow and output
   handling before choosing the first executor shape.
 
+## Dependency Impact Notes
+
+- Finalized `T002_07_add_tool_permission_workspace_contracts.md` defines the
+  generic tool request, permission decision, workspace target validation, bounded
+  result, output-reference, and event/session projection boundaries. This task
+  should specialize those boundaries for controlled shell verification instead of
+  redefining generic tool policy.
+- Shell execution remains denied in Plan mode and approval-gated in Build mode.
+  Permission approval must not override destructive-command posture, workspace cwd
+  denial, secret-like target denial, or descriptor capability limits.
+- Shell output should use bounded summaries and output references from the
+  `T002_07` blueprint; session parts and events must not retain unbounded stdout,
+  stderr, environment data, or command payloads.
+
 ## Creation Note
 
 Status: open.

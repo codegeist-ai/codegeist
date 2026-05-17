@@ -148,6 +148,21 @@
   rules, typed provider errors, validation posture, and future test handoff notes.
   It created no Java source, tests, provider starters, credentials, or live model
   calls.
+- `T002_07_add_tool_permission_workspace_contracts.md` is finalized as a
+  documentation-only tool, permission, and workspace contract blueprint. It created
+  `docs/developer/tool-permission-workspace-contracts.md`, which defines
+  Codegeist-owned tool descriptors, request/result and failure shapes, permission
+  request/decision/scope metadata, workspace tool-target validation, bounded
+  output references, runtime event/session projection, Spring AI tool-call
+  mediation, OpenCode source evidence, future file maps, illustrative Java
+  snippets, and future test handoff notes. It created no Java source, tests,
+  package directories, provider callbacks, shell execution, patch/edit behavior,
+  PF4J, JBang, Graphify, Repomix, or runtime behavior.
+- Finalization propagated `T002_07` impact notes to the parent task, `T002_08`,
+  `T002_09`, and `T002_12`: patch/edit, shell, and extension/client readiness
+  work should specialize the generic tool/permission/workspace blueprint rather
+  than redefining tool policy, and must keep side effects documentation-only until
+  explicitly reopened as implementation work.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -245,4 +260,4 @@
 ## Open Points
 
 - The next useful T002 documentation/specification slice is
-  `T002_07_add_tool_permission_workspace_contracts.md`.
+  `T002_08_add_patch_edit_proposal_flow.md`.

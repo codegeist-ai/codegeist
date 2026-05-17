@@ -18,3 +18,6 @@ constraints here.
 - `provider-configuration-contracts.md` - architecture blueprint for future
   provider configuration, validation, typed provider errors, and Spring AI adapter
   boundaries.
+- `tool-permission-workspace-contracts.md` - architecture blueprint for future
+  tool descriptors, permission decisions, workspace validation, and bounded tool
+  results.

@@ -91,6 +91,16 @@ git --no-pager diff --check
 - Source research should be limited to clarifying extension/client concepts and
   should not pull those surfaces into the CLI/runtime MVP.
 
+## Dependency Impact Notes
+
+- Finalized `T002_07_add_tool_permission_workspace_contracts.md` defines initial
+  tool, permission, workspace, bounded result, event, and session projection
+  boundaries for later PF4J, JBang, MCP, and provider-signaled tools.
+- This task should treat that blueprint as a prerequisite readiness input, but it
+  must still keep PF4J, JBang, server, Vaadin, SDK/OpenAPI, desktop, marketplace,
+  and TUI implementation deferred until the remaining readiness gates are also
+  satisfied.
+
 ## Creation Note
 
 Status: open.

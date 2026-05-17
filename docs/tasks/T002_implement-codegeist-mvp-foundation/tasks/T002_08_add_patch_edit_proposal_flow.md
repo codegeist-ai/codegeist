@@ -83,6 +83,20 @@ a documentation and diagram slice.
 - Source research should focus on OpenCode patch/edit flow and failure handling,
   not on copying its TypeScript implementation shape.
 
+## Dependency Impact Notes
+
+- Finalized `T002_07_add_tool_permission_workspace_contracts.md` defines the
+  generic tool request, permission decision, workspace target validation, bounded
+  result, output-reference, and event/session projection boundaries. This task
+  should specialize those boundaries for reviewable patch/edit proposals and apply
+  results instead of redefining generic tool policy.
+- Patch application remains a Build-mode, permission-gated, workspace-validated
+  side effect. Plan mode may describe or propose changes, but it must not apply
+  patches.
+- Patch results should use bounded summaries and output references from the
+  `T002_07` blueprint; they must not store full file contents, unbounded patch
+  payloads, or provider-native tool data in session parts.
+
 ## Creation Note
 
 Status: open.

@@ -143,7 +143,13 @@ tasks that benefit from targeted OpenCode source evidence.
   `docs/developer/provider-configuration-contracts.md` and did not add Java
   source, tests, provider starters, credentials, live model calls, tool callbacks,
   Graphify, Repomix, or runtime behavior.
-- Open `T002_07` through `T002_12` should continue through specification, plan,
+- `T002_07` is finalized as a documentation-only tool, permission, and workspace
+  contract blueprint. It created
+  `docs/developer/tool-permission-workspace-contracts.md` and did not add Java
+  source, tests, package directories, provider callbacks, tool execution,
+  permission UI, workspace policy code, patch/edit behavior, shell execution,
+  PF4J, JBang, Graphify, Repomix, or runtime behavior.
+- Open `T002_08` through `T002_12` should continue through specification, plan,
   solve, and finalization as documentation-first slices unless explicitly reopened
   as implementation tasks.
 
