@@ -172,9 +172,14 @@ tasks that benefit from targeted OpenCode source evidence.
   `skipped` with reason, or `failed` with a concrete blocker. It did not add Java
   source, tests, package directories, Maven changes, Taskfile commands, provider
   dependencies, PF4J, JBang, Vaadin, server, or runtime behavior.
-- Open `T002_12` should continue through specification, plan,
-  solve, and finalization as documentation-first slices unless explicitly reopened
-  as implementation tasks.
+- `T002_12` is finalized as a documentation-only extension and client readiness
+  gate blueprint. It created
+  `docs/developer/extension-client-readiness-gates.md` and kept PF4J, JBang,
+  headless server, Vaadin, SDK/OpenAPI, and future TUI surfaces deferred until
+  their runtime, tool/permission/workspace, storage/auth, and native gates are
+  satisfied. It did not add Java source, tests, dependencies, adapters, server
+  routes, Vaadin views, PF4J plugins, JBang integrations, SDK generation, TUI
+  behavior, or runtime behavior.
 
 ## Creation Note
 

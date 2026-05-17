@@ -4,6 +4,8 @@ Parent: `T002_implement-codegeist-mvp-foundation`
 
 Sources: `T001_15`, `T001_16`, `T001_17`, `T001_18`, `T001_21`, `T001_22`, `T001_24`
 
+status: finalized
+
 ## Goal
 
 Describe implementation-readiness gates for later PF4J, JBang, server, and Vaadin
@@ -72,8 +74,82 @@ git --no-pager diff --check
 
 ## Open Questions
 
-- Should readiness gates live in the parity architecture document or in a separate
-   developer note once implementation begins?
+- None for this documentation slice. The readiness gates live in the separate
+  developer note `docs/developer/extension-client-readiness-gates.md`, with
+  cross-links from developer documentation and current-state architecture notes.
+
+## Work Task Phase Status
+
+- `/specify-task` result: specified. The existing goal, scope, non-goals,
+  dependencies, acceptance criteria, and prior specification decision were clear
+  enough for a documentation-only readiness-gate task. The durable user context was
+  the exact task reference with no additional narrowing instructions.
+- `/plan-task` result: planned. This existing `T002_12` task is the concrete
+  implementation task; no duplicate task or child task is needed. Target files are
+  `docs/developer/extension-client-readiness-gates.md`,
+  `docs/developer/README.md`, `docs/developer/architecture.md`,
+  `docs/memory-bank/chat.md`, the T002 parent task, and this task file.
+- `/solve-task` result: solved. Created the extension/client readiness-gates
+  blueprint as markdown only, with no Java source, dependencies, tests, adapters,
+  routes, Vaadin views, PF4J plugins, JBang integrations, SDK generation, TUI, or
+  runtime behavior changes.
+- `/finalize-task` result: finalized. Documentation impact was reviewed through
+  update-documentation semantics; developer indexes and current architecture
+  references were updated, and the T002 parent plus project memory now record that
+  the final T002 foundation readiness slice is complete.
+- Context or instructions considered: no extra user context beyond the task
+  reference.
+- Hints considered: T002 parent `Default Solve Hints`,
+  `docs/tasks/hints/opencode-solving-guidance.md`,
+  `docs/tasks/hints/opencode-source-solving-guidance.md`,
+  `.oc_local/rules/codegeist-task-specification.md`, and
+  `.oc_local/rules/architecture-doc.md`.
+- Upstream phase dependency: satisfied by finalized `T002_03` runtime/session/event
+  contracts, `T002_07` tool/permission/workspace contracts, `T002_09` controlled
+  shell verification contracts, `T002_10` storage posture, and `T002_11` native
+  packaging posture.
+- Open decisions or blockers: none for this slice.
+- Next recommended phase: derive later implementation tasks from the readiness
+  gates only when the user explicitly reopens PF4J, JBang, server, Vaadin,
+  SDK/OpenAPI, or TUI implementation work.
+
+## Architecture Plan
+
+Create `docs/developer/extension-client-readiness-gates.md` as the concrete
+readiness blueprint for deferred extension and client surfaces. The document should
+define shared gates, surface-specific gates, implementation split guidance, future
+file maps, diagrams, and future test handoff notes while leaving all source,
+adapter, dependency, and runtime behavior untouched.
+
+The solve pass should consume the finalized runtime/session/event, tool,
+permission, workspace, shell/process, storage, and native packaging posture docs.
+It should update developer documentation cross-references and leave
+`docs/developer/architecture.md` current-state focused by marking the new document
+as a future blueprint only.
+
+## Solution Note
+
+Status: finalized.
+
+Created `docs/developer/extension-client-readiness-gates.md` as the readiness-gate
+blueprint for later PF4J, JBang, headless server, Vaadin, SDK/OpenAPI, and future
+TUI work. The document requires later surfaces to satisfy runtime API,
+session/event, tool/permission/workspace, storage, auth/security, native posture,
+and test-readiness gates before implementation starts.
+
+The solve pass also linked the new blueprint from `docs/developer/README.md` and
+`docs/developer/architecture.md`. It intentionally did not add Java source, tests,
+dependencies, adapters, server routes, Vaadin views, PF4J plugins, JBang scripts,
+SDK generation, TUI behavior, or runtime behavior.
+
+## Finalization Impact Notes
+
+- The T002 parent now records `T002_12` as finalized and documents that deferred
+  extension/client surfaces remain behind readiness gates.
+- `docs/memory-bank/chat.md` now records the completed T002 foundation
+  documentation sequence and removes `T002_12` as the next open point.
+- No other open T002 child task is affected because `T002_12` is the final child
+  in this parent slice.
 
 ## Specification Decision
 

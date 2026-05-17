@@ -25,7 +25,8 @@ future controlled shell verification blueprint, see
 `docs/developer/shell-verification-contracts.md`. For the future storage port
 posture blueprint, see `docs/developer/storage-port-posture.md`. For the future
 JVM jar and GraalVM native-image packaging posture, see
-`docs/developer/native-packaging-posture.md`.
+`docs/developer/native-packaging-posture.md`. For the future extension/client
+readiness gates, see `docs/developer/extension-client-readiness-gates.md`.
 
 ## Current System State
 
@@ -53,7 +54,9 @@ verification contracts are described in
 `docs/developer/shell-verification-contracts.md`; and future storage port posture
 is described in `docs/developer/storage-port-posture.md`; future JVM jar and
 GraalVM native-image verification posture is described in
-`docs/developer/native-packaging-posture.md`.
+`docs/developer/native-packaging-posture.md`; and future extension/client
+readiness gates are described in
+`docs/developer/extension-client-readiness-gates.md`.
 
 ## Build Baseline
 
@@ -295,6 +298,10 @@ future coding agents can distinguish current code from future architecture.
   GraalVM native-image verification posture, native status reporting, and blocker
   classification without changing Java source, Maven configuration, Taskfile
   commands, tests, or packaging behavior.
+- `docs/developer/extension-client-readiness-gates.md` records the planned
+  readiness gates for deferred PF4J, JBang, server, Vaadin, SDK/OpenAPI, and TUI
+  surfaces without implementing adapters, routes, plugins, scripts, UI, tests, or
+  runtime behavior.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

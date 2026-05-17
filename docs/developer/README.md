@@ -33,3 +33,5 @@ constraints here.
 - `native-packaging-posture.md` - architecture blueprint for future JVM jar and
   GraalVM native-image verification posture, status reporting, and blocker
   classification.
+- `extension-client-readiness-gates.md` - architecture blueprint for readiness
+  gates before deferred PF4J, JBang, server, Vaadin, SDK/OpenAPI, and TUI work.

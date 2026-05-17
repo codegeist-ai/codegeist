@@ -208,8 +208,15 @@
   JBang, Vaadin, server, broad providers, shell/process, and storage surfaces as
   JVM-first until their own tasks prove native compatibility. It created no Java
   source, tests, package directories, Maven changes, Taskfile commands, provider
-  dependencies, PF4J, JBang, Vaadin, server, or runtime behavior. The next phase is
-  `/specify-task T002_12` or `/work-task T002_12`.
+  dependencies, PF4J, JBang, Vaadin, server, or runtime behavior.
+- `T002_12_define_extension_and_client_readiness_gates.md` is finalized as a
+  documentation-only extension/client readiness blueprint. It created
+  `docs/developer/extension-client-readiness-gates.md`, which gates later PF4J,
+  JBang, headless server, Vaadin, SDK/OpenAPI, and TUI work behind runtime API,
+  session/event, tool/permission/workspace, storage, auth/security, native posture,
+  and test-readiness decisions. It created no Java source, tests, dependencies,
+  adapters, server routes, Vaadin views, PF4J plugins, JBang scripts, SDK
+  generation, TUI behavior, or runtime behavior.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -307,5 +314,7 @@
 
 ## Open Points
 
-- The next useful T002 documentation/specification slice is
-  `T002_12_define_extension_and_client_readiness_gates.md`.
+- The T002 MVP foundation documentation/specification sequence is complete through
+  `T002_12`. Next work should derive concrete implementation tasks from the
+  finalized blueprints only when the user explicitly reopens runtime, provider,
+  tool, storage, packaging, extension, or client implementation.
