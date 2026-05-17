@@ -99,6 +99,11 @@ a documentation and diagram slice.
 - Shell output should use bounded summaries and output references from the
   `T002_07` blueprint; session parts and events must not retain unbounded stdout,
   stderr, environment data, or command payloads.
+- Finalized `T002_08_add_patch_edit_proposal_flow.md` reinforces the same
+  review-before-side-effect pattern for workspace mutation. This task should keep
+  shell execution separate from patch/edit apply behavior, while mirroring the
+  bounded result, typed failure, permission, workspace, and event/session summary
+  posture where it applies to command execution.
 
 ## Creation Note
 

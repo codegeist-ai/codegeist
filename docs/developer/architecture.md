@@ -265,6 +265,10 @@ future coding agents can distinguish current code from future architecture.
   descriptor, permission decision, workspace validation, and bounded result
   boundary without implementing Java source, tool execution, permission UI,
   provider callbacks, shell execution, patch/edit behavior, or tests.
+- `docs/developer/patch-edit-proposal-contracts.md` records the planned
+  reviewable patch/edit proposal, apply request, typed apply failure, workspace
+  validation, and bounded result boundary without implementing Java source, patch
+  parsing, apply logic, file writes, rollback, formatter integration, or tests.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
   implementation tasks for moving from the current bootstrap toward the MVP
   foundation.

@@ -21,3 +21,6 @@ constraints here.
 - `tool-permission-workspace-contracts.md` - architecture blueprint for future
   tool descriptors, permission decisions, workspace validation, and bounded tool
   results.
+- `patch-edit-proposal-contracts.md` - architecture blueprint for future
+  reviewable patch/edit proposals, apply requests, typed apply failures, and
+  bounded result summaries.

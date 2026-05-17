@@ -163,6 +163,17 @@
   work should specialize the generic tool/permission/workspace blueprint rather
   than redefining tool policy, and must keep side effects documentation-only until
   explicitly reopened as implementation work.
+- `T002_08_add_patch_edit_proposal_flow.md` is finalized as a documentation-only
+  patch/edit proposal and apply-result blueprint. It created
+  `docs/developer/patch-edit-proposal-contracts.md`, which specializes finalized
+  `T002_07` tool/permission/workspace contracts for exact proposal review,
+  Build-mode apply, permission approval, workspace validation, proposal freshness,
+  typed failures, bounded summaries, output references, and future test handoff.
+  It created no Java source, tests, package directories, patch parser, apply
+  executor, file writes, or runtime behavior. Finalization propagated the bounded
+  result, typed failure, permission, workspace, and event/session summary posture
+  to `T002_09` while keeping shell execution separate from patch/edit apply
+  behavior. The next phase is `/specify-task T002_09` or `/work-task T002_09`.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable

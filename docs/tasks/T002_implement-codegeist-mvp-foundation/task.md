@@ -149,7 +149,12 @@ tasks that benefit from targeted OpenCode source evidence.
   source, tests, package directories, provider callbacks, tool execution,
   permission UI, workspace policy code, patch/edit behavior, shell execution,
   PF4J, JBang, Graphify, Repomix, or runtime behavior.
-- Open `T002_08` through `T002_12` should continue through specification, plan,
+- `T002_08` is finalized as a documentation-only patch/edit proposal and
+  apply-result blueprint. It created
+  `docs/developer/patch-edit-proposal-contracts.md` and did not add Java source,
+  tests, package directories, patch parser code, apply logic, file writes,
+  rollback, formatter integration, Graphify, Repomix, or runtime behavior.
+- Open `T002_09` through `T002_12` should continue through specification, plan,
   solve, and finalization as documentation-first slices unless explicitly reopened
   as implementation tasks.
 
