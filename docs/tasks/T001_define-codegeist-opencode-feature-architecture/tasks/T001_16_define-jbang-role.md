@@ -76,7 +76,7 @@ runtime mediation, PF4J boundaries, security questions, and native-image risks.
 Status: completed.
 
 The solution pass added `## JBang Role` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines JBang as an
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines JBang as an
 optional lightweight Java scripting path, identifies fitting and non-fitting use
 cases, preserves PF4J as the packaged plugin boundary, and lists trust,
 dependency, metadata, caching, and native-image questions.

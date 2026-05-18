@@ -19,7 +19,7 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   documentation/specification handoffs unless the user explicitly reopens a task
   as implementation work.
 - For Codegeist architecture and implementation tasks, read
-  `docs/developer/codegeist-opencode-parity.md` when the target task references
+  `docs/developer/specification/codegeist-opencode-parity.md` when the target task references
   OpenCode parity, runtime boundaries, provider behavior, tools, permissions,
   workspace policy, storage, UI, plugin surfaces, or packaging.
 - Use OpenCode as a feature and behavior reference, not as an implementation

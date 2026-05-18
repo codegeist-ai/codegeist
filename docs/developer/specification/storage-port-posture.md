@@ -22,7 +22,7 @@ Reasons:
 
 - The current application has no prompt execution loop, session continuation
   command, provider call, tool execution, or runtime service yet.
-- `docs/developer/runtime-session-event-contracts.md` already keeps sessions,
+- `docs/developer/specification/runtime-session-event-contracts.md` already keeps sessions,
   turns, message parts, and runtime events persistence-ready without requiring a
   database or event store.
 - File-backed storage should prove a narrow user-visible continuation need before
@@ -180,7 +180,7 @@ Rules:
 
 ## Event And Projection Posture
 
-`docs/developer/runtime-session-event-contracts.md` keeps events and message parts
+`docs/developer/specification/runtime-session-event-contracts.md` keeps events and message parts
 separate. Storage should preserve that separation.
 
 ```mermaid
@@ -307,5 +307,5 @@ start with deterministic in-memory tests.
 - Store summaries and references for tool, shell, patch/edit, provider, and
   generated outputs.
 - Define retention, deletion, and migration behavior before broad durable storage.
-- Update `docs/developer/architecture.md` when storage packages or adapters become
+- Update `docs/developer/architecture/architecture.md` when storage packages or adapters become
   real application code.

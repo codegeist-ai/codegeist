@@ -12,7 +12,7 @@ runtime behavior.
 
 Patch/edit work specializes the generic tool, permission, workspace, bounded
 result, event, and session boundaries in
-`docs/developer/tool-permission-workspace-contracts.md`:
+`docs/developer/specification/tool-permission-workspace-contracts.md`:
 
 - A proposed edit is reviewable data before mutation.
 - Applying a proposal is a Build-mode side effect and must pass mode,

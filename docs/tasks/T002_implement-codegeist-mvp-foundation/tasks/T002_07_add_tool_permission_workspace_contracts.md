@@ -21,7 +21,7 @@ these contracts instead of bypassing them.
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/tool-permission-workspace-contracts.md` as
+1. Create or update `docs/developer/specification/tool-permission-workspace-contracts.md` as
    the future tool, permission, and workspace contract blueprint.
 2. Define future `ToolDescriptor`, `ToolRequest`, `ToolResult`, `ToolFailure`,
    capability category, and result summary shapes.
@@ -36,9 +36,9 @@ these contracts instead of bypassing them.
 
 ## Scope
 
-- `docs/developer/tool-permission-workspace-contracts.md`
+- `docs/developer/specification/tool-permission-workspace-contracts.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/architecture.md` only to keep current-state notes accurate
+- `docs/developer/architecture/architecture.md` only to keep current-state notes accurate
 - this task file
 
 ## Acceptance Criteria
@@ -173,9 +173,9 @@ a documentation and diagram slice.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Documentation considered: `docs/developer/architecture.md`,
-  `docs/developer/README.md`, `docs/developer/context-workspace-manifest.md`,
-  `docs/developer/provider-configuration-contracts.md`, and
+- Documentation considered: `docs/developer/architecture/architecture.md`,
+  `docs/developer/README.md`, `docs/developer/specification/context-workspace-manifest.md`,
+  `docs/developer/specification/provider-configuration-contracts.md`, and
   `docs/memory-bank/chat.md`.
 - Discovered hints considered: the T002 parent `Default Solve Hints` point this
   task toward OpenCode source evidence for tool registration, MCP tool exposure,
@@ -191,9 +191,9 @@ a documentation and diagram slice.
   Graphify, Repomix, or runtime behavior.
 - Open decisions or blockers: none for specification. Later planning should choose
   the document structure, concrete diagrams, source-evidence questions, and future
-  file map for `docs/developer/tool-permission-workspace-contracts.md`.
+  file map for `docs/developer/specification/tool-permission-workspace-contracts.md`.
 - Next recommended phase: run `/plan-task T002_07` as a documentation-only
-  architecture plan for `docs/developer/tool-permission-workspace-contracts.md`.
+  architecture plan for `docs/developer/specification/tool-permission-workspace-contracts.md`.
 
 ## Architecture Plan
 
@@ -204,7 +204,7 @@ or implementation task exists yet.
 
 ### Selected Option
 
-Create `docs/developer/tool-permission-workspace-contracts.md` as the concrete
+Create `docs/developer/specification/tool-permission-workspace-contracts.md` as the concrete
 tool, permission, and workspace contract blueprint, then cross-link it from
 developer documentation and current-state architecture notes.
 
@@ -233,9 +233,9 @@ behavior can occur.
 
 ### Planned Documentation Files
 
-- `docs/developer/tool-permission-workspace-contracts.md`
+- `docs/developer/specification/tool-permission-workspace-contracts.md`
 - `docs/developer/README.md`
-- `docs/developer/architecture.md` only for current-state cross-references and
+- `docs/developer/architecture/architecture.md` only for current-state cross-references and
   explicit not-implemented notes
 - this task file
 
@@ -360,7 +360,7 @@ useful for a specific view.
 
 ### Acceptance Criteria
 
-- `docs/developer/tool-permission-workspace-contracts.md` exists and clearly
+- `docs/developer/specification/tool-permission-workspace-contracts.md` exists and clearly
   describes Codegeist-owned tool, permission, and workspace execution boundaries.
 - The document includes concrete UML diagrams for descriptors, requests/results,
   permission decisions, workspace validation, runtime event/session projection, and
@@ -378,7 +378,7 @@ useful for a specific view.
   payloads.
 - Future tests are described as handoff guidance only; no test source is created.
 - `docs/developer/README.md` links the new blueprint.
-- `docs/developer/architecture.md` remains current-state focused and only gains
+- `docs/developer/architecture/architecture.md` remains current-state focused and only gains
   not-implemented or related-document references if needed.
 - No Java source, tests, packages, provider callbacks, runtime behavior, Graphify,
   or Repomix artifacts are added.
@@ -401,9 +401,9 @@ files, provider callbacks, Spring beans, or runtime behavior.
   slice remains documentation-only.
 - Uses the T002 parent default hints for OpenCode translation and source-evidence
   posture.
-- Uses `docs/developer/codegeist-opencode-parity.md` tool, permission, workspace,
+- Uses `docs/developer/specification/codegeist-opencode-parity.md` tool, permission, workspace,
   mode, PF4J, JBang, MVP-cut, and risk-register direction.
-- Uses `docs/developer/runtime-session-event-contracts.md` for runtime event,
+- Uses `docs/developer/specification/runtime-session-event-contracts.md` for runtime event,
   session, turn, message-part, and correlation-id boundaries.
 - Uses finalized `T002_05` context/workspace boundary for deterministic path
   validation and generated/ignored/secret-like path posture.
@@ -431,7 +431,7 @@ implementation choices as future handoff notes.
 - User context considered: the user asked what the task result should be, then ran
   `/plan-task t002_07` with no additional narrowing instructions. The answer in
   the conversation confirmed that the result should be
-  `docs/developer/tool-permission-workspace-contracts.md` and no Java source.
+  `docs/developer/specification/tool-permission-workspace-contracts.md` and no Java source.
 - Parent task considered:
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
 - Adjacent and dependency tasks considered: dependency
@@ -441,7 +441,7 @@ implementation choices as future handoff notes.
   `T002_08_add_patch_edit_proposal_flow.md`, and adjacent
   `T002_09_add_controlled_shell_verification_tool.md`.
 - Duplicate check result: no existing
-  `docs/developer/tool-permission-workspace-contracts.md` document exists, and no
+  `docs/developer/specification/tool-permission-workspace-contracts.md` document exists, and no
   separate implementation task already covers this blueprint; the existing
   `T002_07` task is the correct target to sharpen.
 - Selected option: create the tool, permission, and workspace architecture
@@ -451,11 +451,11 @@ implementation choices as future handoff notes.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Related context files read: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/runtime-session-event-contracts.md`,
-  `docs/developer/context-workspace-manifest.md`,
-  `docs/developer/provider-configuration-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+- Related context files read: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/runtime-session-event-contracts.md`,
+  `docs/developer/specification/context-workspace-manifest.md`,
+  `docs/developer/specification/provider-configuration-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - Upstream phase dependency: satisfied; this task had top-level
   `status: specified` and a current `/specify-task` phase status before this
@@ -468,13 +468,13 @@ implementation choices as future handoff notes.
 ## Solution Note
 
 Solved as a documentation-only architecture blueprint in
-`docs/developer/tool-permission-workspace-contracts.md`. The new document defines
+`docs/developer/specification/tool-permission-workspace-contracts.md`. The new document defines
 Codegeist-owned tool descriptor, tool request/result, permission request/decision,
 workspace tool-target validation, bounded result, output-reference, runtime event,
 session projection, and Spring AI tool-call mediation boundaries.
 
 The solve pass also linked the new blueprint from `docs/developer/README.md` and
-`docs/developer/architecture.md`. It did not create Java source, tests, package
+`docs/developer/architecture/architecture.md`. It did not create Java source, tests, package
 directories, provider callbacks, tool execution, permission UI, workspace policy
 code, patch/edit behavior, shell execution, PF4J, JBang, Graphify, Repomix, or
 runtime behavior.
@@ -485,7 +485,7 @@ runtime behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_07_add_tool_permission_workspace_contracts.md`.
 - User instructions considered: solve `t002_07` using the existing plan. Prior
   user decisions remain in effect: this slice is documentation-only and should
-  create `docs/developer/tool-permission-workspace-contracts.md` without Java
+  create `docs/developer/specification/tool-permission-workspace-contracts.md` without Java
   source.
 - Upstream phase dependency: satisfied. The target task had top-level
   `status: planned` and a current `/plan-task` handoff before this solve pass.
@@ -497,11 +497,11 @@ runtime behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, finalized
   `T002_05_add_context_workspace_manifest_slice.md`, finalized
   `T002_06_add_provider_configuration_adapter.md`,
-  `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/runtime-session-event-contracts.md`,
-  `docs/developer/context-workspace-manifest.md`,
-  `docs/developer/provider-configuration-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/runtime-session-event-contracts.md`,
+  `docs/developer/specification/context-workspace-manifest.md`,
+  `docs/developer/specification/provider-configuration-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - OpenCode evidence considered: `tool/tool.ts` for tool definitions, execution
   context, permission ask hooks, and output truncation; `tool/registry.ts` for
@@ -514,8 +514,8 @@ runtime behavior.
   events and assistant tool message parts; and `mcp/index.ts` for MCP tool
   exposure.
 - Documentation updates: created
-  `docs/developer/tool-permission-workspace-contracts.md`, updated
-  `docs/developer/README.md`, updated `docs/developer/architecture.md`, and
+  `docs/developer/specification/tool-permission-workspace-contracts.md`, updated
+  `docs/developer/README.md`, updated `docs/developer/architecture/architecture.md`, and
   refreshed `docs/memory-bank/chat.md`.
 - Acceptance criteria status: satisfied. Tool descriptors, permission decisions,
   workspace path validation, event metadata, approval-not-override rules, bounded
@@ -547,19 +547,19 @@ runtime behavior.
   `T002_09_add_controlled_shell_verification_tool.md`, and later dependent open
   `T002_12_define_extension_and_client_readiness_gates.md`.
 - Documentation reviewed through update-documentation semantics:
-  `docs/developer/tool-permission-workspace-contracts.md`,
-  `docs/developer/README.md`, `docs/developer/architecture.md`, and
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/README.md`, `docs/developer/architecture/architecture.md`, and
   `docs/memory-bank/chat.md`.
 - Documentation updates: the parent task now records that `T002_07` is finalized;
   `T002_08`, `T002_09`, and `T002_12` record how the new blueprint constrains
   their later documentation slices; `docs/memory-bank/chat.md` was refreshed to
   make `T002_08` the next useful T002 slice. `docs/developer/README.md` and
-  `docs/developer/architecture.md` were already updated during solve and remained
+  `docs/developer/architecture/architecture.md` were already updated during solve and remained
   accurate during finalization.
 - Remaining follow-ups: continue with
   `T002_08_add_patch_edit_proposal_flow.md` as the next documentation-first T002
   slice. Future Java implementation tasks may be derived later from
-  `docs/developer/tool-permission-workspace-contracts.md` only when explicitly
+  `docs/developer/specification/tool-permission-workspace-contracts.md` only when explicitly
   requested.
 - Verification: `git --no-pager diff --check`.
 - Result: finalized. No implementation gaps, blockers, Java source, tests, package

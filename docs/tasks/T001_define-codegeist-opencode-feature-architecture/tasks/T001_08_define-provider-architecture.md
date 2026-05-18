@@ -143,7 +143,7 @@ Codegeist policy without exposing raw Spring AI tool execution directly.
 ## Deliverable
 
 Add `## Provider Architecture` to
-`docs/developer/codegeist-opencode-parity.md` with:
+`docs/developer/specification/codegeist-opencode-parity.md` with:
 
 - Spring AI as the default integration path,
 - Codegeist-owned provider policy boundaries,
@@ -179,7 +179,7 @@ Add `## Provider Architecture` to
 Status: completed.
 
 The solution pass used the narrow documentation-first path because
-`docs/developer/codegeist-opencode-parity.md` already contains the required
+`docs/developer/specification/codegeist-opencode-parity.md` already contains the required
 `Provider Architecture` section. That section records Spring AI as the default
 integration path, Codegeist-owned provider policy, provider/model/capability
 concepts, selection rules, first provider candidates, open questions, and

@@ -18,7 +18,7 @@ deferred as an explicit later exception for trusted built-ins only.
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/patch-edit-proposal-contracts.md` as the
+1. Create or update `docs/developer/specification/patch-edit-proposal-contracts.md` as the
    future patch/edit proposal blueprint.
 2. Define future edit proposal, target file, patch hunk or text replacement,
    apply request, apply result, and typed apply failure shapes.
@@ -31,9 +31,9 @@ deferred as an explicit later exception for trusted built-ins only.
 
 ## Scope
 
-- `docs/developer/patch-edit-proposal-contracts.md`
+- `docs/developer/specification/patch-edit-proposal-contracts.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/architecture.md` only to keep current-state notes accurate
+- `docs/developer/architecture/architecture.md` only to keep current-state notes accurate
 - this task file
 
 ## Acceptance Criteria
@@ -137,9 +137,9 @@ a documentation and diagram slice.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Documentation considered: `docs/developer/architecture.md`,
-  `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/tool-permission-workspace-contracts.md`, and
+- Documentation considered: `docs/developer/architecture/architecture.md`,
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`, and
   `docs/memory-bank/chat.md`.
 - Discovered hints considered: the T002 parent `Default Solve Hints` point this
   task toward OpenCode source evidence for patch/edit tools, permission mediation,
@@ -155,7 +155,7 @@ a documentation and diagram slice.
   task still needs to choose any Java diff/patch library or implementation-specific
   stale-input signal after this contract is documented.
 - Next recommended phase: run `/plan-task T002_08` as a documentation-only
-  architecture plan for `docs/developer/patch-edit-proposal-contracts.md`.
+  architecture plan for `docs/developer/specification/patch-edit-proposal-contracts.md`.
 
 ## Architecture Plan
 
@@ -165,7 +165,7 @@ proposal and apply-result blueprint, and no matching developer document exists y
 
 ### Selected Option
 
-Create `docs/developer/patch-edit-proposal-contracts.md` as the concrete
+Create `docs/developer/specification/patch-edit-proposal-contracts.md` as the concrete
 patch/edit proposal and apply-result contract blueprint, then cross-link it from
 developer documentation and current-state architecture notes.
 
@@ -193,9 +193,9 @@ permission-gated, workspace-validated mutation.
 
 ### Planned Documentation Files
 
-- `docs/developer/patch-edit-proposal-contracts.md`
+- `docs/developer/specification/patch-edit-proposal-contracts.md`
 - `docs/developer/README.md`
-- `docs/developer/architecture.md` only for current-state cross-references and
+- `docs/developer/architecture/architecture.md` only for current-state cross-references and
   explicit not-implemented notes
 - this task file
 
@@ -258,12 +258,12 @@ Expected source areas to verify include `tool/write.ts`, `tool/apply_patch.ts`,
 
 1. Read the OpenCode source evidence for write/apply-patch, permission,
    workspace, truncation, and session-event behavior.
-2. Draft `docs/developer/patch-edit-proposal-contracts.md` with scope,
+2. Draft `docs/developer/specification/patch-edit-proposal-contracts.md` with scope,
    non-goals, evidence, ownership rules, proposal lifecycle, apply flow, failure
    taxonomy, bounded result posture, diagrams, illustrative Java snippets, future
    file map, and future test handoff.
 3. Cross-link the new blueprint from `docs/developer/README.md`.
-4. Update `docs/developer/architecture.md` only to add a related-document link and
+4. Update `docs/developer/architecture/architecture.md` only to add a related-document link and
    keep the patch/edit flow listed as not implemented.
 5. Update this task with a solution note, solve status, acceptance-criteria check,
    and verification result.
@@ -273,7 +273,7 @@ Expected source areas to verify include `tool/write.ts`, `tool/apply_patch.ts`,
 
 ### Acceptance Criteria For Solve
 
-- `docs/developer/patch-edit-proposal-contracts.md` exists and describes
+- `docs/developer/specification/patch-edit-proposal-contracts.md` exists and describes
   reviewable proposals before application.
 - Apply results include success, partial/failure, conflict, missing target, stale
   input, permission denial, workspace denial, and invalid patch concepts.
@@ -284,7 +284,7 @@ Expected source areas to verify include `tool/write.ts`, `tool/apply_patch.ts`,
 - Future proposal and failure-shape tests are described, but no Java source,
   tests, package directories, patch parser, apply executor, or runtime behavior is
   created.
-- `docs/developer/README.md`, `docs/developer/architecture.md`, this task file,
+- `docs/developer/README.md`, `docs/developer/architecture/architecture.md`, this task file,
   and `docs/memory-bank/chat.md` are consistent with the new blueprint.
 
 ### Verification Plan
@@ -330,7 +330,7 @@ Java source, tests, build files, or runtime behavior.
   `T002_09_add_controlled_shell_verification_tool.md`, and source tasks
   `T001_13`, `T001_10`, `T001_11`, `T001_22`, and `T001_24`.
 - Duplicate check result: no existing
-  `docs/developer/patch-edit-proposal-contracts.md` document exists, and no
+  `docs/developer/specification/patch-edit-proposal-contracts.md` document exists, and no
   separate task already plans this blueprint; the existing `T002_08` task is the
   correct target to sharpen.
 - Selected option: create the patch/edit proposal architecture blueprint document
@@ -340,9 +340,9 @@ Java source, tests, build files, or runtime behavior.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Related context files read: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/tool-permission-workspace-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+- Related context files read: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - Upstream phase dependency: satisfied; this task had top-level
   `status: specified` and a current `/specify-task` phase status before this
@@ -355,7 +355,7 @@ Java source, tests, build files, or runtime behavior.
 ## Solution Note
 
 Solved as a documentation-only architecture blueprint in
-`docs/developer/patch-edit-proposal-contracts.md`. The new document defines
+`docs/developer/specification/patch-edit-proposal-contracts.md`. The new document defines
 Codegeist-owned patch/edit proposal identity, target metadata, patch hunk and text
 replacement summary posture, exact apply request binding, Build-mode apply gates,
 typed apply result and failure shapes, bounded result summaries, output references,
@@ -363,7 +363,7 @@ runtime event/session projection, future Java file maps, illustrative Java
 snippets, and future test handoff notes.
 
 The solve pass also linked the new blueprint from `docs/developer/README.md` and
-`docs/developer/architecture.md`, and refreshed `docs/memory-bank/chat.md`. It did
+`docs/developer/architecture/architecture.md`, and refreshed `docs/memory-bank/chat.md`. It did
 not create Java source, tests, package directories, patch parser code, apply
 logic, file writes, rollback, formatter integration, Graphify, Repomix, or runtime
 behavior.
@@ -374,7 +374,7 @@ behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_08_add_patch_edit_proposal_flow.md`.
 - User instructions considered: solve `T002_08` using the existing plan. Prior
   user decisions remain in effect: this slice is documentation-only and should
-  create `docs/developer/patch-edit-proposal-contracts.md` without Java source.
+  create `docs/developer/specification/patch-edit-proposal-contracts.md` without Java source.
 - Upstream phase dependency: satisfied. The target task had top-level
   `status: planned` and a current `/plan-task` handoff before this solve pass.
 - Hints and overlays considered: `docs/tasks/hints/opencode-solving-guidance.md`,
@@ -385,9 +385,9 @@ behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, finalized
   `T002_07_add_tool_permission_workspace_contracts.md`, adjacent open
   `T002_09_add_controlled_shell_verification_tool.md`,
-  `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/tool-permission-workspace-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - OpenCode evidence considered: `tool/write.ts` for diff creation, edit permission,
   writes, file events, and diagnostics; `tool/apply_patch.ts` for hunk parsing,
@@ -400,8 +400,8 @@ behavior.
   `v2/session-event.ts` plus `v2/session-message.ts` for tool lifecycle events and
   bounded assistant tool message parts.
 - Documentation updates: created
-  `docs/developer/patch-edit-proposal-contracts.md`, updated
-  `docs/developer/README.md`, updated `docs/developer/architecture.md`, and
+  `docs/developer/specification/patch-edit-proposal-contracts.md`, updated
+  `docs/developer/README.md`, updated `docs/developer/architecture/architecture.md`, and
   refreshed `docs/memory-bank/chat.md`.
 - Acceptance criteria status: satisfied. File changes are specified as reviewable
   proposals before application; apply results include success, partial/failure,
@@ -433,22 +433,22 @@ behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md` and adjacent open
   `T002_09_add_controlled_shell_verification_tool.md`.
 - Documentation reviewed through update-documentation semantics:
-  `docs/developer/patch-edit-proposal-contracts.md`, `docs/developer/README.md`,
-  `docs/developer/architecture.md`, and `docs/memory-bank/chat.md`.
+  `docs/developer/specification/patch-edit-proposal-contracts.md`, `docs/developer/README.md`,
+  `docs/developer/architecture/architecture.md`, and `docs/memory-bank/chat.md`.
 - Documentation updates: the parent task now records that `T002_08` is finalized;
   `T002_09` records that shell verification should remain separate from
   patch/edit apply behavior while reusing bounded result, typed failure,
   permission, workspace, and event/session summary posture where applicable; and
   `docs/memory-bank/chat.md` was refreshed to make `T002_09` the next useful T002
-  slice. `docs/developer/README.md` and `docs/developer/architecture.md` were
+  slice. `docs/developer/README.md` and `docs/developer/architecture/architecture.md` were
   already updated during solve and remained accurate during finalization.
 - Remaining follow-ups: continue with
   `T002_09_add_controlled_shell_verification_tool.md` as the next
   documentation-first T002 slice. Future Java implementation tasks may be derived
-  later from `docs/developer/patch-edit-proposal-contracts.md` only when
+  later from `docs/developer/specification/patch-edit-proposal-contracts.md` only when
   explicitly requested.
 - Verification: `git --no-pager diff --check` and
-  `git --no-pager diff --check --no-index /dev/null docs/developer/patch-edit-proposal-contracts.md`.
+  `git --no-pager diff --check --no-index /dev/null docs/developer/specification/patch-edit-proposal-contracts.md`.
 - Result: finalized. No implementation gaps, blockers, Java source, tests, package
   directories, patch parser code, apply logic, file writes, rollback, formatter
   integration, Graphify, Repomix, or runtime behavior were introduced.

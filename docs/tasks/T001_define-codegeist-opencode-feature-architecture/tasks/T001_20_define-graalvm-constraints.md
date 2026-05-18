@@ -88,7 +88,7 @@ open compatibility questions.
 Status: completed.
 
 The solution pass added `## GraalVM Constraints` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines native-image
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines native-image
 risk areas, native/JVM-first split, dependency implications, verification
 candidates, and open compatibility questions for Spring, Spring AI, Vaadin,
 PF4J, JBang, reflection, serialization, HTTP clients, file/process work, and

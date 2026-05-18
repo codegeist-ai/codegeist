@@ -42,7 +42,7 @@ instead of silently changing the Spring AI stability decision.
 
 ## Deliverable
 
-Update `docs/developer/codegeist-opencode-parity.md` with a concise technology
+Update `docs/developer/specification/codegeist-opencode-parity.md` with a concise technology
 baseline section.
 
 The section should include a table with at least these columns:

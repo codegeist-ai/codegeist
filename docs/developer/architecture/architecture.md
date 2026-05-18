@@ -10,23 +10,27 @@ Use it as the compact current-state map before changing Codegeist source,
 configuration, build, or verification behavior.
 
 For target architecture and future design decisions, see
-`docs/developer/codegeist-opencode-parity.md`. For the Codegeist-owned runtime
-vocabulary and boundary diagram, see `docs/developer/runtime-vocabulary.md`. For
-the future runtime/session/event contract blueprint and diagrams, see
-`docs/developer/runtime-session-event-contracts.md`. For the future
+`docs/developer/specification/codegeist-opencode-parity.md`. For the
+Codegeist-owned runtime vocabulary and boundary diagram, see
+`docs/developer/specification/runtime-vocabulary.md`. For the future
+runtime/session/event contract blueprint and diagrams, see
+`docs/developer/specification/runtime-session-event-contracts.md`. For the future
 context-loading and workspace-manifest blueprint, see
-`docs/developer/context-workspace-manifest.md`. For the future provider
-configuration and Spring AI adapter blueprint, see
-`docs/developer/provider-configuration-contracts.md`. For the future tool,
-permission, and workspace execution blueprint, see
-`docs/developer/tool-permission-workspace-contracts.md`. For the future patch/edit
-proposal blueprint, see `docs/developer/patch-edit-proposal-contracts.md`. For the
-future controlled shell verification blueprint, see
-`docs/developer/shell-verification-contracts.md`. For the future storage port
-posture blueprint, see `docs/developer/storage-port-posture.md`. For the future
-JVM jar and GraalVM native-image packaging posture, see
-`docs/developer/native-packaging-posture.md`. For the future extension/client
-readiness gates, see `docs/developer/extension-client-readiness-gates.md`.
+`docs/developer/specification/context-workspace-manifest.md`. For the future
+provider configuration and Spring AI adapter blueprint, see
+`docs/developer/specification/provider-configuration-contracts.md`. For the future
+tool, permission, and workspace execution blueprint, see
+`docs/developer/specification/tool-permission-workspace-contracts.md`. For the
+future patch/edit proposal blueprint, see
+`docs/developer/specification/patch-edit-proposal-contracts.md`. For the future
+controlled shell verification blueprint, see
+`docs/developer/specification/shell-verification-contracts.md`. For the future
+storage port posture blueprint, see
+`docs/developer/specification/storage-port-posture.md`. For the future JVM jar and
+GraalVM native-image packaging posture, see
+`docs/developer/specification/native-packaging-posture.md`. For the future
+extension/client readiness gates, see
+`docs/developer/specification/extension-client-readiness-gates.md`.
 
 ## Current System State
 
@@ -39,24 +43,25 @@ The repository also contains planning documentation for a broader coding-agent
 runtime. Those future runtime, session, event, provider, tool, permission,
 workspace, storage, extension, server, and UI concepts are not implemented in the
 application code yet. Their current vocabulary and ownership boundaries are
-documented in `docs/developer/runtime-vocabulary.md`; the future
+documented in `docs/developer/specification/runtime-vocabulary.md`; the future
 runtime/session/event contract shape is described in
-`docs/developer/runtime-session-event-contracts.md`; and the future
+`docs/developer/specification/runtime-session-event-contracts.md`; and the future
 context/workspace manifest shape is described in
-`docs/developer/context-workspace-manifest.md`. Future provider configuration,
-validation, and Spring AI adapter boundaries are described in
-`docs/developer/provider-configuration-contracts.md`; future tool descriptors,
-permission decisions, workspace validation, and bounded tool results are described
-in `docs/developer/tool-permission-workspace-contracts.md`; future patch/edit
-proposal contracts are described in
-`docs/developer/patch-edit-proposal-contracts.md`; and future controlled shell
-verification contracts are described in
-`docs/developer/shell-verification-contracts.md`; and future storage port posture
-is described in `docs/developer/storage-port-posture.md`; future JVM jar and
-GraalVM native-image verification posture is described in
-`docs/developer/native-packaging-posture.md`; and future extension/client
-readiness gates are described in
-`docs/developer/extension-client-readiness-gates.md`.
+`docs/developer/specification/context-workspace-manifest.md`. Future provider
+configuration, validation, and Spring AI adapter boundaries are described in
+`docs/developer/specification/provider-configuration-contracts.md`; future tool
+descriptors, permission decisions, workspace validation, and bounded tool results
+are described in
+`docs/developer/specification/tool-permission-workspace-contracts.md`; future
+patch/edit proposal contracts are described in
+`docs/developer/specification/patch-edit-proposal-contracts.md`; future controlled
+shell verification contracts are described in
+`docs/developer/specification/shell-verification-contracts.md`; future storage port
+posture is described in `docs/developer/specification/storage-port-posture.md`;
+future JVM jar and GraalVM native-image verification posture is described in
+`docs/developer/specification/native-packaging-posture.md`; and future
+extension/client readiness gates are described in
+`docs/developer/specification/extension-client-readiness-gates.md`.
 
 ## Build Baseline
 
@@ -170,8 +175,8 @@ flowchart TD
 The dotted nodes are planned architecture concepts documented elsewhere. They are
 included here only to prevent coding agents from assuming those packages already
 exist. The vocabulary and dependency direction for those concepts are documented
-in `docs/developer/runtime-vocabulary.md`, and their future contract blueprint is
-documented in `docs/developer/runtime-session-event-contracts.md`.
+in `docs/developer/specification/runtime-vocabulary.md`, and their future contract blueprint is
+documented in `docs/developer/specification/runtime-session-event-contracts.md`.
 
 ## Test Architecture
 
@@ -262,43 +267,43 @@ future coding agents can distinguish current code from future architecture.
 
 ## Related Documents
 
-- `docs/developer/codegeist-opencode-parity.md` records target architecture,
+- `docs/developer/specification/codegeist-opencode-parity.md` records target architecture,
   OpenCode parity mapping, planned boundaries, MVP cut, risks, and backlog.
-- `docs/developer/runtime-vocabulary.md` records the Codegeist-owned runtime
+- `docs/developer/specification/runtime-vocabulary.md` records the Codegeist-owned runtime
   vocabulary and boundary diagram without requiring Java packages or classes to
   exist.
-- `docs/developer/runtime-session-event-contracts.md` records the planned
+- `docs/developer/specification/runtime-session-event-contracts.md` records the planned
   runtime/session/event contract shape, OpenCode source evidence, diagrams, and
   illustrative Java snippets without implementing Java source.
-- `docs/developer/context-workspace-manifest.md` records the planned deterministic
+- `docs/developer/specification/context-workspace-manifest.md` records the planned deterministic
   context-loading and workspace-validation manifest contract without implementing
   Java source, readers, provider calls, embeddings, Graphify, or Repomix.
-- `docs/developer/provider-configuration-contracts.md` records the planned
+- `docs/developer/specification/provider-configuration-contracts.md` records the planned
   provider configuration, validation, typed provider error, and Spring AI adapter
   boundary without implementing Java source, provider starters, credentials, live
   model calls, or tests.
-- `docs/developer/tool-permission-workspace-contracts.md` records the planned tool
+- `docs/developer/specification/tool-permission-workspace-contracts.md` records the planned tool
   descriptor, permission decision, workspace validation, and bounded result
   boundary without implementing Java source, tool execution, permission UI,
   provider callbacks, shell execution, patch/edit behavior, or tests.
-- `docs/developer/patch-edit-proposal-contracts.md` records the planned
+- `docs/developer/specification/patch-edit-proposal-contracts.md` records the planned
   reviewable patch/edit proposal, apply request, typed apply failure, workspace
   validation, and bounded result boundary without implementing Java source, patch
   parsing, apply logic, file writes, rollback, formatter integration, or tests.
-- `docs/developer/shell-verification-contracts.md` records the planned controlled
+- `docs/developer/specification/shell-verification-contracts.md` records the planned controlled
   shell verification request, permission gate, workspace-cwd validation, typed
   shell failure, and bounded output boundary without implementing Java source,
   tests, process execution, PTY support, terminal UI, remote execution, JBang
   execution, or shell sandboxing.
-- `docs/developer/storage-port-posture.md` records the planned in-memory-first
+- `docs/developer/specification/storage-port-posture.md` records the planned in-memory-first
   storage port posture, session/message projection boundaries, redaction rules,
   and later file/database adapter gates without implementing Java source, tests,
   storage ports, storage adapters, database schemas, migrations, or event sourcing.
-- `docs/developer/native-packaging-posture.md` records the planned JVM jar and
+- `docs/developer/specification/native-packaging-posture.md` records the planned JVM jar and
   GraalVM native-image verification posture, native status reporting, and blocker
   classification without changing Java source, Maven configuration, Taskfile
   commands, tests, or packaging behavior.
-- `docs/developer/extension-client-readiness-gates.md` records the planned
+- `docs/developer/specification/extension-client-readiness-gates.md` records the planned
   readiness gates for deferred PF4J, JBang, server, Vaadin, SDK/OpenAPI, and TUI
   surfaces without implementing adapters, routes, plugins, scripts, UI, tests, or
   runtime behavior.

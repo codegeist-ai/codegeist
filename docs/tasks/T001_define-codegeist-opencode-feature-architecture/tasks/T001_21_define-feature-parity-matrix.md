@@ -88,7 +88,7 @@ classification, risks/open questions, and verification ideas.
 Status: completed.
 
 The solution pass added `## Feature Parity Matrix` to
-`docs/developer/codegeist-opencode-parity.md`. The matrix covers the OpenCode
+`docs/developer/specification/codegeist-opencode-parity.md`. The matrix covers the OpenCode
 feature groups from the parent epic and maps each to Codegeist target behavior,
 component ownership, MVP/later/out-of-scope classification, dependencies,
 risks/open questions, and verification ideas.

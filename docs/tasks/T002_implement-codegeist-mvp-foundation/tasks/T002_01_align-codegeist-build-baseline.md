@@ -66,7 +66,7 @@ runtime features yet:
 - `app/codegeist/cli/Taskfile.yml`
 - `app/codegeist/cli/src/test/java/ai/codegeist/app/CodegeistApplicationTests.java`
   only if the context-load test needs compatibility changes
-- `docs/developer/codegeist-opencode-parity.md` only if verification changes the
+- `docs/developer/specification/codegeist-opencode-parity.md` only if verification changes the
   recorded baseline decision or open risk
 
 ## Acceptance Criteria
@@ -112,7 +112,7 @@ git --no-pager diff --check
 ## Dependencies
 
 - Depends on the architecture decision in `T001_01` and the implementation
-  backlog in `docs/developer/codegeist-opencode-parity.md`.
+  backlog in `docs/developer/specification/codegeist-opencode-parity.md`.
 - Should be solved before provider integration and before assuming Spring AI APIs
   in runtime, tool, or provider tasks.
 
@@ -146,7 +146,7 @@ git --no-pager diff --check
   model access, global command/skill customization storage, and deployment
   artifacts such as Helm charts.
 - The new component-diagram request is recorded as target architecture context in
-  `docs/developer/codegeist-opencode-parity.md`, not as new implementation scope
+  `docs/developer/specification/codegeist-opencode-parity.md`, not as new implementation scope
   for this completed build-baseline task.
 - Rechecked again with the user decision to include only the CLI project move in
   this task. Moving the tracked CLI Maven project to `app/codegeist/cli` is now
@@ -172,7 +172,7 @@ git --no-pager diff --check
   `docs/tasks/hints/opencode-solving-guidance.md` and
   `docs/tasks/hints/opencode-source-solving-guidance.md` from the T002 parent.
 - Related context files read:
-  `docs/developer/codegeist-opencode-parity.md`, `app/codegeist/cli/pom.xml`,
+  `docs/developer/specification/codegeist-opencode-parity.md`, `app/codegeist/cli/pom.xml`,
   `app/codegeist/cli/Taskfile.yml`, and
   `app/codegeist/cli/src/test/java/ai/codegeist/app/CodegeistApplicationTests.java`.
 - Current worktree observation: the build baseline aligns

@@ -20,7 +20,7 @@ The architecture calls for one verified provider path before broad provider work
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/provider-configuration-contracts.md` as the
+1. Create or update `docs/developer/specification/provider-configuration-contracts.md` as the
    future provider configuration and adapter blueprint.
 2. Define future provider config records/properties for provider id, model id,
    credential source reference, capabilities, and verification status.
@@ -40,9 +40,9 @@ The architecture calls for one verified provider path before broad provider work
 
 ## Scope
 
-- `docs/developer/provider-configuration-contracts.md`
+- `docs/developer/specification/provider-configuration-contracts.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/architecture.md` only to keep current-state notes accurate
+- `docs/developer/architecture/architecture.md` only to keep current-state notes accurate
 - this task file
 
 ## Acceptance Criteria
@@ -205,8 +205,8 @@ a documentation and diagram slice.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Documentation considered: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+- Documentation considered: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - Discovered hints considered: the T002 parent `Default Solve Hints` point this
   provider task toward OpenCode source evidence for provider selection, model
@@ -229,7 +229,7 @@ a documentation and diagram slice.
   how much validation can run offline before any safe live-provider smoke test
   exists.
 - Next recommended phase: run `/plan-task T002_06` as a documentation-only
-  architecture plan for `docs/developer/provider-configuration-contracts.md`.
+  architecture plan for `docs/developer/specification/provider-configuration-contracts.md`.
 
 ## Architecture Plan
 
@@ -240,7 +240,7 @@ task or document exists yet.
 
 ### Selected Option
 
-Create `docs/developer/provider-configuration-contracts.md` as the concrete
+Create `docs/developer/specification/provider-configuration-contracts.md` as the concrete
 provider configuration and adapter blueprint, then cross-link it from developer
 documentation and current-state architecture notes.
 
@@ -273,9 +273,9 @@ adapter-side counterparts only.
 
 ### Planned Documentation Files
 
-- `docs/developer/provider-configuration-contracts.md`
+- `docs/developer/specification/provider-configuration-contracts.md`
 - `docs/developer/README.md`
-- `docs/developer/architecture.md` only for current-state cross-references and
+- `docs/developer/architecture/architecture.md` only for current-state cross-references and
   explicit not-implemented notes
 - this task file
 
@@ -390,7 +390,7 @@ view.
 
 ### Acceptance Criteria
 
-- `docs/developer/provider-configuration-contracts.md` exists and clearly
+- `docs/developer/specification/provider-configuration-contracts.md` exists and clearly
   describes Codegeist-owned provider configuration and adapter boundaries.
 - The document includes concrete UML class diagrams for provider configuration,
   adapter boundary, validation/error, streaming response, and Spring AI mapping.
@@ -405,7 +405,7 @@ view.
   provider/model/credential cases and disabled tool-calling posture.
 - Future tests are described as handoff guidance only; no test source is created.
 - `docs/developer/README.md` links the new provider blueprint.
-- `docs/developer/architecture.md` remains current-state focused and only gains
+- `docs/developer/architecture/architecture.md` remains current-state focused and only gains
   not-implemented or related-document references if needed.
 - No Java source, tests, packages, provider starters, credentials, live calls,
   runtime behavior, Graphify, or Repomix artifacts are added.
@@ -428,10 +428,10 @@ files, provider starters, or runtime behavior.
   task.
 - Uses the T002 parent default hints for OpenCode translation and source-evidence
   posture.
-- Uses `docs/developer/codegeist-opencode-parity.md` provider architecture,
+- Uses `docs/developer/specification/codegeist-opencode-parity.md` provider architecture,
   GraalVM constraints, MVP cut, and risk-register direction.
-- Uses `docs/developer/runtime-vocabulary.md` and
-  `docs/developer/runtime-session-event-contracts.md` for runtime/session/event
+- Uses `docs/developer/specification/runtime-vocabulary.md` and
+  `docs/developer/specification/runtime-session-event-contracts.md` for runtime/session/event
   type-isolation boundaries.
 - Uses finalized `T002_05` context/workspace boundary so provider configuration
   does not own context profiles, workspace reads, or external analysis ingestion.
@@ -463,7 +463,7 @@ implementation choices as future handoff notes.
   `T002_07_add_tool_permission_workspace_contracts.md`, dependency
   `T002_03_introduce-runtime-session-event-contracts.md`, and source tasks
   `T001_08`, `T001_20`, `T001_22`, and `T001_24`.
-- Duplicate check result: no existing `docs/developer/provider-configuration-contracts.md`
+- Duplicate check result: no existing `docs/developer/specification/provider-configuration-contracts.md`
   document exists, and no separate provider implementation task already covers
   this blueprint; the existing `T002_06` task is the correct target to sharpen.
 - Selected option: create the provider architecture blueprint document in the
@@ -473,8 +473,8 @@ implementation choices as future handoff notes.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Related context files read: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/runtime-vocabulary.md`, `docs/developer/architecture.md`,
+- Related context files read: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/runtime-vocabulary.md`, `docs/developer/architecture/architecture.md`,
   `docs/developer/README.md`, and `docs/memory-bank/chat.md`.
 - Spring AI evidence considered from prior Context7 lookup: `ChatModel`,
   `StreamingChatModel`, `Prompt`, `ChatOptions`, `ChatResponse`, provider
@@ -490,7 +490,7 @@ implementation choices as future handoff notes.
 ## Solution Note
 
 Solved as a documentation-only architecture blueprint in
-`docs/developer/provider-configuration-contracts.md`. The new document defines
+`docs/developer/specification/provider-configuration-contracts.md`. The new document defines
 Codegeist-owned provider configuration, capability classification, credential
 source references, validation and dry-run diagnostics, typed provider errors,
 runtime-facing adapter ports, streaming response boundaries, Spring AI counterpart
@@ -498,7 +498,7 @@ mapping, first-wave OpenAI-compatible/OpenAI and Ollama support, and extension
 rules for later Spring AI-supported providers.
 
 The solve pass also linked the new blueprint from `docs/developer/README.md` and
-`docs/developer/architecture.md`. It did not create Java source, tests, package
+`docs/developer/architecture/architecture.md`. It did not create Java source, tests, package
 directories, provider starters, credentials, live model calls, tool callbacks,
 Graphify, Repomix, or runtime behavior.
 
@@ -522,9 +522,9 @@ Graphify, Repomix, or runtime behavior.
   `T002_05_add_context_workspace_manifest_slice.md`, adjacent
   `T002_07_add_tool_permission_workspace_contracts.md`, dependency
   `T002_03_introduce-runtime-session-event-contracts.md`,
-  `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/runtime-session-event-contracts.md`,
-  `docs/developer/context-workspace-manifest.md`, `docs/developer/architecture.md`,
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/runtime-session-event-contracts.md`,
+  `docs/developer/specification/context-workspace-manifest.md`, `docs/developer/architecture/architecture.md`,
   `docs/developer/README.md`, and `docs/memory-bank/chat.md`.
 - OpenCode evidence considered: `v2/model.ts` for provider/model refs,
   capabilities, endpoints, options, and status; `config/provider.ts` for provider
@@ -539,8 +539,8 @@ Graphify, Repomix, or runtime behavior.
   Ollama base URL/model properties, `ToolCallback`, and
   `internal-tool-execution-enabled`.
 - Documentation updates: created
-  `docs/developer/provider-configuration-contracts.md`, updated
-  `docs/developer/README.md`, updated `docs/developer/architecture.md`, and
+  `docs/developer/specification/provider-configuration-contracts.md`, updated
+  `docs/developer/README.md`, updated `docs/developer/architecture/architecture.md`, and
   refreshed `docs/memory-bank/chat.md`.
 - Acceptance criteria status: satisfied. Runtime-facing provider contracts are
   specified as Codegeist-owned and isolated from provider SDK details; provider,
@@ -573,8 +573,8 @@ Graphify, Repomix, or runtime behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md` and adjacent open
   `T002_07_add_tool_permission_workspace_contracts.md`.
 - Documentation reviewed through update-documentation semantics:
-  `docs/developer/provider-configuration-contracts.md`, `docs/developer/README.md`,
-  `docs/developer/architecture.md`, and `docs/memory-bank/chat.md`.
+  `docs/developer/specification/provider-configuration-contracts.md`, `docs/developer/README.md`,
+  `docs/developer/architecture/architecture.md`, and `docs/memory-bank/chat.md`.
 - Documentation updates: the parent task now records that `T002_06` is finalized;
   `T002_07` records that Spring AI tool callbacks and provider-emitted tool-call
   signals must remain disabled or externally mediated until tool, permission, and
@@ -583,7 +583,7 @@ Graphify, Repomix, or runtime behavior.
 - Remaining follow-ups: continue with
   `T002_07_add_tool_permission_workspace_contracts.md` as the next
   documentation-first T002 slice. Future Java implementation tasks for provider
-  config can be derived later from `docs/developer/provider-configuration-contracts.md`
+  config can be derived later from `docs/developer/specification/provider-configuration-contracts.md`
   only when explicitly requested.
 - Verification: `git --no-pager diff --check`.
 - Result: finalized. No implementation gaps, blockers, Java source, tests,

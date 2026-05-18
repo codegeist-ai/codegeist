@@ -82,7 +82,7 @@ event/audit choices, and migration triggers for Spring Data or another backend.
 Status: completed.
 
 The solution pass added `## Storage Architecture` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines persistence
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines persistence
 categories, MVP/later posture, file-backed option, sensitive-data handling,
 event/audit choices, and migration triggers for Spring Data or another backend.
 

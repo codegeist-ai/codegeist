@@ -89,7 +89,7 @@ verification mapping.
 Status: completed.
 
 The solution pass added `## End-To-End Prompt Flow` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines the MVP prompt
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines the MVP prompt
 path, approval/denied/provider-failure branches, component owners, later-stage
 branches, and verification mapping.
 

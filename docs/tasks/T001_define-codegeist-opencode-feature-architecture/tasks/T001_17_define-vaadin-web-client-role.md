@@ -78,7 +78,7 @@ security assumptions.
 Status: completed.
 
 The solution pass added `## Vaadin Web Client Role` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines Vaadin as a
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines Vaadin as a
 future client surface, lists likely session/event/approval/tool/context/provider
 views, preserves runtime and permission ownership, and identifies server/API/auth
 dependencies.

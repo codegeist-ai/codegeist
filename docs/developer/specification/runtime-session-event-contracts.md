@@ -754,7 +754,7 @@ adding placeholder classes just to reserve package names.
 - Assign event sequences in the runtime before publication or return.
 - Keep transient stream events separate from durable message parts.
 - Add contract tests only when Java source exists and behavior can be verified.
-- Update `docs/developer/architecture.md` when any described package becomes real
+- Update `docs/developer/architecture/architecture.md` when any described package becomes real
   application code.
 
 ## Non-Goals

@@ -140,33 +140,33 @@ tasks that benefit from targeted OpenCode source evidence.
   implementation work until the user explicitly requests that next phase.
 - `T002_06` is finalized as a documentation-only provider configuration and
   Spring AI adapter blueprint. It created
-  `docs/developer/provider-configuration-contracts.md` and did not add Java
+  `docs/developer/specification/provider-configuration-contracts.md` and did not add Java
   source, tests, provider starters, credentials, live model calls, tool callbacks,
   Graphify, Repomix, or runtime behavior.
 - `T002_07` is finalized as a documentation-only tool, permission, and workspace
   contract blueprint. It created
-  `docs/developer/tool-permission-workspace-contracts.md` and did not add Java
+  `docs/developer/specification/tool-permission-workspace-contracts.md` and did not add Java
   source, tests, package directories, provider callbacks, tool execution,
   permission UI, workspace policy code, patch/edit behavior, shell execution,
   PF4J, JBang, Graphify, Repomix, or runtime behavior.
 - `T002_08` is finalized as a documentation-only patch/edit proposal and
   apply-result blueprint. It created
-  `docs/developer/patch-edit-proposal-contracts.md` and did not add Java source,
+  `docs/developer/specification/patch-edit-proposal-contracts.md` and did not add Java source,
   tests, package directories, patch parser code, apply logic, file writes,
   rollback, formatter integration, Graphify, Repomix, or runtime behavior.
 - `T002_09` is finalized as a documentation-only controlled shell verification
-  blueprint. It created `docs/developer/shell-verification-contracts.md` and did
+  blueprint. It created `docs/developer/specification/shell-verification-contracts.md` and did
   not add Java source, tests, package directories, process execution, PTY support,
   terminal UI, remote execution, JBang execution, shell sandboxing, Graphify,
   Repomix, or runtime behavior.
 - `T002_10` is finalized as a documentation-only minimal storage posture
-  blueprint. It created `docs/developer/storage-port-posture.md`, selected
+  blueprint. It created `docs/developer/specification/storage-port-posture.md`, selected
   in-memory storage first behind replaceable ports, and did not add Java source,
   tests, package directories, storage ports, adapters, database schemas,
   migrations, encryption, durable audit logs, compaction, event replay, Graphify,
   Repomix, or runtime behavior.
 - `T002_11` is finalized as a documentation-only native packaging posture
-  blueprint. It created `docs/developer/native-packaging-posture.md`, kept the MVP
+  blueprint. It created `docs/developer/specification/native-packaging-posture.md`, kept the MVP
   foundation JVM-first and native-aware, defined future JVM jar and native-image
   verification ladders, and required native status to be reported as `passed`,
   `skipped` with reason, or `failed` with a concrete blocker. It did not add Java
@@ -174,7 +174,7 @@ tasks that benefit from targeted OpenCode source evidence.
   dependencies, PF4J, JBang, Vaadin, server, or runtime behavior.
 - `T002_12` is finalized as a documentation-only extension and client readiness
   gate blueprint. It created
-  `docs/developer/extension-client-readiness-gates.md` and kept PF4J, JBang,
+  `docs/developer/specification/extension-client-readiness-gates.md` and kept PF4J, JBang,
   headless server, Vaadin, SDK/OpenAPI, and future TUI surfaces deferred until
   their runtime, tool/permission/workspace, storage/auth, and native gates are
   satisfied. It did not add Java source, tests, dependencies, adapters, server

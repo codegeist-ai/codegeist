@@ -30,12 +30,12 @@ than expanding the MVP foundation scope.
 
 | Input | Gate lesson |
 | --- | --- |
-| `docs/developer/runtime-session-event-contracts.md` | Server, Vaadin, TUI, SDK, PF4J, and JBang requests must enter through runtime-owned prompt/session/event contracts instead of mutating client state directly. |
-| `docs/developer/tool-permission-workspace-contracts.md` | Plugin tools, script tools, server-triggered tools, and client approval actions must flow through descriptors, mode checks, permission policy, workspace validation, bounded results, events, and session summaries. |
-| `docs/developer/shell-verification-contracts.md` | JBang and any process-like extension path must satisfy the controlled shell/process posture before executing external commands or scripts. |
-| `docs/developer/storage-port-posture.md` | Server and Vaadin surfaces need explicit storage adapter, redaction, retention, artifact, concurrency, and auth posture before depending on durable session/event state. |
-| `docs/developer/native-packaging-posture.md` | PF4J, JBang, server, Vaadin, provider, shell/process, and storage surfaces stay JVM-first until their own tasks prove native compatibility and record `passed`, `skipped`, or `failed`. |
-| `docs/developer/codegeist-opencode-parity.md` | PF4J and JBang may contribute commands, tools, skills, hooks, or integrations, while server, Vaadin, and future TUI clients render and submit work through the same runtime. None of these surfaces owns runtime orchestration. |
+| `docs/developer/specification/runtime-session-event-contracts.md` | Server, Vaadin, TUI, SDK, PF4J, and JBang requests must enter through runtime-owned prompt/session/event contracts instead of mutating client state directly. |
+| `docs/developer/specification/tool-permission-workspace-contracts.md` | Plugin tools, script tools, server-triggered tools, and client approval actions must flow through descriptors, mode checks, permission policy, workspace validation, bounded results, events, and session summaries. |
+| `docs/developer/specification/shell-verification-contracts.md` | JBang and any process-like extension path must satisfy the controlled shell/process posture before executing external commands or scripts. |
+| `docs/developer/specification/storage-port-posture.md` | Server and Vaadin surfaces need explicit storage adapter, redaction, retention, artifact, concurrency, and auth posture before depending on durable session/event state. |
+| `docs/developer/specification/native-packaging-posture.md` | PF4J, JBang, server, Vaadin, provider, shell/process, and storage surfaces stay JVM-first until their own tasks prove native compatibility and record `passed`, `skipped`, or `failed`. |
+| `docs/developer/specification/codegeist-opencode-parity.md` | PF4J and JBang may contribute commands, tools, skills, hooks, or integrations, while server, Vaadin, and future TUI clients render and submit work through the same runtime. None of these surfaces owns runtime orchestration. |
 
 ### OpenCode Feature Evidence
 
@@ -294,5 +294,5 @@ start with contract tests that prove readiness before broad integration tests.
   APIs, not alternate owners of sessions, events, tools, permissions, or storage.
 - Keep native compatibility claims surface-specific. JVM success for the CLI does
   not imply native success for PF4J, JBang, server, Vaadin, storage, or providers.
-- Update `docs/developer/architecture.md` only when one of these surfaces becomes
+- Update `docs/developer/architecture/architecture.md` only when one of these surfaces becomes
   implemented code.

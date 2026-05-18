@@ -2,7 +2,7 @@
 
 Parent: `T003_implement-codegeist-opencode-core-application`
 
-Status: open
+Status: specified
 
 ## Goal
 
@@ -56,11 +56,59 @@ verified instead of assumed.
 - Decide whether Codegeist should depend on the library directly, wrap selected
   utilities, copy concepts, defer adoption, or reject utilities.
 
+## Specification Boundaries
+
+- Treat this as an evidence and decision-report task, not an implementation task.
+- Use the external repository as a candidate utility source and behavior reference;
+  do not let its runtime, storage, permission, workspace, shell, skill, or subagent
+  model become Codegeist's architecture by default.
+- Any `use-directly` decision must explain why the utility can operate inside
+  Codegeist-owned provider, tool, permission, workspace, event, session, storage,
+  and native-readiness boundaries without bypassing them.
+- Any utility with side effects, process execution, workspace access, network use,
+  storage, memory, skills, or subagent orchestration should default to
+  `wrap-behind-codegeist-contract`, `copy-concept-only`, `defer`, or `reject`
+  unless the report can prove it is safe to use directly.
+- Compatibility findings should distinguish released Maven artifacts from
+  snapshot/source-only modules. Snapshot behavior may inform concepts, but it must
+  not be treated as a stable dependency choice.
+- The report may recommend follow-up implementation tasks, but this task should not
+  create those task files unless a later planning or finalization phase explicitly
+  chooses that handoff work.
+
 ## Deferred Surface Compatibility
 
 This analysis must account for future JBang, Vaadin, headless server, and
 API/SDK work, but it must not implement those surfaces. Adoption decisions should
 record whether a utility helps or constrains those future surfaces.
+
+## Direct Inputs And Dependencies
+
+- `app/codegeist/cli/pom.xml` is the current build baseline: Spring Boot `3.5.14`,
+  Spring AI BOM `1.1.6`, Spring Shell `3.4.2`, Java `25`, and GraalVM build tools
+  `0.10.6`.
+- `docs/developer/specification/provider-configuration-contracts.md` defines the Spring AI
+  adapter boundary. Spring AI `ToolCallback` use must remain mediated by
+  Codegeist-owned provider and tool policy.
+- `docs/developer/specification/tool-permission-workspace-contracts.md` defines the tool,
+  permission, workspace, bounded-result, event, and session gates that any adopted
+  tool utility must satisfy.
+- `docs/developer/specification/shell-verification-contracts.md` defines shell execution as a
+  high-risk verification tool, not a generic process-execution shortcut.
+- `docs/developer/specification/storage-port-posture.md` keeps storage in-memory-first and
+  replaceable behind ports; external memory utilities must not own Codegeist
+  persistence behavior.
+- `docs/developer/specification/native-packaging-posture.md` requires native status to be
+  reported as `passed`, `skipped`, or `failed` with a concrete reason when native
+  validation matters.
+
+## Planning Guidance
+
+- `docs/tasks/hints/java-spring-architecture-planning-guidance.md`
+  - The plan should also document fixed test expectations for any recommended
+    adoption path, including which later tests must prove wrapper boundaries,
+    compatibility, permission/workspace mediation, native posture, or rejection
+    rationale.
 
 ## Key Questions
 
@@ -109,6 +157,12 @@ The report should classify each candidate with one of these adoption decisions:
 - No production dependency is added by this analysis task unless a later task
   explicitly chooses it.
 - No Codegeist runtime behavior changes in this task.
+- The report separates stable released artifacts, snapshot/source-only findings,
+  and conceptual lessons.
+- Each direct-use recommendation includes a boundary-safety explanation; otherwise
+  the utility is classified as wrapped, copied conceptually, deferred, or rejected.
+- Follow-up recommendations are phrased as implementation-task candidates, not as
+  changes performed by this task.
 
 ## Verification
 
@@ -125,10 +179,56 @@ git --no-pager diff --check
 - Do not execute live provider calls or network-dependent tests.
 - Do not treat external utilities as trusted tool execution paths unless a later
   implementation task wraps them behind Codegeist contracts.
+- Do not create Java source, tests, Maven dependency changes, package directories,
+  storage adapters, shell executors, skills, subagents, or provider callbacks.
+
+## Planning-Readiness Questions
+
+- Which released Maven artifact versions are available, and do they align with the
+  current Spring Boot, Spring AI, Java, and GraalVM baseline?
+- Which candidate utilities are pure enough to consider direct use, and which have
+  side effects that require Codegeist mediation?
+- Which utilities overlap with already documented T002 boundaries strongly enough
+  that wrapping would be safer than direct dependency exposure?
+- What source or documentation evidence is needed from the external repository to
+  make each adoption decision defensible?
+- What follow-up implementation-task candidates should be created after the report,
+  if any, and which existing T003 child slots would they influence?
+
+## Specification Check Result
+
+- Phase command: `/specify-task`.
+- Context or instructions considered: user requested a specification pass for this
+  task and provided no extra narrowing beyond the task reference.
+- Parent task considered: `T003_implement-codegeist-opencode-core-application/task.md`.
+- Adjacent child tasks considered: none exist yet; the parent lists planned child
+  slots, but only `T003_01` is currently created.
+- Dependency inputs considered: the current Maven baseline in `app/codegeist/cli`,
+  provider configuration, tool/permission/workspace, shell verification, storage
+  posture, and native packaging developer docs.
+- Discovered hints considered: `docs/tasks/hints/opencode-solving-guidance.md` and
+  `docs/tasks/hints/opencode-source-solving-guidance.md` exist under the optional
+  hints directory. They are solve-oriented, so this pass used them only for scope
+  and evidence-boundary posture, not implementation planning. The later planning
+  hint `docs/tasks/hints/java-spring-architecture-planning-guidance.md` was added
+  after this specification pass so `/plan-task` can document Java/Spring
+  architecture with UML diagrams, class diagrams, explanatory text, and
+  illustrative code examples before implementation. It now also requires fixed
+  test expectations and narrow verification commands for later implementation
+  slices.
+- Project overlays considered: `.oc_local/rules/codegeist-task-specification.md`
+  and `.oc_local/rules/architecture-doc.md`.
+- Upstream phase dependency: none; `/specify-task` is the entry phase.
+- Result: task is specified as an analysis/report deliverable with explicit
+  adoption-classification boundaries, dependency inputs, and non-implementation
+  constraints.
+- Open decisions or blockers: actual compatibility, artifact availability, utility
+  classification, and follow-up implementation candidates remain open for the
+  planning and solve phases.
+- Next recommended phase: `/plan-task` to define the concrete research/report plan
+  without changing runtime code.
 
 ## Creation Note
-
-Status: open.
 
 Created as the first T003 child task by user direction. The user wants to see how
 much of Spring AI Agent Utils can be reused directly or adapted before Codegeist

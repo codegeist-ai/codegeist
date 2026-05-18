@@ -19,7 +19,7 @@ runtime modes, Session as the user-work aggregate, and RuntimeEvent as the share
 observation contract for CLI now and later server/Vaadin clients.
 
 This task follows `T002_02`, which documents the Codegeist-owned runtime
-vocabulary and boundary direction in `docs/developer/runtime-vocabulary.md`. It
+vocabulary and boundary direction in `docs/developer/specification/runtime-vocabulary.md`. It
 adds a concrete contract blueprint needed by later prompt-flow, provider, tool,
 permission, and storage tasks.
 
@@ -31,7 +31,7 @@ or route schemas.
 
 ## Concrete Solution
 
-1. Create `docs/developer/runtime-session-event-contracts.md` as the contract
+1. Create `docs/developer/specification/runtime-session-event-contracts.md` as the contract
    blueprint for prompt requests, agent modes, sessions, turns, message parts,
    runtime event envelopes, event families, sequencing, and projection rules.
 2. Include source-evidence notes from OpenCode files under
@@ -53,9 +53,9 @@ or route schemas.
 
 ## Scope
 
-- `docs/developer/runtime-session-event-contracts.md`
+- `docs/developer/specification/runtime-session-event-contracts.md`
 - `docs/developer/README.md`
-- `docs/developer/architecture.md`
+- `docs/developer/architecture/architecture.md`
 - this task file
 
 ## Acceptance Criteria
@@ -89,7 +89,7 @@ documentation and diagram slice.
 ## Dependencies
 
 - Depends on `T002_01` and `T002_02`.
-- Use `docs/developer/runtime-vocabulary.md` as the naming and ownership
+- Use `docs/developer/specification/runtime-vocabulary.md` as the naming and ownership
   reference before describing Java packages or contracts.
 - Use the local `/ask-project opencode` workflow or equivalent targeted source
   inspection against `docs/third-party/opencode/` before finalizing the contract
@@ -145,7 +145,7 @@ documentation and diagram slice.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Result: specified. The durable scope remains a documentation and diagram
-  blueprint in `docs/developer/runtime-session-event-contracts.md`; this task must
+  blueprint in `docs/developer/specification/runtime-session-event-contracts.md`; this task must
   not create Java source files, empty packages, service implementations, or tests.
 - Repeat result: specified again after the user requested descriptions and class
   diagrams for all concepts and explicit documentation of how comparable concepts
@@ -164,7 +164,7 @@ documentation and diagram slice.
 
 Status: solved.
 
-Created `docs/developer/runtime-session-event-contracts.md` as the architecture
+Created `docs/developer/specification/runtime-session-event-contracts.md` as the architecture
 contract blueprint for future runtime/session/event Java work. The document uses
 OpenCode source evidence, Codegeist-owned naming, diagrams, and illustrative Java
 sketches while leaving Java packages, source files, services, and tests

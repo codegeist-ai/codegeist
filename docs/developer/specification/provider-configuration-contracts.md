@@ -503,7 +503,7 @@ prefer deterministic contract tests before live provider smoke tests.
 - Implement OpenAI-compatible/OpenAI and Ollama first, but do not hard-code either
   into Runtime, Session, Event, CLI, Tool, Permission, or Workspace contracts.
 - Add provider starters only in a later implementation task that also updates
-  tests and `docs/developer/architecture.md`.
+  tests and `docs/developer/architecture/architecture.md`.
 - Prefer offline validation tests before any live provider call.
 - Treat model listing as later unless a concrete workflow requires it.
 - Keep all credential values out of logs, events, diagnostics, task docs, and test

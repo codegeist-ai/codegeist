@@ -301,7 +301,7 @@ Before implementation starts, this task should make these answers clear:
 
 ## Deliverable
 
-Add `## Event Model` to `docs/developer/codegeist-opencode-parity.md` with:
+Add `## Event Model` to `docs/developer/specification/codegeist-opencode-parity.md` with:
 
 - OpenCode-to-Java migration questions,
 - event envelope fields,
@@ -353,7 +353,7 @@ Add `## Event Model` to `docs/developer/codegeist-opencode-parity.md` with:
 Status: completed.
 
 The solution pass used the narrow documentation-first path because
-`docs/developer/codegeist-opencode-parity.md` already contains the required
+`docs/developer/specification/codegeist-opencode-parity.md` already contains the required
 `Event Model` section. That section defines the event envelope, Java event shape,
 ordering and correlation rules, event families, initial event types, prompt-flow
 examples, visibility/audit rules, persistence candidates, and non-goals.

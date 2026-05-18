@@ -104,7 +104,7 @@ Define these entrypoint classes:
 ## Deliverable
 
 Add `## CLI And Shell Architecture` to
-`docs/developer/codegeist-opencode-parity.md` with:
+`docs/developer/specification/codegeist-opencode-parity.md` with:
 
 - the Spring Shell-first decision,
 - the OpenCode reference behaviors,
@@ -141,7 +141,7 @@ Add `## CLI And Shell Architecture` to
 Status: completed.
 
 The solution pass used the narrow documentation-first path because
-`docs/developer/codegeist-opencode-parity.md` already contains the required
+`docs/developer/specification/codegeist-opencode-parity.md` already contains the required
 `CLI And Shell Architecture` section. That section records the Spring
 Shell-first decision, OpenCode reference behaviors, Codegeist entrypoint matrix,
 command categories, runtime boundary rules, streaming and approval expectations,

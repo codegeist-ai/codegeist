@@ -29,7 +29,7 @@ empty packages or premature behavior contracts.
 Add a versioned developer document that describes the runtime vocabulary and
 ownership boundaries with a diagram:
 
-1. Create `docs/developer/runtime-vocabulary.md` as the compact reference for
+1. Create `docs/developer/specification/runtime-vocabulary.md` as the compact reference for
    Codegeist-owned Runtime concepts.
 2. Use a Mermaid diagram to show the Runtime as the orchestration boundary and
    the relationship to Session, Agent mode, Context, Provider, Tool,
@@ -38,9 +38,9 @@ ownership boundaries with a diagram:
    boundaries, not implemented code.
 4. Add a short vocabulary table and ownership rules that explain dependency
    direction and what each boundary must not own.
-5. Update `docs/developer/architecture.md` so it still records the current
+5. Update `docs/developer/architecture/architecture.md` so it still records the current
    implementation truth: no Runtime Java packages or classes exist yet.
-6. Update `docs/developer/codegeist-opencode-parity.md` and
+6. Update `docs/developer/specification/codegeist-opencode-parity.md` and
    `docs/developer/README.md` to link to the vocabulary document.
 
 Do not create empty Java packages or placeholder directories. Git does not
@@ -49,18 +49,18 @@ classes or service interfaces before the runtime contracts are ready.
 
 ## Scope
 
-- `docs/developer/runtime-vocabulary.md` for the diagram, vocabulary table, and
+- `docs/developer/specification/runtime-vocabulary.md` for the diagram, vocabulary table, and
   ownership rules.
-- `docs/developer/architecture.md` for current-state cross-reference only.
-- `docs/developer/codegeist-opencode-parity.md` for target-architecture
+- `docs/developer/architecture/architecture.md` for current-state cross-reference only.
+- `docs/developer/specification/codegeist-opencode-parity.md` for target-architecture
   cross-reference only.
 - `docs/developer/README.md` for discoverability.
 
 ## Target Files
 
-- `docs/developer/runtime-vocabulary.md`
-- `docs/developer/architecture.md`
-- `docs/developer/codegeist-opencode-parity.md`
+- `docs/developer/specification/runtime-vocabulary.md`
+- `docs/developer/architecture/architecture.md`
+- `docs/developer/specification/codegeist-opencode-parity.md`
 - `docs/developer/README.md`
 
 ## Acceptance Criteria
@@ -74,7 +74,7 @@ classes or service interfaces before the runtime contracts are ready.
   implementation technology names.
 - The document explains dependency direction without introducing behavior-bearing
   Java service interfaces.
-- `docs/developer/architecture.md` remains accurate as current-state
+- `docs/developer/architecture/architecture.md` remains accurate as current-state
   documentation and still says the runtime packages/classes are not implemented.
 - No Java source files, empty package directories, provider calls, tool
   execution, file edits, shell execution, persistence, server endpoints, Vaadin
@@ -118,7 +118,7 @@ changed. This slice is documentation-only.
 - Result: solved as a documentation and diagram slice instead of a Java contract
   slice.
 - Durable outcome: Runtime vocabulary lives in
-  `docs/developer/runtime-vocabulary.md`, with current-state and target
+  `docs/developer/specification/runtime-vocabulary.md`, with current-state and target
   architecture documents linking to it.
 - Verification: `git --no-pager diff --check`.
 - `/finalize-task` dependency: satisfied by the successful documentation solve
@@ -127,8 +127,8 @@ changed. This slice is documentation-only.
   package vocabulary, updated `T002_03` to depend on the documented vocabulary,
   and refreshed repo memory so it no longer asks to plan or solve this task.
 - `/finalize-task` documentation review: `docs/developer/README.md`,
-  `docs/developer/architecture.md`, and
-  `docs/developer/codegeist-opencode-parity.md` already point to the new runtime
+  `docs/developer/architecture/architecture.md`, and
+  `docs/developer/specification/codegeist-opencode-parity.md` already point to the new runtime
   vocabulary document; no additional README or rule update was needed.
 - `/finalize-task` verification: `git --no-pager diff --check`.
 - `/finalize-task` result: finalized. The next recommended phase is to continue

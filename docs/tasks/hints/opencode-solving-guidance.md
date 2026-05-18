@@ -24,7 +24,7 @@ implementation logs, or one-off decisions.
   `/ask-project-repomix opencode "<question>"` when `repomix-output.xml` is
   available.
 - Keep task updates aligned with
-  `docs/developer/codegeist-opencode-parity.md`.
+  `docs/developer/specification/codegeist-opencode-parity.md`.
 - If a decision affects later `T001` child tasks, update those tasks in the same
   pass.
 - For `T002_02` and later foundation slices, solve them as detailed
@@ -40,7 +40,7 @@ implementation logs, or one-off decisions.
   tests descriptive and contract-focused; do not create test source, fixtures, or
   build changes unless the task is explicitly reopened as implementation work.
 - For documentation-only solve passes, keep current-state docs such as
-  `docs/developer/architecture.md` accurate by not claiming planned packages or
+  `docs/developer/architecture/architecture.md` accurate by not claiming planned packages or
   commands already exist.
 
 ## Non-Goals

@@ -95,7 +95,7 @@ User
 ```
 
 The Codegeist-owned Runtime vocabulary and boundary diagram are maintained in
-`docs/developer/runtime-vocabulary.md`. That document is the compact reference
+`docs/developer/specification/runtime-vocabulary.md`. That document is the compact reference
 for concept names and dependency direction before the corresponding Java
 contracts are implemented.
 

@@ -20,7 +20,7 @@ some provider integrations may remain JVM-first until proven.
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/native-packaging-posture.md` as the JVM/native
+1. Create or update `docs/developer/specification/native-packaging-posture.md` as the JVM/native
    packaging posture blueprint.
 2. Describe which packaging checks a later implementation or release task should
    run for JVM jar startup and GraalVM native profile validation.
@@ -34,9 +34,9 @@ some provider integrations may remain JVM-first until proven.
 
 ## Scope
 
-- `docs/developer/native-packaging-posture.md`
+- `docs/developer/specification/native-packaging-posture.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/codegeist-opencode-parity.md` only if native/JVM-only posture
+- `docs/developer/specification/codegeist-opencode-parity.md` only if native/JVM-only posture
   changes architecture decisions
 - this task file
 
@@ -86,8 +86,8 @@ slice unless build files change.
   packaging posture task after rechecking the T002 parent default hints.
 - `/plan-task` result: planned. The existing task is the concrete implementation
   task; no duplicate task or child task is needed. Target files are
-  `docs/developer/native-packaging-posture.md`, `docs/developer/README.md`,
-  `docs/developer/architecture.md`, `docs/memory-bank/chat.md`, this task file,
+  `docs/developer/specification/native-packaging-posture.md`, `docs/developer/README.md`,
+  `docs/developer/architecture/architecture.md`, `docs/memory-bank/chat.md`, this task file,
   and the T002 parent/T002_12 task only for finalization impact notes.
 - `/solve-task` result: solved. Created the native packaging posture blueprint as
   markdown only, with no Java source, Maven, Taskfile, test, package-directory,
@@ -114,7 +114,7 @@ slice unless build files change.
 
 Status: finalized.
 
-Created `docs/developer/native-packaging-posture.md` as the JVM jar and GraalVM
+Created `docs/developer/specification/native-packaging-posture.md` as the JVM jar and GraalVM
 native-image verification posture blueprint. The document defines JVM-first and
 native-aware release posture, future packaging commands, `passed`/`skipped`/`failed`
 native status reporting, native blocker categories, surface-specific native claims,

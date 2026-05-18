@@ -81,7 +81,7 @@ symlink risks, and tool boundaries.
 Status: completed.
 
 The solution pass added `## Workspace And File Access` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines workspace
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines workspace
 identity, canonical path validation, read/write policy, ignored/generated
 handling, symlink escape risks, output references, and shared tool boundaries.
 

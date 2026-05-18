@@ -73,7 +73,7 @@ Java-first stack instead of copying OpenCode's Bun/TypeScript runtime shape.
 The child tasks collectively produce and refine:
 
 ```text
-docs/developer/codegeist-opencode-parity.md
+docs/developer/specification/codegeist-opencode-parity.md
 ```
 
 The document should separate current facts, architecture decisions, assumptions,

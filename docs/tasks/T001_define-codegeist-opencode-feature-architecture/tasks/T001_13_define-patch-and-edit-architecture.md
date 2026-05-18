@@ -78,7 +78,7 @@ boundaries.
 Status: completed.
 
 The solution pass added `## Patch And Edit Architecture` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines reviewable
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines reviewable
 edit proposals, permission approval, workspace validation, apply results,
 conflict/failure handling, events, artifact references, and direct-write
 constraints.

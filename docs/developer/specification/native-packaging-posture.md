@@ -216,5 +216,5 @@ tasks should prefer small packaging checks before broad native suites.
   adapters JVM-first until their own implementation tasks prove native posture.
 - Add reflection/resource hints narrowly and close to the dependency or feature
   that needs them.
-- Update `docs/developer/architecture.md` when packaging diagnostics, native
+- Update `docs/developer/architecture/architecture.md` when packaging diagnostics, native
   status commands, or real runtime/package behavior become implemented code.

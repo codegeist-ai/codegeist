@@ -125,7 +125,7 @@ Keep one Maven module until at least two of these are true:
 ## Deliverable
 
 Add `## Component Model And Module Boundaries` to
-`docs/developer/codegeist-opencode-parity.md` with:
+`docs/developer/specification/codegeist-opencode-parity.md` with:
 
 - the one-Maven-module-for-now decision,
 - the component responsibility table,
@@ -150,7 +150,7 @@ Add `## Component Model And Module Boundaries` to
 
 - Confirm the component model can start from current `app/codegeist/cli` without a
   full rewrite.
-- Confirm `docs/developer/codegeist-opencode-parity.md` keeps the task
+- Confirm `docs/developer/specification/codegeist-opencode-parity.md` keeps the task
   documentation-only and does not require immediate Maven or package moves.
 
 ## Specification Check Result
@@ -164,7 +164,7 @@ Add `## Component Model And Module Boundaries` to
 Status: completed.
 
 The solution pass used the narrow documentation-first path because
-`docs/developer/codegeist-opencode-parity.md` already contains the required
+`docs/developer/specification/codegeist-opencode-parity.md` already contains the required
 `Component Model And Module Boundaries` section. That section records the
 one-Maven-module MVP decision, the component responsibility table, the proposed
 Java package map, dependency direction rules, module split triggers, and explicit

@@ -543,10 +543,10 @@ The implementation task that eventually creates source should prove these points
 
 ### Documentation Updates
 
-- Update `docs/developer/architecture.md` only if this documentation-only task
+- Update `docs/developer/architecture/architecture.md` only if this documentation-only task
   changes current-state claims. Do not claim packages exist until Java source is
   actually added by a later implementation task.
-- Keep `docs/developer/runtime-session-event-contracts.md` as the broader
+- Keep `docs/developer/specification/runtime-session-event-contracts.md` as the broader
   blueprint; only adjust it if the implemented minimal Java contract deliberately
   differs from the documented field names or boundaries.
 
@@ -575,7 +575,7 @@ The implementation task that eventually creates source should prove these points
   is implemented.
 - Test examples show how future tests prove CLI input maps to runtime request
   contracts.
-- `docs/developer/architecture.md` remains accurate and does not claim concrete
+- `docs/developer/architecture/architecture.md` remains accurate and does not claim concrete
   packages, commands, or verification behavior that do not exist yet.
 
 ## Verification
@@ -727,7 +727,7 @@ build files, or runtime behavior change.
   `T002_05_add_context_workspace_manifest_slice.md`.
 - Documentation update review: applied the `update-documentation` semantics by
   checking task docs, project memory, hint files, and current-state architecture
-  docs. `docs/developer/architecture.md` did not need an update because no current
+  docs. `docs/developer/architecture/architecture.md` did not need an update because no current
   code or command behavior changed.
 - Updated documentation: this task file, `docs/memory-bank/chat.md`, and
   `T002_05_add_context_workspace_manifest_slice.md` for the context-loading

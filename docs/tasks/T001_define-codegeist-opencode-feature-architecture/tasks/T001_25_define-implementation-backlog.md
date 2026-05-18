@@ -79,7 +79,7 @@ create follow-up `T002+` task files.
 Status: completed.
 
 The solution pass added `## Implementation Backlog` to
-`docs/developer/codegeist-opencode-parity.md`. The section derives narrow
+`docs/developer/specification/codegeist-opencode-parity.md`. The section derives narrow
 implementation candidates from the MVP cut and risk register, covering build
 baseline alignment, runtime/session/event contracts, context loading, provider
 configuration, tool/permission/workspace contracts, patch/edit proposal flow,

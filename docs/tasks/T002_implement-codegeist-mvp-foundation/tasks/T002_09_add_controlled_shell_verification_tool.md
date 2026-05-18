@@ -19,7 +19,7 @@ explicit user intent.
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/shell-verification-contracts.md` as the
+1. Create or update `docs/developer/specification/shell-verification-contracts.md` as the
    future controlled shell verification blueprint.
 2. Define future shell command request/result contracts with argv or snippet, cwd,
    env policy, timeout, stdin posture, output limit, exit code, and failure
@@ -33,9 +33,9 @@ explicit user intent.
 
 ## Scope
 
-- `docs/developer/shell-verification-contracts.md`
+- `docs/developer/specification/shell-verification-contracts.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/architecture.md` only to keep current-state notes accurate
+- `docs/developer/architecture/architecture.md` only to keep current-state notes accurate
 - this task file
 
 ## Acceptance Criteria
@@ -127,10 +127,10 @@ a documentation and diagram slice.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Documentation considered: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/tool-permission-workspace-contracts.md`,
-  `docs/developer/patch-edit-proposal-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+- Documentation considered: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/specification/patch-edit-proposal-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - Discovered hints considered: the T002 parent `Default Solve Hints` point this
   task toward OpenCode source evidence for shell execution, permission mediation,
@@ -146,7 +146,7 @@ a documentation and diagram slice.
   deferred; the first future implementation should start with contracts and fake
   executor tests.
 - Next recommended phase: run `/plan-task T002_09` as a documentation-only
-  architecture plan for `docs/developer/shell-verification-contracts.md`.
+  architecture plan for `docs/developer/specification/shell-verification-contracts.md`.
 
 ## Architecture Plan
 
@@ -156,7 +156,7 @@ shell verification blueprint, and no matching developer document existed yet.
 
 ### Selected Option
 
-Create `docs/developer/shell-verification-contracts.md` as the concrete controlled
+Create `docs/developer/specification/shell-verification-contracts.md` as the concrete controlled
 shell verification contract blueprint, then cross-link it from developer
 documentation and current-state architecture notes.
 
@@ -186,9 +186,9 @@ summary posture where it applies to process execution.
 
 ### Planned Documentation Files
 
-- `docs/developer/shell-verification-contracts.md`
+- `docs/developer/specification/shell-verification-contracts.md`
 - `docs/developer/README.md`
-- `docs/developer/architecture.md` only for current-state cross-references and
+- `docs/developer/architecture/architecture.md` only for current-state cross-references and
   explicit not-implemented notes
 - this task file
 - directly affected downstream task files if finalization finds durable impact
@@ -228,7 +228,7 @@ for this task.
 
 ### Acceptance Criteria For Solve
 
-- `docs/developer/shell-verification-contracts.md` exists and describes shell
+- `docs/developer/specification/shell-verification-contracts.md` exists and describes shell
   execution as a permission-gated tool request.
 - Plan mode shell execution is specified as denied by default.
 - Command results include exit code, summary, output reference/truncation, and
@@ -236,7 +236,7 @@ for this task.
 - Destructive commands are not inferred as safe from generic approval.
 - Future approved and denied tests are described, but no Java source, tests,
   process runner, package directories, or executor port is created.
-- `docs/developer/README.md`, `docs/developer/architecture.md`, this task file, and
+- `docs/developer/README.md`, `docs/developer/architecture/architecture.md`, this task file, and
   `docs/memory-bank/chat.md` remain consistent with the new blueprint.
 
 ### Verification Plan
@@ -271,7 +271,7 @@ until a later implementation task.
   finalized adjacent `T002_08`, downstream open `T002_10`, and downstream open
   `T002_12`.
 - Duplicate check result: no existing
-  `docs/developer/shell-verification-contracts.md` document existed before this
+  `docs/developer/specification/shell-verification-contracts.md` document existed before this
   solve, and no separate implementation task already planned this blueprint; the
   existing `T002_09` task is the correct target to sharpen.
 - Selected option: create the controlled shell verification architecture blueprint
@@ -281,10 +281,10 @@ until a later implementation task.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Related context files read: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/tool-permission-workspace-contracts.md`,
-  `docs/developer/patch-edit-proposal-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+- Related context files read: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/specification/patch-edit-proposal-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - Upstream phase dependency: satisfied; this task had a current specification
   result and dependency impact notes before planning.
@@ -296,7 +296,7 @@ until a later implementation task.
 ## Solution Note
 
 Solved as a documentation-only architecture blueprint in
-`docs/developer/shell-verification-contracts.md`. The new document defines
+`docs/developer/specification/shell-verification-contracts.md`. The new document defines
 Codegeist-owned shell verification request shape, command posture, Plan-mode
 denial, Build-mode approval gates, destructive-command safety posture,
 workspace-cwd validation, environment and stdin policy, timeout/cancellation
@@ -305,7 +305,7 @@ runtime event/session projection, future Java file maps, illustrative Java
 snippets, and future test handoff notes.
 
 The solve pass also linked the new blueprint from `docs/developer/README.md` and
-`docs/developer/architecture.md`. It did not create Java source, tests, package
+`docs/developer/architecture/architecture.md`. It did not create Java source, tests, package
 directories, process execution, PTY support, terminal UI, remote execution, JBang
 execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
 
@@ -315,7 +315,7 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_09_add_controlled_shell_verification_tool.md`.
 - User instructions considered: run the full `/work-task` workflow for this exact
   task path. Prior user decisions remain in effect: this slice is documentation
-  only and should create `docs/developer/shell-verification-contracts.md` without
+  only and should create `docs/developer/specification/shell-verification-contracts.md` without
   Java source.
 - Upstream phase dependency: satisfied. The target task had a current plan handoff
   before this solve pass.
@@ -327,10 +327,10 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, finalized
   `T002_07_add_tool_permission_workspace_contracts.md`, finalized
   `T002_08_add_patch_edit_proposal_flow.md`,
-  `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/tool-permission-workspace-contracts.md`,
-  `docs/developer/patch-edit-proposal-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/specification/patch-edit-proposal-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - OpenCode evidence considered: `tool/shell.ts` for command parsing, external
   directory and shell permission prompts, cwd/env/stdin posture, timeout/abort
@@ -342,8 +342,8 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   `v2/session-event.ts` plus `v2/session-message.ts` for shell/tool lifecycle
   events and bounded message parts.
 - Documentation updates: created
-  `docs/developer/shell-verification-contracts.md`, updated
-  `docs/developer/README.md`, updated `docs/developer/architecture.md`, and
+  `docs/developer/specification/shell-verification-contracts.md`, updated
+  `docs/developer/README.md`, updated `docs/developer/architecture/architecture.md`, and
   prepared finalization updates for affected tasks and memory.
 - Acceptance criteria status: satisfied. Shell execution is specified as a
   permission-gated tool request; Plan mode is denied by default; command results
@@ -352,7 +352,7 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   future approved and denied tests are described; and no Java source, tests,
   process runner, package directories, or executor port were created.
 - Verification: `git --no-pager diff --check` and
-  `git --no-pager diff --check --no-index /dev/null docs/developer/shell-verification-contracts.md`.
+  `git --no-pager diff --check --no-index /dev/null docs/developer/specification/shell-verification-contracts.md`.
 - Open decisions or blockers: none for this architecture pass. Future Java
   implementation tasks still need to choose exact APIs, fake-executor test shape,
   process executor behavior, stream handling, and any explicit destructive-command
@@ -377,8 +377,8 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   `T002_10_decide_minimal_storage_ports.md`, and downstream open
   `T002_12_define_extension_and_client_readiness_gates.md`.
 - Documentation reviewed through update-documentation semantics:
-  `docs/developer/shell-verification-contracts.md`, `docs/developer/README.md`,
-  `docs/developer/architecture.md`, affected T002 task files, and
+  `docs/developer/specification/shell-verification-contracts.md`, `docs/developer/README.md`,
+  `docs/developer/architecture/architecture.md`, affected T002 task files, and
   `docs/memory-bank/chat.md`.
 - Documentation updates: the parent task now records that `T002_09` is finalized;
   `T002_10` records that shell logs and output refs are sensitive or large storage
@@ -388,10 +388,10 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   make `T002_10` the next useful T002 slice.
 - Remaining follow-ups: continue with `T002_10_decide_minimal_storage_ports.md` as
   the next documentation-first T002 slice. Future Java implementation tasks may be
-  derived later from `docs/developer/shell-verification-contracts.md` only when
+  derived later from `docs/developer/specification/shell-verification-contracts.md` only when
   explicitly requested.
 - Verification: `git --no-pager diff --check` and
-  `git --no-pager diff --check --no-index /dev/null docs/developer/shell-verification-contracts.md`.
+  `git --no-pager diff --check --no-index /dev/null docs/developer/specification/shell-verification-contracts.md`.
 - Result: finalized. No implementation gaps, blockers, Java source, tests, package
   directories, process execution, PTY support, terminal UI, remote execution, JBang
   execution, shell sandboxing, Graphify, Repomix, or runtime behavior were

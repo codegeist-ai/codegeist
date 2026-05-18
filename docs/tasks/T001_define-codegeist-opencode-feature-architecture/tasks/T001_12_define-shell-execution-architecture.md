@@ -80,7 +80,7 @@ timeouts, cancellation, and audit boundaries.
 Status: completed.
 
 The solution pass added `## Shell Execution Architecture` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines shell
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines shell
 execution as a high-risk tool call, command request fields, permission and
 workspace requirements, environment/output redaction, timeouts, cancellation,
 typed results, and destructive-command constraints.

@@ -82,7 +82,7 @@ workspace boundaries, and later retrieval options.
 Status: completed.
 
 The solution pass added `## Context Loading Architecture` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines deterministic
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines deterministic
 context sources, priority and loading posture, context manifests, large artifact
 handling, workspace boundaries, and later retrieval options.
 

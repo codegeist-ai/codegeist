@@ -12,7 +12,7 @@ allowlists, Graphify, Repomix, or runtime behavior.
 
 Controlled shell verification specializes the generic tool, permission,
 workspace, bounded-result, event, and session boundaries in
-`docs/developer/tool-permission-workspace-contracts.md`:
+`docs/developer/specification/tool-permission-workspace-contracts.md`:
 
 - Shell requests are high-risk tool requests, not CLI adapter shortcuts.
 - Plan mode denies shell execution by default.
@@ -176,8 +176,8 @@ Gate rules:
 - Safety classification happens before permission prompts so destructive commands
   cannot be hidden inside generic shell approval.
 - Cwd validation happens before process start and uses the centralized workspace
-  policy from `docs/developer/context-workspace-manifest.md` and
-  `docs/developer/tool-permission-workspace-contracts.md`.
+  policy from `docs/developer/specification/context-workspace-manifest.md` and
+  `docs/developer/specification/tool-permission-workspace-contracts.md`.
 - Permission approval is scoped to the exact redacted command summary, cwd,
   purpose, timeout, and environment posture.
 - Environment resolution happens after approval but before execution, and the

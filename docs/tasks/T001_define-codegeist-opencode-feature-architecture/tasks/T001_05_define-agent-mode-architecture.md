@@ -103,7 +103,7 @@ tool and permission contracts:
 ## Deliverable
 
 Add `## Agent Mode Architecture` to
-`docs/developer/codegeist-opencode-parity.md` with:
+`docs/developer/specification/codegeist-opencode-parity.md` with:
 
 - Plan and Build as runtime modes,
 - OpenCode reference behaviors,
@@ -140,7 +140,7 @@ Add `## Agent Mode Architecture` to
 Status: completed.
 
 The solution pass used the narrow documentation-first path because
-`docs/developer/codegeist-opencode-parity.md` already contains the required
+`docs/developer/specification/codegeist-opencode-parity.md` already contains the required
 `Agent Mode Architecture` section. That section defines Plan and Build as
 runtime modes, records capability defaults, mode semantics, initial mode
 selection rules, and explicit non-goals.

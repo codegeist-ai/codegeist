@@ -22,7 +22,7 @@ owns path safety.
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/context-workspace-manifest.md` as the future
+1. Create or update `docs/developer/specification/context-workspace-manifest.md` as the future
    context/workspace contract blueprint.
 2. Define the workspace service responsibilities for root identity, canonical path
    validation, generated/ignored posture, secret-like path posture, symlink escape
@@ -38,9 +38,9 @@ owns path safety.
 
 ## Scope
 
-- `docs/developer/context-workspace-manifest.md`
+- `docs/developer/specification/context-workspace-manifest.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/architecture.md` only to keep current-state notes accurate
+- `docs/developer/architecture/architecture.md` only to keep current-state notes accurate
 - this task file
 
 ## Acceptance Criteria
@@ -134,7 +134,7 @@ a documentation and diagram slice.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Documentation considered: `docs/developer/context-workspace-manifest.md`,
+- Documentation considered: `docs/developer/specification/context-workspace-manifest.md`,
   `docs/developer/README.md`, and `docs/memory-bank/chat.md`.
 - Result: specified. The repeat pass confirmed that the existing
   documentation-only blueprint remains the correct scope: context selection is
@@ -157,7 +157,7 @@ design before any Java implementation task is created.
 ### Selected Option
 
 Complete the workspace/context architecture in this task file and
-`docs/developer/context-workspace-manifest.md`.
+`docs/developer/specification/context-workspace-manifest.md`.
 
 This follows the user's clarification: design the complete architecture first,
 then derive implementation tasks later only when explicitly requested.
@@ -180,9 +180,9 @@ explicit context manifest.
 
 ### Planned Documentation Files
 
-- `docs/developer/context-workspace-manifest.md`
+- `docs/developer/specification/context-workspace-manifest.md`
 - `docs/developer/README.md` only if a new architecture document is introduced
-- `docs/developer/architecture.md` only if current-state wording needs to clarify
+- `docs/developer/architecture/architecture.md` only if current-state wording needs to clarify
   that the architecture remains unimplemented
 - this task file
 
@@ -261,7 +261,7 @@ runtime behavior.
 ### Dependencies
 
 - Depends on the current `T002_05` specification status and the solved
-  `docs/developer/context-workspace-manifest.md` blueprint.
+  `docs/developer/specification/context-workspace-manifest.md` blueprint.
 - Uses the finalized `T002_04` boundary that CLI prompt-mode input does not own
   active work paths, context-source selection, or workspace policy.
 - Uses OpenCode source evidence gathered through the local `/ask-project opencode`
@@ -293,8 +293,8 @@ architecture decisions directly in the design document.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Related context files read: `docs/developer/context-workspace-manifest.md`,
-  `docs/developer/architecture.md`, `app/codegeist/cli/pom.xml`,
+- Related context files read: `docs/developer/specification/context-workspace-manifest.md`,
+  `docs/developer/architecture/architecture.md`, `app/codegeist/cli/pom.xml`,
   `app/codegeist/cli/Taskfile.yml`, and `docs/memory-bank/chat.md`.
 - OpenCode evidence considered: project/worktree `InstanceContext`, path
   containment checks, file read/list boundaries, external-directory permission,
@@ -315,7 +315,7 @@ one independently reviewable documentation/specification slice.
 ## Solution Note
 
 Solved as a documentation-only handoff in
-`docs/developer/context-workspace-manifest.md`. The developer document now defines
+`docs/developer/specification/context-workspace-manifest.md`. The developer document now defines
 the future workspace path-validation responsibilities, explicit context loader
 request shape, deterministic source ordering, manifest fields, skip reasons,
 external-analysis exclusion posture, future Java file map, illustrative Java
@@ -343,8 +343,8 @@ manifest structure, and loader validation sequence.
   `.oc_local/rules/architecture-doc.md`.
 - Related context files read: parent
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`,
-  `docs/developer/context-workspace-manifest.md`,
-  `docs/developer/architecture.md`, `app/codegeist/cli/pom.xml`,
+  `docs/developer/specification/context-workspace-manifest.md`,
+  `docs/developer/architecture/architecture.md`, `app/codegeist/cli/pom.xml`,
   `app/codegeist/cli/Taskfile.yml`, and `docs/memory-bank/chat.md`.
 - OpenCode evidence considered through `/ask-project opencode`: project/worktree
   identity, instance context path containment, safe read/list boundaries,
@@ -389,13 +389,13 @@ manifest structure, and loader validation sequence.
   `T002_06_add_provider_configuration_adapter.md`, and adjacent open
   `T002_07_add_tool_permission_workspace_contracts.md`.
 - Documentation reviewed through the update-documentation semantics:
-  `docs/developer/context-workspace-manifest.md`, `docs/developer/README.md`,
-  `docs/developer/architecture.md`, and `docs/memory-bank/chat.md`.
+  `docs/developer/specification/context-workspace-manifest.md`, `docs/developer/README.md`,
+  `docs/developer/architecture/architecture.md`, and `docs/memory-bank/chat.md`.
 - Documentation updates: the parent task now records that `T002_05` is finalized;
   `T002_06` records that provider configuration must not own context profiles,
   workspace validation, or external analysis ingestion; `T002_07` records that
   workspace classification is deterministic and permission approval is layered
-  above it; `docs/developer/architecture.md` and `docs/memory-bank/chat.md` were
+  above it; `docs/developer/architecture/architecture.md` and `docs/memory-bank/chat.md` were
   refreshed to match the finalized state.
 - Remaining follow-ups: continue with
   `T002_06_add_provider_configuration_adapter.md` as the next documentation-first

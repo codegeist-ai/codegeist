@@ -46,7 +46,7 @@ OpenCode is a behavior reference, not an implementation blueprint.
 
 ### Spring AI Posture
 
-`docs/developer/provider-configuration-contracts.md` records the provider-side
+`docs/developer/specification/provider-configuration-contracts.md` records the provider-side
 boundary. Spring AI `ToolCallback` and provider options such as
 `internal-tool-execution-enabled` are adapter-side details. Codegeist runtime must
 not register Spring AI callbacks that execute tools internally until these future
@@ -291,7 +291,7 @@ Policy rules:
 
 ## Workspace Validation Model
 
-`docs/developer/context-workspace-manifest.md` owns workspace identity and default
+`docs/developer/specification/context-workspace-manifest.md` owns workspace identity and default
 path classification. Tool-scoped validation reuses that boundary and adds purpose.
 
 ```mermaid

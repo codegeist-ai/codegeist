@@ -76,7 +76,7 @@ features, out-of-scope items, rationale, dependencies, and verification mapping.
 Status: completed.
 
 The solution pass added `## MVP Cut` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines the smallest
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines the smallest
 CLI-first MVP, included features, deferred features with reasons, out-of-scope
 items, rationale, dependencies, and verification mapping.
 

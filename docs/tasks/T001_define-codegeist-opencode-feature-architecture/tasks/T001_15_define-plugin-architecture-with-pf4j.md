@@ -79,7 +79,7 @@ GraalVM constraints.
 Status: completed.
 
 The solution pass added `## Plugin Architecture With PF4J` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines PF4J as the
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines PF4J as the
 packaged plugin boundary, extension points, runtime mediation, plugin metadata,
 trust/capability classification, lifecycle posture, and GraalVM/native-image
 risk.

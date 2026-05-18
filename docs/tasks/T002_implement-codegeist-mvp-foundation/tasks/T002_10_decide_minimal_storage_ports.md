@@ -20,7 +20,7 @@ workspace policy, or provider selection.
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/storage-port-posture.md` as the future storage
+1. Create or update `docs/developer/specification/storage-port-posture.md` as the future storage
    posture and port blueprint.
 2. Decide whether the first implementation should be in-memory only or file-backed
    for a narrow session-continuation reason.
@@ -35,11 +35,11 @@ workspace policy, or provider selection.
 
 ## Scope
 
-- `docs/developer/storage-port-posture.md`
+- `docs/developer/specification/storage-port-posture.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/codegeist-opencode-parity.md` only if the storage decision
+- `docs/developer/specification/codegeist-opencode-parity.md` only if the storage decision
   changes architecture posture
-- `docs/developer/architecture.md` only to keep current-state notes accurate
+- `docs/developer/architecture/architecture.md` only to keep current-state notes accurate
 - this task file
 
 ## Acceptance Criteria
@@ -126,10 +126,10 @@ a documentation and diagram slice.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Documentation considered: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/runtime-session-event-contracts.md`,
-  `docs/developer/shell-verification-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+- Documentation considered: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/runtime-session-event-contracts.md`,
+  `docs/developer/specification/shell-verification-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - Discovered hints considered: the T002 parent `Default Solve Hints` point this
   task toward OpenCode source evidence for sessions, events, storage, projection,
@@ -144,7 +144,7 @@ a documentation and diagram slice.
 - Open decisions or blockers: none for specification. Restart/continue persistence
   is deferred until a concrete CLI continuation workflow requires it.
 - Next recommended phase: run `/plan-task T002_10` as a documentation-only
-  architecture plan for `docs/developer/storage-port-posture.md`.
+  architecture plan for `docs/developer/specification/storage-port-posture.md`.
 
 ## Architecture Plan
 
@@ -154,7 +154,7 @@ posture and port-shape blueprint, and no matching developer document existed yet
 
 ### Selected Option
 
-Create `docs/developer/storage-port-posture.md` as the concrete storage posture
+Create `docs/developer/specification/storage-port-posture.md` as the concrete storage posture
 blueprint, select in-memory storage first behind replaceable ports, then cross-link
 it from developer documentation and current-state architecture notes.
 
@@ -184,11 +184,11 @@ future user-visible restart/continue/list acceptance criterion.
 
 ### Planned Documentation Files
 
-- `docs/developer/storage-port-posture.md`
+- `docs/developer/specification/storage-port-posture.md`
 - `docs/developer/README.md`
-- `docs/developer/codegeist-opencode-parity.md` because this task turns the prior
+- `docs/developer/specification/codegeist-opencode-parity.md` because this task turns the prior
   in-memory-or-file-backed posture into an explicit in-memory-first decision
-- `docs/developer/architecture.md` only for current-state cross-references and
+- `docs/developer/architecture/architecture.md` only for current-state cross-references and
   explicit not-implemented notes
 - this task file
 - directly affected downstream task files if finalization finds durable impact
@@ -224,7 +224,7 @@ behavior are planned for this task.
 
 ### Acceptance Criteria For Solve
 
-- `docs/developer/storage-port-posture.md` exists and makes the initial storage
+- `docs/developer/specification/storage-port-posture.md` exists and makes the initial storage
   posture explicit as in-memory first, with file-backed persistence deferred until
   restart/continue/list behavior is selected.
 - Storage ports are specified as not owning runtime orchestration.
@@ -234,8 +234,8 @@ behavior are planned for this task.
   projection ordering, artifact references, optional file-backed continuation, and
   event-sourcing optionality are described.
 - Event sourcing remains optional and unimplemented.
-- `docs/developer/README.md`, `docs/developer/architecture.md`,
-  `docs/developer/codegeist-opencode-parity.md`, this task file, and
+- `docs/developer/README.md`, `docs/developer/architecture/architecture.md`,
+  `docs/developer/specification/codegeist-opencode-parity.md`, this task file, and
   `docs/memory-bank/chat.md` remain consistent with the new blueprint.
 
 ### Verification Plan
@@ -267,7 +267,7 @@ deferred until later implementation tasks.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
 - Dependencies and adjacent tasks considered: dependency `T002_03`, finalized
   upstream `T002_09`, adjacent open `T002_11`, and downstream open `T002_12`.
-- Duplicate check result: no existing `docs/developer/storage-port-posture.md`
+- Duplicate check result: no existing `docs/developer/specification/storage-port-posture.md`
   document existed before this solve, and no separate implementation task already
   planned this blueprint; the existing `T002_10` task is the correct target to
   sharpen.
@@ -278,10 +278,10 @@ deferred until later implementation tasks.
   `docs/tasks/hints/opencode-source-solving-guidance.md`,
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
-- Related context files read: `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/runtime-session-event-contracts.md`,
-  `docs/developer/shell-verification-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+- Related context files read: `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/runtime-session-event-contracts.md`,
+  `docs/developer/specification/shell-verification-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - Upstream phase dependency: satisfied; this task had a current specification
   check result and dependency impact notes before planning.
@@ -293,7 +293,7 @@ deferred until later implementation tasks.
 ## Solution Note
 
 Solved as a documentation-only architecture blueprint in
-`docs/developer/storage-port-posture.md`. The new document selects in-memory
+`docs/developer/specification/storage-port-posture.md`. The new document selects in-memory
 storage first behind replaceable ports, defers file-backed restart/continue/list
 persistence until a concrete CLI workflow requires it, keeps event sourcing
 optional, and defines future session, message projection, event projection,
@@ -301,8 +301,8 @@ artifact reference, storage health, redaction, retention, adapter evolution, fut
 Java file map, illustrative Java snippets, and future test handoff guidance.
 
 The solve pass also linked the new blueprint from `docs/developer/README.md` and
-`docs/developer/architecture.md`, and updated
-`docs/developer/codegeist-opencode-parity.md` so the prior in-memory-or-file-backed
+`docs/developer/architecture/architecture.md`, and updated
+`docs/developer/specification/codegeist-opencode-parity.md` so the prior in-memory-or-file-backed
 posture is now an explicit in-memory-first decision. It did not create Java source,
 tests, package directories, storage ports, adapters, database schemas, migrations,
 encryption, durable audit logs, compaction, event replay, Graphify, Repomix, or
@@ -314,7 +314,7 @@ runtime behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_10_decide_minimal_storage_ports.md`.
 - User instructions considered: run the full `/work-task` workflow for this exact
   task path. Prior user decisions remain in effect: this slice is documentation
-  only and should create `docs/developer/storage-port-posture.md` without Java
+  only and should create `docs/developer/specification/storage-port-posture.md` without Java
   source.
 - Upstream phase dependency: satisfied. The target task had a current plan handoff
   before this solve pass.
@@ -328,10 +328,10 @@ runtime behavior.
   `T002_09_add_controlled_shell_verification_tool.md`, adjacent open
   `T002_11_validate_native_packaging_posture.md`, downstream open
   `T002_12_define_extension_and_client_readiness_gates.md`,
-  `docs/developer/codegeist-opencode-parity.md`,
-  `docs/developer/runtime-session-event-contracts.md`,
-  `docs/developer/shell-verification-contracts.md`,
-  `docs/developer/architecture.md`, `docs/developer/README.md`, and
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/runtime-session-event-contracts.md`,
+  `docs/developer/specification/shell-verification-contracts.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/README.md`, and
   `docs/memory-bank/chat.md`.
 - OpenCode evidence considered: `storage/storage.ts` for key-value storage,
   filesystem-backed JSON writes, migrations, locks, and list/read/write/update
@@ -341,9 +341,9 @@ runtime behavior.
   services; `session/projectors-next.ts` for final-event-to-message projection and
   transient delta skipping; and `session/schema.ts` for stable typed session,
   message, and part ids independent of persistence.
-- Documentation updates: created `docs/developer/storage-port-posture.md`, updated
-  `docs/developer/README.md`, updated `docs/developer/architecture.md`, updated
-  `docs/developer/codegeist-opencode-parity.md`, and prepared finalization updates
+- Documentation updates: created `docs/developer/specification/storage-port-posture.md`, updated
+  `docs/developer/README.md`, updated `docs/developer/architecture/architecture.md`, updated
+  `docs/developer/specification/codegeist-opencode-parity.md`, and prepared finalization updates
   for affected tasks and memory.
 - Acceptance criteria status: satisfied. Initial storage posture is explicit as
   in-memory first; storage ports are specified as not owning runtime orchestration;
@@ -351,7 +351,7 @@ runtime behavior.
   future tests are described; and event sourcing remains optional and
   unimplemented.
 - Verification: `git --no-pager diff --check` and
-  `git --no-pager diff --check --no-index /dev/null docs/developer/storage-port-posture.md`.
+  `git --no-pager diff --check --no-index /dev/null docs/developer/specification/storage-port-posture.md`.
 - Open decisions or blockers: none for this architecture pass. Future Java
   implementation tasks still need to choose exact port APIs, serialization, file
   persistence, retention/deletion, migration, encryption, and event log behavior if
@@ -375,8 +375,8 @@ runtime behavior.
   `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md` and downstream open
   `T002_12_define_extension_and_client_readiness_gates.md`.
 - Documentation reviewed through update-documentation semantics:
-  `docs/developer/storage-port-posture.md`, `docs/developer/README.md`,
-  `docs/developer/architecture.md`, `docs/developer/codegeist-opencode-parity.md`,
+  `docs/developer/specification/storage-port-posture.md`, `docs/developer/README.md`,
+  `docs/developer/architecture/architecture.md`, `docs/developer/specification/codegeist-opencode-parity.md`,
   affected T002 task files, and `docs/memory-bank/chat.md`.
 - Documentation updates: the parent task now records that `T002_10` is finalized;
   `T002_12` records that server and Vaadin readiness gates require explicit
@@ -385,10 +385,10 @@ runtime behavior.
   make `T002_11` the next useful T002 slice.
 - Remaining follow-ups: continue with `T002_11_validate_native_packaging_posture.md`
   as the next documentation-first T002 slice. Future Java implementation tasks may
-  be derived later from `docs/developer/storage-port-posture.md` only when
+  be derived later from `docs/developer/specification/storage-port-posture.md` only when
   explicitly requested.
 - Verification: `git --no-pager diff --check` and
-  `git --no-pager diff --check --no-index /dev/null docs/developer/storage-port-posture.md`.
+  `git --no-pager diff --check --no-index /dev/null docs/developer/specification/storage-port-posture.md`.
 - Result: finalized. No implementation gaps, blockers, Java source, tests, package
   directories, storage ports, adapters, database schemas, migrations, encryption,
   durable audit logs, compaction, event replay, Graphify, Repomix, or runtime

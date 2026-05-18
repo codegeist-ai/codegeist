@@ -76,7 +76,7 @@ deferral, and Vaadin dependencies.
 Status: completed.
 
 The solution pass added `## Headless Server Architecture` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines the future
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines the future
 Spring Boot HTTP adapter, API families, runtime boundaries, event streaming
 posture, authentication assumptions, OpenAPI/SDK deferral, and Vaadin
 dependencies.

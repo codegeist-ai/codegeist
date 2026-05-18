@@ -253,7 +253,7 @@ Before implementation starts, this task should make these answers clear:
 
 ## Deliverable
 
-Add `## Session Model` to `docs/developer/codegeist-opencode-parity.md` with:
+Add `## Session Model` to `docs/developer/specification/codegeist-opencode-parity.md` with:
 
 - runtime-owned session aggregate definition,
 - core concepts and fields,
@@ -302,7 +302,7 @@ Add `## Session Model` to `docs/developer/codegeist-opencode-parity.md` with:
 Status: completed.
 
 The solution pass used the narrow documentation-first path because
-`docs/developer/codegeist-opencode-parity.md` already contains the required
+`docs/developer/specification/codegeist-opencode-parity.md` already contains the required
 `Session Model` section. That section defines runtime-owned sessions, turns,
 message parts, lifecycle rules, first-model fields, persistence candidates,
 boundary rules, open questions, and non-goals.

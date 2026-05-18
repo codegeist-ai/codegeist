@@ -92,7 +92,7 @@ boundaries.
 Status: completed.
 
 The solution pass added `## Permission Architecture` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines permission
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines permission
 categories, approval request/decision concepts, mode interaction, audit/event
 behavior, and client presentation boundaries.
 

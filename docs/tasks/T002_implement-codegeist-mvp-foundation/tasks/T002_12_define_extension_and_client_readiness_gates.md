@@ -21,7 +21,7 @@ architecture.
 
 ## Concrete Solution
 
-1. Create or update `docs/developer/extension-client-readiness-gates.md` as the
+1. Create or update `docs/developer/specification/extension-client-readiness-gates.md` as the
    readiness-gate blueprint for PF4J, JBang, headless server, Vaadin, SDK/OpenAPI,
    and future TUI work.
 2. Tie each gate to concrete core contracts: runtime API, session/event model,
@@ -35,9 +35,9 @@ architecture.
 
 ## Scope
 
-- `docs/developer/extension-client-readiness-gates.md`
+- `docs/developer/specification/extension-client-readiness-gates.md`
 - `docs/developer/README.md` if a new developer document is added
-- `docs/developer/codegeist-opencode-parity.md` only if readiness gates change
+- `docs/developer/specification/codegeist-opencode-parity.md` only if readiness gates change
   architecture decisions
 - this task file
 
@@ -75,7 +75,7 @@ git --no-pager diff --check
 ## Open Questions
 
 - None for this documentation slice. The readiness gates live in the separate
-  developer note `docs/developer/extension-client-readiness-gates.md`, with
+  developer note `docs/developer/specification/extension-client-readiness-gates.md`, with
   cross-links from developer documentation and current-state architecture notes.
 
 ## Work Task Phase Status
@@ -86,8 +86,8 @@ git --no-pager diff --check
   the exact task reference with no additional narrowing instructions.
 - `/plan-task` result: planned. This existing `T002_12` task is the concrete
   implementation task; no duplicate task or child task is needed. Target files are
-  `docs/developer/extension-client-readiness-gates.md`,
-  `docs/developer/README.md`, `docs/developer/architecture.md`,
+  `docs/developer/specification/extension-client-readiness-gates.md`,
+  `docs/developer/README.md`, `docs/developer/architecture/architecture.md`,
   `docs/memory-bank/chat.md`, the T002 parent task, and this task file.
 - `/solve-task` result: solved. Created the extension/client readiness-gates
   blueprint as markdown only, with no Java source, dependencies, tests, adapters,
@@ -115,7 +115,7 @@ git --no-pager diff --check
 
 ## Architecture Plan
 
-Create `docs/developer/extension-client-readiness-gates.md` as the concrete
+Create `docs/developer/specification/extension-client-readiness-gates.md` as the concrete
 readiness blueprint for deferred extension and client surfaces. The document should
 define shared gates, surface-specific gates, implementation split guidance, future
 file maps, diagrams, and future test handoff notes while leaving all source,
@@ -124,21 +124,21 @@ adapter, dependency, and runtime behavior untouched.
 The solve pass should consume the finalized runtime/session/event, tool,
 permission, workspace, shell/process, storage, and native packaging posture docs.
 It should update developer documentation cross-references and leave
-`docs/developer/architecture.md` current-state focused by marking the new document
+`docs/developer/architecture/architecture.md` current-state focused by marking the new document
 as a future blueprint only.
 
 ## Solution Note
 
 Status: finalized.
 
-Created `docs/developer/extension-client-readiness-gates.md` as the readiness-gate
+Created `docs/developer/specification/extension-client-readiness-gates.md` as the readiness-gate
 blueprint for later PF4J, JBang, headless server, Vaadin, SDK/OpenAPI, and future
 TUI work. The document requires later surfaces to satisfy runtime API,
 session/event, tool/permission/workspace, storage, auth/security, native posture,
 and test-readiness gates before implementation starts.
 
 The solve pass also linked the new blueprint from `docs/developer/README.md` and
-`docs/developer/architecture.md`. It intentionally did not add Java source, tests,
+`docs/developer/architecture/architecture.md`. It intentionally did not add Java source, tests,
 dependencies, adapters, server routes, Vaadin views, PF4J plugins, JBang scripts,
 SDK generation, TUI behavior, or runtime behavior.
 

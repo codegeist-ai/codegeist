@@ -46,7 +46,7 @@
 - `docs/tasks/T001_define-codegeist-opencode-feature-architecture/` is the active
   architecture epic for Codegeist/OpenCode parity. The epic is split into 25
   granular documentation tasks under `tasks/`.
-- `docs/developer/codegeist-opencode-parity.md` records the Codegeist/OpenCode
+- `docs/developer/specification/codegeist-opencode-parity.md` records the Codegeist/OpenCode
   parity architecture. Codegeist is mapped onto the Java-first stack instead of
   being planned as an OpenCode/Bun/TypeScript copy. The document now covers the
   technology baseline, OpenCode-to-Java mapping, module boundaries, CLI/Shell
@@ -55,8 +55,8 @@
   context loading, PF4J/JBang/Vaadin/server/storage roles, GraalVM constraints,
   feature matrix, MVP cut, prompt flow, risk register, and implementation
   backlog.
-- `docs/developer/architecture.md` is the current-state architecture map for
-  coding agents. It describes only what exists now in `app/codegeist/cli`,
+- `docs/developer/architecture/architecture.md` is the current-state architecture
+  map for coding agents. It describes only what exists now in `app/codegeist/cli`,
   including the single Maven module, Spring Boot entrypoint, configuration,
   context-load test, Taskfile commands, current build baseline, and
   not-yet-implemented boundaries.
@@ -64,7 +64,7 @@
   `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/` have
   been checked with `/specify-task` and solved with `/solve-task`. Each child
   task now has a `Solution Note` that points to the corresponding section in
-  `docs/developer/codegeist-opencode-parity.md`.
+  `docs/developer/specification/codegeist-opencode-parity.md`.
 - `docs/tasks/T002_implement-codegeist-mvp-foundation/` is the active foundation
   specification parent for the first Codegeist MVP work. `T002_01` remains the
   completed build/layout baseline exception. `T002_02` and later are
@@ -83,13 +83,13 @@
   `app/codegeist/cli`.
 - `T002_02_introduce-runtime-vocabulary-contracts.md` is finalized as a
   documentation and diagram slice. It created
-  `docs/developer/runtime-vocabulary.md` for Codegeist-owned runtime terms,
+  `docs/developer/specification/runtime-vocabulary.md` for Codegeist-owned runtime terms,
   boundary direction, deferred surfaces, and non-ownership rules without creating
   Java packages, classes, or empty directories.
 - `T002_03_introduce-runtime-session-event-contracts.md` is specified as a
   documentation and diagram slice after the user narrowed it away from Java
   implementation. It created
-  `docs/developer/runtime-session-event-contracts.md` as the future Java contract
+  `docs/developer/specification/runtime-session-event-contracts.md` as the future Java contract
   blueprint for prompt requests, agent modes, sessions, turns, message parts,
   runtime event envelopes, event families, sequencing, and event-to-session
   projection. It used OpenCode source evidence from `session/schema.ts`,
@@ -117,7 +117,7 @@
 - `T002_05_add_context_workspace_manifest_slice.md` is finalized as a
   documentation-only context/workspace architecture task, with no child task and no
   Java implementation work. It created and then deepened
-  `docs/developer/context-workspace-manifest.md`, which defines future workspace
+  `docs/developer/specification/context-workspace-manifest.md`, which defines future workspace
   path-validation responsibilities, explicit context loader request fields,
   deterministic source ordering, context manifest fields, skip reasons,
   external-analysis exclusion posture, OpenCode lessons, permission boundaries,
@@ -142,7 +142,7 @@
   permission approval above deterministic workspace validation.
 - `T002_06_add_provider_configuration_adapter.md` is finalized as a
   documentation-only provider configuration and Spring AI adapter blueprint. It
-  created `docs/developer/provider-configuration-contracts.md` with UML class
+  created `docs/developer/specification/provider-configuration-contracts.md` with UML class
   diagrams, Spring AI counterpart mapping, future file maps, first-wave
   OpenAI-compatible/OpenAI and Ollama support, later Spring AI provider extension
   rules, typed provider errors, validation posture, and future test handoff notes.
@@ -150,7 +150,7 @@
   calls.
 - `T002_07_add_tool_permission_workspace_contracts.md` is finalized as a
   documentation-only tool, permission, and workspace contract blueprint. It created
-  `docs/developer/tool-permission-workspace-contracts.md`, which defines
+  `docs/developer/specification/tool-permission-workspace-contracts.md`, which defines
   Codegeist-owned tool descriptors, request/result and failure shapes, permission
   request/decision/scope metadata, workspace tool-target validation, bounded
   output references, runtime event/session projection, Spring AI tool-call
@@ -165,7 +165,7 @@
   explicitly reopened as implementation work.
 - `T002_08_add_patch_edit_proposal_flow.md` is finalized as a documentation-only
   patch/edit proposal and apply-result blueprint. It created
-  `docs/developer/patch-edit-proposal-contracts.md`, which specializes finalized
+  `docs/developer/specification/patch-edit-proposal-contracts.md`, which specializes finalized
   `T002_07` tool/permission/workspace contracts for exact proposal review,
   Build-mode apply, permission approval, workspace validation, proposal freshness,
   typed failures, bounded summaries, output references, and future test handoff.
@@ -176,7 +176,7 @@
   behavior.
 - `T002_09_add_controlled_shell_verification_tool.md` is finalized as a
   documentation-only controlled shell verification blueprint. It created
-  `docs/developer/shell-verification-contracts.md`, which specializes finalized
+  `docs/developer/specification/shell-verification-contracts.md`, which specializes finalized
   `T002_07` tool/permission/workspace contracts for Plan-mode shell denial,
   Build-mode approval-gated verification commands, destructive-command safety
   posture, workspace-cwd validation, env/stdin policy, timeout/cancellation,
@@ -188,7 +188,7 @@
   notes to `T002_10` and `T002_12`.
 - `T002_10_decide_minimal_storage_ports.md` is finalized as a documentation-only
   minimal storage posture blueprint. It created
-  `docs/developer/storage-port-posture.md`, which selects in-memory storage first
+  `docs/developer/specification/storage-port-posture.md`, which selects in-memory storage first
   behind replaceable ports and defers file-backed restart/continue/list persistence
   until a concrete CLI workflow requires it. The blueprint keeps event sourcing
   optional, excludes credentials and sensitive tool/shell/provider artifacts from
@@ -201,7 +201,7 @@
   runtime behavior. Finalization propagated storage readiness notes to `T002_12`.
 - `T002_11_validate_native_packaging_posture.md` is finalized as a
   documentation-only native packaging posture blueprint. It created
-  `docs/developer/native-packaging-posture.md`, which keeps the MVP foundation
+  `docs/developer/specification/native-packaging-posture.md`, which keeps the MVP foundation
   JVM-first and native-aware, defines future JVM jar and GraalVM native-image
   verification ladders, requires native status to be reported as `passed`,
   `skipped` with reason, or `failed` with a concrete blocker, and treats PF4J,
@@ -211,7 +211,7 @@
   dependencies, PF4J, JBang, Vaadin, server, or runtime behavior.
 - `T002_12_define_extension_and_client_readiness_gates.md` is finalized as a
   documentation-only extension/client readiness blueprint. It created
-  `docs/developer/extension-client-readiness-gates.md`, which gates later PF4J,
+  `docs/developer/specification/extension-client-readiness-gates.md`, which gates later PF4J,
   JBang, headless server, Vaadin, SDK/OpenAPI, and TUI work behind runtime API,
   session/event, tool/permission/workspace, storage, auth/security, native posture,
   and test-readiness decisions. It created no Java source, tests, dependencies,
@@ -280,10 +280,14 @@
   overlay. It only records Codegeist/OpenCode parity guidance, T002 dependency
   order, Java-first architecture mapping, context-profile ownership guidance, and
   OpenCode source-evidence hints.
-- `.oc_local/rules/architecture-doc.md` defines how to use and maintain
-  `docs/developer/architecture.md`: keep it current-state focused, update it with
-  architecture-relevant code changes, and leave future parity planning in
-  `docs/developer/codegeist-opencode-parity.md`.
+- `.oc_local/rules/architecture-doc.md` defines how to use and maintain Codegeist
+  architecture and specification docs. Current-state architecture lives under
+  `docs/developer/architecture/`, with
+  `docs/developer/architecture/architecture.md` as the current-state map. Planned
+  architecture, contract blueprints, and future-facing specs live under
+  `docs/developer/specification/`. Architecture may be planned before
+  implementation or documented immediately after implementation, but docs, code,
+  and architecture-relevant tests must be synchronized in the same task.
 - Shared task phases use one argument contract,
   `<task-ref> [context/instructions]`, discover hints from task docs, optionally
   use `docs/tasks/hints/` when it exists, record phase status in the task, and
@@ -311,6 +315,13 @@
 - Codegeist vocabulary or boundary slices should not create empty Java package
   directories just to reserve names. Use focused developer documentation or
   diagrams until a later task is ready for behavior-free Java contracts.
+- `docs/tasks/hints/java-spring-architecture-planning-guidance.md` is the reusable
+  planning hint for Java/Spring architecture tasks. It tells `/plan-task` passes to
+  document architecture in markdown with UML/Mermaid diagrams, class diagrams,
+  explanatory text, illustrative Java/Spring examples, and fixed test expectations
+  before implementation. Later solve phases should add or update the planned tests
+  with the code change and not leave known failing tests unresolved without a
+  concrete blocker.
 
 ## Open Points
 
@@ -319,7 +330,10 @@
 - `T003_implement-codegeist-opencode-core-application/` is the new implementation
   epic. It targets OpenCode-replaceable CLI-core behavior while keeping JBang,
   Vaadin, headless web server, and API/SDK surfaces deferred to the backlog.
-- `T003_01_analyze_spring_ai_agent_utils_adoption.md` is the first active child
-  task. It analyzes `spring-ai-community/spring-ai-agent-utils` before Codegeist
-  chooses whether to use, wrap, copy conceptually, defer, or reject its tools,
-  advisors, memory, skills, and subagent utilities.
+- `T003_01_analyze_spring_ai_agent_utils_adoption.md` is specified as the first
+  active child task. It analyzes `spring-ai-community/spring-ai-agent-utils`
+  before Codegeist chooses whether to use, wrap, copy conceptually, defer, or
+  reject its tools, advisors, memory, skills, and subagent utilities. The task is
+  analysis-only: no runtime behavior, Maven dependency, Java source, tests,
+  provider callbacks, storage adapters, shell executors, skills, or subagents are
+  added until a later task explicitly chooses them.

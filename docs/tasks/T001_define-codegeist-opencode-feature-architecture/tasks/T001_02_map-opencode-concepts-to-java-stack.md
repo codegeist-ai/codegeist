@@ -56,7 +56,7 @@ Every mapping should preserve these boundaries:
 ## Deliverable
 
 Add or refine a concept mapping table in
-`docs/developer/codegeist-opencode-parity.md`.
+`docs/developer/specification/codegeist-opencode-parity.md`.
 
 The mapping table must use these columns:
 

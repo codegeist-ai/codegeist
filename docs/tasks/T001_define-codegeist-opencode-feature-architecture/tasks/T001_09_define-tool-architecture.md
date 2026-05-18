@@ -94,7 +94,7 @@ boundaries.
 Status: completed.
 
 The solution pass added `## Tool Architecture` to
-`docs/developer/codegeist-opencode-parity.md`. The section defines the
+`docs/developer/specification/codegeist-opencode-parity.md`. The section defines the
 runtime-owned tool registry, descriptors, request/result model, Spring AI adapter
 boundary, built-in/PF4J/JBang tool sources, initial tool categories, and
 documentation-only non-goals.
