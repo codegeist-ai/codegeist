@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
     properties = {
         "spring.shell.interactive.enabled=false",
-        "spring.shell.noninteractive.enabled=false"
+        "spring.autoconfigure.exclude=org.springframework.shell.core.autoconfigure.SpringShellAutoConfiguration"
     }
 )
 class CodegeistApplicationTests {

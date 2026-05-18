@@ -64,7 +64,7 @@ preceding analysis and implementation-guidance tasks clarify the exact boundarie
 
 | Child task | Primary inputs | Purpose |
 | --- | --- | --- |
-| `T003_01` | Backlog idea, Spring AI Agent Utils repository, T002 tool/provider/storage/shell docs | Decide whether Spring AI Agent Utils can be used directly, wrapped, copied conceptually, deferred, or rejected. |
+| `T003_01` | Backlog idea, Spring AI Agent Utils repository, T002 tool/provider/storage/shell docs | Establish Agent Utils as a dependency baseline and document boundary guidance so Codegeist can use it internally without adopting its architecture. |
 | `T003_02` | T002 blueprints, existing Java baseline | Define Codegeist Java source generation guidance for coding agents before broad implementation starts. |
 | `T003_03` | T002 verification posture, Spring/JUnit/Mockito needs | Define fast, fine-grained, coding-agent-friendly test strategy. |
 | `T003_04` | Native packaging posture, testing strategy | Define test runtime, startup, and native executable smoke budgets. |
@@ -98,8 +98,10 @@ preceding analysis and implementation-guidance tasks clarify the exact boundarie
 - Do not copy OpenCode's Bun, TypeScript, Hono, Effect, or storage architecture.
 - Do not implement JBang, Vaadin, headless server, API, or SDK/OpenAPI behavior in
   the T003 core implementation.
-- Do not bypass Codegeist runtime-owned sessions, events, permissions, workspace
-  validation, or storage ports to use an external utility directly.
+- Do not expose external utilities directly through runtime, provider, session,
+  event, permission, workspace, or storage boundaries in a way that bypasses
+  Codegeist policy. Direct internal use is allowed when Codegeist-owned contracts
+  stay independent.
 - Do not mark Codegeist as OpenCode-replaceable until end-to-end parity checks and
   migration acceptance criteria pass.
 - Do not split Maven modules before runtime, provider, tool, permission,
@@ -132,9 +134,19 @@ git --no-pager diff --check
 Implementation tasks should add the narrowest relevant Maven/Taskfile checks and
 keep `task test` fast enough for coding-agent iteration.
 
+## Progress Notes
+
+- `T003_01` is finalized. Codegeist now keeps Spring AI Agent Utils `0.7.0` on
+  the CLI classpath with Spring Boot 4 and Spring AI `2.0.0-M6`. The durable
+  handoff is `docs/developer/spring-ai-agent-utils-adoption.md`, now an Agent
+  Utils boundary guide rather than an adoption report. Later T003 tasks may use
+  Agent Utils directly inside implementation code, but Codegeist runtime,
+  provider, tool, permission, workspace, event, session, and storage contracts
+  must not depend on Agent Utils architecture or broad raw provider callbacks.
+
 ## Creation Note
 
 Created after `T002_12` finalized the MVP foundation documentation sequence. The
-user selected `T003_01` as a Spring AI Agent Utils adoption analysis, and selected
-JBang, Vaadin, web server, and API/SDK as deferred backlog surfaces that must still
-shape T003's core contracts.
+user selected `T003_01` to decide how Spring AI Agent Utils should inform
+Codegeist, and selected JBang, Vaadin, web server, and API/SDK as deferred
+backlog surfaces that must still shape T003's core contracts.

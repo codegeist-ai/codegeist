@@ -21,8 +21,9 @@
   `compose.local.yml`, root `.oc_local/`, `.devcontainer/.env`, and
   `.devcontainer/compose.local.gen.yml` when needed, and can select a worktree
   under `.worktrees/<branch>` as `/workspace` via `BRANCH`.
-- `app/codegeist/cli` is a Spring Boot and Spring Shell CLI bootstrap with Java
-  25, Maven, and a prepared GraalVM native build.
+- `app/codegeist/cli` is a Spring Boot 4 and Spring Shell 4 CLI bootstrap with
+  Java 25, Maven, Spring AI `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, and a
+  prepared GraalVM native build.
 - `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, and `native`.
 - `.devcontainer/Dockerfile` installs `nix` in addition to the existing
   apt-based toolchain without migrating the devcontainer workflow to Nix.
@@ -278,7 +279,9 @@
 - `.oc_local/rules/codegeist-task-specification.md` is now a thin Codegeist
   overlay. It only records Codegeist/OpenCode parity guidance, T002 dependency
   order, Java-first architecture mapping, context-profile ownership guidance, and
-  OpenCode source-evidence hints.
+  OpenCode source-evidence hints. It also records the current Agent Utils boundary
+  rule: direct internal use is allowed when useful, but Codegeist contracts must
+  stay independent and adapters should appear only for concrete boundary needs.
 - `.oc_local/rules/architecture-doc.md` defines how to use and maintain Codegeist
   architecture and specification docs. Current-state architecture lives under
   `docs/developer/architecture/`, with
@@ -329,15 +332,18 @@
 - `T003_implement-codegeist-opencode-core-application/` is the new implementation
   epic. It targets OpenCode-replaceable CLI-core behavior while keeping JBang,
   Vaadin, headless web server, and API/SDK surfaces deferred to the backlog.
-- `T003_01_analyze_spring_ai_agent_utils_adoption.md` is planned as the first
-  active child task. It will create
-  `docs/developer/spring-ai-agent-utils-adoption.md` as one evidence-backed
-  adoption report for `spring-ai-community/spring-ai-agent-utils`, classifying
-  released and source-only utilities as direct-use, wrapper, conceptual-copy,
-  defer, or reject candidates before Codegeist starts runtime implementation. The
-  task remains analysis-only: no runtime behavior, Maven dependency, Java source,
-  tests, provider callbacks, storage adapters, shell executors, skills, or
-  subagents are added until a later task explicitly chooses them.
+- `T003_01_analyze_spring_ai_agent_utils_adoption.md` is finalized as the first
+  T003 child task. It now maintains
+  `docs/developer/spring-ai-agent-utils-adoption.md`
+  as the Codegeist-owned Agent Utils boundary guide for
+  `spring-ai-community/spring-ai-agent-utils`. User direction changed the build
+  decision: Codegeist now targets Spring Boot 4, Spring AI `2.0.0-M6`, Spring
+  Shell 4, and Spring AI Agent Utils `0.7.0`. Agent Utils may be on the classpath,
+  but useful utilities still need Codegeist runtime, provider, tool, permission,
+  workspace, storage, event, session, and native-readiness boundaries before
+  model exposure. The guide now explicitly avoids creating a wrapper by default:
+  direct internal use is fine when Codegeist contracts stay independent, and
+  adapters should appear only when a concrete boundary needs them.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored

@@ -42,3 +42,9 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - Keep Codegeist-specific source evidence under `docs/third-party/opencode/` and
   prefer `/ask-project opencode ...` when a phase needs source-backed OpenCode
   behavior details. `/ask-project` owns any Repomix-backed deep dive internally.
+- Spring AI Agent Utils may be used directly inside Codegeist implementation code
+  when it helps move faster, but Codegeist runtime, provider, tool, permission,
+  workspace, event, session, storage, API, and UI contracts must not depend on
+  Agent Utils architecture or raw broad provider callbacks. Add an adapter only
+  when a concrete boundary needs policy mediation, result mapping, or replacement
+  flexibility.

@@ -13,9 +13,10 @@ tests.
 The current implemented packaging baseline remains the single Spring Boot CLI
 module under `app/codegeist/cli`:
 
-- Spring Boot `3.5.14`.
-- Spring AI BOM `1.1.6` for dependency management only.
-- Spring Shell `3.4.2`.
+- Spring Boot `4.0.6`.
+- Spring AI BOM `2.0.0-M6`.
+- Spring AI Agent Utils BOM and core artifact `0.7.0`.
+- Spring Shell `4.0.2`.
 - Java `25`.
 - Maven jar packaging through the Spring Boot Maven plugin.
 - GraalVM native profile through `native-maven-plugin` `0.10.6`.

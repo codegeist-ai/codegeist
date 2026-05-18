@@ -11,26 +11,27 @@ Codegeist should be designed around a Java-first stack. OpenCode is a feature
 reference, but Codegeist will not copy OpenCode's Bun and TypeScript runtime
 shape.
 
-Spring AI is a central architecture component, so stable Spring AI support is
-more important than adopting Spring Boot 4 early. The architecture baseline is
-Spring Boot `3.5.x` with the stable Spring AI `1.1.x` line.
+Spring AI is a central architecture component. The architecture baseline now
+follows the Spring AI 2.x milestone line so Codegeist can use Spring AI Agent
+Utils while keeping provider and tool behavior behind Codegeist-owned contracts.
 
 Java `25` remains the preferred Java baseline as long as it works with Spring
-Boot `3.5.x`, Spring AI `1.1.x`, Spring Shell, Maven, and GraalVM. If Java `25`
-causes compatibility issues, the Java version must be decided separately
-instead of silently changing the Spring AI stability decision.
+Boot 4, Spring AI `2.0.0-M6`, Spring Shell 4, Maven, and GraalVM. If Java `25`
+causes compatibility issues, the Java version must be decided separately instead
+of silently changing the Spring AI or Agent Utils adoption decision.
 
-The `app/codegeist/cli/pom.xml` build is aligned to Spring Boot `3.5.14`, Spring AI
-`1.1.6` dependency management, and Spring Shell `3.4.2` while keeping Java `25`
-and the GraalVM native profile as the project posture.
+The `app/codegeist/cli/pom.xml` build is aligned to Spring Boot `4.0.6`, Spring
+AI `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, and Spring Shell `4.0.2` while
+keeping Java `25` and the GraalVM native profile as the project posture.
 
 | Technology | Decision | Role | Boundary | Validation needed |
 | --- | --- | --- | --- | --- |
-| Java 25 | Preferred while compatible | Primary language and domain model | Owns core types, tool contracts, events, and workspace abstractions | Verified for the current JVM test/build baseline with Spring Boot `3.5.14`, Spring AI `1.1.6`, Spring Shell `3.4.2`, Maven, and GraalVM posture |
-| Maven | Baseline build system | Dependency management, build lifecycle, tests, JVM jar, native profile | Does not define runtime architecture | Manages Spring Boot `3.5.14` and Spring AI `1.1.6` BOM alignment |
-| Spring Boot 3.5.x | Target for stable Spring AI support | Application baseline, auto-configuration, lifecycle | Should not own agent-specific domain decisions | Current build uses `3.5.14` instead of the previous `4.0.3` bootstrap |
-| Spring Shell | Keep as initial CLI/shell layer | Interactive and non-interactive command entrypoints | Must remain a client of the runtime | Current build uses Spring Shell `3.4.2` with Spring Boot `3.5.14` and Java `25` |
-| Spring AI 1.1.x | Target stable line | Primary model/provider, chat, tool-calling, and AI integration layer | Does not replace Codegeist runtime, permissions, or tool policy | Current build imports the Spring AI `1.1.6` BOM without provider starters |
+| Java 25 | Preferred while compatible | Primary language and domain model | Owns core types, tool contracts, events, and workspace abstractions | Verify with Spring Boot `4.0.6`, Spring AI `2.0.0-M6`, Spring Shell `4.0.2`, Agent Utils `0.7.0`, Maven, and GraalVM posture |
+| Maven | Baseline build system | Dependency management, build lifecycle, tests, JVM jar, native profile | Does not define runtime architecture | Manages Spring Boot `4.0.6`, Spring AI `2.0.0-M6`, and Agent Utils `0.7.0` alignment |
+| Spring Boot 4.0.x | Target for Spring AI 2.x and Agent Utils support | Application baseline, auto-configuration, lifecycle | Should not own agent-specific domain decisions | Current build uses `4.0.6` |
+| Spring Shell | Keep as initial CLI/shell layer | Interactive and non-interactive command entrypoints | Must remain a client of the runtime | Current build uses Spring Shell `4.0.2` with Spring Boot `4.0.6` and Java `25` |
+| Spring AI 2.0.x | Target line for provider integration | Primary model/provider, chat, tool-calling, and AI integration layer | Does not replace Codegeist runtime, permissions, or tool policy | Current build imports the Spring AI `2.0.0-M6` BOM without provider starters |
+| Spring AI Agent Utils | Adopt as dependency baseline, keep architecture independent | Reference and optional implementation source for agent tools, skills, memory, network, and subagent concepts | Must not become Codegeist's runtime, provider, tool, permission, workspace, session, event, or storage contract model | Current build imports the `0.7.0` BOM and core artifact; direct internal use is allowed when Codegeist contracts stay independent |
 | GraalVM | Native-image target | Runtime optimization and distributable native executable goal | Native compatibility may lag behind JVM-first prototyping | Verify Spring AI, PF4J, Vaadin, reflection, dynamic loading, and JBang execution |
 | Vaadin | Future Java-native web client | Presents sessions, approvals, events, and tool results | Must not own runtime orchestration | Verify fit after server/runtime boundaries exist |
 | JBang | Lightweight user extension runtime | Enables repository-local Java scripts as simple user extensions | Must not bypass tool registry, permissions, workspace boundaries, or audit logging | Verify metadata, dependency trust, script cache, remote-loading policy, and native behavior |
@@ -41,13 +42,13 @@ and the GraalVM native profile as the project posture.
 - The runtime should stay Java-native instead of copying OpenCode's Bun and
   TypeScript runtime shape.
 - The current Spring Boot and Spring Shell bootstrap under `app/codegeist/cli` is
-  aligned to the target Boot `3.5.x` and Spring AI `1.1.x` posture and remains a
-  valid starting point for the CLI and runtime foundation.
+  aligned to the target Boot 4 and Spring AI 2.x posture and remains a valid
+  starting point for the CLI and runtime foundation.
 - GraalVM support should influence dependency choices early, especially for
   reflection-heavy libraries, dynamic loading, and plugin boundaries.
 - Spring AI should be evaluated as the default provider abstraction before
-  introducing custom provider contracts, using the stable `1.1.x` line with
-  Spring Boot `3.5.x`.
+  introducing custom provider contracts, using the selected `2.0.0-M6` milestone
+  line with Spring Boot 4.
 - Vaadin should be treated as a later client surface over the same runtime, not
   as the owner of agent orchestration.
 - JBang should be treated as a lightweight user extension runtime for
@@ -776,7 +777,7 @@ OpenCode is the feature reference for provider-agnostic model access, provider
 and model configuration, provider authentication, model capability checks,
 streaming output, and tool availability shaped by model support. Codegeist should
 not copy OpenCode's broad AI SDK package set. It should start with Spring AI
-`1.1.x` and add Codegeist-specific adapters only where Spring AI does not expose
+`2.0.0-M6` and add Codegeist-specific adapters only where Spring AI does not expose
 the runtime policy Codegeist needs.
 
 Core provider concepts:
@@ -851,7 +852,7 @@ Codegeist policy without exposing raw Spring AI tool execution directly.
 
 Open questions:
 
-- Which Spring AI `1.1.x` provider starter should be verified first in this
+- Which Spring AI `2.0.0-M6` provider starter should be verified first in this
   repository?
 - Does Spring AI tool calling expose enough control for Codegeist permissions, or
   should Codegeist run tools itself after model tool-call requests are parsed?
@@ -864,7 +865,7 @@ Open questions:
 
 Non-goals for this architecture step:
 
-- Do not add Spring AI dependencies or change `app/codegeist/cli/pom.xml` here.
+- Do not add provider starters or implement provider calls here.
 - Do not implement provider calls, credentials, model listing, or tool calling.
 - Do not define final config file syntax.
 - Do not expose provider behavior in CLI/server/Vaadin clients yet.
@@ -1529,7 +1530,7 @@ candidates only; it does not create `T002+` task files automatically.
 
 | Order | Backlog candidate | Outcome | Target areas | Verification idea | Maps to MVP/risk |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Align build baseline | Move `app/codegeist/cli` toward Spring Boot `3.5.x` and Spring AI `1.1.x` compatibility while preserving Java/GraalVM posture | `app/codegeist/cli/pom.xml`, Taskfile/tests | `task test` or Maven test/build | Baseline compatibility risks. |
+| 1 | Align build baseline | Move `app/codegeist/cli` toward Spring Boot 4, Spring AI `2.0.0-M6`, and Spring AI Agent Utils `0.7.0` compatibility while preserving Java/GraalVM posture | `app/codegeist/cli/pom.xml`, Taskfile/tests | `task test` or Maven test/build | Baseline compatibility risks. |
 | 2 | Introduce runtime/session/event contracts | Add minimal Java packages and tests for runtime request, sessions, turns, message parts, and events | `ai.codegeist.runtime`, `session`, `event` | Unit tests for create/append/event sequence | Runtime, session, event MVP. |
 | 3 | Add deterministic context loading slice | Load rules, memory, active task/docs, and focused source snippets with a context manifest | `context`, `workspace` | Context manifest test with fixture workspace | Context MVP and workspace risk. |
 | 4 | Add provider configuration and one Spring AI path | Configure and smoke one provider with streaming mapped to events | `provider`, config docs/tests | Provider streaming smoke with safe test config | Provider risk and model MVP. |
@@ -1562,14 +1563,14 @@ technology stack.
 
 | OpenCode concept | OpenCode evidence | Codegeist concept | Primary owner | Extension path | MVP relevance | Follow-up task | Open questions |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| CLI | `ANALYSIS_REPORT.md` names the `opencode` binary as the CLI surface. | Spring Boot application with Spring Shell command surface | Spring Boot `3.5.x`, Spring Shell | built-in | MVP | `T001_04` | Which commands are required before a full interactive loop exists? |
+| CLI | `ANALYSIS_REPORT.md` names the `opencode` binary as the CLI surface. | Spring Boot application with Spring Shell command surface | Spring Boot 4, Spring Shell | built-in | MVP | `T001_04` | Which commands are required before a full interactive loop exists? |
 | TUI | Feature notes describe terminal UI as the default product experience. | Shell-first terminal UX, with full-screen TUI deferred | Spring Shell, later JLine detail | built-in | Later | `T001_04` | Is Spring Shell enough for first user workflows, or is a richer TUI required earlier? |
-| Plan agent | User notes describe read-only or analysis-oriented plan workflow. | Read-only agent mode | Runtime services, Spring AI `1.1.x` | built-in | MVP | `T001_05` | Which tools are safe in Plan mode by default? |
-| Build agent | Feature notes describe build agent mode for implementation work. | Implementation-capable agent mode | Runtime services, Spring AI `1.1.x` | built-in | MVP | `T001_05` | Which write/shell actions require per-call versus session-level approval? |
+| Plan agent | User notes describe read-only or analysis-oriented plan workflow. | Read-only agent mode | Runtime services, Spring AI `2.0.0-M6` | built-in | MVP | `T001_05` | Which tools are safe in Plan mode by default? |
+| Build agent | Feature notes describe build agent mode for implementation work. | Implementation-capable agent mode | Runtime services, Spring AI `2.0.0-M6` | built-in | MVP | `T001_05` | Which write/shell actions require per-call versus session-level approval? |
 | Sessions | Analysis says the central runtime path is session oriented. | Codegeist Session aggregate | Java domain model, Spring services | none | MVP | `T001_06` | Which session fields are required before persistence exists? |
 | Message parts | Feature notes mention prompts, message parts, events, costs, tokens, snapshots, and state projection. | Typed message model | Java records/classes | none | MVP | `T001_06` | Do costs/tokens belong in the first model or later telemetry? |
 | Events | Analysis says messages, events, costs, and state are persisted or projected for clients. | Runtime event stream and audit events | Java event types, Spring application services | none | MVP | `T001_07` | Should initial events be synchronous callbacks, Spring events, or an internal stream abstraction? |
-| Provider/model configuration | Feature notes describe provider-agnostic model access and model ecosystem. | Spring AI-backed provider policy | Spring AI `1.1.x`, Codegeist provider policy | built-in, PF4J, later | MVP | `T001_08` | Which Spring AI provider should be verified first? |
+| Provider/model configuration | Feature notes describe provider-agnostic model access and model ecosystem. | Spring AI-backed provider policy | Spring AI `2.0.0-M6`, Codegeist provider policy | built-in, PF4J, later | MVP | `T001_08` | Which Spring AI provider should be verified first? |
 | Tool execution | Feature notes list file, shell, patch, web, LSP, task/subagent, and plugin tools mediated by permissions. | Codegeist Tool Registry | Spring services, Spring AI tool binding where useful | built-in, PF4J, JBang | MVP | `T001_09` | How much of Spring AI tool calling should be exposed directly versus wrapped by Codegeist policy? |
 | File tools | Feature notes list file tools. | Workspace-scoped file access service | Java NIO, Spring services | built-in, PF4J, JBang, later | MVP | `T001_11` | How are symlinks, ignored files, and generated files handled? |
 | Shell tools | Feature notes list shell tools mediated by permissions. | Controlled process execution tool | Java Process API, Spring services | built-in, JBang | Later | `T001_12` | What approval granularity and timeout defaults are safe? |
@@ -1612,13 +1613,13 @@ technology stack.
 
 - Which package boundary should be implemented first after the Spring Shell
   bootstrap: runtime/session, context, permission, or tool contracts?
-- Which Spring AI `1.1.x` provider path should be verified first on Spring Boot
-  `3.5.x`?
+- Which Spring AI `2.0.0-M6` provider path should be verified first on Spring Boot
+  4?
 - Which parts of the architecture must be GraalVM-native compatible from day
   one, and which can remain JVM-only during early prototyping?
 - Should PF4J plugins be loaded only in JVM mode at first, with native images
   limited to built-in extensions until plugin loading is verified?
-- Does Java `25` work cleanly with Spring Boot `3.5.x`, Spring AI `1.1.x`,
-  Spring Shell, Maven, and GraalVM in this project?
+- Does Java `25` work cleanly with Spring Boot 4, Spring AI `2.0.0-M6`, Spring AI
+  Agent Utils `0.7.0`, Spring Shell, Maven, and GraalVM in this project?
 - Which repository-local location should hold user JBang extensions, and when
   should remote JBang script loading be considered?

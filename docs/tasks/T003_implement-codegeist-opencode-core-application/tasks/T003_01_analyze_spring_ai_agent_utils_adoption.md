@@ -2,7 +2,7 @@
 
 Parent: `T003_implement-codegeist-opencode-core-application`
 
-Status: planned
+Status: finalized
 
 ## Goal
 
@@ -41,8 +41,8 @@ modules and utilities:
 The public README advertises Maven coordinates such as
 `org.springaicommunity:spring-ai-agent-utils:0.7.0`, while the packed source also
 contains `0.8.0-SNAPSHOT` development modules. Compatibility with Codegeist's
-Spring Boot `3.5.14`, Spring AI `1.1.6`, Java `25`, and GraalVM posture must be
-verified instead of assumed.
+Spring Boot 4, Spring AI 2.x, Java `25`, and GraalVM posture must be verified
+instead of assumed.
 
 ## Scope
 
@@ -84,9 +84,9 @@ record whether a utility helps or constrains those future surfaces.
 
 ## Direct Inputs And Dependencies
 
-- `app/codegeist/cli/pom.xml` is the current build baseline: Spring Boot `3.5.14`,
-  Spring AI BOM `1.1.6`, Spring Shell `3.4.2`, Java `25`, and GraalVM build tools
-  `0.10.6`.
+- `app/codegeist/cli/pom.xml` is the current build baseline: Spring Boot `4.0.6`,
+  Spring AI BOM `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, Spring Shell `4.0.2`,
+  Java `25`, and GraalVM build tools `0.10.6`.
 - `docs/developer/specification/provider-configuration-contracts.md` defines the Spring AI
   adapter boundary. Spring AI `ToolCallback` use must remain mediated by
   Codegeist-owned provider and tool policy.
@@ -112,8 +112,8 @@ record whether a utility helps or constrains those future surfaces.
 
 ## Key Questions
 
-- Can `spring-ai-agent-utils` `0.7.0` be used with Codegeist's Spring Boot
-  `3.5.14` and Spring AI `1.1.6` baseline?
+- Can `spring-ai-agent-utils` `0.7.0` be used with Codegeist's Spring Boot 4 and
+  Spring AI `2.0.0-M6` baseline?
 - Which utilities can be useful for Codegeist immediately?
 - Which utilities are unsafe unless wrapped behind Codegeist permission and
   workspace gates?
@@ -154,8 +154,8 @@ The report should classify each candidate with one of these adoption decisions:
 - Tool, permission, workspace, shell, storage, skill, subagent, performance, and
   native risks are explicitly noted.
 - The report defines follow-up implementation tasks for selected adoption paths.
-- No production dependency is added by this analysis task unless a later task
-  explicitly chooses it.
+- Production dependency adoption is allowed only through a separate build-baseline
+  change that keeps Agent Utils runtime use mediated by Codegeist contracts.
 - No Codegeist runtime behavior changes in this task.
 - The report separates stable released artifacts, snapshot/source-only findings,
   and conceptual lessons.
@@ -194,7 +194,8 @@ boundaries. Direct use should be rare and must include a boundary-safety argumen
 - Update this task file with solve/finalization notes when the report is written.
 - Update `docs/memory-bank/chat.md` only if the solve phase changes the active T003
   focus, selected adoption posture, or follow-up task set.
-- Do not edit `app/codegeist/cli/pom.xml` during this task.
+- Do not wire any Agent Utils runtime utility into Codegeist behavior during this
+  analysis task.
 - Do not create Java source, Java tests, package directories, Spring beans,
   provider callbacks, storage adapters, shell executors, skill adapters, subagent
   implementations, or build configuration during this task.
@@ -205,8 +206,8 @@ boundaries. Direct use should be rare and must include a boundary-safety argumen
 - Evidence sources and versions reviewed, including released artifacts versus
   source snapshots.
 - Codegeist baseline summary from `app/codegeist/cli/pom.xml`: Spring Boot
-  `3.5.14`, Spring AI BOM `1.1.6`, Spring Shell `3.4.2`, Java `25`, and GraalVM
-  build tools `0.10.6`.
+  `4.0.6`, Spring AI BOM `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, Spring Shell
+  `4.0.2`, Java `25`, and GraalVM build tools `0.10.6`.
 - Maven coordinates, modules, dependency graph risk, Java baseline, Spring Boot and
   Spring AI compatibility, and native-image posture.
 - Candidate classification table covering at least `FileSystemTools`, `GlobTool`,
@@ -327,8 +328,11 @@ The local `/analyse-project` workflow has been applied to
   156 supported files. The run is structural/AST-focused; use it for navigation,
   then inspect source files directly before final adoption decisions.
 
-The solve phase should use this workspace as reusable evidence while writing the
+The solve phase used this workspace as reusable evidence while writing the
 Codegeist-owned report at `docs/developer/spring-ai-agent-utils-adoption.md`.
+That document was later reshaped into an Agent Utils boundary guide after the
+build baseline adopted Agent Utils directly. It now explicitly avoids requiring a
+wrapper by default.
 
 ## Verification
 
@@ -336,26 +340,123 @@ Codegeist-owned report at `docs/developer/spring-ai-agent-utils-adoption.md`.
 git --no-pager diff --check
 ```
 
+## Solve Result
+
+- Phase command: `/solve-task`.
+- Context or instructions considered: user requested solving this task by path and
+  provided no extra narrowing instructions.
+- Upstream phase dependency: satisfied by the existing `/plan-task` status and
+  implementation plan in this task.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Project overlays considered: `.oc_local/rules/codegeist-task-specification.md`,
+  `.oc_local/rules/architecture-doc.md`, and
+  `.oc_local/rules/third-party-analysis-workflow.md`.
+- Related context files read: `app/codegeist/cli/pom.xml`,
+  `docs/developer/architecture/architecture.md`,
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/provider-configuration-contracts.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/specification/shell-verification-contracts.md`,
+  `docs/developer/specification/storage-port-posture.md`,
+  `docs/developer/specification/native-packaging-posture.md`,
+  `docs/third-party/spring-ai-agent-utils/README.md`, and
+  `docs/third-party/spring-ai-agent-utils/ANALYSIS_REPORT.md`.
+- Third-party evidence inspected: upstream README and POMs, Maven Central metadata
+  for `spring-ai-agent-utils` and `spring-ai-agent-utils-bom`, released `0.7.0`
+  POMs, source POMs for the core/common/A2A modules, candidate utility source
+  files, subagent SPI files, and focused upstream tests for grep, filesystem, and
+  shell behavior.
+- Implemented solution: created and later reshaped
+  `docs/developer/spring-ai-agent-utils-adoption.md` as the Codegeist-owned
+  Spring AI Agent Utils boundary guide.
+- Main decision updated by user direction: adopt `spring-ai-agent-utils` as part
+  of the Spring Boot 4 and Spring AI `2.0.0-M6` build baseline, but keep runtime
+  utility use mediated. Use it as behavior and test-pattern reference, copy
+  selected concepts, and only expose specific utilities after Codegeist-owned
+  runtime, provider, tool, permission, workspace, storage, event, session, and
+  native-readiness tests exist.
+- Compatibility result: Maven Central latest release is `0.7.0`; the released core
+  artifact depends on Spring AI `2.0.0-M3` and Spring Framework `7.0.1` as
+  provided dependencies. Codegeist now targets the compatible Spring Boot 4 and
+  Spring AI 2.x family, with Maven verification required before runtime use.
+- Native status: `skipped`; native validation is deferred until JVM Maven
+  verification is green for the new dependency graph.
+- Runtime changes: none. No Java source, tests, provider callbacks, storage
+  adapters, shell executors, skills, or subagents were added.
+- Acceptance criteria status: satisfied by the boundary guide and retained
+  analysis notes. It identifies
+  modules and utilities, records Maven/version findings, assesses compatibility
+  and native risk, classifies useful utilities, notes boundary risks, defines
+  follow-up task candidates, separates stable release evidence from source-only
+  findings, and performs no runtime behavior change.
+- Verification: `git --no-pager diff --check`.
+- Open decisions or blockers: none blocking this analysis task. Follow-up
+  implementation tasks must still create their own detailed specifications and
+  verification before exposing any Agent Utils behavior through Codegeist
+  provider or runtime boundaries.
+- Next recommended phase: `/finalize-task` for this same task to review impact on
+  parent and later T003 child tasks.
+
+## Finalization Result
+
+- Phase command: `/finalize-task t003_01`.
+- Context or instructions considered: user requested finalization for `t003_01`
+  after the solve output had been updated to a boundary guide and no-wrapper-by-default
+  posture.
+- Upstream phase dependency: satisfied. The task had `Status: solved` and a
+  current successful `/solve-task` result before finalization.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Project overlays considered: `.oc_local/rules/codegeist-task-specification.md`,
+  `.oc_local/rules/architecture-doc.md`, and
+  `.oc_local/rules/third-party-analysis-workflow.md`.
+- Impacted tasks: parent task
+  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md` now
+  records that `T003_01` is finalized, that Agent Utils is a dependency baseline,
+  and that direct internal use is allowed only while Codegeist contracts stay
+  independent.
+- Documentation updates reviewed: `docs/developer/spring-ai-agent-utils-adoption.md`,
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/architecture/architecture.md`,
+  `docs/developer/specification/native-packaging-posture.md`, and
+  `docs/memory-bank/chat.md`.
+- Documentation updates made during finalization:
+  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md` and
+  `docs/developer/specification/codegeist-opencode-parity.md` were refreshed to
+  align with the boundary-guide posture.
+- Remaining follow-ups: later T003 implementation tasks should create concrete
+  Codegeist contracts and tests before exposing Agent Utils behavior through
+  provider callbacks, shell, write/edit, memory, web, skills, or subagent surfaces.
+- Verification: `git --no-pager diff --check`.
+- Open decisions or blockers: none for finalizing this task.
+- Result: finalized.
+- Next recommended phase: create or specify the next T003 child task when ready.
+
 ## Non-Goals
 
-- Do not add `spring-ai-agent-utils` as a Codegeist dependency in this analysis
-  task.
+- Do not wire `spring-ai-agent-utils` utilities directly into Codegeist runtime
+  behavior in this analysis task.
 - Do not implement or modify Codegeist runtime, provider, tools, permissions,
   storage, shell, skills, or subagents.
 - Do not execute live provider calls or network-dependent tests.
 - Do not treat external utilities as trusted tool execution paths unless a later
-  implementation task wraps them behind Codegeist contracts.
-- Do not create Java source, tests, Maven dependency changes, package directories,
-  storage adapters, shell executors, skills, subagents, or provider callbacks.
+  implementation task proves the required Codegeist boundaries.
+- Do not create Java source, tests, package directories, storage adapters, shell
+  executors, skills, subagents, or provider callbacks.
 
 ## Planning-Readiness Questions
 
 - Which released Maven artifact versions are available, and do they align with the
-  current Spring Boot, Spring AI, Java, and GraalVM baseline?
+  selected Spring Boot, Spring AI, Java, and GraalVM baseline?
 - Which candidate utilities are pure enough to consider direct use, and which have
   side effects that require Codegeist mediation?
 - Which utilities overlap with already documented T002 boundaries strongly enough
-  that wrapping would be safer than direct dependency exposure?
+  that an adapter would be safer than direct internal use?
 - What source or documentation evidence is needed from the external repository to
   make each adoption decision defensible?
 - What follow-up implementation-task candidates should be created after the report,

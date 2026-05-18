@@ -72,15 +72,16 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | Module shape | Single Maven module under `app/codegeist/cli` |
 | Group/artifact | `ai.codegeist:codegeist` |
 | Java | `25` through `java.version` and `maven.compiler.release` |
-| Spring Boot | Parent `spring-boot-starter-parent` `3.5.14` |
-| Spring Shell | BOM `3.4.2`, dependency `spring-shell-starter` |
-| Spring AI | BOM `1.1.6` imported for dependency management only |
+| Spring Boot | Parent `spring-boot-starter-parent` `4.0.6` |
+| Spring Shell | BOM `4.0.2`, dependency `spring-shell-starter` |
+| Spring AI | BOM `2.0.0-M6` imported for dependency management |
+| Spring AI Agent Utils | BOM and core artifact `0.7.0` |
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Tests | Spring Boot context-load test only |
 
-Spring AI provider starters are not present. The BOM import only records the
-dependency-management posture for later provider work.
+Spring AI provider starters are not present. Spring AI Agent Utils is present as a
+dependency baseline, but no Agent Utils runtime utility is wired into the app yet.
 
 ## Implemented File Layout
 
@@ -181,8 +182,8 @@ documented in `docs/developer/specification/runtime-session-event-contracts.md`.
 ## Test Architecture
 
 `CodegeistApplicationTests` is a Spring Boot context-load test. It disables
-Spring Shell interactive and noninteractive modes for the test context so the
-bootstrap can be verified without starting an interactive shell.
+Spring Shell auto-configuration for the test context so the bootstrap can be
+verified without starting an interactive or noninteractive shell runner.
 
 ```mermaid
 sequenceDiagram
@@ -190,7 +191,7 @@ sequenceDiagram
     participant Spring as Spring Boot TestContext
     participant App as CodegeistApplication
 
-    Test->>Spring: Load context with shell modes disabled
+    Test->>Spring: Load context with shell runner disabled
     Spring->>App: Start application context
     App-->>Spring: Context starts or fails
     Spring-->>Test: contextLoads passes on successful startup
