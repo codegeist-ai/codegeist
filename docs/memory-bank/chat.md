@@ -315,6 +315,11 @@
 ## Open Points
 
 - The T002 MVP foundation documentation/specification sequence is complete through
-  `T002_12`. Next work should derive concrete implementation tasks from the
-  finalized blueprints only when the user explicitly reopens runtime, provider,
-  tool, storage, packaging, extension, or client implementation.
+  `T002_12`.
+- `T003_implement-codegeist-opencode-core-application/` is the new implementation
+  epic. It targets OpenCode-replaceable CLI-core behavior while keeping JBang,
+  Vaadin, headless web server, and API/SDK surfaces deferred to the backlog.
+- `T003_01_analyze_spring_ai_agent_utils_adoption.md` is the first active child
+  task. It analyzes `spring-ai-community/spring-ai-agent-utils` before Codegeist
+  chooses whether to use, wrap, copy conceptually, defer, or reject its tools,
+  advisors, memory, skills, and subagent utilities.
