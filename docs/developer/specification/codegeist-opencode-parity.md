@@ -228,13 +228,14 @@ OpenCode is the feature reference for the desired user experience: a primary
 `opencode` CLI entrypoint, terminal-first interactive usage, Plan and Build
 agent modes, later `serve` and `web` entrypoints, streaming model/tool output,
 and user approval prompts. Codegeist should translate those capabilities into
-Spring Boot, Spring Shell, and later JLine/Vaadin/server adapters instead of
-copying OpenCode's Bun, TypeScript, Hono, or full-screen TUI implementation
-shape.
+Spring Boot, Spring Shell, and a Codegeist-owned TUI adapter instead of copying
+OpenCode's Bun, TypeScript, Hono, or TUI implementation shape.
 
-Full-screen TUI behavior is deferred. JLine may be used through Spring Shell or
-later shell ergonomics for streaming output, prompts, completion, and terminal
-interaction, but it remains a presentation/detail layer over the runtime.
+TUI behavior is part of the T003 core implementation scope. It remains a
+presentation adapter over the runtime, not a second runtime. JLine or another
+terminal UI library may be selected by the implementation task, but TUI commands,
+streaming output, approval prompts, and session rendering must reuse the same
+runtime/session/event/permission contracts as CLI commands.
 
 | Entrypoint | MVP relevance | Owner | Runtime relationship |
 | --- | --- | --- | --- |
@@ -247,7 +248,7 @@ interaction, but it remains a presentation/detail layer over the runtime.
 | `codegeist provider ...` | Later | Spring Shell/CLI adapter | Lists or validates provider configuration without owning provider calls |
 | `codegeist serve` | Later | Server adapter | Exposes the same runtime over HTTP |
 | `codegeist web` | Later | Vaadin/server adapter | Presents runtime sessions through a browser client |
-| Full-screen TUI | Later | To decide | Must remain a runtime client, not a second runtime |
+| Full-screen TUI | MVP | TUI adapter over runtime | Must remain a runtime client, not a second runtime |
 
 Command categories to design before implementation:
 
@@ -271,8 +272,8 @@ Runtime boundary rules:
 - Plan and Build are runtime agent modes, not separate CLI implementations.
 - Interactive and one-shot commands must exercise the same runtime path whenever
   they perform the same user-visible action.
-- Server, Vaadin, and future TUI adapters must reuse the same runtime contracts
-  instead of reimplementing CLI behavior.
+- TUI, server, and Vaadin adapters must reuse the same runtime contracts instead
+  of reimplementing CLI behavior.
 
 Streaming and approval expectations:
 
@@ -286,7 +287,8 @@ Streaming and approval expectations:
 Non-goals for this architecture step:
 
 - Do not implement CLI commands yet.
-- Do not implement full-screen TUI behavior yet.
+- Do not implement full-screen TUI behavior in this documentation section; TUI
+  implementation belongs to the T003 core implementation task set.
 - Do not implement provider calls, tool execution, permission storage, or event
   streaming here.
 - Do not add dependencies or change `app/codegeist/cli` code in this documentation
@@ -297,9 +299,9 @@ Non-goals for this architecture step:
 ## Session Model
 
 Codegeist sessions are runtime-owned aggregates for related user work in one
-workspace. They are independent of client surfaces: Spring Shell, future server
-APIs, future Vaadin views, and future TUI clients can create, continue, inspect,
-and render sessions, but they must not own session state transitions.
+workspace. They are independent of client surfaces: Spring Shell, the T003 TUI,
+future server APIs, and future Vaadin views can create, continue, inspect, and
+render sessions, but they must not own session state transitions.
 
 OpenCode is the feature reference: prompt processing is session-oriented,
 messages are represented as ordered parts, clients render runtime activity from
@@ -450,7 +452,7 @@ these items durable later:
 Boundary rules:
 
 - Runtime owns session state transitions.
-- CLI, server, Vaadin, and future TUI clients may render sessions and submit
+- CLI, TUI, server, and Vaadin clients may render sessions and submit
   commands, but they must not mutate session internals directly.
 - Provider adapters may contribute assistant response parts, cost/token metadata,
   and provider errors, but they must not own session lifecycle.
@@ -687,8 +689,8 @@ Visibility and audit rules:
 
 - User-visible events must be enough for Spring Shell to render streaming text,
   tool activity, permission prompts, warnings, errors, and completion.
-- Server, Vaadin, and future TUI clients should consume the same conceptual
-  events instead of receiving client-specific session mutations.
+- TUI, server, and Vaadin clients should consume the same conceptual events
+  instead of receiving client-specific session mutations.
 - Audit-relevant events include session creation/status changes, mode selection,
   user input summaries, tool requests, permission requests/decisions,
   side-effecting tool starts/results/failures, and execution-stopping errors.
@@ -1000,9 +1002,9 @@ Non-goals for this architecture step:
 
 Permissions are the central gate between tool requests and side effects. Mode
 checks happen first; permission approval cannot grant a capability that the
-active mode denies. CLI, server, Vaadin, and future TUI clients may collect user
-approval decisions, but the runtime/permission boundary owns decision scope,
-cache behavior, audit events, and policy evaluation.
+active mode denies. CLI, TUI, server, and Vaadin clients may collect user approval
+decisions, but the runtime/permission boundary owns decision scope, cache
+behavior, audit events, and policy evaluation.
 
 Permission categories:
 

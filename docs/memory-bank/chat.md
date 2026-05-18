@@ -210,13 +210,11 @@
   source, tests, package directories, Maven changes, Taskfile commands, provider
   dependencies, PF4J, JBang, Vaadin, server, or runtime behavior.
 - `T002_12_define_extension_and_client_readiness_gates.md` is finalized as a
-  documentation-only extension/client readiness blueprint. It created
-  `docs/developer/specification/extension-client-readiness-gates.md`, which gates later PF4J,
-  JBang, headless server, Vaadin, SDK/OpenAPI, and TUI work behind runtime API,
-  session/event, tool/permission/workspace, storage, auth/security, native posture,
-  and test-readiness decisions. It created no Java source, tests, dependencies,
-  adapters, server routes, Vaadin views, PF4J plugins, JBang scripts, SDK
-  generation, TUI behavior, or runtime behavior.
+  documentation-only extension/client readiness blueprint. Its current developer
+  doc `docs/developer/specification/extension-client-readiness-gates.md` gates
+  later PF4J, JBang, headless server, Vaadin, and SDK/OpenAPI work behind runtime
+  API, session/event, tool/permission/workspace, storage, auth/security, native
+  posture, and test-readiness decisions. TUI has since moved into T003 core scope.
 - The `opencode` analysis uses a focused runtime corpus for Graphify instead of
   the whole repository. The last Graphify run produced 1,247 nodes, 2,008 edges,
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
@@ -256,12 +254,13 @@
   documentation corpus.
 - The selected Codegeist technology baseline is Java, GraalVM, Spring,
   Spring AI, Vaadin, JBang, and PF4J. Architecture docs should map OpenCode
-  concepts explicitly onto this stack.
-- Codegeist sessions are runtime-owned aggregates. CLI, server, Vaadin, and
-  future TUI clients may create, continue, inspect, and render sessions, but they
-  must not own session state transitions. `T001_06` answers the OpenCode-to-Java
-  migration questions for session, turn, message part, lifecycle, streaming
-  boundaries, and later storage projections.
+  concepts explicitly onto this stack. T003 now requires CLI and TUI core
+  behavior; Vaadin, JBang, and PF4J remain later/deferred surfaces.
+- Codegeist sessions are runtime-owned aggregates. CLI, TUI, server, and Vaadin
+  clients may create, continue, inspect, and render sessions, but they must not
+  own session state transitions. `T001_06` answers the OpenCode-to-Java migration
+  questions for session, turn, message part, lifecycle, streaming boundaries, and
+  later storage projections.
 - Codegeist events are typed runtime events for CLI output and later server,
   Vaadin, and TUI streams. They separate user-visible rendering from
   audit-relevant events; transport, event sourcing, and storage schema remain
@@ -330,8 +329,9 @@
 - The T002 MVP foundation documentation/specification sequence is complete through
   `T002_12`.
 - `T003_implement-codegeist-opencode-core-application/` is the new implementation
-  epic. It targets OpenCode-replaceable CLI-core behavior while keeping JBang,
-  Vaadin, headless web server, and API/SDK surfaces deferred to the backlog.
+  epic. It targets OpenCode-replaceable CLI and TUI core behavior while keeping
+  JBang, PF4J, Vaadin, headless web server, and API/SDK surfaces deferred to the
+  backlog.
 - `T003_01_analyze_spring_ai_agent_utils_adoption.md` is finalized as the first
   T003 child task. It now maintains
   `docs/developer/spring-ai-agent-utils-adoption.md`
@@ -344,6 +344,9 @@
   model exposure. The guide now explicitly avoids creating a wrapper by default:
   direct internal use is fine when Codegeist contracts stay independent, and
   adapters should appear only when a concrete boundary needs them.
+- `T003_02_define_java_generation_guidance.md` has been created as the next T003
+  child task. It is documentation-only and should produce Java/Spring generation
+  guidance before broad runtime, CLI, or TUI source generation starts.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored

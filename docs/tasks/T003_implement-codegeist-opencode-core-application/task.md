@@ -5,11 +5,11 @@ Status: open
 ## Goal
 
 Implement the Codegeist core application so it can replace OpenCode for the target
-CLI-based coding-agent workflows while staying Java-first and Codegeist-owned.
+CLI and TUI coding-agent workflows while staying Java-first and Codegeist-owned.
 
 The implementation must provide the runtime, session, event, context, provider,
-tool, permission, workspace, patch/edit, shell, storage, and CLI behavior needed
-for practical OpenCode-style agent work.
+tool, permission, workspace, patch/edit, shell, storage, CLI, and TUI behavior
+needed for practical OpenCode-style agent work.
 
 ## Context
 
@@ -28,6 +28,7 @@ The following surfaces are intentionally deferred out of the T003 core
 implementation scope:
 
 - JBang extension runtime.
+- PF4J packaged plugin runtime.
 - Vaadin client.
 - Headless web server.
 - API and SDK/OpenAPI surface.
@@ -35,8 +36,8 @@ implementation scope:
 T003 implementation tasks must still keep these future surfaces possible. Runtime
 contracts, session/event projections, tool descriptors, permission decisions,
 workspace policy, storage ports, provider boundaries, and native status reporting
-must stay adapter-ready so later JBang, Vaadin, server, and API tasks can attach
-without reworking the core.
+must stay adapter-ready so later JBang, PF4J, Vaadin, server, and API tasks can
+attach without reworking the core.
 
 ## Child Tasks
 
@@ -57,7 +58,7 @@ without reworking the core.
 - `T003_15_validate_packaging_native_and_startup_posture.md`
 - `T003_16_validate_opencode_core_replacement_readiness.md`
 
-Only `T003_01` is created initially. Later child tasks should be created when the
+`T003_01` and `T003_02` are created. Later child tasks should be created when the
 preceding analysis and implementation-guidance tasks clarify the exact boundaries.
 
 ## Derivation Map
@@ -85,8 +86,8 @@ preceding analysis and implementation-guidance tasks clarify the exact boundarie
 
 - Build on the existing single Maven module under `app/codegeist/cli` until the
   contracts and tests prove that a module split is useful.
-- Implement core CLI coding-agent behavior before deferred server, Vaadin, JBang,
-  API, or SDK surfaces.
+- Implement core CLI and TUI coding-agent behavior before deferred JBang, PF4J,
+  Vaadin, server, API, or SDK surfaces.
 - Keep Spring AI behind Codegeist provider and tool policy.
 - Keep tools behind Codegeist mode, permission, workspace, bounded-result, event,
   and session contracts.
@@ -96,8 +97,8 @@ preceding analysis and implementation-guidance tasks clarify the exact boundarie
 ## Non-Goals
 
 - Do not copy OpenCode's Bun, TypeScript, Hono, Effect, or storage architecture.
-- Do not implement JBang, Vaadin, headless server, API, or SDK/OpenAPI behavior in
-  the T003 core implementation.
+- Do not implement JBang, PF4J, Vaadin, headless server, API, or SDK/OpenAPI
+  behavior in the T003 core implementation.
 - Do not expose external utilities directly through runtime, provider, session,
   event, permission, workspace, or storage boundaries in a way that bypasses
   Codegeist policy. Direct internal use is allowed when Codegeist-owned contracts
@@ -110,15 +111,15 @@ preceding analysis and implementation-guidance tasks clarify the exact boundarie
 ## Acceptance Criteria
 
 - Codegeist can perform the selected OpenCode-style coding-agent workflows through
-  its own CLI.
+  its own CLI and TUI.
 - Runtime, session, event, context, provider, tool, permission, workspace,
-  patch/edit, shell, storage, and CLI behavior are implemented behind Codegeist
-  contracts.
+  patch/edit, shell, storage, CLI, and TUI behavior are implemented behind
+  Codegeist contracts.
 - Tests cover each subsystem with fast, deterministic unit or contract tests plus
   focused integration and smoke tests where needed.
 - The final validation task demonstrates that Codegeist can replace OpenCode for
-  the selected core CLI workflows without implementing the deferred JBang, Vaadin,
-  server, or API surfaces.
+  the selected core CLI and TUI workflows without implementing the deferred JBang,
+  PF4J, Vaadin, server, or API surfaces.
 - Deferred surfaces have explicit backlog entries and remain compatible with the
   implemented core boundaries.
 
@@ -148,5 +149,5 @@ keep `task test` fast enough for coding-agent iteration.
 
 Created after `T002_12` finalized the MVP foundation documentation sequence. The
 user selected `T003_01` to decide how Spring AI Agent Utils should inform
-Codegeist, and selected JBang, Vaadin, web server, and API/SDK as deferred
+Codegeist, and selected JBang, PF4J, Vaadin, web server, and API/SDK as deferred
 backlog surfaces that must still shape T003's core contracts.

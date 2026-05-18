@@ -48,3 +48,7 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   Agent Utils architecture or raw broad provider callbacks. Add an adapter only
   when a concrete boundary needs policy mediation, result mapping, or replacement
   flexibility.
+- T003 core implementation scope includes both CLI and TUI behavior. Keep JBang,
+  PF4J, Vaadin, headless server, API, and SDK/OpenAPI implementation in the
+  backlog while preserving adapter-ready runtime boundaries for those later
+  surfaces.

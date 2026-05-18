@@ -1,14 +1,14 @@
 # Extension And Client Readiness Gates
 
-Blueprint for deciding when deferred PF4J, JBang, headless server, Vaadin,
-SDK/OpenAPI, and future TUI surfaces are ready for implementation.
+Blueprint for deciding when deferred PF4J, JBang, headless server, Vaadin, and
+SDK/OpenAPI surfaces are ready for implementation.
 
 ## Scope
 
 This document specifies planned readiness gates only. It does not describe
 implemented Java source, Maven modules, dependencies, adapters, server routes,
-Vaadin views, PF4J plugins, JBang scripts, SDK generation, TUI behavior, tests,
-or runtime behavior.
+Vaadin views, PF4J plugins, JBang scripts, SDK generation, tests, or runtime
+behavior.
 
 The immediate purpose is to keep later extension and client work deferred until
 the core CLI/runtime foundation has enough contracts to receive those surfaces
@@ -30,12 +30,12 @@ than expanding the MVP foundation scope.
 
 | Input | Gate lesson |
 | --- | --- |
-| `docs/developer/specification/runtime-session-event-contracts.md` | Server, Vaadin, TUI, SDK, PF4J, and JBang requests must enter through runtime-owned prompt/session/event contracts instead of mutating client state directly. |
+| `docs/developer/specification/runtime-session-event-contracts.md` | TUI, server, Vaadin, SDK, PF4J, and JBang requests must enter through runtime-owned prompt/session/event contracts instead of mutating client state directly. |
 | `docs/developer/specification/tool-permission-workspace-contracts.md` | Plugin tools, script tools, server-triggered tools, and client approval actions must flow through descriptors, mode checks, permission policy, workspace validation, bounded results, events, and session summaries. |
 | `docs/developer/specification/shell-verification-contracts.md` | JBang and any process-like extension path must satisfy the controlled shell/process posture before executing external commands or scripts. |
 | `docs/developer/specification/storage-port-posture.md` | Server and Vaadin surfaces need explicit storage adapter, redaction, retention, artifact, concurrency, and auth posture before depending on durable session/event state. |
 | `docs/developer/specification/native-packaging-posture.md` | PF4J, JBang, server, Vaadin, provider, shell/process, and storage surfaces stay JVM-first until their own tasks prove native compatibility and record `passed`, `skipped`, or `failed`. |
-| `docs/developer/specification/codegeist-opencode-parity.md` | PF4J and JBang may contribute commands, tools, skills, hooks, or integrations, while server, Vaadin, and future TUI clients render and submit work through the same runtime. None of these surfaces owns runtime orchestration. |
+| `docs/developer/specification/codegeist-opencode-parity.md` | TUI is part of the T003 core client scope. PF4J and JBang are deferred contribution surfaces, while server and Vaadin clients later render and submit work through the same runtime. None of these surfaces owns runtime orchestration. |
 
 ### OpenCode Feature Evidence
 
@@ -83,8 +83,6 @@ flowchart TD
     Native --> Vaadin
 
     Server --> SDK[SDK/OpenAPI]
-    Runtime --> TUI[Future TUI]
-    Tool --> TUI
 ```
 
 The gates are conjunctive. A later task should not implement a surface by
@@ -231,21 +229,6 @@ SDK/OpenAPI implementation may start only when:
   provider SDK, Vaadin, PF4J, JBang, or storage adapter types.
 - Versioning and compatibility policy are selected.
 
-## Future TUI Readiness Gate
-
-The future TUI is a client surface, not a second runtime. It can improve terminal
-ergonomics after the line-oriented CLI/runtime contract is stable.
-
-TUI implementation may start only when:
-
-- Runtime emits enough event and session projection data for streaming text,
-  tool progress, approval prompts, warnings, errors, and completion status.
-- Terminal interaction, input focus, cancellation, resize, degraded output, and
-  accessibility behavior are specified without changing runtime semantics.
-- Approval and tool-result rendering calls the same permission and bounded-output
-  contracts as CLI, server, and Vaadin.
-- No storage or event model changes are required only for TUI presentation.
-
 ## Implementation Split Guidance
 
 Create later implementation tasks in this order unless a user explicitly changes
@@ -261,7 +244,8 @@ the product goal:
 7. Vaadin client only after server/runtime projection and approval semantics are
    usable.
 8. SDK/OpenAPI only after server contracts are stable enough to version.
-9. Full-screen TUI only after CLI/runtime events can drive a richer presentation.
+9. TUI implementation belongs to the T003 core task set and should reuse the same
+   runtime/session/event and permission contracts as CLI behavior.
 
 Do not combine all surfaces into one broad implementation task. Each task should
 name the gate it satisfies and the gate evidence it consumes.
