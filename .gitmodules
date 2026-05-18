@@ -10,3 +10,6 @@
 	path = docs/third-party/opencode/source
 	url = https://github.com/anomalyco/opencode.git
 	branch = dev
+[submodule "docs/third-party/spring-ai-agent-utils/source"]
+	path = docs/third-party/spring-ai-agent-utils/source
+	url = https://github.com/spring-ai-community/spring-ai-agent-utils.git

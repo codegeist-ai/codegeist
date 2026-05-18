@@ -6,6 +6,10 @@ agent: build
 Use this command to query a previously analyzed project and optionally generate
 follow-up documentation or diagrams from its analysis artifacts.
 
+This is the normal question and documentation interface for a project workspace
+created by `/analyse-project`. For the shared artifact contract, apply
+`.oc_local/rules/third-party-analysis-workflow.md`.
+
 User request:
 
 ```text
@@ -35,38 +39,45 @@ Examples:
 docs/third-party/<project-name>/
 ```
 
-3. If no analysis exists, stop and ask whether to run `/analyse-project` first.
-4. Treat `analysis-manifest.json` as optional because it is ignored and
-   regenerable. If it is missing, derive the source checkout from
-   `docs/third-party/<project-name>/source`.
-5. Check graph artifacts:
-   - Prefer existing `graphify-out/GRAPH_REPORT.md`,
-     `graphify-out/COMMUNITIES_BY_FILE.md`, and `graphify-out/graph.json` when
-     they are present.
-   - If `graphify-out/GRAPH_REPORT.md` or `graphify-out/graph.json` is missing
-     and the request needs graph, cluster, route, architecture, or cross-file
-     evidence, run or delegate to `/analyse-project <source-path-or-url>
-     --project <project-name>` before answering.
+3. If no analysis exists, stop and tell the user to run `/analyse-project` first.
+4. Check required analysis artifacts:
+   - `source/`
+   - `ANALYSIS_REPORT.md`
+   - `repomix-output.xml`
+   - `graphify-out/GRAPH_REPORT.md`
+   - `graphify-out/graph.json`
+5. If a required artifact is missing or clearly stale, stop and recommend rerunning
+   `/analyse-project <source-path-or-url> --project <project-name>`. Do not create
+   or refresh analysis artifacts from `/ask-project`.
+6. Check graph artifacts:
+    - Prefer existing `graphify-out/GRAPH_REPORT.md`,
+      `graphify-out/graph.json`, and `graphify-out/graph.html` when they are
+      present. Treat companion files such as `COMMUNITIES_BY_FILE.md` as optional
+      because the shared Graphify skill does not guarantee them.
    - Do not invoke Graphify directly from `/ask-project`; `/analyse-project`
      owns Graphify generation and must use `@.opencode/skills/graphify/SKILL.md`.
    - Keep `graphify-out/` ignored but local when present; it is the graph cache
      used by `/ask-project`, not a durable documentation file.
-6. Read the available artifacts before answering:
+7. Read the available artifacts before answering:
    - `analysis-manifest.json` when present
    - `ANALYSIS_REPORT.md`
    - `graphify-out/GRAPH_REPORT.md`
-   - `graphify-out/COMMUNITIES_BY_FILE.md`
    - `graphify-out/graph.json`
+   - `graphify-out/graph.html` as a handoff artifact when relevant
+   - `repomix-output.xml` through the `@repomix` subagent for broad source-level
+     implementation questions
    - `features/*.md`
    - `developer/*.md`
    - `user/*.md`
-   - `repomix-output.xml` only when needed for source-level details and present
-7. For source-level implementation questions that require broad code context,
-   prefer delegating to the `@repomix` subagent or to
-   `/ask-project-repomix <project-name> "<question>"` when
-   `repomix-output.xml` exists. This keeps the large packed-output context in a
-   child agent session instead of the parent `/ask-project` context.
-8. Determine the request type:
+8. For source-level implementation questions that require broad code context,
+   delegate to the `@repomix` subagent from this command. Include:
+   - `project=<project-name>`
+   - `repomix_path=docs/third-party/<project-name>/repomix-output.xml`
+   - `question=<question>`
+   The subagent must attach the packed output, search/read only relevant sections,
+   and answer with source-path citations. Do not paste raw XML into the parent
+   context.
+9. Determine the request type:
    - explanation
    - feature deep dive
    - workflow diagram
@@ -75,23 +86,23 @@ docs/third-party/<project-name>/
    - user documentation
    - developer documentation
    - migration assessment
-9. If the request is ambiguous, ask one concise clarification question. Example:
+10. If the request is ambiguous, ask one concise clarification question. Example:
 
 ```text
 I found several parser candidates: CLI argument parsing, AI response parsing,
 and document parsing. Which one should the diagram cover?
 ```
 
-10. Use source, graph, docs, tests, and runtime evidence as the basis for the
-   answer. Mark assumptions explicitly.
-11. If creating Mermaid:
+11. Use source, graph, Repomix, docs, tests, and runtime evidence as the basis for the
+    answer. Mark assumptions explicitly.
+12. If creating Mermaid:
    - write `.mmd` under `docs/third-party/<project-name>/diagrams/source/`
    - render SVG under `docs/third-party/<project-name>/diagrams/rendered/`
    - use `.oc_local/ai-scripts/render-mermaid.sh` when available
    - reference the rendered SVG from any generated markdown when SVG handoff is needed
-12. Verify generated files and report rendering failures.
-13. Return a concise answer with paths to created or updated artifacts.
-14. Ask whether the user wants a targeted follow-up.
+13. Verify generated files and report rendering failures.
+14. Return a concise answer with paths to created or updated artifacts.
+15. Ask whether the user wants a targeted follow-up.
 
 ## Diagram Output Rules
 
@@ -141,8 +152,10 @@ Keep the follow-up specific to the user's request.
   is missing or incomplete, regenerate it via `/analyse-project` so Graphify
   ownership stays centralized.
 - Do not load large `repomix-output.xml` content into the parent context. Use
-  the `@repomix` subagent or `/ask-project-repomix` for broad source-level
-  questions so the packed-output context stays isolated.
+  the `@repomix` subagent from this command for broad source-level questions so
+  the packed-output context stays isolated.
+- Do not route users to separate local project-analysis commands or skills; rerun
+  `/analyse-project` when the analysis workspace is missing or stale.
 - Prefer focused feature or cluster diagrams over huge system diagrams.
 - Keep Mermaid sources editable and render SVGs when `mmdc` is available.
 - If rendering fails, keep the `.mmd` source and report the exact failure.

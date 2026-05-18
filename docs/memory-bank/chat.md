@@ -33,10 +33,9 @@
 - The Nix profile hook is wired globally through `/etc/profile.d/nix.sh` so
   `nix` is available on `PATH` in container login shells.
 - The local OpenCode overlay `.oc_local/` contains the commands
-  `/analyse-project`, `/ask-project`, and `/ask-project-repomix`, the
-  `/repository-analysis` skill, the `@repomix` subagent, and the AI script
-  `render-mermaid.sh` for Mermaid SVG rendering. The task phase commands now come
-  from the shared `.opencode` agent kit.
+  `/analyse-project` and `/ask-project`, the `@repomix` subagent, and the AI
+  script `render-mermaid.sh` for Mermaid SVG rendering. The task phase commands
+  now come from the shared `.opencode` agent kit.
 - `docs/third-party/opencode/source` is a submodule for
   `https://github.com/anomalyco/opencode.git` on branch `dev` and points to
   `22e64ca`.
@@ -222,9 +221,9 @@
   and 78 communities; Graphify, Repomix, and verify outputs remain regenerable
   and ignored.
 - Source-close questions about third-party projects should use
-  `/ask-project-repomix <project> "<question>"` or the `@repomix` subagent
-  directly. The subagent loads `docs/third-party/<project>/repomix-output.xml`
-  into its own context through Repomix tools so the main context stays small.
+  `/ask-project <project> "<question>"`. The command uses the analyzed project's
+  `docs/third-party/<project>/repomix-output.xml` through the `@repomix` subagent
+  when broad packed-output context is needed, so the main context stays small.
 
 ## Important Decisions
 
@@ -306,8 +305,8 @@
   documentation-only T002 handoff pattern: future file maps, boundary rules,
   diagrams, and realistic Java examples in markdown without source/build changes.
 - `docs/tasks/hints/opencode-source-solving-guidance.md` is the source-focused
-  hint for using `/ask-project opencode ...` and `/ask-project-repomix opencode
-  ...` during solve passes that need evidence from
+  hint for using `/ask-project opencode ...` during solve passes that need
+  evidence from
   `docs/third-party/opencode/source/`, especially provider, tool, MCP,
   permission, session, event, context, shell, patch/edit, extension, and storage
   tasks. It now tells CLI/prompt-flow tasks to separate adapter evidence from
@@ -330,10 +329,24 @@
 - `T003_implement-codegeist-opencode-core-application/` is the new implementation
   epic. It targets OpenCode-replaceable CLI-core behavior while keeping JBang,
   Vaadin, headless web server, and API/SDK surfaces deferred to the backlog.
-- `T003_01_analyze_spring_ai_agent_utils_adoption.md` is specified as the first
-  active child task. It analyzes `spring-ai-community/spring-ai-agent-utils`
-  before Codegeist chooses whether to use, wrap, copy conceptually, defer, or
-  reject its tools, advisors, memory, skills, and subagent utilities. The task is
-  analysis-only: no runtime behavior, Maven dependency, Java source, tests,
-  provider callbacks, storage adapters, shell executors, skills, or subagents are
-  added until a later task explicitly chooses them.
+- `T003_01_analyze_spring_ai_agent_utils_adoption.md` is planned as the first
+  active child task. It will create
+  `docs/developer/spring-ai-agent-utils-adoption.md` as one evidence-backed
+  adoption report for `spring-ai-community/spring-ai-agent-utils`, classifying
+  released and source-only utilities as direct-use, wrapper, conceptual-copy,
+  defer, or reject candidates before Codegeist starts runtime implementation. The
+  task remains analysis-only: no runtime behavior, Maven dependency, Java source,
+  tests, provider callbacks, storage adapters, shell executors, skills, or
+  subagents are added until a later task explicitly chooses them.
+- The local `/analyse-project` workflow has created
+  `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
+  `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored
+  Graphify cache. The current graph is structural/AST-focused with 1,030 nodes,
+  1,604 edges, and 47 communities; use it for navigation, then inspect source
+  files directly before making final T003 adoption decisions.
+- Local third-party analysis workflows now use only two commands under the shared
+  contract in `.oc_local/rules/third-party-analysis-workflow.md`:
+  `/analyse-project` owns the complete deep analysis workspace with source,
+  Graphify, Repomix, manifest, verification, and durable docs; `/ask-project`
+  consumes that workspace for focused answers, diagrams, and Repomix-backed
+  source deep dives via the `@repomix` subagent when needed.

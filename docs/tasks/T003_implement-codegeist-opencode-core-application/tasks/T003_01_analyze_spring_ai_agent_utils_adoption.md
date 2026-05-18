@@ -2,7 +2,7 @@
 
 Parent: `T003_implement-codegeist-opencode-core-application`
 
-Status: specified
+Status: planned
 
 ## Goal
 
@@ -163,6 +163,172 @@ The report should classify each candidate with one of these adoption decisions:
   the utility is classified as wrapped, copied conceptually, deferred, or rejected.
 - Follow-up recommendations are phrased as implementation-task candidates, not as
   changes performed by this task.
+
+## Implementation Plan
+
+### Selected Option
+
+Create one evidence-backed adoption report for the whole Spring AI Agent Utils
+candidate set. Do not split this into separate Maven, tool, memory, skills, or
+subagent reports yet, because the first Codegeist implementation decisions need a
+single cross-boundary recommendation before later T003 child tasks are created or
+sharpened.
+
+### Concrete Solution Direction
+
+Write `docs/developer/spring-ai-agent-utils-adoption.md` as a decision report that
+compares Spring AI Agent Utils against Codegeist's current Java/Spring baseline and
+the finalized T002 contract blueprints. The report should separate released Maven
+artifact evidence from snapshot/source-only findings, then classify every relevant
+module and utility as `use-directly`, `wrap-behind-codegeist-contract`,
+`copy-concept-only`, `defer`, or `reject`.
+
+The report should default side-effecting utilities to mediated or conceptual use
+unless the analysis proves they can run fully inside Codegeist-owned runtime,
+provider, tool, permission, workspace, storage, event, session, and native-readiness
+boundaries. Direct use should be rare and must include a boundary-safety argument.
+
+### Planned Files And Targets
+
+- Add `docs/developer/spring-ai-agent-utils-adoption.md`.
+- Update this task file with solve/finalization notes when the report is written.
+- Update `docs/memory-bank/chat.md` only if the solve phase changes the active T003
+  focus, selected adoption posture, or follow-up task set.
+- Do not edit `app/codegeist/cli/pom.xml` during this task.
+- Do not create Java source, Java tests, package directories, Spring beans,
+  provider callbacks, storage adapters, shell executors, skill adapters, subagent
+  implementations, or build configuration during this task.
+
+### Report Structure
+
+- Purpose and executive recommendation.
+- Evidence sources and versions reviewed, including released artifacts versus
+  source snapshots.
+- Codegeist baseline summary from `app/codegeist/cli/pom.xml`: Spring Boot
+  `3.5.14`, Spring AI BOM `1.1.6`, Spring Shell `3.4.2`, Java `25`, and GraalVM
+  build tools `0.10.6`.
+- Maven coordinates, modules, dependency graph risk, Java baseline, Spring Boot and
+  Spring AI compatibility, and native-image posture.
+- Candidate classification table covering at least `FileSystemTools`, `GlobTool`,
+  `GrepTool`, `ShellTools`, `TodoWriteTool`, `AskUserQuestionTool`, `SkillsTool`,
+  `TaskTool`, `AutoMemoryTools`, `AutoMemoryToolsAdvisor`, `SmartWebFetchTool`,
+  `BraveWebSearchTool`, common subagent SPI, A2A subagent support, and the BOM.
+- Boundary analysis sections for provider/tool callback mediation, permission and
+  workspace safety, shell execution, storage/memory, skills, subagents, network
+  tools, native readiness, performance/startup, and future JBang/Vaadin/server/API
+  compatibility.
+- Reusable test patterns from the external repository and fixed expectations for
+  later Codegeist tests.
+- Follow-up implementation-task candidates mapped to existing or planned T003 child
+  slots.
+
+### Evidence Collection Steps
+
+1. Confirm released Maven coordinates and versions through Maven metadata or
+   upstream release documentation. Record whether `0.7.0`, `0.8.0-SNAPSHOT`, or
+   another version is the stable adoption candidate.
+2. Inspect the upstream repository modules and POM files for Spring Boot, Spring AI,
+   Java, optional dependency, and test-library versions. Keep snapshot/source-only
+   facts separate from released artifact facts.
+3. Inspect upstream tool implementations and tests for API shape, Spring AI
+   `ToolCallback` integration, side effects, path handling, process execution,
+   network use, memory/storage behavior, skills, task/subagent orchestration, output
+   bounding, and error handling.
+4. Compare each candidate against the Codegeist provider, tool/permission/workspace,
+   shell verification, storage, and native packaging contract docs named by this
+   task.
+5. Record a decision and reason for each candidate. For `wrap-behind-codegeist-contract`,
+   name the Codegeist boundary that must mediate the utility. For
+   `copy-concept-only`, name the concept worth reusing without copying package or
+   runtime ownership. For `defer` or `reject`, name the blocker.
+6. Define later test expectations before any adoption implementation begins,
+   including compatibility checks, wrapper-boundary tests, permission/workspace
+   mediation tests, shell denial/approval tests, storage redaction tests, native
+   status reporting, and rejection rationale coverage.
+
+### Verification Strategy
+
+- Required for this documentation-only task:
+
+```bash
+git --no-pager diff --check
+```
+
+- Do not run `task test`, `task build`, or `task native` unless the solve phase
+  unexpectedly changes Java, Maven, Taskfile, build, or runtime files. If native
+  validation is discussed in the report but not run, record native status as
+  `skipped` with a documentation-only reason.
+
+### Dependencies And Tradeoffs
+
+- Depends on the existing T003 parent scope and the T002 provider, tool, shell,
+  storage, and native posture documents.
+- Depends on accurate upstream Spring AI Agent Utils evidence. Missing released
+  artifact metadata should be recorded as an open compatibility check instead of
+  guessed.
+- The single-report approach gives Codegeist one coherent adoption posture before
+  implementation starts, but it may defer detailed wrapper design to later T003
+  implementation tasks.
+- A narrower compatibility-only report would be faster, but it would not answer
+  the user's main question about which utilities are safe to reuse or adapt.
+
+### Open Questions
+
+None for planning. The solve phase still needs to answer the compatibility,
+artifact availability, utility classification, native risk, and follow-up task
+questions through evidence.
+
+## Plan Workflow Handoff
+
+- Phase command: `/plan-task`.
+- Source task: `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_01_analyze_spring_ai_agent_utils_adoption.md`.
+- Parent task considered: `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+- User context or instructions considered: only the task reference was provided;
+  no extra narrowing instructions were supplied.
+- Selected option: sharpen the existing `T003_01` analysis/report task as one
+  comprehensive adoption report.
+- Duplicate check result: no existing duplicate Spring AI Agent Utils adoption task
+  was found under `docs/tasks/`; the existing `T003_01` task is the target.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Project overlays considered: `.oc_local/rules/codegeist-task-specification.md`
+  and `.oc_local/rules/architecture-doc.md`.
+- Related context files read: `app/codegeist/cli/pom.xml`,
+  `docs/developer/architecture/architecture.md`,
+  `docs/developer/specification/codegeist-opencode-parity.md`,
+  `docs/developer/specification/provider-configuration-contracts.md`,
+  `docs/developer/specification/tool-permission-workspace-contracts.md`,
+  `docs/developer/specification/shell-verification-contracts.md`,
+  `docs/developer/specification/storage-port-posture.md`, and
+  `docs/developer/specification/native-packaging-posture.md`.
+- Upstream phase dependency: satisfied by the recorded `/specify-task` pass in
+  this task.
+- Result: the task is now implementation-ready as a documentation-only analysis
+  and adoption-decision report.
+- Open decisions or blockers: none blocking planning; evidence collection during
+  solve owns the actual adoption decisions.
+- Next recommended phase: `/solve-task` for this same task to write
+  `docs/developer/spring-ai-agent-utils-adoption.md` without changing runtime code.
+
+## Third-Party Analysis Workspace
+
+The local `/analyse-project` workflow has been applied to
+`https://github.com/spring-ai-community/spring-ai-agent-utils` with project name
+`spring-ai-agent-utils`.
+
+- Source checkout: `docs/third-party/spring-ai-agent-utils/source`.
+- Durable analysis docs: `docs/third-party/spring-ai-agent-utils/README.md`,
+  `docs/third-party/spring-ai-agent-utils/ANALYSIS_REPORT.md`, and
+  `docs/third-party/spring-ai-agent-utils/REGENERATE.md`.
+- Local ignored Graphify cache: `docs/third-party/spring-ai-agent-utils/graphify-out/`.
+- Current Graphify cache shape: 1,030 nodes, 1,604 edges, and 47 communities from
+  156 supported files. The run is structural/AST-focused; use it for navigation,
+  then inspect source files directly before final adoption decisions.
+
+The solve phase should use this workspace as reusable evidence while writing the
+Codegeist-owned report at `docs/developer/spring-ai-agent-utils-adoption.md`.
 
 ## Verification
 

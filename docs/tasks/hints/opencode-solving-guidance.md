@@ -20,9 +20,9 @@ implementation logs, or one-off decisions.
   safety boundaries.
 - Check existing third-party OpenCode docs under `docs/third-party/opencode/`
   before making architecture claims.
-- For source-level questions, prefer
-  `/ask-project-repomix opencode "<question>"` when `repomix-output.xml` is
-  available.
+- For source-level questions, prefer `/ask-project opencode "<question>"`.
+  `/ask-project` uses the analyzed project's Repomix artifact internally when
+  broad packed-output context is needed.
 - Keep task updates aligned with
   `docs/developer/specification/codegeist-opencode-parity.md`.
 - If a decision affects later `T001` child tasks, update those tasks in the same

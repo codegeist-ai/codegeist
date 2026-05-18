@@ -1,9 +1,9 @@
 ---
-description: Analyze a local or remote third-party project with Graphify
+description: Deep-analyze a local or remote third-party project with Graphify and Repomix
 agent: build
 ---
 
-Analyze a local directory or GitHub repository URL into a reproducible
+Analyze a local directory or GitHub repository URL into a complete reproducible
 third-party project documentation workspace.
 
 User request:
@@ -22,15 +22,28 @@ Expected syntax:
 ## Purpose
 
 Use this command before asking project-specific follow-up questions with
-`/ask-project`. The command keeps durable analysis notes under:
+`/ask-project`. This is the only command that creates or refreshes third-party
+analysis artifacts. It keeps durable analysis notes under:
 
 ```text
 docs/third-party/<repo-name>/
 ```
 
+The command owns the complete project analysis workspace: source checkout,
+Repomix packed output, Graphify knowledge graph, reproducibility manifest,
+verification report, durable handoff docs, and optional feature/user/developer
+docs and diagrams.
+
 Graph generation belongs to the shared Graphify skill at
-`@.opencode/skills/graphify/SKILL.md`. Do not maintain a separate local
-analysis shell script and do not reimplement Graphify internals in this command.
+`@.opencode/skills/graphify/SKILL.md`. Repomix packaging belongs to this command
+and should write `docs/third-party/<repo-name>/repomix-output.xml`.
+
+Do not maintain a separate local analysis shell script, do not reimplement
+Graphify internals, and do not send users to another local command or skill for a
+normal deep project analysis.
+
+For the shared artifact contract and escalation path, apply
+`.oc_local/rules/third-party-analysis-workflow.md`.
 
 ## Workflow
 
@@ -45,40 +58,82 @@ analysis shell script and do not reimplement Graphify internals in this command.
      requested branch. Ask before changing an existing source checkout.
    - If the source checkout still cannot be read after initialization, stop and
      report the missing source instead of running Graphify.
-4. Create only lightweight durable directories and files as needed:
+4. Create the analysis workspace directories and files as needed:
 
 ```text
 docs/third-party/<repo-name>/
 ├── README.md
 ├── ANALYSIS_REPORT.md
 ├── REGENERATE.md
+├── VERIFY_REPORT.md
+├── analysis-manifest.json
+├── repomix-output.xml
+├── graphify-out/
 ├── features/
 ├── user/
 ├── developer/
-└── diagrams/source/
+└── diagrams/
+    ├── source/
+    └── rendered/
 ```
 
-5. When graph generation is needed, load and execute the shared `graphify` skill
-   from `@.opencode/skills/graphify/SKILL.md` against the selected source or a
-   temporary filtered corpus. Do not run the Graphify CLI directly from this
-   command except as instructed by the loaded skill.
-6. For third-party codebase analysis, use a temporary filtered corpus containing
-   only source-code and documentation files unless the user explicitly requests
-   a broader corpus.
-7. Keep Graphify outputs under `docs/third-party/<repo-name>/graphify-out/`.
+5. Run Repomix against the source checkout and write:
+
+```text
+docs/third-party/<repo-name>/repomix-output.xml
+```
+
+   Use conservative excludes for generated, dependency-heavy, build, vendored,
+   secret-like, and local-environment files. Verify the packed output exists,
+   contains file boundaries, and does not intentionally include obvious secrets.
+6. Run Graphify by loading the shared `graphify` skill from
+   `@.opencode/skills/graphify/SKILL.md` from the project analysis directory,
+   using the selected source checkout or a temporary filtered corpus as input. Do
+   not run the Graphify CLI directly from this command except as instructed by the
+   loaded skill.
+7. For third-party codebase analysis, use a temporary filtered corpus containing
+   only source-code and documentation files unless the user explicitly requests a
+   broader corpus.
+8. Keep Graphify outputs under `docs/third-party/<repo-name>/graphify-out/`.
    This directory is ignored but intentionally useful as a local cache for
-   `/ask-project`; do not delete it just because it is not commit-worthy.
-8. Read `GRAPH_REPORT.md`, `COMMUNITIES_BY_FILE.md`, `graph.json`, and source
-   files before writing feature, user, developer, or diagram documentation.
-9. Render Mermaid sources to SVG only when needed for handoff:
+   `/ask-project`; do not delete it just because it is not commit-worthy. Never
+   leave generated `graphify-out/` files inside
+   `docs/third-party/<repo-name>/source`.
+9. Read `GRAPH_REPORT.md`, `graph.json`, optional Graphify companion reports when
+   present, and source files before writing feature, user, developer, or diagram
+   documentation. Do not assume `COMMUNITIES_BY_FILE.md` exists.
+10. Write or update the durable handoff docs:
+    - `README.md` with source, artifact status, and next questions.
+    - `ANALYSIS_REPORT.md` with architecture, feature, dependency, test,
+      runtime-evidence, and risk findings.
+    - `REGENERATE.md` with exact regeneration steps.
+    - `VERIFY_REPORT.md` with generated artifact checks, skipped phases, failures,
+      assumptions, and runtime-evidence status.
+    - `analysis-manifest.json` with input, source commit, timestamp, options,
+      Repomix command or parameters, Graphify invocation, generated files, skipped
+      phases, and warnings.
+11. Create feature/user/developer docs and Mermaid diagrams when the analysis has
+    enough evidence. Mark missing runtime evidence explicitly instead of inventing
+    behavior.
+12. Render Mermaid sources to SVG only when needed for handoff:
 
 ```bash
 bash ".oc_local/ai-scripts/render-mermaid.sh" "docs/third-party/<repo-name>/diagrams"
 ```
 
-10. Report the project name, source path or URL, output directory, generated docs,
-    ignored reproducible artifacts, failed tool phases, and the next useful
-    `/ask-project` question.
+13. Report the project name, source path or URL, output directory, generated docs,
+    ignored reproducible artifacts, failed tool phases, verification status, and
+    the next useful `/ask-project` question.
+
+## Cooperation With Ask Project
+
+- `/analyse-project` creates and refreshes all analysis artifacts.
+- `/ask-project <project-name> "..."` consumes those artifacts for questions,
+  focused docs, diagrams, source citations, and follow-up analysis.
+- If `/ask-project` finds missing or stale artifacts, it should tell the user to
+  rerun `/analyse-project <source-path-or-url> --project <repo-name>`.
+- Do not use separate local project-analysis commands or skills; deep-analysis
+  responsibilities are folded into this command and `/ask-project`.
 
 ## Git Policy
 
@@ -118,9 +173,15 @@ docs/third-party/<repo-name>/repomix-output.*
 - Keep `graphify-out/` ignored but locally available when present, because
   `/ask-project` reads it for graph-backed answers. Regenerate it through this
   command when it is missing or incomplete.
+- Keep generated Graphify files out of the `source` submodule checkout. If a run
+  accidentally writes `source/graphify-out/`, remove that generated directory
+  before handing off.
 - Limit default Graphify input to source-code and documentation files for
   third-party repository analysis; exclude image, video, binary, dependency, and
   build artifacts unless the user explicitly asks for a broader corpus.
+- Create or refresh `repomix-output.xml` as part of the normal deep analysis.
+- Do not answer migration or runtime behavior questions without source, docs,
+  tests, graph, packed-source, or runtime evidence.
 - Keep all durable docs in English.
 - Mark missing runtime evidence explicitly.
 - Use `/ask-project <repo-name> "..."` for follow-up questions after this

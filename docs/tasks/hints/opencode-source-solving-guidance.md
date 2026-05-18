@@ -18,8 +18,9 @@ OpenCode-to-Codegeist translation posture.
   behavior must be verified.
 - Prefer `/ask-project opencode "<question>"` for targeted source questions that
   can benefit from analysis artifacts, source paths, and Mermaid diagrams.
-- Prefer `/ask-project-repomix opencode "<question>"` for broad source-level
-  questions that require many files or packed-output context.
+- Prefer `/ask-project opencode "<question>"` for broad source-level questions
+  that require many files or packed-output context. `/ask-project` owns any
+  Repomix-backed deep dive internally.
 - Ask source questions before designing Codegeist tasks for provider, tool, MCP,
   permission, session, event, context, shell, patch/edit, extension, server, or
   storage behavior.

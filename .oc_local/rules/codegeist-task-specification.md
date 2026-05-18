@@ -40,5 +40,5 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   hard-code this repository's `docs/` layout or external analysis artifacts as
   Codegeist core runtime context sources.
 - Keep Codegeist-specific source evidence under `docs/third-party/opencode/` and
-  prefer `/ask-project opencode ...` or `/ask-project-repomix opencode ...` when
-  a phase needs source-backed OpenCode behavior details.
+  prefer `/ask-project opencode ...` when a phase needs source-backed OpenCode
+  behavior details. `/ask-project` owns any Repomix-backed deep dive internally.

@@ -33,7 +33,7 @@ docs/third-party/<project>/repomix-output.xml
 ```
 
 2. If the packed output is missing, stop and say that `/analyse-project` must be
-   run first for that project.
+   rerun for that project because it owns Repomix generation.
 3. Attach the packed output with the Repomix packed-output tool.
 4. Search the packed output for relevant files, symbols, routes, commands, or
    concepts before reading content.
