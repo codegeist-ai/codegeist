@@ -375,6 +375,96 @@
   Taskfile changes, or release deployment behavior. Later packaging, release
   automation, and platform-smoke implementation tasks should use this strategy,
   especially the planned `T003_15` packaging/native/startup validation slice.
+- `T003_05_define_runtime_session_event_source_generation_contract.md` is
+  finalized as a documentation-only source-generation contract slice. It created
+  `docs/developer/specification/runtime-session-event-source-generation-contract.md`,
+  which defines the first planned `ai.codegeist.runtime`, `ai.codegeist.session`,
+  and `ai.codegeist.event` source boundary, minimum Java shapes, event-family cut,
+  sequencing and projection rules, dependency exclusions, TDD handoff tests, and
+  deferrals without creating Java source, tests, packages, or runtime behavior. The
+  planned later Java source task should implement runtime/session/event core
+  contracts with TDD before CLI prompt command implementation.
+- `T003_06_define_cli_prompt_command_source_generation_contract.md` is finalized as
+  a documentation-only CLI prompt command contract slice before CLI or Java source
+  generation. It created
+  `docs/developer/specification/cli-prompt-command-source-generation-contract.md`,
+  which defines planned `plan` and `build` Spring Shell command boundaries,
+  prompt/session input, runtime delegation over the finalized runtime/session/event
+  handoff, stable accepted/submitted output, OpenCode translation notes,
+  illustrative adapter and test examples, TDD handoff, deferrals, and later
+  implementation checklist. It created no Java source, tests, packages, Spring
+  beans, CLI commands, runtime behavior, provider calls, tools, permissions,
+  workspace reads, storage, patch/edit, shell behavior, TUI behavior, or
+  native/build behavior.
+- `T003_07_define_context_workspace_loading_source_generation_contract.md` is
+  finalized as a documentation-only context/workspace loading contract slice before
+  context, workspace, or Java source generation. It created
+  `docs/developer/specification/context-workspace-loading-source-generation-contract.md`,
+  which defines planned workspace identity, path classification, context profile
+  data, explicit source selection, deterministic ordering, manifest records,
+  runtime/session/event diagnostics integration, boundary exclusions, TDD handoff,
+  deferrals, and a later implementation checklist without creating Java source,
+  tests, packages, context readers, workspace reads, runtime behavior, provider
+  calls, tools, permissions, storage, patch/edit, shell behavior, TUI behavior, or
+  native/build behavior.
+- `T003_08_define_provider_configuration_spring_ai_adapter_source_generation_contract.md`
+  is finalized as a documentation-only provider configuration and Spring AI adapter
+  source-generation contract slice. It created
+  `docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`,
+  which defines planned provider ids, model refs, capabilities, option profiles,
+  credential-source references, offline validation, runtime-facing adapter records,
+  typed provider errors, Spring AI mapping isolation, OpenAI-compatible/OpenAI and
+  Ollama first-wave posture, streaming fallback, disabled tool-callback posture,
+  TDD handoff tests, deferrals, and a later implementation checklist. It created
+  no Java source, tests, packages, provider starters, credentials, live model
+  calls, Spring beans, runtime behavior, provider behavior, CLI/TUI behavior,
+  context loading, workspace reads, tools, permissions, storage, patch/edit, shell
+  behavior, or native/build behavior.
+- `T003_09_define_tool_permission_workspace_source_generation_contract.md` is
+  finalized as a documentation-only tool, permission, and workspace contract slice
+  before tool, permission, workspace, or Java source generation. It created
+  `docs/developer/specification/tool-permission-workspace-source-generation-contract.md`,
+  which defines planned descriptor classification, registry exposure, mode gates,
+  permission requests and decisions, workspace target validation, bounded results,
+  output references, runtime/session/event integration, Spring AI provider
+  tool-call mediation, typed failures, TDD handoff tests, and deferrals. It created
+  no Java source, tests, packages, callbacks, tool execution, permission behavior,
+  workspace behavior, storage, patch/edit, shell, or runtime behavior.
+- `T003_10_define_patch_edit_proposal_source_generation_contract.md` is finalized
+  as a documentation-only patch/edit proposal contract slice before patch/edit or
+  Java source generation. It created
+  `docs/developer/specification/patch-edit-proposal-source-generation-contract.md`,
+  which defines planned proposal identity, target summaries, patch hunk and text
+  replacement summaries, freshness metadata, exact approval binding, Build-mode
+  apply flow, Plan-mode apply denial, typed apply failures, bounded summaries,
+  output references, runtime/session/event projection, TDD handoff tests,
+  deferrals, and a later implementation checklist. It created no Java source,
+  tests, packages, patch parsers, apply executors, file reads, file writes,
+  provider callbacks, shell execution, storage, or runtime behavior.
+- `T003_11_define_controlled_shell_tool_source_generation_contract.md` is finalized
+  as a documentation-only controlled shell tool contract slice before shell or Java
+  source generation. It created
+  `docs/developer/specification/controlled-shell-tool-source-generation-contract.md`,
+  which defines planned shell request identity, command shapes, command purpose,
+  destructive posture, Plan-mode denial, Build-mode exact approval,
+  workspace-cwd validation, env/stdin policy, timeout and cancellation, typed shell
+  failures, bounded stdout/stderr summaries, output references,
+  runtime/session/event projection, fake-executor posture, TDD handoff tests,
+  deferrals, and a later implementation checklist. It created no Java source,
+  tests, packages, shell commands, process executors, process execution, provider
+  callbacks, patch/edit behavior, storage, or runtime behavior.
+- `T003_12_define_storage_ports_session_continuation_source_generation_contract.md`
+  is finalized as a documentation-only storage ports and session continuation
+  contract slice before storage, continuation, or Java source generation. It created
+  `docs/developer/specification/storage-session-continuation-source-generation-contract.md`,
+  which defines planned in-memory-first storage ports, session continuation
+  identity, create/continue/list/update/delete behavior, message and event
+  projection stores, artifact-reference metadata, redaction and retention posture,
+  file-backed persistence deferral criteria, typed storage failures, storage health,
+  runtime/session/event integration rules, TDD handoff tests, and deferrals. It
+  created no Java source, tests, packages, storage adapters, persistence behavior,
+  CLI/TUI behavior, provider behavior, tool behavior, permission behavior,
+  workspace behavior, patch/edit behavior, shell behavior, or runtime behavior.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored

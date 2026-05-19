@@ -45,22 +45,38 @@ attach without reworking the core.
 - `T003_02_define_java_generation_guidance.md`
 - `T003_03_define_testing_strategy_and_agent_test_rules.md`
 - `T003_04_define_build_release_and_binary_smoke_strategy.md`
-- `T003_05_implement_runtime_session_event_core.md`
-- `T003_06_implement_cli_prompt_commands.md`
-- `T003_07_implement_context_workspace_loading.md`
-- `T003_08_implement_provider_configuration_and_spring_ai_adapter.md`
-- `T003_09_implement_tool_permission_workspace_core.md`
-- `T003_10_implement_patch_edit_proposal_flow.md`
-- `T003_11_implement_controlled_shell_tool.md`
-- `T003_12_implement_storage_ports_and_session_continuation.md`
+- `T003_05_define_runtime_session_event_source_generation_contract.md`
+- `T003_06_define_cli_prompt_command_source_generation_contract.md`
+- `T003_07_define_context_workspace_loading_source_generation_contract.md`
+- `T003_08_define_provider_configuration_spring_ai_adapter_source_generation_contract.md`
+- `T003_09_define_tool_permission_workspace_source_generation_contract.md`
+- `T003_10_define_patch_edit_proposal_source_generation_contract.md`
+- `T003_11_define_controlled_shell_tool_source_generation_contract.md`
+- `T003_12_define_storage_ports_session_continuation_source_generation_contract.md`
 - `T003_13_implement_end_to_end_agent_loop.md`
 - `T003_14_implement_opencode_parity_cli_workflows.md`
 - `T003_15_validate_packaging_native_and_startup_posture.md`
 - `T003_16_validate_opencode_core_replacement_readiness.md`
 
-`T003_01`, `T003_02`, `T003_03`, and `T003_04` are finalized. Later child tasks
-should be created when the preceding analysis and implementation-guidance tasks
-clarify the exact boundaries.
+`T003_01`, `T003_02`, `T003_03`, `T003_04`, and `T003_05` are finalized.
+`T003_05` created the documentation-only runtime/session/event source-generation
+contract before Java implementation. `T003_06` is finalized as a
+documentation-only CLI prompt command source-generation contract slice before CLI
+or Java source is created. `T003_07` is finalized as a documentation-only
+context/workspace loading source-generation contract slice before context,
+workspace, or Java source is created. `T003_08` is finalized as a
+documentation-only provider configuration and Spring AI adapter source-generation
+contract slice before provider or Java source is created. `T003_09` is finalized as
+a documentation-only tool, permission, and workspace source-generation contract
+slice before tool, permission, workspace, or Java source is created. `T003_10` is
+finalized as a documentation-only patch/edit proposal source-generation contract
+slice before patch/edit or Java source is created. `T003_11` is finalized as a
+documentation-only controlled shell tool
+source-generation contract slice before shell or Java source is created. `T003_12`
+is finalized as a documentation-only storage ports and session continuation
+source-generation contract slice before storage, continuation, or Java source is
+created. Later child tasks should be created or adjusted when the preceding
+analysis and implementation-guidance tasks clarify the exact boundaries.
 
 ## Derivation Map
 
@@ -70,14 +86,14 @@ clarify the exact boundaries.
 | `T003_02` | T002 blueprints, existing Java baseline | Define Codegeist Java source generation guidance for coding agents before broad implementation starts. |
 | `T003_03` | T002 verification posture, Spring/JUnit/Mockito needs | Define fast, fine-grained, coding-agent-friendly test strategy. |
 | `T003_04` | Native packaging posture, testing strategy, release requirements | Define build, GitHub release, platform support, startup, and binary smoke-test strategy. |
-| `T003_05` | Runtime/session/event contracts | Implement core runtime request, mode, session, turn, message part, and event contracts. |
-| `T003_06` | CLI prompt contract | Implement Spring Shell prompt commands over runtime APIs. |
-| `T003_07` | Context/workspace manifest | Implement deterministic context and workspace loading. |
-| `T003_08` | Provider configuration contracts | Implement provider configuration and Spring AI adapter boundaries. |
-| `T003_09` | Tool/permission/workspace contracts | Implement descriptors, registry, mode gates, permissions, and workspace validation. |
-| `T003_10` | Patch/edit proposal contracts | Implement reviewable patch/edit proposal and apply flow. |
-| `T003_11` | Shell verification contracts | Implement controlled shell verification tool. |
-| `T003_12` | Storage port posture | Implement storage ports and session continuation behavior needed for CLI workflows. |
+| `T003_05` | Runtime/session/event contracts, Java generation guidance, testing strategy | Define the first runtime/session/event source-generation contract before Java implementation. |
+| `T003_06` | CLI prompt contract, runtime/session/event contract handoff | Define the documentation-only Spring Shell prompt command contract before CLI or Java source generation. |
+| `T003_07` | Context/workspace manifest | Define the documentation-only context/workspace loading source-generation contract before Java implementation. |
+| `T003_08` | Provider configuration contracts | Define the documentation-only provider configuration and Spring AI adapter source-generation contract before Java implementation. |
+| `T003_09` | Tool/permission/workspace contracts | Define the documentation-only tool, permission, and workspace source-generation contract before Java implementation. |
+| `T003_10` | Patch/edit proposal contracts | Define the documentation-only patch/edit proposal and apply-result source-generation contract before Java implementation. |
+| `T003_11` | Shell verification contracts | Define the documentation-only controlled shell tool source-generation contract before Java implementation. |
+| `T003_12` | Storage port posture, runtime/session/event contracts, shell and patch output references | Define the documentation-only storage ports and session continuation source-generation contract before Java implementation. |
 | `T003_13` | Runtime, provider, tools, storage | Implement a complete prompt loop with provider streaming, tools, permissions, and projections. |
 | `T003_14` | OpenCode parity architecture | Implement and verify key OpenCode-style CLI workflows. |
 | `T003_15` | Native packaging posture, performance budgets | Validate packaging, native status, startup, and executable smoke behavior. |
@@ -172,6 +188,99 @@ keep `task test` fast enough for coding-agent iteration.
   Taskfile changes, or release deployment behavior. Future packaging, release
   automation, and platform-smoke implementation tasks, especially the planned
   `T003_15`, should use this strategy as their release-readiness contract.
+- `T003_05` is finalized as a documentation-only runtime/session/event
+  source-generation contract slice. It created
+  `docs/developer/specification/runtime-session-event-source-generation-contract.md`,
+  which narrows the broad T002 runtime/session/event blueprint into planned
+  `ai.codegeist.runtime`, `ai.codegeist.session`, and `ai.codegeist.event`
+  package ownership, minimum first-wave records and ports, event-family cuts,
+  sequencing and projection rules, boundary exclusions, TDD handoff tests, and
+  deferrals. It created no Java source, tests, package directories, build files,
+  runtime behavior, CLI/TUI behavior, provider calls, tools, permissions,
+  workspace reads, storage, patch/edit, or shell behavior. The planned later Java
+  source task should implement runtime/session/event core contracts with TDD
+  before CLI prompt command implementation.
+- `T003_06` is finalized as a documentation-only CLI prompt command
+  source-generation contract slice. It created
+  `docs/developer/specification/cli-prompt-command-source-generation-contract.md`,
+  which defines planned `plan` and `build` Spring Shell command boundaries,
+  prompt/session input, runtime delegation over the finalized runtime/session/event
+  handoff, stable accepted/submitted output, OpenCode translation notes,
+  illustrative adapter and test examples, TDD handoff, deferrals, and later
+  implementation checklist. It created no Java source, tests, packages, Spring
+  beans, CLI commands, runtime behavior, provider calls, tools, permissions,
+  workspace reads, storage, patch/edit, shell behavior, TUI behavior, or
+  native/build behavior.
+- `T003_07` is finalized as a documentation-only context/workspace loading
+  source-generation contract slice. It created
+  `docs/developer/specification/context-workspace-loading-source-generation-contract.md`,
+  which defines planned workspace identity, path classification, repo-owned context
+  profile data, explicit source selection, deterministic source ordering, manifest
+  records, runtime/session/event diagnostics integration, boundary exclusions, TDD
+  handoff tests, deferrals, and a later implementation checklist. It created no
+  Java source, tests, packages, context readers, workspace reads, runtime behavior,
+  provider calls, tools, permissions, storage, patch/edit, shell behavior, TUI
+  behavior, or native/build behavior.
+- `T003_08` is finalized as a documentation-only provider configuration and Spring
+  AI adapter source-generation contract slice. It created
+  `docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`,
+  which defines planned provider ids, model refs, capabilities, option profiles,
+  credential-source references, offline validation, runtime-facing adapter records,
+  typed provider errors, Spring AI mapping isolation, OpenAI-compatible/OpenAI and
+  Ollama first-wave posture, streaming fallback, disabled tool-callback posture,
+  TDD handoff tests, deferrals, and a later implementation checklist. It created
+  no Java source, tests, packages, provider starters, credentials, live model
+  calls, Spring beans, runtime behavior, provider behavior, CLI/TUI behavior,
+  context loading, workspace reads, tools, permissions, storage, patch/edit, shell
+  behavior, or native/build behavior.
+- `T003_09` is finalized as a documentation-only tool, permission, and workspace
+  source-generation contract slice. It created
+  `docs/developer/specification/tool-permission-workspace-source-generation-contract.md`,
+  which defines planned descriptor classification, registry exposure, mode gates,
+  permission requests and decisions, workspace tool-target validation, bounded
+  results, output references, runtime/session/event integration, Spring AI provider
+  tool-call mediation, typed failures, TDD handoff tests, and deferrals. It created
+  no Java source, tests, packages, Spring AI tool callbacks, provider callbacks,
+  tool execution, permission approval, workspace policy code, shell execution,
+  patch/edit behavior, storage, or runtime behavior. `T003_10`, `T003_11`, and
+  `T003_12` should consume this generic policy handoff instead of redefining it.
+- `T003_10` is finalized as a documentation-only patch/edit proposal
+  source-generation contract slice. It created
+  `docs/developer/specification/patch-edit-proposal-source-generation-contract.md`,
+  which defines planned proposal identity, target summaries, patch hunk and text
+  replacement summaries, freshness metadata, exact approval binding, Build-mode
+  apply flow, Plan-mode apply denial, typed apply failures, bounded summaries,
+  output references, runtime/session/event projection, TDD handoff tests,
+  deferrals, and a later implementation checklist. It created no Java source,
+  tests, packages, patch parsers, apply executors, file reads, file writes,
+  provider callbacks, shell execution, storage, or runtime behavior. `T003_11` and
+  `T003_12` should consume patch/edit output-reference and bounded-result posture
+  without redefining patch/edit apply behavior.
+- `T003_11` is finalized as a documentation-only controlled shell tool
+  source-generation contract slice. It created
+  `docs/developer/specification/controlled-shell-tool-source-generation-contract.md`,
+  which defines planned shell request identity, command shapes, command purpose,
+  destructive posture, Plan-mode denial, Build-mode exact approval,
+  workspace-cwd validation, env/stdin policy, timeout and cancellation, result
+  statuses, typed failures, bounded stdout/stderr summaries, output references,
+  runtime/session/event projection, fake-executor posture, TDD handoff tests,
+  deferrals, and a later implementation checklist. It created no Java source,
+  tests, packages, shell commands, process executors, process execution, provider
+  callbacks, patch/edit behavior, storage, or runtime behavior. `T003_12` should
+  consume shell bounded-output and output-reference decisions where storage
+  artifact references and session continuation interact with shell results.
+- `T003_12` is finalized as a documentation-only storage ports and session
+  continuation source-generation contract slice. It created
+  `docs/developer/specification/storage-session-continuation-source-generation-contract.md`,
+  which defines planned in-memory-first storage ports, session continuation
+  identity, create/continue/list/update/delete behavior, message and event
+  projection stores, artifact-reference metadata, redaction and retention posture,
+  file-backed persistence deferral criteria, typed storage failures, storage health
+  reporting, runtime/session/event integration rules, TDD handoff tests, and
+  deferrals. It created no Java source, tests, packages, storage adapters,
+  file-backed persistence, event sourcing, database schemas, migrations, CLI/TUI
+  behavior, provider behavior, tool behavior, permission behavior, workspace
+  behavior, patch/edit behavior, shell behavior, or runtime behavior.
 
 ## Creation Note
 

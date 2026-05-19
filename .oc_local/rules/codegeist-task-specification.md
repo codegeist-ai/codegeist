@@ -66,3 +66,9 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   GitHub Releases are the release target, Windows/Linux/macOS support must be
   proven explicitly, and each platform check should report `passed`, `skipped`
   with reason, or `failed` with blocker.
+- For T003 implementation slots, prefer a documentation-only source-generation
+  contract before creating Java source when the boundary still spans runtime,
+  CLI, context/workspace, provider, tool/permission/workspace, patch/edit, shell,
+  or storage behavior. Use the finalized `*-source-generation-contract.md`
+  documents under `docs/developer/specification/` as the handoff for later
+  source-generating tasks.

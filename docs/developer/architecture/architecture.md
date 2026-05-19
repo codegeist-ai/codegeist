@@ -19,23 +19,42 @@ Codegeist-owned runtime vocabulary and boundary diagram, see
 `docs/developer/specification/runtime-vocabulary.md`. For the future
 runtime/session/event contract blueprint and diagrams, see
 `docs/developer/specification/runtime-session-event-contracts.md`. For the future
-context-loading and workspace-manifest blueprint, see
+runtime/session/event source-generation handoff, see
+`docs/developer/specification/runtime-session-event-source-generation-contract.md`.
+For the future CLI prompt command source-generation handoff, see
+`docs/developer/specification/cli-prompt-command-source-generation-contract.md`.
+For the future context-loading and workspace-manifest blueprint, see
 `docs/developer/specification/context-workspace-manifest.md`. For the future
-provider configuration and Spring AI adapter blueprint, see
+context/workspace loading source-generation handoff, see
+`docs/developer/specification/context-workspace-loading-source-generation-contract.md`.
+For the future provider configuration and Spring AI adapter blueprint, see
 `docs/developer/specification/provider-configuration-contracts.md`. For the future
+provider Spring AI adapter source-generation handoff, see
+`docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`.
+For the future
 tool, permission, and workspace execution blueprint, see
 `docs/developer/specification/tool-permission-workspace-contracts.md`. For the
-future patch/edit proposal blueprint, see
+future tool, permission, and workspace source-generation handoff, see
+`docs/developer/specification/tool-permission-workspace-source-generation-contract.md`.
+For the future patch/edit proposal blueprint, see
 `docs/developer/specification/patch-edit-proposal-contracts.md`. For the future
+patch/edit proposal source-generation handoff, see
+`docs/developer/specification/patch-edit-proposal-source-generation-contract.md`.
+For the future
 controlled shell verification blueprint, see
 `docs/developer/specification/shell-verification-contracts.md`. For the future
+controlled shell tool source-generation handoff, see
+`docs/developer/specification/controlled-shell-tool-source-generation-contract.md`.
+For the future
 storage port posture blueprint, see
-`docs/developer/specification/storage-port-posture.md`. For the future JVM jar and
-GraalVM native-image packaging posture, see
+`docs/developer/specification/storage-port-posture.md`. For the future
+storage/session continuation source-generation handoff, see
+`docs/developer/specification/storage-session-continuation-source-generation-contract.md`.
+For the future JVM jar and GraalVM native-image packaging posture, see
 `docs/developer/specification/native-packaging-posture.md`. For the future build,
 GitHub release, platform support, and binary smoke strategy, see
-`docs/developer/specification/build-release-and-binary-smoke-strategy.md`. For the future
-extension/client readiness gates, see
+`docs/developer/specification/build-release-and-binary-smoke-strategy.md`. For the
+future extension/client readiness gates, see
 `docs/developer/specification/extension-client-readiness-gates.md`.
 
 ## Current System State
@@ -51,19 +70,39 @@ workspace, storage, extension, server, and UI concepts are not implemented in th
 application code yet. Their current vocabulary and ownership boundaries are
 documented in `docs/developer/specification/runtime-vocabulary.md`; the future
 runtime/session/event contract shape is described in
-`docs/developer/specification/runtime-session-event-contracts.md`; and the future
-context/workspace manifest shape is described in
-`docs/developer/specification/context-workspace-manifest.md`. Future provider
-configuration, validation, and Spring AI adapter boundaries are described in
-`docs/developer/specification/provider-configuration-contracts.md`; future tool
+`docs/developer/specification/runtime-session-event-contracts.md`; the future
+runtime/session/event source-generation handoff is described in
+`docs/developer/specification/runtime-session-event-source-generation-contract.md`;
+the future CLI prompt command source-generation handoff is described in
+`docs/developer/specification/cli-prompt-command-source-generation-contract.md`;
+and the future context/workspace manifest shape is described in
+`docs/developer/specification/context-workspace-manifest.md`; the future
+context/workspace loading source-generation handoff is described in
+`docs/developer/specification/context-workspace-loading-source-generation-contract.md`.
+Future provider configuration, validation, and Spring AI adapter boundaries are
+described in
+`docs/developer/specification/provider-configuration-contracts.md`; the future
+provider Spring AI adapter source-generation handoff is described in
+`docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`;
+future tool
 descriptors, permission decisions, workspace validation, and bounded tool results
 are described in
 `docs/developer/specification/tool-permission-workspace-contracts.md`; future
-patch/edit proposal contracts are described in
-`docs/developer/specification/patch-edit-proposal-contracts.md`; future controlled
+tool, permission, and workspace source-generation guidance is described in
+`docs/developer/specification/tool-permission-workspace-source-generation-contract.md`;
+future patch/edit proposal contracts are described in
+`docs/developer/specification/patch-edit-proposal-contracts.md`; future patch/edit
+proposal source-generation guidance is described in
+`docs/developer/specification/patch-edit-proposal-source-generation-contract.md`;
+future controlled
 shell verification contracts are described in
-`docs/developer/specification/shell-verification-contracts.md`; future storage port
-posture is described in `docs/developer/specification/storage-port-posture.md`;
+`docs/developer/specification/shell-verification-contracts.md`; future controlled
+shell tool source-generation guidance is described in
+`docs/developer/specification/controlled-shell-tool-source-generation-contract.md`;
+future storage port posture is described in
+`docs/developer/specification/storage-port-posture.md`; future storage/session
+continuation source-generation guidance is described in
+`docs/developer/specification/storage-session-continuation-source-generation-contract.md`;
 future JVM jar and GraalVM native-image verification posture is described in
 `docs/developer/specification/native-packaging-posture.md`; future GitHub Release,
 platform artifact, and binary smoke strategy is described in
@@ -292,6 +331,14 @@ future coding agents can distinguish current code from future architecture.
 - `docs/developer/specification/runtime-session-event-contracts.md` records the planned
   runtime/session/event contract shape, OpenCode source evidence, diagrams, and
   illustrative Java snippets without implementing Java source.
+- `docs/developer/specification/runtime-session-event-source-generation-contract.md`
+  records the planned first runtime/session/event source-generation handoff,
+  minimum Java shapes, event-family cut, sequencing rules, and TDD handoff without
+  implementing Java source.
+- `docs/developer/specification/cli-prompt-command-source-generation-contract.md`
+  records the planned first CLI prompt command source-generation handoff for
+  `plan` and `build`, runtime delegation, adapter examples, and TDD handoff without
+  implementing CLI commands or Java source.
 - `docs/developer/specification/context-workspace-manifest.md` records the planned deterministic
   context-loading and workspace-validation manifest contract without implementing
   Java source, readers, provider calls, embeddings, Graphify, or Repomix.
@@ -299,19 +346,41 @@ future coding agents can distinguish current code from future architecture.
   provider configuration, validation, typed provider error, and Spring AI adapter
   boundary without implementing Java source, provider starters, credentials, live
   model calls, or tests.
+- `docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`
+  records the planned first provider configuration and Spring AI adapter
+  source-generation handoff, OpenAI-compatible/OpenAI and Ollama first-wave
+  posture, Spring AI type isolation, disabled tool-callback posture, typed provider
+  errors, and TDD handoff without implementing Java source, provider starters,
+  credentials, live model calls, or tests.
 - `docs/developer/specification/tool-permission-workspace-contracts.md` records the planned tool
   descriptor, permission decision, workspace validation, and bounded result
   boundary without implementing Java source, tool execution, permission UI,
   provider callbacks, shell execution, patch/edit behavior, or tests.
+- `docs/developer/specification/tool-permission-workspace-source-generation-contract.md`
+  records the planned first tool, permission, and workspace source-generation
+  handoff, descriptor classification, mode gates, permission/workspace policy,
+  provider tool-call mediation, bounded results, and TDD handoff without
+  implementing Java source or tool behavior.
 - `docs/developer/specification/patch-edit-proposal-contracts.md` records the planned
   reviewable patch/edit proposal, apply request, typed apply failure, workspace
   validation, and bounded result boundary without implementing Java source, patch
   parsing, apply logic, file writes, rollback, formatter integration, or tests.
+- `docs/developer/specification/patch-edit-proposal-source-generation-contract.md`
+  records the planned first patch/edit proposal and apply-result source-generation
+  handoff, proposal identity, target summaries, freshness, exact approval binding,
+  typed apply failures, output references, and TDD handoff without implementing
+  Java source or patch/edit behavior.
 - `docs/developer/specification/shell-verification-contracts.md` records the planned controlled
   shell verification request, permission gate, workspace-cwd validation, typed
   shell failure, and bounded output boundary without implementing Java source,
   tests, process execution, PTY support, terminal UI, remote execution, JBang
   execution, or shell sandboxing.
+- `docs/developer/specification/controlled-shell-tool-source-generation-contract.md`
+  records the planned first controlled shell tool source-generation handoff,
+  command shapes, destructive posture, gate order, approved executor handoff,
+  typed shell results, bounded stdout/stderr summaries, output references, and TDD
+  handoff without implementing Java source, tests, shell commands, process
+  execution, or shell behavior.
 - `docs/developer/specification/storage-port-posture.md` records the planned in-memory-first
   storage port posture, session/message projection boundaries, redaction rules,
   and later file/database adapter gates without implementing Java source, tests,
