@@ -281,6 +281,8 @@
   OpenCode source-evidence hints. It also records the current Agent Utils boundary
   rule: direct internal use is allowed when useful, but Codegeist contracts must
   stay independent and adapters should appear only for concrete boundary needs.
+  It now points T003 implementation work at the finalized Java generation,
+  testing strategy, and build/release/binary-smoke strategy docs.
 - `.oc_local/rules/architecture-doc.md` defines how to use and maintain Codegeist
   architecture and specification docs. Current-state architecture lives under
   `docs/developer/architecture/`, with
@@ -344,9 +346,35 @@
   model exposure. The guide now explicitly avoids creating a wrapper by default:
   direct internal use is fine when Codegeist contracts stay independent, and
   adapters should appear only when a concrete boundary needs them.
-- `T003_02_define_java_generation_guidance.md` has been created as the next T003
-  child task. It is documentation-only and should produce Java/Spring generation
-  guidance before broad runtime, CLI, or TUI source generation starts.
+- `T003_02_define_java_generation_guidance.md` is finalized as a documentation-only
+  Java/Spring guidance task. It created
+  `docs/developer/specification/java-generation-guidance.md`, which fixes the
+  current-state boundary: only `ai.codegeist.app` exists in source today, while
+  runtime, session, event, context, provider, tool, permission, workspace,
+  patch/edit, shell, storage, CLI command, and TUI packages are planned boundaries
+  for later generated code. The guide also records code-shape rules, Spring and
+  Agent Utils boundaries, CLI/TUI adapter expectations, future test expectations,
+  illustrative Java snippets, and a later-task checklist.
+- `T003_03_define_testing_strategy_and_agent_test_rules.md` is finalized as a
+  documentation-only testing and development strategy task. It created
+  `docs/developer/specification/testing-strategy-and-agent-rules.md`, which makes
+  TDD the default for future behavior changes and bug fixes, separates fast
+  unit/contract tests from startup-heavy and external categories, requires tests
+  to remain individually executable or document blockers, and requires solve
+  results to report targeted commands and enough timing information to spot slow
+  tests or slow startup. It created no Java source, tests, Maven changes, Taskfile
+  changes, runtime behavior, or build behavior.
+- `T003_04_define_build_release_and_binary_smoke_strategy.md` is finalized as a
+  documentation-only build/release/platform strategy task. It created
+  `docs/developer/specification/build-release-and-binary-smoke-strategy.md`, which
+  defines GitHub Releases as the deployment target, Windows/Linux/macOS artifact
+  and smoke expectations, JVM jar versus native executable verification,
+  provisional startup/smoke budgets, checksum and release-note posture, and
+  explicit `passed`/`skipped`/`failed` reporting for every platform check. It did
+  not implement CI workflows, release scripts, Java source, tests, Maven changes,
+  Taskfile changes, or release deployment behavior. Later packaging, release
+  automation, and platform-smoke implementation tasks should use this strategy,
+  especially the planned `T003_15` packaging/native/startup validation slice.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored

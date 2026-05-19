@@ -52,3 +52,17 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   PF4J, Vaadin, headless server, API, and SDK/OpenAPI implementation in the
   backlog while preserving adapter-ready runtime boundaries for those later
   surfaces.
+- For T003 Java implementation tasks, use
+  `docs/developer/specification/java-generation-guidance.md` as the source
+  generation contract and keep planned package boundaries separate from current
+  implemented source.
+- For Codegeist behavior changes and bug fixes, use
+  `docs/developer/specification/testing-strategy-and-agent-rules.md`: TDD is the
+  default, tests should stay individually executable, and solve results should
+  report targeted commands plus enough timing detail to spot slow tests or slow
+  startup.
+- For packaging, release, platform, or binary-smoke work, use
+  `docs/developer/specification/build-release-and-binary-smoke-strategy.md`:
+  GitHub Releases are the release target, Windows/Linux/macOS support must be
+  proven explicitly, and each platform check should report `passed`, `skipped`
+  with reason, or `failed` with blocker.

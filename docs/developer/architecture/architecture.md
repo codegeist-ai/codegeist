@@ -11,6 +11,10 @@ configuration, build, or verification behavior.
 
 For target architecture and future design decisions, see
 `docs/developer/specification/codegeist-opencode-parity.md`. For the
+Codegeist Java/Spring source-generation guidance, see
+`docs/developer/specification/java-generation-guidance.md`. For the Codegeist
+testing and coding-agent workflow guidance, see
+`docs/developer/specification/testing-strategy-and-agent-rules.md`. For the
 Codegeist-owned runtime vocabulary and boundary diagram, see
 `docs/developer/specification/runtime-vocabulary.md`. For the future
 runtime/session/event contract blueprint and diagrams, see
@@ -28,7 +32,9 @@ controlled shell verification blueprint, see
 storage port posture blueprint, see
 `docs/developer/specification/storage-port-posture.md`. For the future JVM jar and
 GraalVM native-image packaging posture, see
-`docs/developer/specification/native-packaging-posture.md`. For the future
+`docs/developer/specification/native-packaging-posture.md`. For the future build,
+GitHub release, platform support, and binary smoke strategy, see
+`docs/developer/specification/build-release-and-binary-smoke-strategy.md`. For the future
 extension/client readiness gates, see
 `docs/developer/specification/extension-client-readiness-gates.md`.
 
@@ -59,7 +65,9 @@ shell verification contracts are described in
 `docs/developer/specification/shell-verification-contracts.md`; future storage port
 posture is described in `docs/developer/specification/storage-port-posture.md`;
 future JVM jar and GraalVM native-image verification posture is described in
-`docs/developer/specification/native-packaging-posture.md`; and future
+`docs/developer/specification/native-packaging-posture.md`; future GitHub Release,
+platform artifact, and binary smoke strategy is described in
+`docs/developer/specification/build-release-and-binary-smoke-strategy.md`; and future
 extension/client readiness gates are described in
 `docs/developer/specification/extension-client-readiness-gates.md`.
 
@@ -270,6 +278,14 @@ future coding agents can distinguish current code from future architecture.
 
 - `docs/developer/specification/codegeist-opencode-parity.md` records target architecture,
   OpenCode parity mapping, planned boundaries, MVP cut, risks, and backlog.
+- `docs/developer/specification/java-generation-guidance.md` records Java/Spring
+  generation guidance for planned package ownership, dependency direction,
+  framework and Agent Utils boundaries, CLI/TUI adapter expectations, future test
+  expectations, and illustrative examples without implementing Java source.
+- `docs/developer/specification/testing-strategy-and-agent-rules.md` records TDD,
+  test taxonomy, individual execution, startup-sensitive testing, and solve-result
+  timing guidance for future implementation tasks without adding test source,
+  Maven configuration, Taskfile wrappers, or runtime behavior.
 - `docs/developer/specification/runtime-vocabulary.md` records the Codegeist-owned runtime
   vocabulary and boundary diagram without requiring Java packages or classes to
   exist.
@@ -304,6 +320,10 @@ future coding agents can distinguish current code from future architecture.
   GraalVM native-image verification posture, native status reporting, and blocker
   classification without changing Java source, Maven configuration, Taskfile
   commands, tests, or packaging behavior.
+- `docs/developer/specification/build-release-and-binary-smoke-strategy.md` records the planned
+  GitHub Release target, Windows/Linux/macOS platform matrix, artifact naming,
+  checksum posture, binary smoke scenarios, startup budgets, and skip/failure
+  reporting without adding workflows, scripts, tests, or release behavior.
 - `docs/developer/specification/extension-client-readiness-gates.md` records the planned
   readiness gates for deferred PF4J, JBang, server, Vaadin, SDK/OpenAPI, and TUI
   surfaces without implementing adapters, routes, plugins, scripts, UI, tests, or

@@ -44,7 +44,7 @@ attach without reworking the core.
 - `T003_01_analyze_spring_ai_agent_utils_adoption.md`
 - `T003_02_define_java_generation_guidance.md`
 - `T003_03_define_testing_strategy_and_agent_test_rules.md`
-- `T003_04_define_performance_startup_and_native_smoke_budgets.md`
+- `T003_04_define_build_release_and_binary_smoke_strategy.md`
 - `T003_05_implement_runtime_session_event_core.md`
 - `T003_06_implement_cli_prompt_commands.md`
 - `T003_07_implement_context_workspace_loading.md`
@@ -58,8 +58,9 @@ attach without reworking the core.
 - `T003_15_validate_packaging_native_and_startup_posture.md`
 - `T003_16_validate_opencode_core_replacement_readiness.md`
 
-`T003_01` and `T003_02` are created. Later child tasks should be created when the
-preceding analysis and implementation-guidance tasks clarify the exact boundaries.
+`T003_01`, `T003_02`, `T003_03`, and `T003_04` are finalized. Later child tasks
+should be created when the preceding analysis and implementation-guidance tasks
+clarify the exact boundaries.
 
 ## Derivation Map
 
@@ -68,7 +69,7 @@ preceding analysis and implementation-guidance tasks clarify the exact boundarie
 | `T003_01` | Backlog idea, Spring AI Agent Utils repository, T002 tool/provider/storage/shell docs | Establish Agent Utils as a dependency baseline and document boundary guidance so Codegeist can use it internally without adopting its architecture. |
 | `T003_02` | T002 blueprints, existing Java baseline | Define Codegeist Java source generation guidance for coding agents before broad implementation starts. |
 | `T003_03` | T002 verification posture, Spring/JUnit/Mockito needs | Define fast, fine-grained, coding-agent-friendly test strategy. |
-| `T003_04` | Native packaging posture, testing strategy | Define test runtime, startup, and native executable smoke budgets. |
+| `T003_04` | Native packaging posture, testing strategy, release requirements | Define build, GitHub release, platform support, startup, and binary smoke-test strategy. |
 | `T003_05` | Runtime/session/event contracts | Implement core runtime request, mode, session, turn, message part, and event contracts. |
 | `T003_06` | CLI prompt contract | Implement Spring Shell prompt commands over runtime APIs. |
 | `T003_07` | Context/workspace manifest | Implement deterministic context and workspace loading. |
@@ -144,6 +145,33 @@ keep `task test` fast enough for coding-agent iteration.
   Agent Utils directly inside implementation code, but Codegeist runtime,
   provider, tool, permission, workspace, event, session, and storage contracts
   must not depend on Agent Utils architecture or broad raw provider callbacks.
+- `T003_02` is finalized as a documentation-only Java/Spring generation guidance
+  task. It created `docs/developer/specification/java-generation-guidance.md`,
+  which defines package ownership, dependency direction, code-shape rules,
+  framework and Agent Utils boundaries, CLI/TUI adapter expectations, future
+  test-generation expectations, illustrative examples, and a later-task checklist
+  without creating Java source, tests, packages, build changes, or runtime
+  behavior.
+- `T003_03` is finalized as a documentation-only testing and development strategy
+  task. It created
+  `docs/developer/specification/testing-strategy-and-agent-rules.md`, which makes
+  TDD the default for behavior changes and bug fixes, separates fast
+  unit/contract tests from startup-heavy and external categories, requires tests
+  to stay individually executable or document blockers, and requires solve results
+  to report targeted commands and enough timing information to spot slow tests or
+  slow startup. It created no Java source, tests, Maven changes, Taskfile changes,
+  runtime behavior, or build behavior.
+- `T003_04` is finalized as a documentation-only build, release, platform, and
+  binary-smoke strategy task. It created
+  `docs/developer/specification/build-release-and-binary-smoke-strategy.md`, which
+  defines GitHub Releases as the deployment target, Windows/Linux/macOS artifact
+  and smoke expectations, JVM jar versus native executable verification,
+  provisional startup/smoke budgets, checksum and release-note posture, and
+  explicit `passed`/`skipped`/`failed` reporting for every platform check. It
+  created no CI workflow, release script, Java source, tests, Maven changes,
+  Taskfile changes, or release deployment behavior. Future packaging, release
+  automation, and platform-smoke implementation tasks, especially the planned
+  `T003_15`, should use this strategy as their release-readiness contract.
 
 ## Creation Note
 
