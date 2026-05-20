@@ -1,6 +1,6 @@
-# T002_04 Wire CLI Prompt Mode Contract
+# T002_04 Describe CLI Prompt Mode Contract
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_04`, `T001_05`, `T001_22`, `T001_23`
 
@@ -637,11 +637,11 @@ build files, or runtime behavior change.
 ## Phase Status
 
 - Phase: `/specify-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
 - Context or instructions considered: the user requested OpenCode reference
   implementation research and documentation for the CLI prompt mode contract.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent tasks considered:
   `T002_03_introduce-runtime-session-event-contracts.md`; `T002_04` depends on
   its blueprint but not on Java source from that task.
@@ -656,13 +656,13 @@ build files, or runtime behavior change.
 - Next recommended phase: run `/plan-task` for this task and decide the smallest
   concrete Java types and tests needed for Spring Shell Plan/Build adapter wiring.
 - Phase: `/plan-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
 - Upstream phase dependency: satisfied; the task was already specified with
   OpenCode source evidence and the `T002_03` blueprint dependency clarified.
 - Context or instructions considered: continue the current planning pass and stop
   only if clarification is needed.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent tasks considered: `T002_03` remains a documentation blueprint, and
   `T002_05` owns context/workspace manifest behavior that must not be pulled into
   this CLI slice.
@@ -684,7 +684,7 @@ build files, or runtime behavior change.
 - Next recommended phase: run `/solve-task` for this task as a documentation-only
   solution pass.
 - Phase: `/solve-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
 - User instructions considered: solve `t002_04` as an existing task, with the
   prior clarification that this task should first describe the solution in minute
   detail and include deep source-code examples instead of adding Java source.
@@ -716,13 +716,13 @@ build files, or runtime behavior change.
   Java implementation remains a later task.
 - Next recommended phase: run `/finalize-task` for this task.
 - Phase: `/finalize-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_04_wire_cli_prompt_mode_contract.md`.
 - User instructions considered: finalize `t002_04` after the documentation-only
   solve pass.
 - Upstream phase dependency: satisfied; the task had top-level `Status: solved`
   and a successful `/solve-task` phase status before finalization.
 - Impacted tasks reviewed: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, dependency
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`, dependency
   `T002_03_introduce-runtime-session-event-contracts.md`, and adjacent
   `T002_05_add_context_workspace_manifest_slice.md`.
 - Documentation update review: applied the `update-documentation` semantics by

@@ -1,6 +1,6 @@
 # T003_02 Define Java Generation Guidance
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -78,8 +78,8 @@ not accidentally create deferred extension, plugin, web, or API behavior.
 
 ## Direct Inputs
 
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_01_analyze_spring_ai_agent_utils_adoption.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_01_analyze_spring_ai_agent_utils_adoption.md`
 - `docs/developer/spring-ai-agent-utils-adoption.md`
 - `docs/developer/specification/codegeist-opencode-parity.md`
 - `docs/developer/architecture/architecture.md`
@@ -147,7 +147,7 @@ module layout, choose a TUI library, or implement runtime behavior.
 - Update this task file with solve/finalization notes when the guide is written.
 - Update `docs/memory-bank/chat.md` if the solve phase changes the active T003
   focus, the current guidance status, or the next recommended T003 task.
-- Optionally update `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
+- Optionally update `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
   during solve or finalization if the finished guide changes parent progress notes
   or later child-task boundaries.
 - Do not change Java source, Java tests, package directories, Maven files,
@@ -366,9 +366,9 @@ git --no-pager diff --check
 
 - Phase command: `/plan-task`.
 - Source task:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_02_define_java_generation_guidance.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_02_define_java_generation_guidance.md`.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - User context or instructions considered: user requested planning with task
   reference `t003_02` and provided no extra narrowing instructions.
 - Selected option: sharpen the existing `T003_02` task as one documentation-only
@@ -404,9 +404,9 @@ git --no-pager diff --check
   this task by exact repo-relative path and provided no extra narrowing
   instructions beyond the shared `/specify-task` command contract.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_01_analyze_spring_ai_agent_utils_adoption.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_01_analyze_spring_ai_agent_utils_adoption.md`.
   The parent lists later T003 child slots, but only `T003_01` and `T003_02` are
   currently created.
 - Dependency inputs considered:

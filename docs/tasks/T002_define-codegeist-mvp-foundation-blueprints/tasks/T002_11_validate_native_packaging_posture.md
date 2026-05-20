@@ -1,6 +1,6 @@
 # T002_11 Describe Native Packaging Posture
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_20`, `T001_01`, `T001_24`, `T001_25`
 

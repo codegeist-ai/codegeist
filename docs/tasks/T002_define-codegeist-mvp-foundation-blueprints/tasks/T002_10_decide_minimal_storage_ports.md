@@ -1,6 +1,6 @@
 # T002_10 Describe Minimal Storage Ports
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_19`, `T001_06`, `T001_07`, `T001_22`, `T001_24`
 
@@ -109,14 +109,14 @@ a documentation and diagram slice.
 ## Phase Status
 
 - Phase: `/specify-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_10_decide_minimal_storage_ports.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_10_decide_minimal_storage_ports.md`.
 - Context or instructions considered: user ran `/work-task` by exact task path with
   no additional narrowing instructions.
 - Upstream phase dependency: none; `/specify-task` is the entry phase and may be
   repeated when session continuation, storage redaction, event projection, or
   persistence boundaries need to be refreshed.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Dependencies and adjacent tasks considered: dependency
   `T002_03_introduce-runtime-session-event-contracts.md`, finalized upstream
   `T002_09_add_controlled_shell_verification_tool.md`, adjacent open
@@ -256,15 +256,15 @@ deferred until later implementation tasks.
 ## Plan Workflow Handoff
 
 - Phase: `/plan-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_10_decide_minimal_storage_ports.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_10_decide_minimal_storage_ports.md`.
 - Source task resolved: exact path
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_10_decide_minimal_storage_ports.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_10_decide_minimal_storage_ports.md`.
 - Target task: this existing `T002_10` task; no child task was created because the
   task is already the narrow documentation-only storage posture slice.
 - User context considered: the user ran `/work-task` with no additional narrowing
   instructions.
 - Parent task considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Dependencies and adjacent tasks considered: dependency `T002_03`, finalized
   upstream `T002_09`, adjacent open `T002_11`, and downstream open `T002_12`.
 - Duplicate check result: no existing `docs/developer/specification/storage-port-posture.md`
@@ -311,7 +311,7 @@ runtime behavior.
 ## Solve Status
 
 - Phase: `/solve-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_10_decide_minimal_storage_ports.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_10_decide_minimal_storage_ports.md`.
 - User instructions considered: run the full `/work-task` workflow for this exact
   task path. Prior user decisions remain in effect: this slice is documentation
   only and should create `docs/developer/specification/storage-port-posture.md` without Java
@@ -323,7 +323,7 @@ runtime behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Related context files read: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, dependency
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`, dependency
   `T002_03_introduce-runtime-session-event-contracts.md`, finalized
   `T002_09_add_controlled_shell_verification_tool.md`, adjacent open
   `T002_11_validate_native_packaging_posture.md`, downstream open
@@ -361,7 +361,7 @@ runtime behavior.
 ## Finalization Status
 
 - Phase: `/finalize-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_10_decide_minimal_storage_ports.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_10_decide_minimal_storage_ports.md`.
 - User instructions considered: finalize after solving by checking task impact and
   refreshing affected documentation through update-documentation semantics.
 - Upstream phase dependency: satisfied. The target task had top-level
@@ -372,7 +372,7 @@ runtime behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Impacted tasks: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md` and downstream open
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md` and downstream open
   `T002_12_define_extension_and_client_readiness_gates.md`.
 - Documentation reviewed through update-documentation semantics:
   `docs/developer/specification/storage-port-posture.md`, `docs/developer/README.md`,

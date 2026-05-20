@@ -1,6 +1,6 @@
 # T003_05 Define Runtime Session Event Source Generation Contract
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -88,10 +88,10 @@ source-generation contract. It should sharpen scope without adding code.
 
 ## Direct Inputs
 
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_02_define_java_generation_guidance.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_03_define_testing_strategy_and_agent_test_rules.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_02_define_java_generation_guidance.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_03_define_testing_strategy_and_agent_test_rules.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`
 - `docs/developer/specification/runtime-session-event-contracts.md`
 - `docs/developer/specification/runtime-vocabulary.md`
 - `docs/developer/specification/java-generation-guidance.md`
@@ -170,7 +170,7 @@ patch/edit, and shell details outside the core contracts.
 - Add `docs/developer/specification/runtime-session-event-source-generation-contract.md`.
 - Update this task with solve and finalization notes after the contract is
   written.
-- Update `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
+- Update `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
   during solve or finalization when the completed contract changes parent progress
   notes or the next T003 task boundary.
 - Update `docs/memory-bank/chat.md` if the solve result changes active T003 state
@@ -343,7 +343,7 @@ git --no-pager diff --check
   implementation yet and asked whether this needs another documentation-only
   contract slice before source generation.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered: finalized `T003_02`, `T003_03`, and `T003_04`;
   the parent listed `T003_05_implement_runtime_session_event_core.md`, but that
   child task file did not exist before this pass.

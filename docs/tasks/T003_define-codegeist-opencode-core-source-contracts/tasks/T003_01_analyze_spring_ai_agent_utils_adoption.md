@@ -1,6 +1,6 @@
 # T003_01 Analyze Spring AI Agent Utils Adoption
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -282,8 +282,8 @@ questions through evidence.
 ## Plan Workflow Handoff
 
 - Phase command: `/plan-task`.
-- Source task: `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_01_analyze_spring_ai_agent_utils_adoption.md`.
-- Parent task considered: `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+- Source task: `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_01_analyze_spring_ai_agent_utils_adoption.md`.
+- Parent task considered: `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - User context or instructions considered: only the task reference was provided;
   no extra narrowing instructions were supplied.
 - Selected option: sharpen the existing `T003_01` analysis/report task as one
@@ -416,7 +416,7 @@ git --no-pager diff --check
   `.oc_local/rules/architecture-doc.md`, and
   `.oc_local/rules/third-party-analysis-workflow.md`.
 - Impacted tasks: parent task
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md` now
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md` now
   records that `T003_01` is finalized, that Agent Utils is a dependency baseline,
   and that direct internal use is allowed only while Codegeist contracts stay
   independent.
@@ -426,7 +426,7 @@ git --no-pager diff --check
   `docs/developer/specification/native-packaging-posture.md`, and
   `docs/memory-bank/chat.md`.
 - Documentation updates made during finalization:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md` and
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md` and
   `docs/developer/specification/codegeist-opencode-parity.md` were refreshed to
   align with the boundary-guide posture.
 - Remaining follow-ups: later T003 implementation tasks should create concrete
@@ -467,7 +467,7 @@ git --no-pager diff --check
 - Phase command: `/specify-task`.
 - Context or instructions considered: user requested a specification pass for this
   task and provided no extra narrowing beyond the task reference.
-- Parent task considered: `T003_implement-codegeist-opencode-core-application/task.md`.
+- Parent task considered: `T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered: none exist yet; the parent lists planned child
   slots, but only `T003_01` is currently created.
 - Dependency inputs considered: the current Maven baseline in `app/codegeist/cli`,

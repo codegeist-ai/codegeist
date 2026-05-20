@@ -1,6 +1,6 @@
 # T002_08 Describe Patch Edit Proposal Flow
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_13`, `T001_10`, `T001_11`, `T001_22`, `T001_24`
 
@@ -121,14 +121,14 @@ a documentation and diagram slice.
 ## Phase Status
 
 - Phase: `/specify-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_08_add_patch_edit_proposal_flow.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_08_add_patch_edit_proposal_flow.md`.
 - Context or instructions considered: user requested a specification pass by exact
   task path with no additional narrowing instructions.
 - Upstream phase dependency: none; `/specify-task` is the entry phase and may be
   repeated when patch/edit, permission, workspace, or bounded-result boundaries
   need to be refreshed.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent and dependency tasks considered: finalized dependency
   `T002_07_add_tool_permission_workspace_contracts.md`, adjacent
   `T002_09_add_controlled_shell_verification_tool.md`, and source tasks
@@ -318,13 +318,13 @@ Java source, tests, build files, or runtime behavior.
 ## Plan Workflow Handoff
 
 - Phase: `/plan-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_08_add_patch_edit_proposal_flow.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_08_add_patch_edit_proposal_flow.md`.
 - Source task resolved: `T002_08` as
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_08_add_patch_edit_proposal_flow.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_08_add_patch_edit_proposal_flow.md`.
 - User context considered: the user ran `/plan-task T002_08` with no additional
   narrowing instructions.
 - Parent task considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent and dependency tasks considered: finalized dependency
   `T002_07_add_tool_permission_workspace_contracts.md`, adjacent open
   `T002_09_add_controlled_shell_verification_tool.md`, and source tasks
@@ -371,7 +371,7 @@ behavior.
 ## Solve Status
 
 - Phase: `/solve-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_08_add_patch_edit_proposal_flow.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_08_add_patch_edit_proposal_flow.md`.
 - User instructions considered: solve `T002_08` using the existing plan. Prior
   user decisions remain in effect: this slice is documentation-only and should
   create `docs/developer/specification/patch-edit-proposal-contracts.md` without Java source.
@@ -382,7 +382,7 @@ behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Related context files read: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, finalized
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`, finalized
   `T002_07_add_tool_permission_workspace_contracts.md`, adjacent open
   `T002_09_add_controlled_shell_verification_tool.md`,
   `docs/developer/specification/codegeist-opencode-parity.md`,
@@ -419,7 +419,7 @@ behavior.
 ## Finalization Status
 
 - Phase: `/finalize-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_08_add_patch_edit_proposal_flow.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_08_add_patch_edit_proposal_flow.md`.
 - User instructions considered: finalize `T002_08` by checking task impact and
   refreshing affected documentation after the successful solve phase.
 - Upstream phase dependency: satisfied. The target task had top-level
@@ -430,7 +430,7 @@ behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Impacted tasks: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md` and adjacent open
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md` and adjacent open
   `T002_09_add_controlled_shell_verification_tool.md`.
 - Documentation reviewed through update-documentation semantics:
   `docs/developer/specification/patch-edit-proposal-contracts.md`, `docs/developer/README.md`,

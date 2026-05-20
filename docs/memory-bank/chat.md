@@ -65,9 +65,9 @@
   been checked with `/specify-task` and solved with `/solve-task`. Each child
   task now has a `Solution Note` that points to the corresponding section in
   `docs/developer/specification/codegeist-opencode-parity.md`.
-- `docs/tasks/T002_implement-codegeist-mvp-foundation/` is the active foundation
-  specification parent for the first Codegeist MVP work. `T002_01` remains the
-  completed build/layout baseline exception. `T002_02` and later are
+- `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/` is the active MVP
+  foundation blueprint parent. `T002_01` remains the completed build/layout
+  baseline exception. `T002_02` and later are
   documentation/specification slices, not Java implementation tasks: they should
   define developer docs, diagrams, future file maps, contract sketches, and
   handoff checklists before later implementation tasks are created.
@@ -330,10 +330,12 @@
 
 - The T002 MVP foundation documentation/specification sequence is complete through
   `T002_12`.
-- `T003_implement-codegeist-opencode-core-application/` is the new implementation
-  epic. It targets OpenCode-replaceable CLI and TUI core behavior while keeping
-  JBang, PF4J, Vaadin, headless web server, and API/SDK surfaces deferred to the
-  backlog.
+- `T003_define-codegeist-opencode-core-source-contracts/` is the source-contract
+  preparation and later implementation epic. It targets OpenCode-replaceable CLI
+  and TUI core behavior while keeping JBang, PF4J, Vaadin, headless web server,
+  and API/SDK surfaces deferred to the backlog. The directory and parent title now
+  clarify that the current T003 work is source-contract definition before Java
+  implementation.
 - `T003_01_analyze_spring_ai_agent_utils_adoption.md` is finalized as the first
   T003 child task. It now maintains
   `docs/developer/spring-ai-agent-utils-adoption.md`

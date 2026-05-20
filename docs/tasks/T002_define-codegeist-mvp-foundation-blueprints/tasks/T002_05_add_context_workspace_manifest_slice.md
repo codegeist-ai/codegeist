@@ -1,6 +1,6 @@
 # T002_05 Describe Context Workspace Manifest Slice
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_11`, `T001_14`, `T001_22`, `T001_23`
 
@@ -116,15 +116,15 @@ a documentation and diagram slice.
 ## Phase Status
 
 - Phase: `/specify-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_05_add_context_workspace_manifest_slice.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_05_add_context_workspace_manifest_slice.md`.
 - Context or instructions considered: user requested a repeat specification pass
   by exact task path,
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_05_add_context_workspace_manifest_slice.md`,
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_05_add_context_workspace_manifest_slice.md`,
   with no additional narrowing instructions.
 - Upstream phase dependency: none; `/specify-task` is the entry phase and may be
   repeated when the source or workflow boundary needs to be current.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent tasks considered: finalized
   `T002_04_wire_cli_prompt_mode_contract.md`, which confirms CLI prompt-mode
   wiring does not select active work paths or own context sources, and
@@ -277,14 +277,14 @@ architecture decisions directly in the design document.
 ## Plan Workflow Handoff
 
 - Phase: `/plan-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_05_add_context_workspace_manifest_slice.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_05_add_context_workspace_manifest_slice.md`.
 - Target task: this existing `T002_05` task; no child task was created because the
   user wants complete architecture design before implementation planning.
 - User context considered: the user asked how OpenCode handles this area, accepted
   the workspace-policy ordering, then clarified that they do not want direct Java
   implementation yet and want the complete architecture designed first.
 - Parent task considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Duplicate check result: no child tasks exist under `T002_05`; no existing task or
   Java source implements `ai.codegeist.workspace`, `WorkspacePathPolicy`, or
   context manifest behavior.
@@ -331,7 +331,7 @@ manifest structure, and loader validation sequence.
 ## Solve Status
 
 - Phase: `/solve-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_05_add_context_workspace_manifest_slice.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_05_add_context_workspace_manifest_slice.md`.
 - User instructions considered: solve `t002_05`; prior user clarification remains
   in effect that this task should complete architecture design before any Java
   implementation task is created.
@@ -342,7 +342,7 @@ manifest structure, and loader validation sequence.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Related context files read: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`,
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`,
   `docs/developer/specification/context-workspace-manifest.md`,
   `docs/developer/architecture/architecture.md`, `app/codegeist/cli/pom.xml`,
   `app/codegeist/cli/Taskfile.yml`, and `docs/memory-bank/chat.md`.
@@ -374,7 +374,7 @@ manifest structure, and loader validation sequence.
 ## Finalization Status
 
 - Phase: `/finalize-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_05_add_context_workspace_manifest_slice.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_05_add_context_workspace_manifest_slice.md`.
 - User instructions considered: finalize `T002_05` by checking task impact and
   refreshing affected documentation after the successful solve phase.
 - Upstream phase dependency: satisfied. The target task had top-level
@@ -385,7 +385,7 @@ manifest structure, and loader validation sequence.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Impacted tasks: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, adjacent open
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`, adjacent open
   `T002_06_add_provider_configuration_adapter.md`, and adjacent open
   `T002_07_add_tool_permission_workspace_contracts.md`.
 - Documentation reviewed through the update-documentation semantics:

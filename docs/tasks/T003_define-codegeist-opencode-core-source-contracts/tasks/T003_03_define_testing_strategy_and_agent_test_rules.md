@@ -1,6 +1,6 @@
 # T003_03 Define Testing Strategy And Agent Test Rules
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -66,8 +66,8 @@ implemented test today is the Spring Boot context-load test
 
 ## Direct Inputs
 
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_02_define_java_generation_guidance.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_02_define_java_generation_guidance.md`
 - `docs/developer/specification/java-generation-guidance.md`
 - `docs/developer/architecture/architecture.md`
 - `app/codegeist/cli/Taskfile.yml`
@@ -141,10 +141,10 @@ as planned expectations, not current implemented coverage.
 - Update `docs/developer/architecture/architecture.md` only if the new guide needs
   to be listed as a related specification or if current-state test documentation
   would otherwise become stale.
-- Update `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
+- Update `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
   during solve or finalization if the completed guide changes parent progress
   notes or later child-task boundaries.
-- Update `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`
+- Update `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`
   only if this strategy changes `T003_04` inputs around startup, native, or binary
   smoke-test ownership.
 - Update `docs/memory-bank/chat.md` only if the solve result changes active T003
@@ -248,9 +248,9 @@ task contract without another specification pass.
 
 - Phase command: `/plan-task t003_03`.
 - Source task:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_03_define_testing_strategy_and_agent_test_rules.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_03_define_testing_strategy_and_agent_test_rules.md`.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - User context or instructions considered: user requested planning with task
   reference `t003_03` and provided no extra narrowing instructions.
 - Selected option: keep `T003_03` as one documentation-only implementation plan
@@ -368,7 +368,7 @@ git --no-pager diff --check
   development should work, specifically TDD, careful test-duration and test-startup
   monitoring, and individually executable tests.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered:
   `T003_01_analyze_spring_ai_agent_utils_adoption.md` and
   `T003_02_define_java_generation_guidance.md`.

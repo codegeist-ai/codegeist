@@ -1,6 +1,6 @@
 # T002_09 Describe Controlled Shell Verification Tool
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_12`, `T001_10`, `T001_11`, `T001_22`, `T001_24`
 
@@ -111,14 +111,14 @@ a documentation and diagram slice.
 ## Phase Status
 
 - Phase: `/specify-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_09_add_controlled_shell_verification_tool.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_09_add_controlled_shell_verification_tool.md`.
 - Context or instructions considered: user ran `/work-task` by exact task path
   with no additional narrowing instructions.
 - Upstream phase dependency: none; `/specify-task` is the entry phase and may be
   repeated when shell, permission, workspace-cwd, destructive-command, or bounded
   output boundaries need to be refreshed.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Dependencies and adjacent tasks considered: finalized dependency
   `T002_07_add_tool_permission_workspace_contracts.md`, finalized adjacent
   `T002_08_add_patch_edit_proposal_flow.md`, and downstream open `T002_10` and
@@ -257,16 +257,16 @@ until a later implementation task.
 ## Plan Workflow Handoff
 
 - Phase: `/plan-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_09_add_controlled_shell_verification_tool.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_09_add_controlled_shell_verification_tool.md`.
 - Source task resolved: exact path
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_09_add_controlled_shell_verification_tool.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_09_add_controlled_shell_verification_tool.md`.
 - Target task: this existing `T002_09` task; no child task was created because the
   task is already the narrow documentation-only controlled shell verification
   blueprint slice.
 - User context considered: the user ran `/work-task` with no additional narrowing
   instructions.
 - Parent task considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Dependencies and adjacent tasks considered: finalized dependency `T002_07`,
   finalized adjacent `T002_08`, downstream open `T002_10`, and downstream open
   `T002_12`.
@@ -312,7 +312,7 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
 ## Solve Status
 
 - Phase: `/solve-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_09_add_controlled_shell_verification_tool.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_09_add_controlled_shell_verification_tool.md`.
 - User instructions considered: run the full `/work-task` workflow for this exact
   task path. Prior user decisions remain in effect: this slice is documentation
   only and should create `docs/developer/specification/shell-verification-contracts.md` without
@@ -324,7 +324,7 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Related context files read: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, finalized
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`, finalized
   `T002_07_add_tool_permission_workspace_contracts.md`, finalized
   `T002_08_add_patch_edit_proposal_flow.md`,
   `docs/developer/specification/codegeist-opencode-parity.md`,
@@ -362,7 +362,7 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
 ## Finalization Status
 
 - Phase: `/finalize-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_09_add_controlled_shell_verification_tool.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_09_add_controlled_shell_verification_tool.md`.
 - User instructions considered: finalize after solving by checking task impact and
   refreshing affected documentation through update-documentation semantics.
 - Upstream phase dependency: satisfied. The target task had top-level
@@ -373,7 +373,7 @@ execution, shell sandboxing, Graphify, Repomix, or runtime behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Impacted tasks: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, downstream open
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`, downstream open
   `T002_10_decide_minimal_storage_ports.md`, and downstream open
   `T002_12_define_extension_and_client_readiness_gates.md`.
 - Documentation reviewed through update-documentation semantics:

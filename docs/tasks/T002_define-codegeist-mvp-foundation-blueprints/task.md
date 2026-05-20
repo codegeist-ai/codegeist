@@ -1,15 +1,20 @@
-# T002 Implement Codegeist MVP Foundation
+# T002 Define Codegeist MVP Foundation Blueprints
 
 ## Goal
 
-Create the first implementation foundation for the Codegeist MVP from the
-completed OpenCode parity architecture.
+Define the first MVP foundation handoffs for Codegeist from the completed
+OpenCode parity architecture.
 
 This parent task groups the narrow foundation slices that must be specified
 before runtime behavior, provider calls, tools, permissions, UI, plugins, or
 storage are implemented. `T002_01` is the completed build/layout baseline
 exception; the remaining child tasks are documentation and specification handoff
 slices, not Java implementation tasks.
+
+## Naming Note
+
+The directory name now matches the current task meaning: blueprint definition
+rather than runtime implementation.
 
 ## Context
 
@@ -46,7 +51,7 @@ the remaining slices are documentation-first specifications.
 | `T002_01` | `T001_01`, `T001_20`, `T001_24`, `T001_25` | Align build/dependency and CLI layout baseline. |
 | `T002_02` | `T001_02`, `T001_03` | Document runtime vocabulary before behavior. |
 | `T002_03` | `T001_03`, `T001_05`, `T001_06`, `T001_07`, `T001_22`, `T001_23` | Add runtime/session/event contracts. |
-| `T002_04` | `T001_04`, `T001_05`, `T001_22`, `T001_23` | Wire CLI commands to runtime modes. |
+| `T002_04` | `T001_04`, `T001_05`, `T001_22`, `T001_23` | Describe CLI command wiring to runtime modes. |
 | `T002_05` | `T001_11`, `T001_14`, `T001_22`, `T001_23` | Describe context loading through workspace policy. |
 | `T002_06` | `T001_08`, `T001_20`, `T001_22`, `T001_24` | Describe provider configuration and Spring AI adapter boundary. |
 | `T002_07` | `T001_09`, `T001_10`, `T001_11`, `T001_22`, `T001_24` | Describe tool/permission/workspace contracts. |
@@ -108,9 +113,9 @@ tasks that benefit from targeted OpenCode source evidence.
 ## Verification
 
 - Confirm there is one canonical `T002` representation at
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Confirm child tasks live under
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/`.
 - Run `git --no-pager diff --check`.
 
 ## Specification Check Result

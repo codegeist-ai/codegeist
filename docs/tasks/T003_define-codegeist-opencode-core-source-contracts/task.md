@@ -1,26 +1,37 @@
-# T003 Implement Codegeist OpenCode Core Application
+# T003 Define Codegeist OpenCode Core Source Contracts
 
 Status: open
 
 ## Goal
 
-Implement the Codegeist core application so it can replace OpenCode for the target
-CLI and TUI coding-agent workflows while staying Java-first and Codegeist-owned.
+Define the source-generation contracts and later implementation slices that let
+Codegeist grow into an OpenCode-style core application for the target CLI and TUI
+coding-agent workflows while staying Java-first and Codegeist-owned.
 
-The implementation must provide the runtime, session, event, context, provider,
-tool, permission, workspace, patch/edit, shell, storage, CLI, and TUI behavior
-needed for practical OpenCode-style agent work.
+The eventual implementation must provide the runtime, session, event, context,
+provider, tool, permission, workspace, patch/edit, shell, storage, CLI, and TUI
+behavior needed for practical OpenCode-style agent work. The current completed
+T003 work through `T003_12` is still documentation-only source-generation
+handoff, not generated Java source.
+
+## Naming Note
+
+The directory name now matches the current task set: source-contract definition
+before implementation. Later child tasks may introduce Java source only when they
+explicitly move from a finalized contract handoff into a source-generating
+implementation task.
 
 ## Context
 
 `T001_define-codegeist-opencode-feature-architecture` defined the target
-OpenCode-parity architecture. `T002_implement-codegeist-mvp-foundation` completed
+OpenCode-parity architecture. `T002_define-codegeist-mvp-foundation-blueprints` completed
 the documentation blueprints and readiness gates without implementing runtime
 behavior, except for the earlier build/layout baseline.
 
-This parent task starts the implementation phase. It should derive concrete code
-from the finalized blueprints, not reopen broad architecture decisions unless an
-implementation task proves a contradiction.
+This parent task is the bridge from architecture blueprints to implementation. It
+should derive concrete source-generation handoffs from the finalized blueprints,
+then later derive code from those handoffs without reopening broad architecture
+decisions unless an implementation task proves a contradiction.
 
 ## Deferred Surface Compatibility
 

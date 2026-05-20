@@ -1,6 +1,6 @@
 # T002_02 Describe Runtime Vocabulary Contracts
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Source: `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/T001_02_map-opencode-concepts-to-java-stack.md`
 
@@ -114,7 +114,7 @@ changed. This slice is documentation-only.
 ## Phase Status
 
 - Phase: `/solve-task`-style documentation solution for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_02_introduce-runtime-vocabulary-contracts.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_02_introduce-runtime-vocabulary-contracts.md`.
 - Result: solved as a documentation and diagram slice instead of a Java contract
   slice.
 - Durable outcome: Runtime vocabulary lives in

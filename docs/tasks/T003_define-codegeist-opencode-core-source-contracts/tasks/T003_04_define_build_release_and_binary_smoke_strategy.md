@@ -1,6 +1,6 @@
 # T003_04 Define Build Release And Binary Smoke Strategy
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -74,8 +74,8 @@ signing posture, platform matrix, installer policy, or binary smoke-test suite.
 
 ## Direct Inputs
 
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_03_define_testing_strategy_and_agent_test_rules.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_03_define_testing_strategy_and_agent_test_rules.md`
 - `docs/developer/specification/native-packaging-posture.md`
 - `docs/developer/specification/java-generation-guidance.md`
 - `docs/developer/architecture/architecture.md`
@@ -156,7 +156,7 @@ runner, toolchain, signing/notarization prerequisite, or implementation follow-u
 - Update `docs/developer/architecture/architecture.md` only to add a related
   specification link or to keep current build/release descriptions accurate. Do
   not describe planned workflows as implemented CI.
-- Update `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
+- Update `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
   during solve or finalization if the completed guide changes parent progress
   notes or later child-task boundaries, especially `T003_15`.
 - Update `docs/memory-bank/chat.md` only if the solve or finalization result
@@ -289,9 +289,9 @@ baseline commands are implemented and run on the target platform matrix.
 
 - Phase command: `/plan-task t003_04`.
 - Source task:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - User context or instructions considered: user requested planning with task
   reference `t003_04` and provided no extra narrowing instructions.
 - Selected option: keep `T003_04` as one documentation-only implementation plan
@@ -364,9 +364,9 @@ git --no-pager diff --check
 
 - Phase command: `/solve-task t003_04`.
 - Source task:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_04_define_build_release_and_binary_smoke_strategy.md`.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Result: solved as a documentation-only build, GitHub release, platform support,
   and binary-smoke strategy task.
 - Open decisions or blockers: exact measured startup and smoke durations remain
@@ -388,7 +388,7 @@ git --no-pager diff --check
 - Project overlays considered: `.oc_local/rules/codegeist-task-specification.md`
   and `.oc_local/rules/architecture-doc.md`.
 - Impacted tasks: parent task
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md` now
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md` now
   records that `T003_04` is finalized and that future packaging, release
   automation, and platform-smoke work should use the completed strategy. No
   `T003_15` task file exists yet, so no child implementation task was updated.
@@ -397,7 +397,7 @@ git --no-pager diff --check
   `docs/developer/architecture/architecture.md`, and
   `docs/memory-bank/chat.md`.
 - Documentation updates made during finalization:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`, this
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`, this
   task file, and `docs/memory-bank/chat.md`.
 - Remaining follow-ups: create later packaging/release implementation tasks when
   T003 reaches that stage, especially the planned `T003_15` packaging, native,
@@ -416,7 +416,7 @@ git --no-pager diff --check
   that platform support, and detailed smoke tests for built binaries on each
   system.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered:
   `T003_02_define_java_generation_guidance.md` and
   `T003_03_define_testing_strategy_and_agent_test_rules.md`.

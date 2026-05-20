@@ -1,6 +1,6 @@
 # T002_03 Describe Runtime Session Event Contracts
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_03`, `T001_05`, `T001_06`, `T001_07`, `T001_22`, `T001_23`
 
@@ -131,12 +131,12 @@ documentation and diagram slice.
 ## Phase Status
 
 - Phase: `/specify-task` repeated for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_03_introduce-runtime-session-event-contracts.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_03_introduce-runtime-session-event-contracts.md`.
 - Context or instructions considered: the user requested a specification pass over
   the existing task after narrowing it away from concrete Java implementation and
   after asking to use `/ask-project opencode` source evidence.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent tasks considered:
   `T002_02_introduce-runtime-vocabulary-contracts.md` and
   `T002_04_wire_cli_prompt_mode_contract.md`.

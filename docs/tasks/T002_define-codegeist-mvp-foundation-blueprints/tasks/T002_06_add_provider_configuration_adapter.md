@@ -1,6 +1,6 @@
 # T002_06 Describe Provider Configuration Adapter
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Sources: `T001_08`, `T001_20`, `T001_22`, `T001_24`
 
@@ -188,14 +188,14 @@ a documentation and diagram slice.
 ## Phase Status
 
 - Phase: `/specify-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_06_add_provider_configuration_adapter.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_06_add_provider_configuration_adapter.md`.
 - Context or instructions considered: user requested a specification pass by exact
   task path with no additional narrowing instructions.
 - Upstream phase dependency: none; `/specify-task` is the entry phase and may be
   repeated when provider boundaries, dependencies, or documentation-only scope
   need to be refreshed.
 - Parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent and dependency tasks considered: finalized
   `T002_05_add_context_workspace_manifest_slice.md`, adjacent
   `T002_07_add_tool_permission_workspace_contracts.md`, dependency
@@ -447,7 +447,7 @@ implementation choices as future handoff notes.
 ## Plan Workflow Handoff
 
 - Phase: `/plan-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_06_add_provider_configuration_adapter.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_06_add_provider_configuration_adapter.md`.
 - Source task resolved from user input: `t002_06`, resolved to this existing task
   file under the T002 parent.
 - Target task: this existing `T002_06` task; no child task was created because the
@@ -457,7 +457,7 @@ implementation choices as future handoff notes.
   first-wave OpenAI-compatible/OpenAI plus Ollama support with long-term support
   for all Spring AI-supported providers.
 - Parent task considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - Adjacent and dependency tasks considered: finalized
   `T002_05_add_context_workspace_manifest_slice.md`, adjacent
   `T002_07_add_tool_permission_workspace_contracts.md`, dependency
@@ -505,7 +505,7 @@ Graphify, Repomix, or runtime behavior.
 ## Solve Status
 
 - Phase: `/solve-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_06_add_provider_configuration_adapter.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_06_add_provider_configuration_adapter.md`.
 - User instructions considered: solve `t002_06` using the existing plan. Prior
   user decisions remain in effect: include concrete UML class diagrams, use Spring
   AI documentation evidence from Context7, mention future tests only as handoff
@@ -518,7 +518,7 @@ Graphify, Repomix, or runtime behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Related context files read: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`, finalized
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`, finalized
   `T002_05_add_context_workspace_manifest_slice.md`, adjacent
   `T002_07_add_tool_permission_workspace_contracts.md`, dependency
   `T002_03_introduce-runtime-session-event-contracts.md`,
@@ -559,7 +559,7 @@ Graphify, Repomix, or runtime behavior.
 ## Finalization Status
 
 - Phase: `/finalize-task` for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_06_add_provider_configuration_adapter.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_06_add_provider_configuration_adapter.md`.
 - User instructions considered: finalize `T002_06` by checking task impact and
   refreshing affected documentation after the successful solve phase.
 - Upstream phase dependency: satisfied. The target task had top-level
@@ -570,7 +570,7 @@ Graphify, Repomix, or runtime behavior.
   `.oc_local/rules/codegeist-task-specification.md`, and
   `.oc_local/rules/architecture-doc.md`.
 - Impacted tasks: parent
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md` and adjacent open
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md` and adjacent open
   `T002_07_add_tool_permission_workspace_contracts.md`.
 - Documentation reviewed through update-documentation semantics:
   `docs/developer/specification/provider-configuration-contracts.md`, `docs/developer/README.md`,

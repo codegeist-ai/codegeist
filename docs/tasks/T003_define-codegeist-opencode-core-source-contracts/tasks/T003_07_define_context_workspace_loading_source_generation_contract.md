@@ -1,6 +1,6 @@
 # T003_07 Define Context Workspace Loading Source Generation Contract
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -87,10 +87,10 @@ profile-selected source loading and explainable manifests.
 
 ## Direct Inputs
 
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_05_define_runtime_session_event_source_generation_contract.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_06_define_cli_prompt_command_source_generation_contract.md`
-- `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_05_add_context_workspace_manifest_slice.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_05_define_runtime_session_event_source_generation_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_06_define_cli_prompt_command_source_generation_contract.md`
+- `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_05_add_context_workspace_manifest_slice.md`
 - `docs/developer/specification/context-workspace-manifest.md`
 - `docs/developer/specification/java-generation-guidance.md`
 - `docs/developer/specification/testing-strategy-and-agent-rules.md`
@@ -183,7 +183,7 @@ git --no-pager diff --check
   implementation yet and asked to convert this into a documentation-only context
   and workspace loading source-generation contract task before source generation.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered: finalized `T003_05`, specified `T003_06`, and
   finalized `T003_02`, `T003_03`, and `T003_04`; the parent listed an
   implementation-oriented `T003_07_implement_context_workspace_loading.md` slot,

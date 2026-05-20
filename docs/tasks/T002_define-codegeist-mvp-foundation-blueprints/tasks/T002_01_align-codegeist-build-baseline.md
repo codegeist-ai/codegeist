@@ -1,6 +1,6 @@
 # T002_01 Align Codegeist Build Baseline
 
-Parent: `T002_implement-codegeist-mvp-foundation`
+Parent: `T002_define-codegeist-mvp-foundation-blueprints`
 
 Source: `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/T001_01_define-technology-baseline.md`
 
@@ -157,11 +157,11 @@ git --no-pager diff --check
 ## Plan Workflow Handoff
 
 - Phase: `/plan-task` run for
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_01_align-codegeist-build-baseline.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_01_align-codegeist-build-baseline.md`.
 - Source task considered:
   `docs/tasks/T001_define-codegeist-opencode-feature-architecture/tasks/T001_01_define-technology-baseline.md`.
 - Source parent considered:
-  `docs/tasks/T002_implement-codegeist-mvp-foundation/task.md`.
+  `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/task.md`.
 - User focus: plan the referenced existing implementation task; no extra context
   or variant was provided.
 - Selected option: sharpen the existing build-baseline implementation task instead

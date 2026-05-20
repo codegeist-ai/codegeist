@@ -1,6 +1,6 @@
 # T003_06 Define CLI Prompt Command Source Generation Contract
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -79,9 +79,9 @@ runtime request, session, or event model.
 
 ## Direct Inputs
 
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_05_define_runtime_session_event_source_generation_contract.md`
-- `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_04_wire_cli_prompt_mode_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_05_define_runtime_session_event_source_generation_contract.md`
+- `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_04_wire_cli_prompt_mode_contract.md`
 - `docs/developer/specification/java-generation-guidance.md`
 - `docs/developer/specification/testing-strategy-and-agent-rules.md`
 - `docs/developer/specification/runtime-session-event-contracts.md`
@@ -260,7 +260,7 @@ git --no-pager diff --check
   implementation yet and asked to convert this into a documentation-only CLI prompt
   command contract task before source generation.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered: finalized `T003_02`, `T003_03`, `T003_04`, and
   `T003_05`; the parent listed an implementation-oriented
   `T003_06_implement_cli_prompt_commands.md` slot, but that child task file did

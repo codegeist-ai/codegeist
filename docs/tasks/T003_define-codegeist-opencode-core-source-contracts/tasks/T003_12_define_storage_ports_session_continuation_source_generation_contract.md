@@ -1,6 +1,6 @@
 # T003_12 Define Storage Ports Session Continuation Source Generation Contract
 
-Parent: `T003_implement-codegeist-opencode-core-application`
+Parent: `T003_define-codegeist-opencode-core-source-contracts`
 
 Status: finalized
 
@@ -115,15 +115,15 @@ metadata, health reporting, and adapter-specific failures.
 
 ## Direct Inputs
 
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_05_define_runtime_session_event_source_generation_contract.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_06_define_cli_prompt_command_source_generation_contract.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_07_define_context_workspace_loading_source_generation_contract.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_08_define_provider_configuration_spring_ai_adapter_source_generation_contract.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_09_define_tool_permission_workspace_source_generation_contract.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_10_define_patch_edit_proposal_source_generation_contract.md`
-- `docs/tasks/T003_implement-codegeist-opencode-core-application/tasks/T003_11_define_controlled_shell_tool_source_generation_contract.md`
-- `docs/tasks/T002_implement-codegeist-mvp-foundation/tasks/T002_10_decide_minimal_storage_ports.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_05_define_runtime_session_event_source_generation_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_06_define_cli_prompt_command_source_generation_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_07_define_context_workspace_loading_source_generation_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_08_define_provider_configuration_spring_ai_adapter_source_generation_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_09_define_tool_permission_workspace_source_generation_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_10_define_patch_edit_proposal_source_generation_contract.md`
+- `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/tasks/T003_11_define_controlled_shell_tool_source_generation_contract.md`
+- `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/tasks/T002_10_decide_minimal_storage_ports.md`
 - `docs/developer/specification/storage-port-posture.md`
 - `docs/developer/specification/runtime-session-event-contracts.md`
 - `docs/developer/specification/patch-edit-proposal-contracts.md`
@@ -253,7 +253,7 @@ git --no-pager diff --check
   ports and session continuation source-generation contract task before source
   generation.
 - Parent task considered:
-  `docs/tasks/T003_implement-codegeist-opencode-core-application/task.md`.
+  `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`.
 - Adjacent child tasks considered: finalized `T003_05`, specified `T003_06`,
   specified `T003_07`, specified `T003_08`, finalized `T003_09`, specified
   `T003_10`, specified `T003_11`, and finalized `T003_02`, `T003_03`, and

@@ -397,8 +397,7 @@ future coding agents can distinguish current code from future architecture.
   readiness gates for deferred PF4J, JBang, server, Vaadin, SDK/OpenAPI, and TUI
   surfaces without implementing adapters, routes, plugins, scripts, UI, tests, or
   runtime behavior.
-- `docs/tasks/T002_implement-codegeist-mvp-foundation/` contains active
-  implementation tasks for moving from the current bootstrap toward the MVP
-  foundation.
+- `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/` contains active
+  blueprint tasks for moving from the current bootstrap toward the MVP foundation.
 - `.oc_local/rules/architecture-doc.md` defines how this current-state
   architecture document should be used and maintained.
