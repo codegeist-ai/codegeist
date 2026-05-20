@@ -72,3 +72,13 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   or storage behavior. Use the finalized `*-source-generation-contract.md`
   documents under `docs/developer/specification/` as the handoff for later
   source-generating tasks.
+- T004 is the real implementation epic derived from the finalized T003 handoffs.
+  Do not run `/solve-task` for a T004 child until `/plan-task` has created an
+  implementation document under `docs/developer/implementation/` with an UML class
+  diagram covering every planned class, record, interface, enum, sealed interface,
+  failure type, configuration type, and test class for that task.
+- T004 solve phases may write Java source and tests, but they must follow the
+  current plan, start from the planned failing test where practical, run the
+  planned narrow test commands, report timing, and update
+  `docs/developer/architecture/architecture.md` when implemented packages,
+  classes, configuration, or tests change.

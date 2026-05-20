@@ -399,5 +399,10 @@ future coding agents can distinguish current code from future architecture.
   runtime behavior.
 - `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/` contains active
   blueprint tasks for moving from the current bootstrap toward the MVP foundation.
+- `docs/tasks/T004_implement-codegeist-opencode-core-application/` contains the
+  new real implementation epic derived from the finalized T003 source-generation
+  contracts. Its child tasks must be planned with implementation docs, UML class
+  diagrams, file maps, TDD sequences, and verification commands before
+  `solve-task` writes Java source.
 - `.oc_local/rules/architecture-doc.md` defines how this current-state
   architecture document should be used and maintained.

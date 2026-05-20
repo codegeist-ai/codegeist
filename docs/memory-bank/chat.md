@@ -467,6 +467,20 @@
   created no Java source, tests, packages, storage adapters, persistence behavior,
   CLI/TUI behavior, provider behavior, tool behavior, permission behavior,
   workspace behavior, patch/edit behavior, shell behavior, or runtime behavior.
+- `docs/tasks/T004_implement-codegeist-opencode-core-application/` is the new real
+  implementation epic derived from finalized T003 results. It creates specified
+  child tasks `T004_01` through `T004_12` for runtime/session/event, context and
+  workspace, provider/Spring AI adapter, tool/permission/workspace, patch/edit,
+  controlled shell, storage/session continuation, CLI prompt commands, end-to-end
+  agent loop, CLI workflow parity, packaging/native/startup posture, and final
+  core replacement readiness. T004 is allowed to write Java source only in
+  `solve-task`; before that, each child must go through careful specification and
+  planning. The planning phase must create a developer implementation document
+  under `docs/developer/implementation/` with a full UML class diagram, file map,
+  TDD sequence, documentation updates, and verification commands.
+- Next recommended phase: `/plan-task t004_01` to plan the first runtime,
+  session, and event core implementation slice before any Java classes are
+  generated.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored
