@@ -2,7 +2,7 @@
 
 Parent: `T004_implement-codegeist-opencode-core-application`
 
-Status: specified
+Status: planned
 
 ## Goal
 
@@ -50,6 +50,29 @@ first source-generating task and should establish the initial packages under
 - Name the exact Java and test files to add or change.
 - Define the first failing test and the exact narrow Maven command.
 
+## Implementation Plan
+
+The implementation plan is recorded in
+`docs/developer/implementation/runtime-session-event-core-implementation.md`.
+
+Planned solve-phase target packages:
+
+- `ai.codegeist.runtime`
+- `ai.codegeist.session`
+- `ai.codegeist.event`
+
+Planned solve-phase tests:
+
+- `RuntimeSessionEventContractTests`
+- `RuntimeSessionEventDependencyTests`
+
+First failing test command for the solve phase:
+
+```bash
+cd app/codegeist/cli
+mvn --batch-mode --no-transfer-progress -Dtest=RuntimeSessionEventContractTests#acceptsPromptWithoutFrameworkTypes test
+```
+
 ## Acceptance Criteria
 
 - Runtime/session/event core classes and tests are implemented only after planning.
@@ -70,8 +93,55 @@ The planning phase must define Java test commands for the solve phase.
 
 ## Specification Check Result
 
-- Phase command: initial T004 creation.
-- Result: specified as the first source-generating runtime/session/event task.
-- Open decisions or blockers: exact class list, package layout, tests, and
-  documentation updates belong to `/plan-task t004_01`.
-- Next recommended phase: `/plan-task t004_01`.
+- Phase command: `/specify-task T004_01` rechecked during the full T004
+  specification pass.
+- Context or instructions considered: user input `für alle t004 tasks ausführen`.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Adjacent task docs considered: specified `T004_02` and the T004 parent epic.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: none for specification; this task already has a
+  later planning result and implementation handoff.
+- Result: confirmed as the first source-generating runtime/session/event task and
+  preserved the existing implementation plan without selecting new source beyond
+  that plan.
+- Open decisions or blockers: none at specification depth; implementation remains
+  bounded by the existing plan and must still be solved with TDD.
+- Next recommended phase: `/solve-task t004_01` if the plan remains current.
+
+## Planning Check Result
+
+- Phase command: `/plan-task t004_01`.
+- Context or instructions considered: user input `t004_01`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: satisfied by the existing specification check result
+  in this task before planning advanced the top-level status to `planned`.
+- Duplicate check result: no separate implementation plan existed, and this task is
+  already the concrete implementation slice for runtime/session/event core.
+- Result: created
+  `docs/developer/implementation/runtime-session-event-core-implementation.md`
+  with the UML class diagram, exact file map, implementation steps, TDD sequence,
+  acceptance criteria, dependencies, risks, and verification strategy.
+- Open decisions or blockers: none.
+- Next recommended phase: `/solve-task t004_01`.
+
+## Planning Recheck Result
+
+- Phase command: `/plan-task T004_01` rechecked as part of user input
+  `alle tasks aus t004`.
+- Selected option: preserve and confirm the existing implementation handoff instead
+  of creating a duplicate plan.
+- Duplicate check result:
+  `docs/developer/implementation/runtime-session-event-core-implementation.md`
+  already existed and remains the authoritative T004_01 solve handoff.
+- Result: confirmed the existing class diagram, file map, TDD sequence,
+  dependencies, deferrals, and documentation update plan remain current for the
+  first runtime/session/event solve phase.
+- Open decisions or blockers: none at planning depth.
+- Next recommended phase: `/solve-task t004_01`.

@@ -1,6 +1,6 @@
 # T004 Implement Codegeist OpenCode Core Application
 
-Status: specified
+Status: planned
 
 ## Goal
 
@@ -81,7 +81,7 @@ verification command before marking the task solved.
 - `T004_11_validate_packaging_native_and_startup_posture.md`
 - `T004_12_validate_core_replacement_readiness.md`
 
-All child tasks are initially specified. None are planned or solved yet.
+All child tasks have been specified and planned. None are solved yet.
 
 ## Derivation Map
 
@@ -174,6 +174,52 @@ Taskfile commands from `app/codegeist/cli` and report timing in solve results.
 - Next recommended phase: `/plan-task t004_01` to create the first detailed
   implementation plan, UML class diagram, documentation plan, and TDD sequence for
   runtime/session/event core.
+
+## Specification Recheck Result
+
+- Phase command: `/specify-task T004` across the full T004 task family.
+- Context or instructions considered: user input `für alle t004 tasks ausführen`,
+  interpreted as rerunning specification for the parent epic and all T004 child
+  tasks.
+- Parent task considered: this file is the parent task.
+- Adjacent child task docs considered: `T004_01` through `T004_12` under
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: none for specification; finalized T003 source
+  contracts and current architecture docs remain the source of truth for planning.
+- Result: confirmed T004 as the real implementation epic derived from T003
+  handoffs, with Java source reserved for child solve phases after implementation
+  plans and UML class diagrams exist.
+- Open decisions or blockers: child implementation details remain owned by each
+  child `/plan-task`; no parent-level solution path is selected here.
+- Next recommended phase: continue with `/solve-task t004_01`; all child tasks now
+  have detailed implementation handoffs for their later solve phases.
+
+## Planning Check Result
+
+- Phase command: `/plan-task T004` across the full T004 task family.
+- Context or instructions considered: user input `alle tasks aus t004`, interpreted
+  as explicit permission to plan every existing T004 child task instead of only one
+  task.
+- Source task considered: this parent epic and child tasks `T004_01` through
+  `T004_12`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Duplicate check result: `T004_01` already had an implementation handoff;
+  implementation handoffs were missing for `T004_02` through `T004_12` and were
+  created under `docs/developer/implementation/`.
+- Result: all T004 child tasks now have concrete implementation plans with class
+  diagrams, file maps, implementation steps, TDD or validation commands,
+  dependencies, deferrals, and documentation update targets.
+- Open decisions or blockers: none at planning depth; solve phases must still
+  respect each task's upstream dependencies and adjust only for concrete source
+  facts discovered during implementation.
+- Next recommended phase: `/solve-task t004_01`.
 
 ## Creation Note
 

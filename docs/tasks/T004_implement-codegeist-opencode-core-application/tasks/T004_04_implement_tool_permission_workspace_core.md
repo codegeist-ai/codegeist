@@ -2,7 +2,7 @@
 
 Parent: `T004_implement-codegeist-opencode-core-application`
 
-Status: specified
+Status: planned
 
 ## Goal
 
@@ -45,6 +45,24 @@ tool-call mediation.
   failure, and test classes.
 - Define policy and path-validation test commands.
 
+## Implementation Plan
+
+The implementation plan is recorded in
+`docs/developer/implementation/tool-permission-workspace-core-implementation.md`.
+
+Planned solve-phase target packages:
+
+- `ai.codegeist.tool`
+- `ai.codegeist.permission`
+- `ai.codegeist.workspace`
+
+Planned solve-phase tests:
+
+- `ToolPermissionWorkspaceContractTests`
+- `PermissionPolicyTests`
+- `WorkspaceToolPolicyTests`
+- `ToolBoundaryDependencyTests`
+
 ## Acceptance Criteria
 
 - Selected policy and workspace core behavior is implemented and tested.
@@ -57,8 +75,39 @@ planned narrow tests and affected broader checks.
 
 ## Specification Check Result
 
-- Phase command: initial T004 creation.
-- Result: specified as the tool/permission/workspace implementation task.
-- Open decisions or blockers: exact policy surface and class list belong to
-  `/plan-task t004_04`.
-- Next recommended phase: `/plan-task t004_04`.
+- Phase command: `/specify-task T004_04` rechecked during the full T004
+  specification pass.
+- Context or instructions considered: user input `für alle t004 tasks ausführen`.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Adjacent task docs considered: specified `T004_03`, specified `T004_05`, and
+  specified `T004_06`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: none for specification; planning should consume
+  runtime/context/provider boundaries where needed without executing tools.
+- Result: confirmed as the policy primitive task for descriptors, permissions,
+  workspace target validation, bounded results, and later patch/shell/provider
+  mediation.
+- Open decisions or blockers: exact policy surface, class list, runtime/event
+  integration points, workspace validation fixtures, and narrow Maven commands
+  belong to `/plan-task t004_04`.
+- Next recommended phase: `/plan-task t004_04` to create the implementation plan,
+  UML class diagram, policy test matrix, and documentation update plan.
+
+## Planning Check Result
+
+- Phase command: `/plan-task T004_04` as part of user input `alle tasks aus t004`.
+- Selected option: plan the existing T004 child task instead of creating a duplicate.
+- Duplicate check result: no existing tool/permission/workspace implementation
+  handoff was present.
+- Result: created
+  `docs/developer/implementation/tool-permission-workspace-core-implementation.md`
+  with the class diagram, file map, implementation steps, policy test commands,
+  dependencies, deferrals, and documentation targets.
+- Open decisions or blockers: solve should use `T004_01` and `T004_02` source types
+  when available and must not introduce concrete tool executors.
+- Next recommended phase: `/solve-task t004_04` after runtime and workspace
+  dependencies are available.

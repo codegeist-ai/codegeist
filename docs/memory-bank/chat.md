@@ -14,7 +14,7 @@
   to `c79edf1`.
 - `.devcontainer/` is configured as a git submodule that tracks the `release`
   branch of `codegeist-devcontainer-kit` in `.gitmodules` and points to
-  `35f46d9`.
+  `de44d10`.
 - `start.sh` has been removed; the devcontainer is started directly through VS
   Code Dev Containers or `devcontainer up --workspace-folder .`.
 - `.devcontainer/initialize.sh` from the kit creates root `.local.env`,
@@ -478,9 +478,22 @@
   planning. The planning phase must create a developer implementation document
   under `docs/developer/implementation/` with a full UML class diagram, file map,
   TDD sequence, documentation updates, and verification commands.
-- Next recommended phase: `/plan-task t004_01` to plan the first runtime,
-  session, and event core implementation slice before any Java classes are
-  generated.
+- `T004_01_implement_runtime_session_event_core.md` is now planned. Its
+  implementation handoff is
+  `docs/developer/implementation/runtime-session-event-core-implementation.md`,
+  which names the first runtime/session/event Java files, UML class diagram, TDD
+  sequence, targeted Maven commands, architecture-doc update, dependencies, and
+  non-goals. No Java source or tests have been generated yet.
+- The full T004 task family has been rechecked with `/specify-task` semantics and
+  then planned with `/plan-task` semantics. The parent and `T004_01` through
+  `T004_12` now record full-family specification and planning passes. `T004_01`
+  keeps its existing runtime/session/event implementation handoff, and `T004_02`
+  through `T004_12` now have implementation handoffs under
+  `docs/developer/implementation/` covering class diagrams, file maps, TDD or
+  validation commands, dependencies, deferrals, and documentation targets. No Java
+  source or tests have been generated yet.
+- Next recommended phase: `/solve-task t004_01` to implement the planned
+  runtime/session/event core with TDD.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored

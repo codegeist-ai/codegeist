@@ -2,7 +2,7 @@
 
 Parent: `T004_implement-codegeist-opencode-core-application`
 
-Status: specified
+Status: planned
 
 ## Goal
 
@@ -41,6 +41,21 @@ and depends on runtime/session/event core from `T004_01`.
   tests.
 - Define in-memory store tests and skip criteria for file-backed persistence.
 
+## Implementation Plan
+
+The implementation plan is recorded in
+`docs/developer/implementation/storage-session-continuation-core-implementation.md`.
+
+Planned solve-phase target package:
+
+- `ai.codegeist.storage`
+
+Planned solve-phase tests:
+
+- `StorageSessionContinuationContractTests`
+- `InMemoryStorageTests`
+- `StorageBoundaryDependencyTests`
+
 ## Acceptance Criteria
 
 - Selected in-memory storage and session continuation behavior is implemented and
@@ -54,9 +69,37 @@ planned narrow tests and affected broader checks.
 
 ## Specification Check Result
 
-- Phase command: initial T004 creation.
-- Result: specified as the storage/session-continuation implementation task.
-- Open decisions or blockers: exact storage port set and continuation semantics
+- Phase command: `/specify-task T004_07` rechecked during the full T004
+  specification pass.
+- Context or instructions considered: user input `für alle t004 tasks ausführen`.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Adjacent task docs considered: planned `T004_01`, specified `T004_06`, and
+  specified `T004_08`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: none for specification; planning should consume the
+  runtime/session/event handoff and keep storage behind replaceable ports.
+- Result: confirmed as the in-memory-first storage ports and session continuation
+  implementation task, with file-backed persistence and event sourcing deferred.
+- Open decisions or blockers: exact storage port set, continuation semantics,
+  redaction rules, health reporting, class list, tests, and narrow Maven commands
   belong to `/plan-task t004_07`.
-- Next recommended phase: `/plan-task t004_07` after `T004_01` is planned or solved
-  enough to provide runtime/session dependencies.
+- Next recommended phase: `/plan-task t004_07` after `T004_01` is planned or
+  solved enough to provide runtime/session dependencies.
+
+## Planning Check Result
+
+- Phase command: `/plan-task T004_07` as part of user input `alle tasks aus t004`.
+- Selected option: plan the existing T004 child task instead of creating a duplicate.
+- Duplicate check result: no existing storage/session-continuation implementation
+  handoff was present.
+- Result: created
+  `docs/developer/implementation/storage-session-continuation-core-implementation.md`
+  with the class diagram, file map, implementation steps, in-memory TDD commands,
+  dependencies, deferrals, and documentation targets.
+- Open decisions or blockers: solve should wait until `T004_01` provides
+  runtime/session/event source types; file-backed persistence remains deferred.
+- Next recommended phase: `/solve-task t004_07` after `T004_01` is solved.
