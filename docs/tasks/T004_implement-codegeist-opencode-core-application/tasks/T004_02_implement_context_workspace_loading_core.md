@@ -60,6 +60,16 @@ Planned solve-phase tests:
 - `ContextManifestOrderingTests`
 - `ContextWorkspaceDependencyTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalents: `GrepTool`, `GlobTool`, `ListDirectoryTool`,
+  `FileSystemTools.read`, and `Skills` path loading.
+- Classification: direct internal candidates after Codegeist validates workspace
+  roots, path safety, ignored/generated filters, result limits, and output shape.
+- Specification consequence: planning must decide whether to reuse these utilities
+  privately or keep a pure Codegeist implementation, but Codegeist request/result
+  types and context-profile ownership remain independent.
+
 ## Dependencies And Boundaries
 
 - Planning may consume the planned runtime/session/event package boundaries and
@@ -118,4 +128,54 @@ planned narrow tests and affected broader checks.
   dependencies, deferrals, and documentation targets.
 - Open decisions or blockers: solving should wait until `T004_01` provides the
   runtime/session/event source types this plan references, or narrow explicitly.
+- Next recommended phase: `/solve-task t004_02` after `T004_01` is solved.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_02` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils docs for `GrepTool`, `GlobTool`,
+  `FileSystemTools`, and the adoption guide's first practical uses table.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked against these direct-use candidates before solving.
+- Result: identified read-only search/list/read utilities as possible private
+  implementation dependencies behind Codegeist workspace policy.
+- Open decisions or blockers: `/plan-task t004_02` must choose direct use, an
+  adapter, or no Agent Utils use for each context/workspace operation.
+- Next recommended phase: `/plan-task t004_02` after `T004_01` remains current.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_02` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep the planned Codegeist context/workspace contracts and allow
+  direct private use of Agent Utils read-only search/list/read utilities only after
+  Codegeist workspace policy validates the request.
+- Duplicate check result:
+  `docs/developer/implementation/context-workspace-loading-core-implementation.md`
+  already exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Agent Utils adoption guide, and Agent Utils `GrepTool`,
+  `GlobTool`, `ListDirectoryTool`, and `FileSystemTools` docs.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: solve may use Agent Utils as private implementation detail for search,
+  glob, listing, or file read, but must keep Codegeist request/result records,
+  path validation, skip reasons, and manifest ordering authoritative.
+- Open decisions or blockers: none beyond final class/API names from solved
+  `T004_01`.
 - Next recommended phase: `/solve-task t004_02` after `T004_01` is solved.

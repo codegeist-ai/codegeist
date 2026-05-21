@@ -130,3 +130,15 @@ None. The solve phase may choose the exact Spring Shell option syntax that works
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, CLI prompt command source-generation contract, and T004_01 implementation plan.
 - Next recommended phase: `/solve-task t004_08` after `T004_01` is solved enough to provide runtime APIs.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: `AskUserQuestionTool`, `CommandLineQuestionHandler`, and
+  bundled agent prompt resources.
+- Plan decision: keep Spring Shell `plan` and `build` command behavior as a
+  Codegeist-owned runtime client boundary.
+- Solve constraint: do not use Agent Utils question handling as the command
+  contract; it may inform later interactive clarification or approval UX only.
+- Test impact: existing adapter and command-registration tests remain the right
+  verification scope.
+- Result: the plan remains implementation-ready after `T004_01` is solved.

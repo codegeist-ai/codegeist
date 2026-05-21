@@ -56,6 +56,16 @@ Planned solve-phase tests:
 - `InMemoryStorageTests`
 - `StorageBoundaryDependencyTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalents: `AutoMemoryTools`, `AutoMemoryToolsAdvisor`,
+  `TaskRepository`, `DefaultTaskRepository`, and `BackgroundTask`.
+- Classification: concept reference only for T004 storage/session continuation.
+- Specification consequence: Codegeist session continuation, message/event
+  projections, artifact references, redaction, retention, health, and storage ports
+  remain independent; Agent Utils file-based memory and background task storage do
+  not become the session store.
+
 ## Acceptance Criteria
 
 - Selected in-memory storage and session continuation behavior is implemented and
@@ -102,4 +112,52 @@ planned narrow tests and affected broader checks.
   dependencies, deferrals, and documentation targets.
 - Open decisions or blockers: solve should wait until `T004_01` provides
   runtime/session/event source types; file-backed persistence remains deferred.
+- Next recommended phase: `/solve-task t004_07` after `T004_01` is solved.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_07` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils `AutoMemoryTools`,
+  `AutoMemoryToolsAdvisor`, and task repository source names.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked to keep memory helpers separate from Codegeist session storage.
+- Result: classified Agent Utils memory and task repositories as references only,
+  not direct storage-port implementations.
+- Open decisions or blockers: `/plan-task t004_07` must decide whether to cite
+  Agent Utils memory conventions while keeping in-memory-first Codegeist storage.
+- Next recommended phase: `/plan-task t004_07` after `T004_01` remains current.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_07` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep Codegeist in-memory session continuation and projection
+  ports independent from Agent Utils memory and task repositories.
+- Duplicate check result:
+  `docs/developer/implementation/storage-session-continuation-core-implementation.md`
+  already exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Agent Utils adoption guide, and Agent Utils
+  `AutoMemoryTools`, `AutoMemoryToolsAdvisor`, and task repository docs/source
+  names.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, class diagram, or tests changed; Agent Utils memory
+  conventions remain references only and must not become session storage.
+- Open decisions or blockers: none beyond `T004_01` source type names.
 - Next recommended phase: `/solve-task t004_07` after `T004_01` is solved.

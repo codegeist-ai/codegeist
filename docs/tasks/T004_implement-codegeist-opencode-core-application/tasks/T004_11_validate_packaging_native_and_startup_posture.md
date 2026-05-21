@@ -55,6 +55,15 @@ Planned solve-phase optional tests:
 - `PackagingCheckResultTests`
 - `NativeBlockerClassificationTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalent: none beyond treating the Agent Utils dependency itself as a
+  packaging, startup, classpath, and native-image risk.
+- Classification: no focused Agent Utils equivalent.
+- Specification consequence: planning should verify or classify Agent Utils impact
+  only when the implemented core actually uses it; Agent Utils is not a packaging
+  helper or startup validation framework.
+
 ## Acceptance Criteria
 
 - Packaging and startup posture is verified with explicit `passed`, `skipped`, or
@@ -103,4 +112,52 @@ planned packaging, startup, and smoke commands.
   targets.
 - Open decisions or blockers: solve depends on enough implemented behavior to make
   startup smoke meaningful; native checks may be skipped with concrete reason.
+- Next recommended phase: `/solve-task t004_11` after enough core behavior exists.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_11` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils analysis report dependency and
+  native/startup risk notes.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked only if earlier solves adopt Agent Utils utilities.
+- Result: no Agent Utils packaging equivalent was selected.
+- Open decisions or blockers: `/plan-task t004_11` must decide whether Agent Utils
+  is an actual dependency under test or only a deferred adoption note.
+- Next recommended phase: `/plan-task t004_11` after enough core behavior exists.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_11` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep the packaging/native/startup validation plan and add Agent
+  Utils only as a dependency impact to report if earlier solve phases adopt it.
+- Duplicate check result:
+  `docs/developer/implementation/packaging-native-startup-validation.md` already
+  exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, build/release strategy, native packaging posture, and
+  Agent Utils analysis report.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, optional diagnostics, or smoke commands changed; solve
+  must classify Agent Utils as actual dependency impact only if it is used by
+  earlier implementation tasks.
+- Open decisions or blockers: none at planning depth; solve still depends on enough
+  implemented core behavior for meaningful smoke checks.
 - Next recommended phase: `/solve-task t004_11` after enough core behavior exists.

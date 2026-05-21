@@ -66,6 +66,17 @@ Planned solve-phase tests:
 - `RuntimeSessionEventContractTests`
 - `RuntimeSessionEventDependencyTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalent: `TaskCall`, `BackgroundTask`, and `TodoWriteTool` event
+  handling are useful concept references only.
+- Classification: concept reference; no direct Agent Utils equivalent for
+  Codegeist runtime, session, turn, message, event-envelope, or projection
+  contracts.
+- Specification consequence: keep all public runtime/session/event types in
+  Codegeist packages and do not model them on Agent Utils task, todo, or subagent
+  repository types.
+
 First failing test command for the solve phase:
 
 ```bash
@@ -144,4 +155,54 @@ The planning phase must define Java test commands for the solve phase.
   dependencies, deferrals, and documentation update plan remain current for the
   first runtime/session/event solve phase.
 - Open decisions or blockers: none at planning depth.
+- Next recommended phase: `/solve-task t004_01`.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_01` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered:
+  `docs/developer/spring-ai-agent-utils-adoption.md`, Agent Utils `TaskTool`
+  documentation, and Agent Utils task repository source names.
+- Upstream phase dependency: none for specification; the existing implementation
+  plan needs a recheck because this equivalence scan is new planning input.
+- Result: no direct Agent Utils replacement was selected for runtime/session/event
+  core.
+- Open decisions or blockers: `/plan-task t004_01` must decide whether the
+  implementation handoff needs any note about task/todo concepts, or remains
+  unchanged.
+- Next recommended phase: `/plan-task t004_01`.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_01` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep the existing runtime/session/event implementation plan and
+  record Agent Utils task/todo surfaces as concept references only.
+- Duplicate check result:
+  `docs/developer/implementation/runtime-session-event-core-implementation.md`
+  already exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Agent Utils adoption guide, and Agent Utils task/tool
+  docs.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, class diagram, or TDD command changed; solve must not
+  expose Agent Utils task, todo, or background-task types in Codegeist runtime
+  contracts.
+- Open decisions or blockers: none.
 - Next recommended phase: `/solve-task t004_01`.

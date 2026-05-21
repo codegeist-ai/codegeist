@@ -194,3 +194,18 @@ None. Final type names may be adjusted only to match the solved `T004_01` contra
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, context/workspace source-generation contract, and T004_01 implementation plan.
 - Next recommended phase: `/solve-task t004_02` after `T004_01` has produced the runtime/session/event source types this plan references.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: `GrepTool`, `GlobTool`, `ListDirectoryTool`,
+  `FileSystemTools.read`, and `Skills` path loading.
+- Plan decision: the solve phase may use these utilities as private implementation
+  details only after `DefaultWorkspacePathPolicy` validates roots, ignored or
+  generated paths, secret-like files, symlink escape, size bounds, and result
+  limits.
+- Target-file impact: no new public packages are added; optional Agent Utils calls
+  belong inside planned context/workspace services or a package-private helper, not
+  in Codegeist public records.
+- Test impact: keep the existing temporary-directory tests and assert Codegeist
+  request/result behavior, not Agent Utils internals.
+- Result: the plan remains implementation-ready after `T004_01` is solved.

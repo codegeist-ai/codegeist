@@ -484,14 +484,13 @@
   which names the first runtime/session/event Java files, UML class diagram, TDD
   sequence, targeted Maven commands, architecture-doc update, dependencies, and
   non-goals. No Java source or tests have been generated yet.
-- The full T004 task family has been rechecked with `/specify-task` semantics and
-  then planned with `/plan-task` semantics. The parent and `T004_01` through
-  `T004_12` now record full-family specification and planning passes. `T004_01`
-  keeps its existing runtime/session/event implementation handoff, and `T004_02`
-  through `T004_12` now have implementation handoffs under
-  `docs/developer/implementation/` covering class diagrams, file maps, TDD or
-  validation commands, dependencies, deferrals, and documentation targets. No Java
-  source or tests have been generated yet.
+- The full T004 task family has been rechecked with `/specify-task` semantics,
+  planned with `/plan-task` semantics, re-specified against Spring AI Agent Utils,
+  and re-planned after that equivalence scan. The parent T004 task contains an
+  Agent Utils equivalence matrix for `T004_01` through `T004_12`, and every child
+  task plus every implementation handoff under `docs/developer/implementation/`
+  records the concrete planning consequence. No Java source or tests have been
+  generated yet.
 - Next recommended phase: `/solve-task t004_01` to implement the planned
   runtime/session/event core with TDD.
 - The local `/analyse-project` workflow has created

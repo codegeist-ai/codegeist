@@ -139,3 +139,16 @@ None. Native execution may be skipped with reason when the solve environment can
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, build/release strategy, and native packaging posture.
 - Next recommended phase: `/solve-task t004_11` after enough core behavior exists for meaningful startup smoke.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalent: no packaging helper equivalent; Agent Utils is only a
+  dependency impact to classify if earlier solve phases adopt it.
+- Plan decision: keep the existing packaging, startup, JVM jar, and optional native
+  validation ladder unchanged.
+- Solve constraint: report Agent Utils impact only when it is actually present in
+  implemented code or runtime dependencies.
+- Test impact: existing startup, build, native posture, and optional diagnostic
+  checks remain the right verification scope.
+- Result: the plan remains implementation-ready after enough core behavior exists
+  for meaningful smoke checks.

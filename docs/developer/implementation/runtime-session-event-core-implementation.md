@@ -351,3 +351,14 @@ None.
   specification check result in `T004_01`.
 - Result: one implementation-ready plan for the runtime/session/event core.
 - Recommended next phase: `/solve-task t004_01`.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalent: `TaskCall`, `BackgroundTask`, and `TodoWriteTool` are
+  concept references only.
+- Plan decision: keep the existing Codegeist runtime/session/event file map, class
+  diagram, TDD sequence, and verification commands unchanged.
+- Solve constraint: do not expose Agent Utils task, todo, subagent, or background
+  task types through `ai.codegeist.runtime`, `ai.codegeist.session`, or
+  `ai.codegeist.event`.
+- Result: the plan remains implementation-ready.

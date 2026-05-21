@@ -52,6 +52,15 @@ Planned solve-phase tests:
 - `CoreReplacementReadinessTests`
 - `ReadinessReportTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalent: the overall Agent Utils adoption boundary guide and T004
+  equivalence matrix in the parent task.
+- Classification: evidence input, not a runtime readiness substitute.
+- Specification consequence: readiness must report which Agent Utils candidates
+  were adopted directly, wrapped, deferred, rejected, or unused, but readiness
+  cannot depend on raw Agent Utils architecture bypassing Codegeist boundaries.
+
 ## Acceptance Criteria
 
 - Readiness is reported as passed, skipped with reasons, or failed with blockers
@@ -101,4 +110,56 @@ planned readiness checks and affected broad verification.
   targets.
 - Open decisions or blockers: solve depends on finalized `T004_01` through
   `T004_11`; readiness claims must not exceed implemented and verified behavior.
+- Next recommended phase: `/solve-task t004_12` after `T004_11` is finalized.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_12` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered:
+  `docs/developer/spring-ai-agent-utils-adoption.md` and the parent T004 Agent
+  Utils equivalence matrix.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked so readiness reporting includes the final Agent Utils adoption state.
+- Result: classified Agent Utils adoption as readiness evidence only, not a
+  replacement-readiness shortcut.
+- Open decisions or blockers: `/plan-task t004_12` must define how to report Agent
+  Utils direct use, adapters, deferrals, and rejected candidates after all prior
+  T004 solves finish.
+- Next recommended phase: `/plan-task t004_12` after `T004_11` is finalized.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_12` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep the readiness validation plan and require its readiness
+  report to summarize final Agent Utils adoption outcomes from all earlier T004
+  tasks.
+- Duplicate check result:
+  `docs/developer/implementation/core-replacement-readiness-validation.md` already
+  exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Codegeist/OpenCode parity docs, Agent Utils adoption
+  guide, and the parent T004 equivalence matrix.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, class diagram, or readiness tests changed; solve must
+  include Agent Utils direct-use, adapter, deferred, rejected, and unused outcomes
+  in readiness evidence without weakening Codegeist boundaries.
+- Open decisions or blockers: none at planning depth; solve still depends on
+  finalized `T004_01` through `T004_11`.
 - Next recommended phase: `/solve-task t004_12` after `T004_11` is finalized.

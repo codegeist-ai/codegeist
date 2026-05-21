@@ -81,7 +81,9 @@ verification command before marking the task solved.
 - `T004_11_validate_packaging_native_and_startup_posture.md`
 - `T004_12_validate_core_replacement_readiness.md`
 
-All child tasks have been specified and planned. None are solved yet.
+All child tasks have been specified and planned. The Agent Utils equivalence scan
+below has been folded into each child implementation handoff, so solve phases may
+start in dependency order.
 
 ## Derivation Map
 
@@ -99,6 +101,39 @@ All child tasks have been specified and planned. None are solved yet.
 | `T004_10` | OpenCode parity docs and finalized T004 core implementation | Validate selected OpenCode-style CLI workflows and close parity gaps. |
 | `T004_11` | Build/release/binary smoke strategy and implemented core behavior | Validate packaging, startup, JVM jar, native posture, and binary smoke readiness. |
 | `T004_12` | All finalized T004 implementation tasks | Validate that Codegeist can replace OpenCode for selected CLI/TUI-oriented core workflows. |
+
+## Spring AI Agent Utils Equivalence Scan
+
+This specification pass compared every T004 task with
+`spring-ai-community/spring-ai-agent-utils` using the local third-party workspace
+under `docs/third-party/spring-ai-agent-utils/` and the adoption guide in
+`docs/developer/spring-ai-agent-utils-adoption.md`.
+
+Classification rules for later planning:
+
+- `Direct candidate` means the solve phase may call the Agent Utils class as a
+  private implementation detail after Codegeist policy validates the request.
+- `Adapter candidate` means a Codegeist mapper or callback boundary is probably
+  needed before provider/tool exposure.
+- `Concept reference` means use the upstream behavior and tests for guidance, not
+  as Codegeist public architecture.
+- `No equivalent` means keep the planned Codegeist-owned contract and do not add an
+  Agent Utils dependency only for that task.
+
+| Child task | Closest Agent Utils equivalent | Classification | Specification consequence |
+| --- | --- | --- | --- |
+| `T004_01` runtime/session/event | `TaskCall`, `BackgroundTask`, `TodoWriteTool` event handling concepts | Concept reference only | Keep runtime, session, event, turn, message, and envelope contracts Codegeist-owned; do not model them on Agent Utils task or todo types. |
+| `T004_02` context/workspace loading | `GrepTool`, `GlobTool`, `ListDirectoryTool`, `FileSystemTools.read`, `Skills` path loading | Direct candidates behind workspace policy | Planning must decide where Codegeist validates roots, ignored/generated paths, size bounds, and output normalization before calling any utility. |
+| `T004_03` provider/Spring AI adapter | Agent Utils `ChatClient.Builder` usages in subagents and memory advisor | Concept reference only | Keep provider configuration on Spring AI and Codegeist contracts; do not treat Agent Utils as provider configuration infrastructure. |
+| `T004_04` tool/permission/workspace | Agent Utils tool catalog plus `AskUserQuestionTool` | Adapter/concept candidates | Use Agent Utils tool definitions as catalog evidence, but Codegeist owns descriptors, mode gates, permission decisions, workspace target validation, and result mapping. |
+| `T004_05` patch/edit proposal | `FileSystemTools.edit` and `FileSystemTools.write` | Deferred adapter candidate | Do not expose direct writes; planning must preserve proposal, approval, freshness, and typed apply-result boundaries before any file mutation utility is considered. |
+| `T004_06` controlled shell | `ShellTools` and `AgentEnvironment` | Deferred adapter candidate | Keep fake executor first; any real process execution must stay behind Codegeist shell request, cwd, permission, timeout, and bounded-output policy. |
+| `T004_07` storage/session continuation | `AutoMemoryTools`, `AutoMemoryToolsAdvisor`, `TaskRepository`, `DefaultTaskRepository` | Concept reference only | Use memory and task repository ideas only as references; Codegeist session continuation, redaction, projection, and storage ports remain independent. |
+| `T004_08` CLI prompt commands | `AskUserQuestionTool`, `CommandLineQuestionHandler`, bundled agent prompts | Concept reference only | Spring Shell command behavior stays Codegeist-owned; Agent Utils may inform later interactive question or approval UX, not `plan`/`build` command contracts. |
+| `T004_09` end-to-end agent loop | `TaskTool`, `TaskOutputTool`, Claude/A2A subagent SPI, `AutoMemoryToolsAdvisor`, `SkillsTool` | Deferred concept/reference | Minimal loop stays runtime-owned with fakes first; nested subagents, skills, and memory advisors are later gated surfaces unless explicitly planned. |
+| `T004_10` CLI parity workflows | Agent Utils Claude Code-inspired tools, built-in subagents, and prompt resources | Behavior reference | Use as secondary Java/Spring evidence for Claude Code-like workflows; OpenCode parity docs remain the primary workflow target. |
+| `T004_11` packaging/native/startup | No focused equivalent beyond the dependency itself | No equivalent | Planning must treat Agent Utils as a dependency and native/startup risk to verify, not as a packaging helper. |
+| `T004_12` core replacement readiness | The overall Agent Utils adoption boundary guide | Evidence input | Readiness reporting must mention which Agent Utils candidates were adopted, wrapped, deferred, or rejected, but readiness cannot depend on raw Agent Utils architecture. |
 
 ## Scope
 
@@ -219,6 +254,61 @@ Taskfile commands from `app/codegeist/cli` and report timing in solve results.
 - Open decisions or blockers: none at planning depth; solve phases must still
   respect each task's upstream dependencies and adjust only for concrete source
   facts discovered during implementation.
+- Next recommended phase: `/solve-task t004_01`.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004` across the full T004 task family.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every task in T004, using
+  `https://github.com/spring-ai-community/spring-ai-agent-utils` as the reference.
+- Parent task considered: this file.
+- Adjacent child task docs considered: `T004_01` through `T004_12` under
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered:
+  `docs/third-party/spring-ai-agent-utils/README.md`,
+  `docs/third-party/spring-ai-agent-utils/ANALYSIS_REPORT.md`,
+  `docs/developer/spring-ai-agent-utils-adoption.md`, and Agent Utils docs for
+  `FileSystemTools`, `GrepTool`, `GlobTool`, `ShellTools`, `TaskTool`,
+  `AutoMemoryTools`, `AutoMemoryToolsAdvisor`, and `AskUserQuestionTool`.
+- Upstream phase dependency: none for specification; existing T004 planning
+  outputs are now stale enough to need a plan recheck before solving.
+- Result: recorded the Agent Utils equivalence matrix and kept Codegeist-owned
+  contracts independent from Agent Utils public architecture.
+- Open decisions or blockers: each child `/plan-task` recheck must decide whether
+  to keep the existing implementation plan unchanged, add a direct internal Agent
+  Utils call, add a Codegeist adapter, or explicitly defer the equivalent.
+- Next recommended phase: `/plan-task t004_01` to recheck the first implementation
+  handoff against the Agent Utils equivalence scan before solving.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004` across the full T004 task family.
+- Context or instructions considered: user requested the planning recheck for all
+  T004 tasks after the Agent Utils equivalence scan.
+- Parent task considered: this file.
+- Child task docs considered: `T004_01` through `T004_12` under
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: existing implementation handoffs under
+  `docs/developer/implementation/`, `docs/developer/spring-ai-agent-utils-adoption.md`,
+  and Spring AI Agent Utils third-party analysis docs.
+- Selected option: sharpen the existing T004 child implementation tasks and their
+  handoffs instead of creating duplicates.
+- Duplicate check result: matching implementation handoff files already existed for
+  every T004 child task.
+- Result: each implementation handoff now records how the closest Agent Utils
+  equivalent affects the concrete plan, tests, deferrals, and solve boundary.
+- Open decisions or blockers: none at planning depth; solve phases must still
+  respect task dependency order and may adjust implementation details only for
+  concrete source/API facts.
 - Next recommended phase: `/solve-task t004_01`.
 
 ## Creation Note

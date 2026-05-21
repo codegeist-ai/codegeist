@@ -60,6 +60,16 @@ Planned solve-phase tests:
 - `SpringAiProviderMappingTests`
 - `ProviderBoundaryDependencyTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalent: Agent Utils uses Spring AI `ChatClient.Builder` in subagent
+  executors and memory advisors, but it does not provide Codegeist provider
+  configuration infrastructure.
+- Classification: concept reference only.
+- Specification consequence: keep provider ids, model refs, capabilities,
+  options, credentials, and adapter records Codegeist-owned and map them directly
+  to Spring AI rather than to Agent Utils runtime concepts.
+
 ## Acceptance Criteria
 
 - Provider configuration and adapter boundaries selected by the plan are
@@ -107,4 +117,55 @@ planned narrow tests and affected broader checks.
   dependencies, deferrals, and documentation targets.
 - Open decisions or blockers: solve may adjust Spring AI adapter imports to match
   Spring AI `2.0.0-M6`, but public Codegeist provider contracts remain stable.
+- Next recommended phase: `/solve-task t004_03` after `T004_01` is solved.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_03` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils `TaskTool`, `AutoMemoryToolsAdvisor`,
+  and adoption-guide provider exposure notes.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked because the scan confirms no provider-config equivalent should be
+  inserted.
+- Result: no Agent Utils provider configuration equivalent was selected.
+- Open decisions or blockers: `/plan-task t004_03` should keep Spring AI adapter
+  boundaries stable and mention Agent Utils only as provider-callback risk where
+  relevant.
+- Next recommended phase: `/plan-task t004_03` after runtime dependencies remain
+  current.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_03` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep the provider/Spring AI adapter plan unchanged and treat
+  Agent Utils only as provider-callback boundary evidence.
+- Duplicate check result:
+  `docs/developer/implementation/provider-spring-ai-adapter-core-implementation.md`
+  already exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Agent Utils adoption guide, and Agent Utils provider
+  exposure notes.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, class diagram, or offline mapper tests changed; solve
+  must keep provider configuration mapped directly to Spring AI behind Codegeist
+  contracts, not through Agent Utils architecture.
+- Open decisions or blockers: none beyond Spring AI `2.0.0-M6` API names during
+  solve.
 - Next recommended phase: `/solve-task t004_03` after `T004_01` is solved.

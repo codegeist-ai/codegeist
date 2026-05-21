@@ -56,6 +56,15 @@ Planned solve-phase tests:
 - `PromptCommandRegistrationTests`
 - `PromptCommandBoundaryDependencyTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalents: `AskUserQuestionTool`, `CommandLineQuestionHandler`, and
+  bundled agent prompt resources.
+- Classification: concept reference only for CLI prompt commands.
+- Specification consequence: Spring Shell `plan` and `build` commands remain
+  Codegeist-owned runtime clients. Agent Utils question handling can inform later
+  interactive clarification or approval UX, but it is not the command contract.
+
 ## Acceptance Criteria
 
 - `plan` and `build` command behavior selected by the plan is implemented and
@@ -103,4 +112,53 @@ planned narrow tests and affected broader checks.
 - Open decisions or blockers: solve should wait until `T004_01` provides runtime
   APIs; exact Spring Shell option syntax can be chosen during solve without
   changing the runtime boundary.
+- Next recommended phase: `/solve-task t004_08` after `T004_01` is solved.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_08` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils `AskUserQuestionTool`
+  documentation and `CommandLineQuestionHandler` source name.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked so question/approval utilities do not leak into the `plan`/`build`
+  command contract.
+- Result: identified Agent Utils question handling as a later UX reference, not a
+  direct CLI command equivalent.
+- Open decisions or blockers: `/plan-task t004_08` must decide whether the current
+  CLI implementation handoff needs only a non-goal note or a future follow-up.
+- Next recommended phase: `/plan-task t004_08` after `T004_01` remains current.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_08` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep Spring Shell `plan` and `build` command contracts unchanged
+  and treat Agent Utils question handling as later interactive UX reference only.
+- Duplicate check result:
+  `docs/developer/implementation/cli-prompt-command-implementation.md` already
+  exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Agent Utils adoption guide, and Agent Utils
+  `AskUserQuestionTool` documentation.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, class diagram, or tests changed; solve must keep CLI as
+  a runtime client and must not use Agent Utils question handling as the prompt
+  command boundary.
+- Open decisions or blockers: none beyond `T004_01` runtime API names.
 - Next recommended phase: `/solve-task t004_08` after `T004_01` is solved.

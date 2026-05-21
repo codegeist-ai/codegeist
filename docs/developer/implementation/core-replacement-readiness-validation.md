@@ -129,3 +129,17 @@ None. The readiness verdict must follow the evidence available after `T004_11` f
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, Codegeist/OpenCode parity doc, packaging plans, and all T004 implementation plan dependencies.
 - Next recommended phase: `/solve-task t004_12` after `T004_11` is finalized.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalent: the parent T004 equivalence matrix and
+  `docs/developer/spring-ai-agent-utils-adoption.md` are readiness evidence inputs.
+- Plan decision: keep the readiness validation scenarios and require the readiness
+  report to summarize final Agent Utils outcomes across T004.
+- Solve constraint: report each candidate as direct use, adapter use, deferred,
+  rejected, or unused without letting raw Agent Utils architecture bypass Codegeist
+  runtime, provider, tool, permission, workspace, event, session, storage, API, or
+  UI contracts.
+- Test impact: existing readiness and report tests remain the right verification
+  scope.
+- Result: the plan remains implementation-ready after `T004_11` is finalized.

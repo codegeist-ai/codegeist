@@ -149,3 +149,16 @@ None. Real apply execution is intentionally deferred.
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, patch/edit source-generation contract, and `T004_04` plan.
 - Next recommended phase: `/solve-task t004_05` after `T004_04` is solved enough to provide policy dependencies.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: `FileSystemTools.write` and `FileSystemTools.edit`.
+- Plan decision: keep this solve slice pure Codegeist proposal and apply-result
+  contracts; defer real Agent Utils file mutation until a later mediated adapter is
+  explicitly planned.
+- Solve constraint: do not call write/edit utilities while implementing proposal
+  identity, freshness, approval binding, typed failures, and bounded summaries.
+- Test impact: existing approval-binding and typed-failure tests remain the right
+  verification scope.
+- Result: the plan remains implementation-ready after `T004_04` policy dependencies
+  are available.

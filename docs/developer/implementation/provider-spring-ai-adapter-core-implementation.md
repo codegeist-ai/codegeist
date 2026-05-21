@@ -198,3 +198,15 @@ None. Exact Spring AI mapping imports may be adjusted during solve to match Spri
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, provider source-generation contract, provider blueprint, and T004_01 implementation plan.
 - Next recommended phase: `/solve-task t004_03` after `T004_01` has produced the runtime/session/event source types this plan references.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalent: no provider-configuration equivalent; Agent Utils
+  `ChatClient.Builder` usage is only provider-callback boundary evidence.
+- Plan decision: keep provider configuration mapped from Codegeist provider records
+  directly to Spring AI APIs inside `ai.codegeist.provider.springai`.
+- Solve constraint: do not make Agent Utils the provider configuration layer and do
+  not register raw Agent Utils tool callbacks from this task.
+- Test impact: existing offline validation and Spring AI mapper tests remain the
+  right verification scope.
+- Result: the plan remains implementation-ready after `T004_01` is solved.

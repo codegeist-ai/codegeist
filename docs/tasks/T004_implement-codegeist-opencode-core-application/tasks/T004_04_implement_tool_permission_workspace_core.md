@@ -63,6 +63,17 @@ Planned solve-phase tests:
 - `WorkspaceToolPolicyTests`
 - `ToolBoundaryDependencyTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalents: Agent Utils tool catalog, including `FileSystemTools`,
+  `GrepTool`, `GlobTool`, `ListDirectoryTool`, `ShellTools`, `SmartWebFetchTool`,
+  `BraveWebSearchTool`, `SkillsTool`, `TaskTool`, `TodoWriteTool`, and
+  `AskUserQuestionTool`.
+- Classification: adapter and concept candidates, not a permission engine.
+- Specification consequence: use Agent Utils tool shapes as evidence for tool
+  metadata and tests, but Codegeist owns descriptors, mode gates, permission
+  decisions, workspace target validation, output references, and typed failures.
+
 ## Acceptance Criteria
 
 - Selected policy and workspace core behavior is implemented and tested.
@@ -109,5 +120,57 @@ planned narrow tests and affected broader checks.
   dependencies, deferrals, and documentation targets.
 - Open decisions or blockers: solve should use `T004_01` and `T004_02` source types
   when available and must not introduce concrete tool executors.
+- Next recommended phase: `/solve-task t004_04` after runtime and workspace
+  dependencies are available.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_04` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils analysis report tool-exposure
+  section and adoption-guide provider exposure and result-handling sections.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked for tool-catalog and callback-boundary implications.
+- Result: identified Agent Utils tools as catalog evidence and possible private
+  implementations, but not as Codegeist permission or workspace policy.
+- Open decisions or blockers: `/plan-task t004_04` must decide whether a
+  Codegeist callback or adapter layer is needed before any Agent Utils tool is
+  exposed to Spring AI providers.
+- Next recommended phase: `/plan-task t004_04` after runtime and workspace
+  dependencies remain current.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_04` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep Codegeist tool, permission, and workspace contracts as the
+  public boundary and add an optional future `ai.codegeist.tool.agentutils` adapter
+  only if solve needs to map Agent Utils tool output into Codegeist `ToolResult`.
+- Duplicate check result:
+  `docs/developer/implementation/tool-permission-workspace-core-implementation.md`
+  already exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Agent Utils adoption guide, and Agent Utils tool catalog
+  docs.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: solve must not register raw Agent Utils tools with providers; any Agent
+  Utils utility must be mediated by Codegeist descriptors, permissions, workspace
+  policy, bounded output, and typed failure mapping.
+- Open decisions or blockers: none beyond final `T004_01` and `T004_02` type names.
 - Next recommended phase: `/solve-task t004_04` after runtime and workspace
   dependencies are available.

@@ -52,6 +52,15 @@ Planned solve-phase tests:
 - `CliWorkflowSmokeTests`
 - `ParityGapReportTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalents: Agent Utils Claude Code-inspired tool docs, built-in
+  subagents, and prompt resources.
+- Classification: behavior reference only.
+- Specification consequence: use Agent Utils as secondary Java/Spring evidence for
+  Claude Code-like workflow behavior, but keep OpenCode parity docs and Codegeist
+  implemented behavior as the primary validation target.
+
 ## Acceptance Criteria
 
 - Selected workflows are verified or gaps are recorded with precise follow-ups.
@@ -96,4 +105,54 @@ planned workflow and smoke tests.
   commands, dependencies, deferrals, and documentation targets.
 - Open decisions or blockers: solve depends on solved `T004_09`; broader parity
   gaps must become follow-up task notes instead of hidden scope expansion.
+- Next recommended phase: `/solve-task t004_10` after `T004_09` is solved.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_10` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils analysis report, built-in subagent
+  docs, and tool documentation for Claude Code-inspired workflows.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked to decide whether Agent Utils behavior evidence changes the parity
+  workflow list or only the gap-report notes.
+- Result: identified Agent Utils as a secondary Java/Spring behavior reference, not
+  the parity source of truth.
+- Open decisions or blockers: `/plan-task t004_10` must keep OpenCode parity
+  primary and record any Agent Utils-derived comparison as supporting evidence.
+- Next recommended phase: `/plan-task t004_10` after `T004_09` is solved.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_10` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep OpenCode parity workflows as the primary validation target
+  and use Agent Utils only as secondary Java/Spring behavior evidence.
+- Duplicate check result:
+  `docs/developer/implementation/opencode-parity-cli-workflow-validation.md`
+  already exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, OpenCode parity docs, Agent Utils analysis report, and
+  Agent Utils built-in subagent/tool docs.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, class diagram, or workflow tests changed; solve should
+  mention Agent Utils only when it helps explain a Java/Spring equivalent or
+  follow-up gap.
+- Open decisions or blockers: none at planning depth; solve still depends on
+  solved `T004_09`.
 - Next recommended phase: `/solve-task t004_10` after `T004_09` is solved.

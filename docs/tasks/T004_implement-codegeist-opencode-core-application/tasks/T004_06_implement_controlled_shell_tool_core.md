@@ -58,6 +58,15 @@ Planned solve-phase tests:
 - `FakeShellExecutorTests`
 - `ShellBoundaryDependencyTests`
 
+## Spring AI Agent Utils Equivalent
+
+- Closest equivalents: `ShellTools` and `AgentEnvironment`.
+- Classification: deferred adapter candidates because process execution is
+  high-risk.
+- Specification consequence: keep fake execution first. Any real process execution
+  must remain behind Codegeist command purpose, destructive posture, cwd, env,
+  stdin, timeout, cancellation, permission, and bounded-output contracts.
+
 ## Acceptance Criteria
 
 - Selected controlled shell core is implemented and tested without unsafe process
@@ -106,5 +115,56 @@ planned narrow tests and affected broader checks.
 - Open decisions or blockers: solve should wait until `T004_04` provides policy,
   permission, workspace target, and output-ref contracts; real process execution
   remains deferred.
+- Next recommended phase: `/solve-task t004_06` after `T004_04` is solved enough
+  to provide policy dependencies.
+
+## Agent Utils Equivalence Specification Result
+
+- Phase command: `/specify-task T004_06` during the full T004 Agent Utils
+  equivalence pass.
+- Context or instructions considered: user requested a suitable Spring AI Agent
+  Utils equivalent for every T004 task.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Third-party evidence considered: Agent Utils `ShellTools` documentation,
+  `AgentEnvironment` source name, and adoption-guide shell warnings.
+- Upstream phase dependency: none for specification; existing planning must be
+  rechecked before solving because `ShellTools` is now classified as deferred and
+  mediated only.
+- Result: identified `ShellTools` as the closest equivalent while preserving the
+  fake-executor-first Codegeist shell boundary.
+- Open decisions or blockers: `/plan-task t004_06` must decide whether any real
+  process smoke remains out of scope or is mediated by a narrow adapter.
+- Next recommended phase: `/plan-task t004_06` after `T004_04` remains current.
+
+## Agent Utils Planning Recheck Result
+
+- Phase command: `/plan-task T004_06` during the full T004 Agent Utils planning
+  recheck.
+- Context or instructions considered: user requested planning for all T004 tasks
+  after the Agent Utils equivalence scan.
+- Selected option: keep fake executor as the solve-phase implementation and defer
+  Agent Utils `ShellTools` to a later real-process adapter after Codegeist shell
+  policy exists.
+- Duplicate check result:
+  `docs/developer/implementation/controlled-shell-tool-core-implementation.md`
+  already exists and remains the authoritative solve handoff.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, adjacent child tasks, the existing
+  implementation handoff, Agent Utils adoption guide, and Agent Utils `ShellTools`
+  docs.
+- Upstream phase dependency: satisfied by the Agent Utils equivalence
+  specification result in this task.
+- Result: no target files, class diagram, or tests changed; solve must not run real
+  shell processes by default and must keep timeout, cwd, env, stdin, permission,
+  and output policy Codegeist-owned.
+- Open decisions or blockers: none beyond `T004_04` policy dependencies.
 - Next recommended phase: `/solve-task t004_06` after `T004_04` is solved enough
   to provide policy dependencies.

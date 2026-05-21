@@ -202,3 +202,17 @@ None. The solve phase may adjust package imports to match the final `T004_01` an
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, tool/permission/workspace source-generation contract, and dependent T004 implementation plans.
 - Next recommended phase: `/solve-task t004_04` after `T004_01` and preferably `T004_02` have provided runtime and workspace primitives.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: the Agent Utils tool catalog and `AskUserQuestionTool`
+  are adapter or concept candidates, not the Codegeist permission engine.
+- Plan decision: keep `ai.codegeist.tool`, `ai.codegeist.permission`, and
+  `ai.codegeist.workspace` as the public contract. Add an Agent Utils adapter only
+  later if a concrete solve step needs typed result mapping from a utility.
+- Target-file impact: no raw Agent Utils tool objects are planned as provider
+  callbacks in this task.
+- Test impact: existing policy and workspace tests must prove Codegeist mode,
+  permission, descriptor, workspace, bounded-output, and typed-failure behavior.
+- Result: the plan remains implementation-ready after runtime/workspace
+  dependencies are available.

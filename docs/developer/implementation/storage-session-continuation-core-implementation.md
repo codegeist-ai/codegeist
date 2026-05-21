@@ -165,3 +165,15 @@ None. File-backed persistence remains deferred.
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, storage source-generation contract, storage posture doc, and T004_01 implementation plan.
 - Next recommended phase: `/solve-task t004_07` after `T004_01` is solved enough to provide runtime/session/event source types.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: `AutoMemoryTools`, `AutoMemoryToolsAdvisor`,
+  `TaskRepository`, `DefaultTaskRepository`, and `BackgroundTask`.
+- Plan decision: keep Codegeist in-memory session continuation, projections,
+  redaction, retention, and storage health independent from Agent Utils memory or
+  task repositories.
+- Solve constraint: do not use Agent Utils file-backed memory as the session store.
+- Test impact: existing in-memory continuation and storage boundary tests remain
+  the right verification scope.
+- Result: the plan remains implementation-ready after `T004_01` is solved.

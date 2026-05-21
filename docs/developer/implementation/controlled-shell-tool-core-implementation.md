@@ -159,3 +159,16 @@ None. Real process execution remains a later task.
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, controlled shell source-generation contract, and `T004_04` plan.
 - Next recommended phase: `/solve-task t004_06` after `T004_04` is solved enough to provide policy dependencies.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: `ShellTools` and `AgentEnvironment`.
+- Plan decision: keep the fake executor as the solve-phase implementation and defer
+  Agent Utils real process execution until a later adapter is explicitly planned.
+- Solve constraint: do not run real shell commands by default; keep command purpose,
+  destructive posture, cwd, env, stdin, timeout, cancellation, permission, and
+  bounded output Codegeist-owned.
+- Test impact: existing fake-executor and shell contract tests remain the right
+  verification scope.
+- Result: the plan remains implementation-ready after `T004_04` policy dependencies
+  are available.

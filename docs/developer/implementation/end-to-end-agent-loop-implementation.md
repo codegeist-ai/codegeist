@@ -145,3 +145,16 @@ None at planning depth. Solve must wait until upstream T004 tasks are solved or 
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, Codegeist/OpenCode parity doc, and earlier T004 implementation plans.
 - Next recommended phase: `/solve-task t004_09` after required earlier T004 implementation tasks are solved.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: `TaskTool`, `TaskOutputTool`, Claude/A2A subagent SPI,
+  `AutoMemoryToolsAdvisor`, and `SkillsTool`.
+- Plan decision: keep the first end-to-end loop fake-provider and fake-tool based;
+  nested subagents, skills, and long-term memory advisors remain deferred.
+- Solve constraint: do not broaden the loop into Agent Utils subagent execution,
+  skill loading, or memory-advisor orchestration.
+- Test impact: existing fake-provider loop tests remain the right verification
+  scope.
+- Result: the plan remains implementation-ready after required earlier T004 tasks
+  are solved.

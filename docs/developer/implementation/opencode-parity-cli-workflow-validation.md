@@ -125,3 +125,16 @@ None. The selected workflow set is intentionally small for first validation.
 - Discovered hints considered: `java-spring-architecture-planning-guidance.md`, `opencode-solving-guidance.md`, and `opencode-source-solving-guidance.md`.
 - Related context files read: T004 parent, T004 child tasks, current architecture doc, Codegeist/OpenCode parity doc, and `T004_09` plan.
 - Next recommended phase: `/solve-task t004_10` after `T004_09` is solved.
+
+## Agent Utils Planning Recheck
+
+- Agent Utils equivalents: Claude Code-inspired Agent Utils tools, built-in
+  subagents, and prompt resources.
+- Plan decision: keep OpenCode parity workflows as the primary validation target
+  and use Agent Utils only as secondary Java/Spring behavior evidence.
+- Solve constraint: do not replace OpenCode parity criteria with Agent Utils
+  behavior; record Agent Utils-derived comparisons only as supporting notes or
+  follow-up gaps.
+- Test impact: existing workflow and gap-report tests remain the right verification
+  scope.
+- Result: the plan remains implementation-ready after `T004_09` is solved.
