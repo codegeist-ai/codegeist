@@ -35,7 +35,7 @@ tool-call mediation.
 - `docs/developer/specification/tool-permission-workspace-contracts.md`
 - `docs/developer/specification/java-generation-guidance.md`
 - `docs/developer/specification/testing-strategy-and-agent-rules.md`
-- `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core.md`
+- `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/task.md`
 - `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_02_implement_context_workspace_loading_core.md`
 
 ## Planning Requirements

@@ -478,12 +478,17 @@
   planning. The planning phase must create a developer implementation document
   under `docs/developer/implementation/` with a full UML class diagram, file map,
   TDD sequence, documentation updates, and verification commands.
-- `T004_01_implement_runtime_session_event_core.md` is now planned. Its
-  implementation handoff is
+- `T004_01_implement_runtime_session_event_core` has been split into a canonical
+  grouped task with six child tasks for runtime prompt contracts, runtime failures
+  and validation, session core, event core, session projection, and final
+  dependency-boundary verification. It was also re-specified after planning to
+  require a package diagram, one description for every planned type, and smaller
+  readable Mermaid class diagrams. Its implementation handoff is
   `docs/developer/implementation/runtime-session-event-core-implementation.md`,
-  which names the first runtime/session/event Java files, UML class diagram, TDD
-  sequence, targeted Maven commands, architecture-doc update, dependencies, and
-  non-goals. No Java source or tests have been generated yet.
+  which names the first runtime/session/event Java files, includes the package
+  diagram, type catalog, split UML class diagrams, TDD sequence, targeted Maven
+  commands, architecture-doc update, dependencies, and non-goals. No Java source or
+  tests have been generated yet.
 - The full T004 task family has been rechecked with `/specify-task` semantics,
   planned with `/plan-task` semantics, re-specified against Spring AI Agent Utils,
   and re-planned after that equivalence scan. The parent T004 task contains an
@@ -491,8 +496,8 @@
   task plus every implementation handoff under `docs/developer/implementation/`
   records the concrete planning consequence. No Java source or tests have been
   generated yet.
-- Next recommended phase: `/solve-task t004_01` to implement the planned
-  runtime/session/event core with TDD.
+- Next recommended phase: `/plan-task T004_01_01` to plan the first split runtime
+  prompt-contract slice before any Java source is written.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored

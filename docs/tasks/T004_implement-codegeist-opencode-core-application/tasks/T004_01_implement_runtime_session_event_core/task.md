@@ -2,7 +2,7 @@
 
 Parent: `T004_implement-codegeist-opencode-core-application`
 
-Status: planned
+Status: specified
 
 ## Goal
 
@@ -23,6 +23,19 @@ first source-generating task and should establish the initial packages under
 - Add plain JVM tests first; avoid Spring context startup unless the plan proves it
   is necessary.
 - Update architecture documentation after source and tests exist.
+
+## Child Tasks
+
+- `tasks/T004_01_01_define_runtime_prompt_contracts.md`
+- `tasks/T004_01_02_define_runtime_failures_and_validation.md`
+- `tasks/T004_01_03_define_session_core_contracts.md`
+- `tasks/T004_01_04_define_event_core_contracts.md`
+- `tasks/T004_01_05_define_session_projection_core.md`
+- `tasks/T004_01_06_verify_core_dependency_boundaries.md`
+
+Prefer solving these child tasks in order. Each child owns a smaller TDD slice of
+the original runtime/session/event core plan and should keep Java source creation
+inside its own `/solve-task` pass.
 
 ## Non-Goals
 
@@ -45,8 +58,12 @@ first source-generating task and should establish the initial packages under
 ## Planning Requirements
 
 - Create `docs/developer/implementation/runtime-session-event-core-implementation.md`.
-- Include an UML class diagram covering every planned runtime/session/event class,
+- Include a package diagram for the planned runtime, session, event, and test
+  package relationships.
+- Include a short description for every planned runtime/session/event class,
   record, interface, enum, sealed interface, failure type, and test class.
+- Include UML class diagrams covering every planned type, but split the diagrams
+  into small readable Mermaid views instead of one oversized diagram.
 - Name the exact Java and test files to add or change.
 - Define the first failing test and the exact narrow Maven command.
 
@@ -206,3 +223,43 @@ The planning phase must define Java test commands for the solve phase.
   contracts.
 - Open decisions or blockers: none.
 - Next recommended phase: `/solve-task t004_01`.
+
+## Diagram Readability Specification Result
+
+- Phase command: `/specify-task t004_01`.
+- Context or instructions considered: user requested a package diagram, a
+  description for every class, and UML class diagrams that stay small enough to
+  read comfortably in markdown and Mermaid.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: none for specification; the existing implementation
+  handoff already exists and was clarified without Java, test, or build changes.
+- Result: updated the T004_01 planning requirements and implementation handoff so
+  the documentation now includes a package diagram, per-type class catalog, and
+  smaller runtime, session, event, and cross-package Mermaid class diagrams.
+- Open decisions or blockers: none.
+- Next recommended phase: `/plan-task t004_01` to confirm the clarified handoff
+  remains implementation-ready before any `/solve-task` writes Java source.
+
+## Task Split Specification Result
+
+- Phase command: chat-guided split of `T004_01` after the user confirmed the task
+  should be subdivided.
+- Context or instructions considered: user requested further subdivision of this
+  task and approved the six-slice proposal.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Discovered hints considered:
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: none for splitting at specification depth; each child
+  still needs its own planning and solve phase before writing Java source.
+- Result: migrated this task to canonical grouped form with `task.md` and six
+  child tasks under `tasks/`.
+- Open decisions or blockers: none.
+- Next recommended phase: `/plan-task T004_01_01`.

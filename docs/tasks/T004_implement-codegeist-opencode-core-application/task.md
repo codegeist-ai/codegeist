@@ -68,7 +68,7 @@ verification command before marking the task solved.
 
 ## Child Tasks
 
-- `T004_01_implement_runtime_session_event_core.md`
+- `T004_01_implement_runtime_session_event_core/task.md`
 - `T004_02_implement_context_workspace_loading_core.md`
 - `T004_03_implement_provider_configuration_spring_ai_adapter_core.md`
 - `T004_04_implement_tool_permission_workspace_core.md`

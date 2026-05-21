@@ -32,7 +32,7 @@ and depends on runtime/session/event core from `T004_01`.
 - `docs/developer/architecture/architecture.md`
 - `docs/developer/specification/storage-session-continuation-source-generation-contract.md`
 - `docs/developer/specification/storage-port-posture.md`
-- `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core.md`
+- `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/task.md`
 
 ## Planning Requirements
 

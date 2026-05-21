@@ -35,7 +35,7 @@ after `T004_01` provides runtime/session/event diagnostics and boundaries.
 - `docs/developer/specification/context-workspace-manifest.md`
 - `docs/developer/specification/java-generation-guidance.md`
 - `docs/developer/specification/testing-strategy-and-agent-rules.md`
-- `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core.md`
+- `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/task.md`
 - `docs/developer/implementation/runtime-session-event-core-implementation.md`
 
 ## Planning Requirements

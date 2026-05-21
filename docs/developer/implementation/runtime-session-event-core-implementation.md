@@ -6,7 +6,7 @@ workspace, storage, or UI behavior exists.
 
 ## Source Task
 
-- Task: `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core.md`
+- Task: `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/task.md`
 - Parent: `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`
 - Primary contract: `docs/developer/specification/runtime-session-event-source-generation-contract.md`
 - Supporting context: `docs/developer/specification/runtime-session-event-contracts.md`, `docs/developer/specification/java-generation-guidance.md`, `docs/developer/specification/testing-strategy-and-agent-rules.md`, and `docs/developer/architecture/architecture.md`
@@ -43,78 +43,111 @@ startup in the new tests.
 - No Maven module split, build-file changes, native-image checks, network checks,
   or startup-heavy tests.
 
-## Planned Class Diagram
+## Planned Package Diagram
 
-Every planned production and test class, record, interface, enum, sealed
-interface, and failure type for this task is included here.
+The first source slice has three core packages. `ai.codegeist.runtime` accepts
+prompt requests and reports typed failures, `ai.codegeist.session` owns the
+session aggregate and client projection, and `ai.codegeist.event` carries ordered
+runtime observations. The test package verifies the contracts without starting
+Spring.
+
+```mermaid
+flowchart LR
+    Runtime[ai.codegeist.runtime<br/>prompt intake, modes, failures]
+    Session[ai.codegeist.session<br/>sessions, turns, projections]
+    Event[ai.codegeist.event<br/>envelopes, payloads, sequencing]
+    Tests[ai.codegeist.runtime tests<br/>plain JVM contract checks]
+
+    Runtime --> Session
+    Runtime --> Event
+    Session --> Event
+    Tests -. verifies .-> Runtime
+    Tests -. verifies .-> Session
+    Tests -. verifies .-> Event
+```
+
+## Planned Class Catalog
+
+Every planned production and test type for this task is listed here. The class
+diagrams below intentionally split the same set into smaller views so Mermaid
+renders remain readable in markdown.
+
+| Type | Kind | Responsibility |
+| --- | --- | --- |
+| `PromptRequestId` | record | Typed identity for one prompt request. |
+| `CorrelationId` | record | Optional cross-event correlation value for one request flow. |
+| `WorkspaceRef` | record | Minimal workspace boundary value without path validation. |
+| `AgentMode` | enum | Stable runtime mode names for `PLAN`, `BUILD`, and reserved `REVIEW`. |
+| `SourceClient` | enum | Identifies the client surface that submitted a request. |
+| `Recoverability` | enum | Marks failures as recoverable or terminal. |
+| `PromptRequest` | record | Captures prompt intake before provider, tool, or storage work starts. |
+| `PromptAcceptance` | record | Reports accepted request ids, session/turn ids, events, and projection. |
+| `RuntimePromptPort` | interface | Small boundary for accepting a prompt request from later clients. |
+| `PromptRequestValidator` | class | Validates prompt request shape and returns typed failures. |
+| `RuntimeContractFailure` | sealed interface | Shared contract failure surface with redacted message and recoverability. |
+| `InvalidPromptRequest` | record | Failure for invalid prompt text or missing request data. |
+| `InvalidIdentifier` | record | Failure for blank or malformed identifier values. |
+| `InvalidSequence` | record | Failure for non-positive or non-monotonic sequence values. |
+| `ProjectionConflict` | record | Failure for projection inputs that do not belong together. |
+| `UnsupportedMode` | record | Failure for a mode value not accepted by a later runtime policy. |
+| `SessionId` | record | Typed identity for a session aggregate. |
+| `TurnId` | record | Typed identity for a prompt turn. |
+| `PartId` | record | Typed identity for an ordered message part. |
+| `SessionStatus` | enum | First session lifecycle states. |
+| `TurnStatus` | enum | First turn lifecycle states. |
+| `MessagePartType` | enum | First message-part categories. |
+| `MessagePart` | record | Durable, append-oriented message summary inside a turn. |
+| `Turn` | record | Ordered prompt turn with mode, status, message parts, and start time. |
+| `Session` | record | Runtime-owned aggregate with status, default mode, turns, and timestamps. |
+| `MessagePartProjection` | record | Client-safe message-part read shape. |
+| `TurnProjection` | record | Client-safe turn read shape. |
+| `SessionProjection` | record | Client-safe session read model with recent runtime events. |
+| `SessionProjector` | class | Builds idempotent projections and rejects mismatched session events. |
+| `EventId` | record | Stable identity for replay-safe runtime events. |
+| `EventType` | enum | First event family names for session, turn, input, warning, and error flow. |
+| `EventSource` | enum | Identifies whether an event came from runtime, session, client, or system. |
+| `EventVisibility` | enum | Separates user-visible, internal, and audit-oriented events. |
+| `EventEnvelope` | record | Ordered metadata for one runtime event. |
+| `RuntimeEvent` | record | Couples an event envelope to a typed payload. |
+| `EventPayload` | sealed interface | Permits the first runtime event payload records. |
+| `SessionCreated` | record | Payload for a newly accepted session. |
+| `SessionUpdated` | record | Payload for session status changes. |
+| `TurnStarted` | record | Payload for an accepted prompt turn. |
+| `UserInputAccepted` | record | Payload for a redacted user prompt summary. |
+| `TurnCompleted` | record | Payload for a terminal first-wave turn status. |
+| `WarningRaised` | record | Payload for a non-fatal runtime warning. |
+| `ErrorRaised` | record | Payload for a recoverable or terminal runtime error. |
+| `RuntimeSessionEventContractTests` | test class | Verifies prompt intake, validation, sequencing, and projection contracts. |
+| `RuntimeSessionEventDependencyTests` | test class | Verifies core contracts do not expose forbidden framework or deferred types. |
+
+## Planned Runtime Class Diagram
 
 ```mermaid
 classDiagram
-    namespace ai.codegeist.runtime {
-        class PromptRequestId { <<record>> String value }
-        class CorrelationId { <<record>> String value }
-        class WorkspaceRef { <<record>> String value }
-        class AgentMode { <<enum>> PLAN BUILD REVIEW }
-        class SourceClient { <<enum>> CLI TUI SERVER VAADIN EXTENSION SYSTEM }
-        class Recoverability { <<enum>> RECOVERABLE TERMINAL }
-        class PromptRequest { <<record>> PromptRequestId id; AgentMode mode; Optional~SessionId~ sessionId; WorkspaceRef workspace; SourceClient source; String promptText; Instant requestedAt; CorrelationId correlationId }
-        class PromptAcceptance { <<record>> PromptRequestId requestId; SessionId sessionId; TurnId turnId; AgentMode acceptedMode; List~RuntimeEvent~ initialEvents; SessionProjection projection }
-        class RuntimePromptPort { <<interface>> accept(PromptRequest) PromptAcceptance }
-        class PromptRequestValidator { <<class>> validate(PromptRequest) Optional~RuntimeContractFailure~ }
-        class RuntimeContractFailure { <<sealed interface>> redactedMessage() String; recoverability() Recoverability }
-        class InvalidPromptRequest { <<record>> String redactedMessage; Recoverability recoverability }
-        class InvalidIdentifier { <<record>> String redactedMessage; Recoverability recoverability }
-        class InvalidSequence { <<record>> String redactedMessage; Recoverability recoverability }
-        class ProjectionConflict { <<record>> String redactedMessage; Recoverability recoverability }
-        class UnsupportedMode { <<record>> String redactedMessage; Recoverability recoverability }
-    }
+    class PromptRequestId { <<record>> String value }
+    class CorrelationId { <<record>> String value }
+    class WorkspaceRef { <<record>> String value }
+    class AgentMode { <<enum>> PLAN BUILD REVIEW }
+    class SourceClient { <<enum>> CLI TUI SERVER VAADIN EXTENSION SYSTEM }
+    class Recoverability { <<enum>> RECOVERABLE TERMINAL }
+    class PromptRequest { <<record>> }
+    class PromptAcceptance { <<record>> }
+    class RuntimePromptPort { <<interface>> accept(PromptRequest) PromptAcceptance }
+    class PromptRequestValidator { validate(PromptRequest) Optional~RuntimeContractFailure~ }
+    class RuntimeContractFailure { <<sealed interface>> redactedMessage(); recoverability() }
+    class InvalidPromptRequest { <<record>> }
+    class InvalidIdentifier { <<record>> }
+    class InvalidSequence { <<record>> }
+    class ProjectionConflict { <<record>> }
+    class UnsupportedMode { <<record>> }
 
-    namespace ai.codegeist.session {
-        class SessionId { <<record>> String value }
-        class TurnId { <<record>> String value }
-        class PartId { <<record>> String value }
-        class SessionStatus { <<enum>> ACTIVE COMPLETED FAILED ARCHIVED }
-        class TurnStatus { <<enum>> ACCEPTED RUNNING COMPLETED FAILED }
-        class MessagePartType { <<enum>> USER_PROMPT ASSISTANT_SUMMARY DIAGNOSTIC }
-        class MessagePart { <<record>> PartId id; long sequence; MessagePartType type; String summary; Instant createdAt }
-        class Turn { <<record>> TurnId id; long sequence; AgentMode mode; TurnStatus status; List~MessagePart~ parts; Instant startedAt }
-        class Session { <<record>> SessionId id; SessionStatus status; AgentMode defaultMode; List~Turn~ turns; Instant createdAt; Instant updatedAt }
-        class MessagePartProjection { <<record>> PartId id; long sequence; MessagePartType type; String summary }
-        class TurnProjection { <<record>> TurnId id; long sequence; TurnStatus status; List~MessagePartProjection~ parts }
-        class SessionProjection { <<record>> SessionId sessionId; SessionStatus status; List~TurnProjection~ turns; List~RuntimeEvent~ recentEvents }
-        class SessionProjector { <<class>> project(Session, List~RuntimeEvent~) SessionProjection }
-    }
-
-    namespace ai.codegeist.event {
-        class EventId { <<record>> String value }
-        class EventType { <<enum>> SESSION_CREATED SESSION_UPDATED TURN_STARTED USER_INPUT TURN_COMPLETED WARNING_RAISED ERROR_RAISED }
-        class EventSource { <<enum>> RUNTIME SESSION CLIENT SYSTEM }
-        class EventVisibility { <<enum>> USER_VISIBLE INTERNAL AUDIT }
-        class EventEnvelope { <<record>> EventId id; EventType type; SessionId sessionId; Optional~TurnId~ turnId; long sessionSequence; OptionalLong turnSequence; EventSource source; EventVisibility visibility; boolean auditRelevant; Optional~CorrelationId~ correlationId; Instant occurredAt; String summary }
-        class RuntimeEvent { <<record>> EventEnvelope envelope; EventPayload payload }
-        class EventPayload { <<sealed interface>> }
-        class SessionCreated { <<record>> SessionId sessionId }
-        class SessionUpdated { <<record>> SessionStatus status }
-        class TurnStarted { <<record>> TurnId turnId; AgentMode mode }
-        class UserInputAccepted { <<record>> String redactedSummary }
-        class TurnCompleted { <<record>> TurnId turnId; TurnStatus status }
-        class WarningRaised { <<record>> String redactedMessage }
-        class ErrorRaised { <<record>> String redactedMessage; Recoverability recoverability }
-    }
-
-    namespace ai.codegeist.runtime.tests {
-        class RuntimeSessionEventContractTests { acceptsPromptWithoutFrameworkTypes(); rejectsBlankPromptWithTypedFailure(); appendsTurnsAndPartsInOrder(); assignsMonotonicSessionEventSequence(); projectsEventsIdempotentlyByEventId() }
-        class RuntimeSessionEventDependencyTests { coreContractsDoNotExposeFrameworkTypes() }
-    }
-
-    RuntimePromptPort --> PromptRequest
-    RuntimePromptPort --> PromptAcceptance
     PromptRequest --> PromptRequestId
     PromptRequest --> AgentMode
-    PromptRequest --> SessionId
     PromptRequest --> WorkspaceRef
     PromptRequest --> SourceClient
     PromptRequest --> CorrelationId
+    RuntimePromptPort --> PromptRequest
+    RuntimePromptPort --> PromptAcceptance
     PromptRequestValidator --> RuntimeContractFailure
     RuntimeContractFailure <|.. InvalidPromptRequest
     RuntimeContractFailure <|.. InvalidIdentifier
@@ -122,18 +155,63 @@ classDiagram
     RuntimeContractFailure <|.. ProjectionConflict
     RuntimeContractFailure <|.. UnsupportedMode
     RuntimeContractFailure --> Recoverability
-    PromptAcceptance --> SessionId
-    PromptAcceptance --> TurnId
-    PromptAcceptance --> RuntimeEvent
-    PromptAcceptance --> SessionProjection
+```
+
+## Planned Session Class Diagram
+
+```mermaid
+classDiagram
+    class SessionId { <<record>> String value }
+    class TurnId { <<record>> String value }
+    class PartId { <<record>> String value }
+    class SessionStatus { <<enum>> ACTIVE COMPLETED FAILED ARCHIVED }
+    class TurnStatus { <<enum>> ACCEPTED RUNNING COMPLETED FAILED }
+    class MessagePartType { <<enum>> USER_PROMPT ASSISTANT_SUMMARY DIAGNOSTIC }
+    class MessagePart { <<record>> PartId id; long sequence; MessagePartType type }
+    class Turn { <<record>> TurnId id; long sequence; TurnStatus status }
+    class Session { <<record>> SessionId id; SessionStatus status }
+    class MessagePartProjection { <<record>> PartId id; long sequence; MessagePartType type }
+    class TurnProjection { <<record>> TurnId id; long sequence; TurnStatus status }
+    class SessionProjection { <<record>> SessionId sessionId; SessionStatus status }
+    class SessionProjector { project(Session, List~RuntimeEvent~) SessionProjection }
+
     Session "1" --> "0..*" Turn
     Turn "1" --> "0..*" MessagePart
+    MessagePart --> PartId
+    MessagePart --> MessagePartType
+    Turn --> TurnId
+    Turn --> TurnStatus
+    Session --> SessionId
+    Session --> SessionStatus
     SessionProjection "1" --> "0..*" TurnProjection
-    SessionProjection "1" --> "0..*" RuntimeEvent
     TurnProjection "1" --> "0..*" MessagePartProjection
     SessionProjector --> Session
-    SessionProjector --> RuntimeEvent
     SessionProjector --> SessionProjection
+```
+
+## Planned Event Class Diagram
+
+```mermaid
+classDiagram
+    class EventId { <<record>> String value }
+    class EventType { <<enum>> SESSION_CREATED SESSION_UPDATED TURN_STARTED USER_INPUT TURN_COMPLETED WARNING_RAISED ERROR_RAISED }
+    class EventSource { <<enum>> RUNTIME SESSION CLIENT SYSTEM }
+    class EventVisibility { <<enum>> USER_VISIBLE INTERNAL AUDIT }
+    class EventEnvelope { <<record>> EventId id; EventType type; long sessionSequence }
+    class RuntimeEvent { <<record>> EventEnvelope envelope; EventPayload payload }
+    class EventPayload { <<sealed interface>> }
+    class SessionCreated { <<record>> SessionId sessionId }
+    class SessionUpdated { <<record>> SessionStatus status }
+    class TurnStarted { <<record>> TurnId turnId; AgentMode mode }
+    class UserInputAccepted { <<record>> String redactedSummary }
+    class TurnCompleted { <<record>> TurnId turnId; TurnStatus status }
+    class WarningRaised { <<record>> String redactedMessage }
+    class ErrorRaised { <<record>> String redactedMessage; Recoverability recoverability }
+
+    EventEnvelope --> EventId
+    EventEnvelope --> EventType
+    EventEnvelope --> EventSource
+    EventEnvelope --> EventVisibility
     RuntimeEvent --> EventEnvelope
     RuntimeEvent --> EventPayload
     EventPayload <|.. SessionCreated
@@ -143,6 +221,31 @@ classDiagram
     EventPayload <|.. TurnCompleted
     EventPayload <|.. WarningRaised
     EventPayload <|.. ErrorRaised
+```
+
+## Planned Cross-Package Contract Diagram
+
+```mermaid
+classDiagram
+    class PromptRequest
+    class PromptAcceptance
+    class Session
+    class SessionProjection
+    class SessionProjector
+    class RuntimeEvent
+    class EventEnvelope
+    class RuntimeSessionEventContractTests
+    class RuntimeSessionEventDependencyTests
+
+    PromptRequest --> Session : optional continuation id
+    PromptAcceptance --> SessionProjection
+    PromptAcceptance --> RuntimeEvent
+    SessionProjector --> Session
+    SessionProjector --> RuntimeEvent
+    RuntimeEvent --> EventEnvelope
+    RuntimeSessionEventContractTests ..> PromptRequest
+    RuntimeSessionEventContractTests ..> SessionProjector
+    RuntimeSessionEventDependencyTests ..> PromptAcceptance
 ```
 
 ## File Map
@@ -212,7 +315,7 @@ Documentation files to update in the solve phase after source exists:
 
 ```text
 docs/developer/architecture/architecture.md
-docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core.md
+docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/task.md
 ```
 
 No `pom.xml`, `Taskfile.yml`, `application.yaml`, or Spring configuration changes
@@ -329,7 +432,7 @@ None.
 
 - Phase command: `/plan-task t004_01`.
 - User context considered: `t004_01`.
-- Resolved source task: `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core.md`.
+- Resolved source task: `docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/task.md`.
 - Parent task: `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
 - Selected option: sharpen the existing `T004_01` implementation task; no new task
   was needed.
