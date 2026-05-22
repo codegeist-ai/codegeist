@@ -31,39 +31,183 @@ tool execution.
 ```mermaid
 classDiagram
     namespace ai.codegeist.workspace {
-        class WorkspaceRoot { <<record>> WorkspaceRef ref; Path root }
-        class WorkspacePath { <<record>> String value }
-        class WorkspaceReadPurpose { <<enum>> CONTEXT_PROFILE CONTEXT_SOURCE SOURCE_SNIPPET }
-        class WorkspacePathVerdict { <<enum>> ALLOWED MISSING_OPTIONAL OUTSIDE_ROOT SYMLINK_ESCAPE GENERATED IGNORED SECRET_LIKE UNSUPPORTED_SOURCE }
-        class WorkspacePathClassification { <<record>> WorkspacePath input; Optional~WorkspacePath~ normalized; WorkspacePathVerdict verdict; String summary; RedactionStatus redaction }
-        class WorkspacePathPolicy { <<interface>> classify(WorkspaceRoot, WorkspacePath, WorkspaceReadPurpose) WorkspacePathClassification }
-        class DefaultWorkspacePathPolicy { <<class>> }
+        class WorkspaceRoot {
+          <<record>>
+          WorkspaceRef ref;
+          Path root
+        }
+        class WorkspacePath {
+          <<record>>
+          String value
+        }
+        class WorkspaceReadPurpose {
+          <<enum>>
+          CONTEXT_PROFILE
+          CONTEXT_SOURCE
+          SOURCE_SNIPPET
+        }
+        class WorkspacePathVerdict {
+          <<enum>>
+          ALLOWED
+          MISSING_OPTIONAL
+          OUTSIDE_ROOT
+          SYMLINK_ESCAPE
+          GENERATED
+          IGNORED
+          SECRET_LIKE
+          UNSUPPORTED_SOURCE
+        }
+        class WorkspacePathClassification {
+          <<record>>
+          WorkspacePath input;
+          Optional~WorkspacePath~ normalized;
+          WorkspacePathVerdict verdict;
+          String summary;
+          RedactionStatus redaction
+        }
+        class WorkspacePathPolicy {
+          <<interface>>
+          classify(WorkspaceRoot, WorkspacePath, WorkspaceReadPurpose) WorkspacePathClassification
+        }
+        class DefaultWorkspacePathPolicy {
+          <<class>>
+        }
     }
 
     namespace ai.codegeist.context {
-        class ContextLoadRequestId { <<record>> String value }
-        class ContextProfileId { <<record>> String value }
-        class ContextProfile { <<record>> ContextProfileId id; List~ContextSourceSelection~ selections; SourceSnippetPolicy snippets }
-        class ContextSourceSelection { <<record>> ContextSourceKind kind; WorkspacePath path; String reason; boolean required; int priority }
-        class SourceSnippetPolicy { <<record>> int maxLines; int maxBytes }
-        class SourceSnippetSelection { <<record>> WorkspacePath path; int startLine; int endLine }
-        class ContextLoadRequest { <<record>> ContextLoadRequestId id; WorkspaceRef workspace; AgentMode mode; Optional~SessionId~ sessionId; ContextProfileId profileId; List~ContextSourceKind~ selectedGroups }
-        class ContextCandidate { <<record>> ContextSourceSelection selection; WorkspaceReadPurpose purpose }
-        class ContextSourceKind { <<enum>> RUNTIME_SUMMARY INSTRUCTION STATE WORK_ITEM KNOWLEDGE SOURCE_SNIPPET }
-        class ContextManifest { <<record>> ContextManifestId id; ContextLoadRequestId requestId; List~IncludedContextSource~ included; List~SkippedContextSource~ skipped; List~ContextWarning~ warnings; ContextLimits limits }
-        class ContextManifestId { <<record>> String value }
-        class IncludedContextSource { <<record>> ContextSourceKind kind; WorkspacePath path; int order; String summary; RedactionStatus redaction }
-        class SkippedContextSource { <<record>> ContextSourceKind kind; WorkspacePath path; ContextSkipReason reason; String summary }
-        class ContextSkipReason { <<enum>> GENERATED IGNORED HEAVY MISSING_OPTIONAL OUTSIDE_ROOT SYMLINK_ESCAPE SECRET_LIKE UNSUPPORTED_SOURCE }
-        class ContextWarning { <<record>> String summary }
-        class ContextLimits { <<record>> int maxSources; int maxBytes; int maxLines }
-        class RedactionStatus { <<enum>> NOT_NEEDED REDACTED BLOCKED_BEFORE_READ }
-        class ContextLoader { <<interface>> load(ContextLoadRequest, ContextProfile) ContextManifest }
-        class DeterministicContextLoader { <<class>> }
-        class ContextContractFailure { <<sealed interface>> }
-        class InvalidContextProfile { <<record>> String redactedMessage }
-        class InvalidContextSelection { <<record>> String redactedMessage }
-        class ContextManifestConflict { <<record>> String redactedMessage }
+        class ContextLoadRequestId {
+          <<record>>
+          String value
+        }
+        class ContextProfileId {
+          <<record>>
+          String value
+        }
+        class ContextProfile {
+          <<record>>
+          ContextProfileId id;
+          List~ContextSourceSelection~ selections;
+          SourceSnippetPolicy snippets
+        }
+        class ContextSourceSelection {
+          <<record>>
+          ContextSourceKind kind;
+          WorkspacePath path;
+          String reason;
+          boolean required;
+          int priority
+        }
+        class SourceSnippetPolicy {
+          <<record>>
+          int maxLines;
+          int maxBytes
+        }
+        class SourceSnippetSelection {
+          <<record>>
+          WorkspacePath path;
+          int startLine;
+          int endLine
+        }
+        class ContextLoadRequest {
+          <<record>>
+          ContextLoadRequestId id;
+          WorkspaceRef workspace;
+          AgentMode mode;
+          Optional~SessionId~ sessionId;
+          ContextProfileId profileId;
+          List~ContextSourceKind~ selectedGroups
+        }
+        class ContextCandidate {
+          <<record>>
+          ContextSourceSelection selection;
+          WorkspaceReadPurpose purpose
+        }
+        class ContextSourceKind {
+          <<enum>>
+          RUNTIME_SUMMARY
+          INSTRUCTION
+          STATE
+          WORK_ITEM
+          KNOWLEDGE
+          SOURCE_SNIPPET
+        }
+        class ContextManifest {
+          <<record>>
+          ContextManifestId id;
+          ContextLoadRequestId requestId;
+          List~IncludedContextSource~ included;
+          List~SkippedContextSource~ skipped;
+          List~ContextWarning~ warnings;
+          ContextLimits limits
+        }
+        class ContextManifestId {
+          <<record>>
+          String value
+        }
+        class IncludedContextSource {
+          <<record>>
+          ContextSourceKind kind;
+          WorkspacePath path;
+          int order;
+          String summary;
+          RedactionStatus redaction
+        }
+        class SkippedContextSource {
+          <<record>>
+          ContextSourceKind kind;
+          WorkspacePath path;
+          ContextSkipReason reason;
+          String summary
+        }
+        class ContextSkipReason {
+          <<enum>>
+          GENERATED
+          IGNORED
+          HEAVY
+          MISSING_OPTIONAL
+          OUTSIDE_ROOT
+          SYMLINK_ESCAPE
+          SECRET_LIKE
+          UNSUPPORTED_SOURCE
+        }
+        class ContextWarning {
+          <<record>>
+          String summary
+        }
+        class ContextLimits {
+          <<record>>
+          int maxSources;
+          int maxBytes;
+          int maxLines
+        }
+        class RedactionStatus {
+          <<enum>>
+          NOT_NEEDED
+          REDACTED
+          BLOCKED_BEFORE_READ
+        }
+        class ContextLoader {
+          <<interface>>
+          load(ContextLoadRequest, ContextProfile) ContextManifest
+        }
+        class DeterministicContextLoader {
+          <<class>>
+        }
+        class ContextContractFailure {
+          <<sealed interface>>
+        }
+        class InvalidContextProfile {
+          <<record>>
+          String redactedMessage
+        }
+        class InvalidContextSelection {
+          <<record>>
+          String redactedMessage
+        }
+        class ContextManifestConflict {
+          <<record>>
+          String redactedMessage
+        }
     }
 
     namespace ai.codegeist.context.tests {

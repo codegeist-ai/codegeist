@@ -29,19 +29,44 @@ readiness out of this task.
 ```mermaid
 classDiagram
     namespace ai.codegeist.runtime {
-        class AgentLoop { <<class>> run(PromptRequest) PromptAcceptance }
-        class AgentLoopDependencies { <<record>> ContextLoader context; ProviderAdapter provider; ToolDescriptorRegistry tools; PermissionPolicy permissions; SessionStore sessions }
-        class AgentLoopResult { <<record>> PromptAcceptance acceptance; Optional~ProviderResponse~ response; SessionProjection projection }
-        class AgentLoopFailure { <<record>> String redactedMessage; Recoverability recoverability }
-        class RuntimeEventCollector { <<class>> }
+        class AgentLoop {
+          <<class>>
+          run(PromptRequest) PromptAcceptance
+        }
+        class AgentLoopDependencies {
+          <<record>>
+          ContextLoader context;
+          ProviderAdapter provider;
+          ToolDescriptorRegistry tools;
+          PermissionPolicy permissions;
+          SessionStore sessions
+        }
+        class AgentLoopResult {
+          <<record>>
+          PromptAcceptance acceptance;
+          Optional~ProviderResponse~ response;
+          SessionProjection projection
+        }
+        class AgentLoopFailure {
+          <<record>>
+          String redactedMessage;
+          Recoverability recoverability
+        }
+        class RuntimeEventCollector {
+          <<class>>
+        }
     }
 
     namespace ai.codegeist.provider.fake {
-        class FakeProviderAdapter { <<class>> }
+        class FakeProviderAdapter {
+          <<class>>
+        }
     }
 
     namespace ai.codegeist.tool.fake {
-        class FakeToolDescriptorRegistry { <<class>> }
+        class FakeToolDescriptorRegistry {
+          <<class>>
+        }
     }
 
     namespace ai.codegeist.runtime.tests {

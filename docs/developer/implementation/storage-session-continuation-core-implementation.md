@@ -28,30 +28,141 @@ continuation orchestration.
 ```mermaid
 classDiagram
     namespace ai.codegeist.storage {
-        class SessionStore { <<interface>> create(SessionRecord) StorageResult~SessionRecord~; find(SessionId) StorageResult~SessionRecord~; list(SessionListQuery) StorageResult~List~SessionSummary~~; updateSummary(SessionSummaryUpdate) StorageResult~SessionSummary~; deleteOrArchive(SessionId) StorageResult~SessionDeletionResult~ }
-        class MessageProjectionStore { <<interface>> append(MessagePartRecord) StorageResult~MessagePartRecord~; list(SessionId) StorageResult~List~MessagePartRecord~~ }
-        class RuntimeEventProjectionStore { <<interface>> append(RuntimeEventRecord) StorageResult~RuntimeEventRecord~; listAuditEvents(SessionId) StorageResult~List~RuntimeEventRecord~~ }
-        class ArtifactReferenceStore { <<interface>> reference(ArtifactReferenceRecord) StorageResult~ArtifactReferenceRecord~; find(OutputRefId) StorageResult~ArtifactReferenceRecord~ }
-        class StorageHealthPort { <<interface>> health() StorageHealth }
-        class InMemorySessionStore { <<class>> }
-        class InMemoryMessageProjectionStore { <<class>> }
-        class InMemoryRuntimeEventProjectionStore { <<class>> }
-        class InMemoryArtifactReferenceStore { <<class>> }
-        class SessionRecord { <<record>> SessionId id; WorkspaceRef workspace; SessionStatus status; String title; long version }
-        class SessionSummary { <<record>> SessionId id; String title; SessionStatus status; String boundedLastMessage }
-        class SessionListQuery { <<record>> int limit; boolean includeArchived }
-        class SessionSummaryUpdate { <<record>> SessionId id; long expectedVersion; String boundedSummary }
-        class SessionDeletionResult { <<record>> SessionId id; boolean archived }
-        class MessagePartRecord { <<record>> SessionId sessionId; TurnId turnId; PartId partId; long sequence; String boundedSummary }
-        class RuntimeEventRecord { <<record>> EventId eventId; SessionId sessionId; long sequence; boolean auditRelevant; String redactedSummary }
-        class ArtifactReferenceRecord { <<record>> OutputRefId outputRefId; String producerFamily; String boundedDescription }
-        class StorageHealth { <<record>> StorageMode mode; StorageStatus status; String redactedDiagnostics }
-        class StorageMode { <<enum>> IN_MEMORY FILE_BACKED DATABASE_BACKED }
-        class StorageStatus { <<enum>> AVAILABLE DEGRADED READ_ONLY UNAVAILABLE SKIPPED }
-        class StorageResult { <<sealed interface>> }
-        class StorageSuccess { <<record>> T value }
-        class StorageFailure { <<record>> StorageFailureKind kind; String redactedMessage; Recoverability recoverability }
-        class StorageFailureKind { <<enum>> NOT_FOUND DUPLICATE_ID STALE_VERSION REDACTION_DENIED UNAVAILABLE ADAPTER_FAILURE INVALID_QUERY }
+        class SessionStore {
+          <<interface>>
+          create(SessionRecord) StorageResult~SessionRecord~;
+          find(SessionId) StorageResult~SessionRecord~;
+          list(SessionListQuery) StorageResult~List~SessionSummary~~;
+          updateSummary(SessionSummaryUpdate) StorageResult~SessionSummary~;
+          deleteOrArchive(SessionId) StorageResult~SessionDeletionResult~
+        }
+        class MessageProjectionStore {
+          <<interface>>
+          append(MessagePartRecord) StorageResult~MessagePartRecord~;
+          list(SessionId) StorageResult~List~MessagePartRecord~~
+        }
+        class RuntimeEventProjectionStore {
+          <<interface>>
+          append(RuntimeEventRecord) StorageResult~RuntimeEventRecord~;
+          listAuditEvents(SessionId) StorageResult~List~RuntimeEventRecord~~
+        }
+        class ArtifactReferenceStore {
+          <<interface>>
+          reference(ArtifactReferenceRecord) StorageResult~ArtifactReferenceRecord~;
+          find(OutputRefId) StorageResult~ArtifactReferenceRecord~
+        }
+        class StorageHealthPort {
+          <<interface>>
+          health() StorageHealth
+        }
+        class InMemorySessionStore {
+          <<class>>
+        }
+        class InMemoryMessageProjectionStore {
+          <<class>>
+        }
+        class InMemoryRuntimeEventProjectionStore {
+          <<class>>
+        }
+        class InMemoryArtifactReferenceStore {
+          <<class>>
+        }
+        class SessionRecord {
+          <<record>>
+          SessionId id;
+          WorkspaceRef workspace;
+          SessionStatus status;
+          String title;
+          long version
+        }
+        class SessionSummary {
+          <<record>>
+          SessionId id;
+          String title;
+          SessionStatus status;
+          String boundedLastMessage
+        }
+        class SessionListQuery {
+          <<record>>
+          int limit;
+          boolean includeArchived
+        }
+        class SessionSummaryUpdate {
+          <<record>>
+          SessionId id;
+          long expectedVersion;
+          String boundedSummary
+        }
+        class SessionDeletionResult {
+          <<record>>
+          SessionId id;
+          boolean archived
+        }
+        class MessagePartRecord {
+          <<record>>
+          SessionId sessionId;
+          TurnId turnId;
+          PartId partId;
+          long sequence;
+          String boundedSummary
+        }
+        class RuntimeEventRecord {
+          <<record>>
+          EventId eventId;
+          SessionId sessionId;
+          long sequence;
+          boolean auditRelevant;
+          String redactedSummary
+        }
+        class ArtifactReferenceRecord {
+          <<record>>
+          OutputRefId outputRefId;
+          String producerFamily;
+          String boundedDescription
+        }
+        class StorageHealth {
+          <<record>>
+          StorageMode mode;
+          StorageStatus status;
+          String redactedDiagnostics
+        }
+        class StorageMode {
+          <<enum>>
+          IN_MEMORY
+          FILE_BACKED
+          DATABASE_BACKED
+        }
+        class StorageStatus {
+          <<enum>>
+          AVAILABLE
+          DEGRADED
+          READ_ONLY
+          UNAVAILABLE
+          SKIPPED
+        }
+        class StorageResult {
+          <<sealed interface>>
+        }
+        class StorageSuccess {
+          <<record>>
+          T value
+        }
+        class StorageFailure {
+          <<record>>
+          StorageFailureKind kind;
+          String redactedMessage;
+          Recoverability recoverability
+        }
+        class StorageFailureKind {
+          <<enum>>
+          NOT_FOUND
+          DUPLICATE_ID
+          STALE_VERSION
+          REDACTION_DENIED
+          UNAVAILABLE
+          ADAPTER_FAILURE
+          INVALID_QUERY
+        }
     }
 
     namespace ai.codegeist.storage.tests {

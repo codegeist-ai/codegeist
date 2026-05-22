@@ -517,6 +517,10 @@
   includes a class diagram, detailed type or test-helper explanations, Spring
   usage or forbidden-dependency decisions, file maps, TDD commands, dependencies,
   risks, and verification strategy.
+- Mermaid class diagrams in Codegeist architecture, specification, and
+  implementation docs should keep attributes and methods on separate lines inside
+  each class body and stay small enough to fit on one DIN A4 landscape page when
+  rendered or printed; split large diagrams into focused views.
 - The full T004 task family has been rechecked with `/specify-task` semantics,
   planned with `/plan-task` semantics, re-specified against Spring AI Agent Utils,
   and re-planned after that equivalence scan. The parent T004 task contains an

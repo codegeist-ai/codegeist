@@ -29,22 +29,125 @@ or apply real patches, run formatters, rollback files, or persist proposals.
 ```mermaid
 classDiagram
     namespace ai.codegeist.patch {
-        class EditProposalId { <<record>> String value }
-        class ApplyEditRequestId { <<record>> String value }
-        class EditProposal { <<record>> EditProposalId id; SessionId sessionId; TurnId turnId; AgentMode mode; CorrelationId correlationId; ProposalSummary summary; List~EditTarget~ targets; ProposalFreshness freshness; List~OutputRef~ outputRefs }
-        class EditTarget { <<record>> WorkspaceToolTarget target; EditTargetKind kind; ProposalFreshness freshness }
-        class EditTargetKind { <<enum>> UPDATE_EXISTING_FILE CREATE_FILE DELETE_FILE RENAME_OR_MOVE }
-        class PatchHunk { <<record>> EditTarget target; int oldStart; int newStart; int removedLines; int addedLines; Optional~OutputRef~ detailRef }
-        class TextReplacement { <<record>> EditTarget target; String redactedSummary; ProposalFreshness freshness }
-        class ProposalFreshness { <<record>> String contentIdentity; Instant checkedAt }
-        class ProposalSummary { <<record>> String redactedIntent; int targetCount; int changeCount; boolean truncated }
-        class ApplyEditRequest { <<record>> ApplyEditRequestId id; EditProposalId proposalId; PermissionDecisionId decisionId; AgentMode mode; CorrelationId correlationId }
-        class ApplyEditResult { <<record>> ApplyEditRequestId id; EditProposalId proposalId; ApplyResultStatus status; ProposalSummary summary; List~EditedFileSummary~ files; Optional~ApplyEditFailure~ failure; List~OutputRef~ outputRefs }
-        class ApplyResultStatus { <<enum>> APPLIED PARTIALLY_APPLIED DENIED FAILED CANCELLED }
-        class EditedFileSummary { <<record>> WorkspaceToolTarget target; EditTargetKind kind; boolean touched; int changedLines; List~OutputRef~ outputRefs }
-        class ApplyEditFailure { <<record>> ApplyFailureKind kind; String redactedMessage; Recoverability recoverability }
-        class ApplyFailureKind { <<enum>> MODE_DENIED PERMISSION_DENIED WORKSPACE_DENIED MISSING_TARGET STALE_INPUT CONFLICT INVALID_PATCH PARTIAL_APPLY OUTPUT_OVERFLOW CANCELLED UNEXPECTED_IO_FAILURE }
-        class EditProposalService { <<class>> createProposal(); applyMetadataOnly() ApplyEditResult }
+        class EditProposalId {
+          <<record>>
+          String value
+        }
+        class ApplyEditRequestId {
+          <<record>>
+          String value
+        }
+        class EditProposal {
+          <<record>>
+          EditProposalId id;
+          SessionId sessionId;
+          TurnId turnId;
+          AgentMode mode;
+          CorrelationId correlationId;
+          ProposalSummary summary;
+          List~EditTarget~ targets;
+          ProposalFreshness freshness;
+          List~OutputRef~ outputRefs
+        }
+        class EditTarget {
+          <<record>>
+          WorkspaceToolTarget target;
+          EditTargetKind kind;
+          ProposalFreshness freshness
+        }
+        class EditTargetKind {
+          <<enum>>
+          UPDATE_EXISTING_FILE
+          CREATE_FILE
+          DELETE_FILE
+          RENAME_OR_MOVE
+        }
+        class PatchHunk {
+          <<record>>
+          EditTarget target;
+          int oldStart;
+          int newStart;
+          int removedLines;
+          int addedLines;
+          Optional~OutputRef~ detailRef
+        }
+        class TextReplacement {
+          <<record>>
+          EditTarget target;
+          String redactedSummary;
+          ProposalFreshness freshness
+        }
+        class ProposalFreshness {
+          <<record>>
+          String contentIdentity;
+          Instant checkedAt
+        }
+        class ProposalSummary {
+          <<record>>
+          String redactedIntent;
+          int targetCount;
+          int changeCount;
+          boolean truncated
+        }
+        class ApplyEditRequest {
+          <<record>>
+          ApplyEditRequestId id;
+          EditProposalId proposalId;
+          PermissionDecisionId decisionId;
+          AgentMode mode;
+          CorrelationId correlationId
+        }
+        class ApplyEditResult {
+          <<record>>
+          ApplyEditRequestId id;
+          EditProposalId proposalId;
+          ApplyResultStatus status;
+          ProposalSummary summary;
+          List~EditedFileSummary~ files;
+          Optional~ApplyEditFailure~ failure;
+          List~OutputRef~ outputRefs
+        }
+        class ApplyResultStatus {
+          <<enum>>
+          APPLIED
+          PARTIALLY_APPLIED
+          DENIED
+          FAILED
+          CANCELLED
+        }
+        class EditedFileSummary {
+          <<record>>
+          WorkspaceToolTarget target;
+          EditTargetKind kind;
+          boolean touched;
+          int changedLines;
+          List~OutputRef~ outputRefs
+        }
+        class ApplyEditFailure {
+          <<record>>
+          ApplyFailureKind kind;
+          String redactedMessage;
+          Recoverability recoverability
+        }
+        class ApplyFailureKind {
+          <<enum>>
+          MODE_DENIED
+          PERMISSION_DENIED
+          WORKSPACE_DENIED
+          MISSING_TARGET
+          STALE_INPUT
+          CONFLICT
+          INVALID_PATCH
+          PARTIAL_APPLY
+          OUTPUT_OVERFLOW
+          CANCELLED
+          UNEXPECTED_IO_FAILURE
+        }
+        class EditProposalService {
+          <<class>>
+          createProposal();
+          applyMetadataOnly() ApplyEditResult
+        }
     }
 
     namespace ai.codegeist.patch.tests {

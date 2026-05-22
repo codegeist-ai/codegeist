@@ -36,10 +36,21 @@ classDiagram
       inspectPublicContract(Class)
       assertAllowedType(Type)
     }
-    class RuntimePackage { ai.codegeist.runtime.* }
-    class SessionPackage { ai.codegeist.session.* }
-    class EventPackage { ai.codegeist.event.* }
-    class ForbiddenPackages { org.springframework; org.springaicommunity; provider SDKs; UI/storage/process/filesystem }
+    class RuntimePackage {
+      ai.codegeist.runtime.*
+    }
+    class SessionPackage {
+      ai.codegeist.session.*
+    }
+    class EventPackage {
+      ai.codegeist.event.*
+    }
+    class ForbiddenPackages {
+      org.springframework;
+      org.springaicommunity;
+      provider SDKs;
+      UI/storage/process/filesystem
+    }
 
     RuntimeSessionEventDependencyTests ..> RuntimePackage
     RuntimeSessionEventDependencyTests ..> SessionPackage

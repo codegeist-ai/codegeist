@@ -29,43 +29,234 @@ policy.
 ```mermaid
 classDiagram
     namespace ai.codegeist.tool {
-        class ToolId { <<record>> String value }
-        class ToolRequestId { <<record>> String value }
-        class ToolDescriptor { <<record>> ToolId id; ToolSource source; ToolCapability capability; Set~AgentMode~ modes; PermissionNeed permission; WorkspaceNeed workspace; ResultLimit resultLimit; boolean enabled }
-        class ToolSource { <<enum>> BUILT_IN SPRING_AI_SIGNAL MCP PF4J JBANG SCRIPT PLUGIN LSP SUBAGENT }
-        class ToolCapability { <<enum>> READ_WORKSPACE MUTATE_WORKSPACE PATCH_EDIT SHELL_PROCESS NETWORK PROVIDER_MEDIATED PLUGIN SCRIPT LSP_CODE_INTELLIGENCE SUBAGENT }
-        class PermissionNeed { <<enum>> NEVER ASK ALWAYS_REQUIRED DENIED_UNTIL_CLASSIFIED }
-        class WorkspaceNeed { <<enum>> NONE READ_TARGET WRITE_TARGET COMMAND_CWD OUTPUT_REF EXTERNAL_DIRECTORY_CANDIDATE }
-        class ResultLimit { <<record>> int maxSummaryChars; int maxOutputRefs }
-        class ToolDescriptorRegistry { <<interface>> resolve(ToolId) Optional~ToolDescriptor~ }
-        class ToolRequest { <<record>> ToolRequestId id; ToolId toolId; SessionId sessionId; TurnId turnId; AgentMode mode; CorrelationId correlationId; RedactedInputSummary input; List~WorkspaceToolTarget~ targets }
-        class RedactedInputSummary { <<record>> String summary }
-        class ToolResult { <<record>> ToolRequestId requestId; ToolResultStatus status; ToolResultSummary summary; List~OutputRef~ refs; Optional~ToolFailure~ failure }
-        class ToolResultStatus { <<enum>> DENIED_BY_MODE DENIED_BY_PERMISSION DENIED_BY_WORKSPACE SKIPPED_DISABLED APPROVAL_REQUIRED STARTED COMPLETED FAILED CANCELLED }
-        class ToolResultSummary { <<record>> String redactedSummary; boolean truncated }
-        class ToolFailure { <<record>> ToolFailureKind kind; String redactedMessage; Recoverability recoverability }
-        class ToolFailureKind { <<enum>> INVALID_DESCRIPTOR MODE_DENIED PERMISSION_DENIED WORKSPACE_DENIED DISABLED_SOURCE UNSUPPORTED_CAPABILITY INPUT_INVALID OUTPUT_OVERFLOW EXECUTOR_UNAVAILABLE CANCELLED UNEXPECTED_FAILURE }
-        class OutputRefId { <<record>> String value }
-        class OutputKind { <<enum>> TEXT PATCH SHELL_OUTPUT PROVIDER_TRACE ARTIFACT }
-        class OutputRef { <<record>> OutputRefId id; OutputKind kind; String redactedDescription; boolean bounded }
+        class ToolId {
+          <<record>>
+          String value
+        }
+        class ToolRequestId {
+          <<record>>
+          String value
+        }
+        class ToolDescriptor {
+          <<record>>
+          ToolId id;
+          ToolSource source;
+          ToolCapability capability;
+          Set~AgentMode~ modes;
+          PermissionNeed permission;
+          WorkspaceNeed workspace;
+          ResultLimit resultLimit;
+          boolean enabled
+        }
+        class ToolSource {
+          <<enum>>
+          BUILT_IN
+          SPRING_AI_SIGNAL
+          MCP
+          PF4J
+          JBANG
+          SCRIPT
+          PLUGIN
+          LSP
+          SUBAGENT
+        }
+        class ToolCapability {
+          <<enum>>
+          READ_WORKSPACE
+          MUTATE_WORKSPACE
+          PATCH_EDIT
+          SHELL_PROCESS
+          NETWORK
+          PROVIDER_MEDIATED
+          PLUGIN
+          SCRIPT
+          LSP_CODE_INTELLIGENCE
+          SUBAGENT
+        }
+        class PermissionNeed {
+          <<enum>>
+          NEVER
+          ASK
+          ALWAYS_REQUIRED
+          DENIED_UNTIL_CLASSIFIED
+        }
+        class WorkspaceNeed {
+          <<enum>>
+          NONE
+          READ_TARGET
+          WRITE_TARGET
+          COMMAND_CWD
+          OUTPUT_REF
+          EXTERNAL_DIRECTORY_CANDIDATE
+        }
+        class ResultLimit {
+          <<record>>
+          int maxSummaryChars;
+          int maxOutputRefs
+        }
+        class ToolDescriptorRegistry {
+          <<interface>>
+          resolve(ToolId) Optional~ToolDescriptor~
+        }
+        class ToolRequest {
+          <<record>>
+          ToolRequestId id;
+          ToolId toolId;
+          SessionId sessionId;
+          TurnId turnId;
+          AgentMode mode;
+          CorrelationId correlationId;
+          RedactedInputSummary input;
+          List~WorkspaceToolTarget~ targets
+        }
+        class RedactedInputSummary {
+          <<record>>
+          String summary
+        }
+        class ToolResult {
+          <<record>>
+          ToolRequestId requestId;
+          ToolResultStatus status;
+          ToolResultSummary summary;
+          List~OutputRef~ refs;
+          Optional~ToolFailure~ failure
+        }
+        class ToolResultStatus {
+          <<enum>>
+          DENIED_BY_MODE
+          DENIED_BY_PERMISSION
+          DENIED_BY_WORKSPACE
+          SKIPPED_DISABLED
+          APPROVAL_REQUIRED
+          STARTED
+          COMPLETED
+          FAILED
+          CANCELLED
+        }
+        class ToolResultSummary {
+          <<record>>
+          String redactedSummary;
+          boolean truncated
+        }
+        class ToolFailure {
+          <<record>>
+          ToolFailureKind kind;
+          String redactedMessage;
+          Recoverability recoverability
+        }
+        class ToolFailureKind {
+          <<enum>>
+          INVALID_DESCRIPTOR
+          MODE_DENIED
+          PERMISSION_DENIED
+          WORKSPACE_DENIED
+          DISABLED_SOURCE
+          UNSUPPORTED_CAPABILITY
+          INPUT_INVALID
+          OUTPUT_OVERFLOW
+          EXECUTOR_UNAVAILABLE
+          CANCELLED
+          UNEXPECTED_FAILURE
+        }
+        class OutputRefId {
+          <<record>>
+          String value
+        }
+        class OutputKind {
+          <<enum>>
+          TEXT
+          PATCH
+          SHELL_OUTPUT
+          PROVIDER_TRACE
+          ARTIFACT
+        }
+        class OutputRef {
+          <<record>>
+          OutputRefId id;
+          OutputKind kind;
+          String redactedDescription;
+          boolean bounded
+        }
     }
 
     namespace ai.codegeist.permission {
-        class PermissionRequestId { <<record>> String value }
-        class PermissionDecisionId { <<record>> String value }
-        class PermissionRequest { <<record>> PermissionRequestId id; ToolRequestId toolRequestId; ToolId toolId; PermissionScope requestedScope; String redactedReason }
-        class PermissionDecision { <<record>> PermissionDecisionId id; PermissionDecisionValue value; PermissionScope scope; SourceClient source; String redactedReason }
-        class PermissionDecisionValue { <<enum>> ALLOW DENY ASK CORRECT_AND_RETRY }
-        class PermissionScope { <<enum>> ONE_REQUEST ONE_TURN ONE_SESSION WORKSPACE_TARGET DESCRIPTOR_DEFAULT }
-        class PermissionPolicy { <<interface>> evaluate(PermissionRequest) PermissionDecision }
-        class StaticPermissionPolicy { <<class>> }
+        class PermissionRequestId {
+          <<record>>
+          String value
+        }
+        class PermissionDecisionId {
+          <<record>>
+          String value
+        }
+        class PermissionRequest {
+          <<record>>
+          PermissionRequestId id;
+          ToolRequestId toolRequestId;
+          ToolId toolId;
+          PermissionScope requestedScope;
+          String redactedReason
+        }
+        class PermissionDecision {
+          <<record>>
+          PermissionDecisionId id;
+          PermissionDecisionValue value;
+          PermissionScope scope;
+          SourceClient source;
+          String redactedReason
+        }
+        class PermissionDecisionValue {
+          <<enum>>
+          ALLOW
+          DENY
+          ASK
+          CORRECT_AND_RETRY
+        }
+        class PermissionScope {
+          <<enum>>
+          ONE_REQUEST
+          ONE_TURN
+          ONE_SESSION
+          WORKSPACE_TARGET
+          DESCRIPTOR_DEFAULT
+        }
+        class PermissionPolicy {
+          <<interface>>
+          evaluate(PermissionRequest) PermissionDecision
+        }
+        class StaticPermissionPolicy {
+          <<class>>
+        }
     }
 
     namespace ai.codegeist.workspace {
-        class WorkspaceToolTarget { <<record>> WorkspaceToolTargetKind kind; WorkspacePath path; WorkspaceToolVerdict verdict }
-        class WorkspaceToolTargetKind { <<enum>> READ_TARGET WRITE_TARGET COMMAND_CWD OUTPUT_REF EXTERNAL_DIRECTORY_CANDIDATE }
-        class WorkspaceToolVerdict { <<enum>> ALLOWED DENIED_OUTSIDE_ROOT DENIED_SECRET_LIKE DENIED_GENERATED DENIED_IGNORED DENIED_SYMLINK_ESCAPE APPROVAL_CANDIDATE }
-        class WorkspaceToolPolicy { <<interface>> validate(WorkspaceToolTarget) WorkspaceToolTarget }
+        class WorkspaceToolTarget {
+          <<record>>
+          WorkspaceToolTargetKind kind;
+          WorkspacePath path;
+          WorkspaceToolVerdict verdict
+        }
+        class WorkspaceToolTargetKind {
+          <<enum>>
+          READ_TARGET
+          WRITE_TARGET
+          COMMAND_CWD
+          OUTPUT_REF
+          EXTERNAL_DIRECTORY_CANDIDATE
+        }
+        class WorkspaceToolVerdict {
+          <<enum>>
+          ALLOWED
+          DENIED_OUTSIDE_ROOT
+          DENIED_SECRET_LIKE
+          DENIED_GENERATED
+          DENIED_IGNORED
+          DENIED_SYMLINK_ESCAPE
+          APPROVAL_CANDIDATE
+        }
+        class WorkspaceToolPolicy {
+          <<interface>>
+          validate(WorkspaceToolTarget) WorkspaceToolTarget
+        }
     }
 
     namespace ai.codegeist.tool.tests {

@@ -35,14 +35,40 @@ classDiagram
       MessagePartType type;
       String summary
     }
-    class TurnProjection { <<record>> TurnId id; long sequence; TurnStatus status; List~MessagePartProjection~ parts }
-    class SessionProjection { <<record>> SessionId sessionId; SessionStatus status; List~TurnProjection~ turns; List~RuntimeEvent~ recentEvents }
-    class SessionProjector { project(Session, List~RuntimeEvent~) ProjectionResult }
-    class ProjectionConflict { <<record>> String redactedMessage; Recoverability recoverability }
-    class Session { <<record>> }
-    class RuntimeEvent { <<record>> }
-    class EventId { <<record>> }
-    class RuntimeSessionEventContractTests { projectsEventsIdempotentlyByEventId() }
+    class TurnProjection {
+      <<record>>
+      TurnId id;
+      long sequence;
+      TurnStatus status;
+      List~MessagePartProjection~ parts
+    }
+    class SessionProjection {
+      <<record>>
+      SessionId sessionId;
+      SessionStatus status;
+      List~TurnProjection~ turns;
+      List~RuntimeEvent~ recentEvents
+    }
+    class SessionProjector {
+      project(Session, List~RuntimeEvent~) ProjectionResult
+    }
+    class ProjectionConflict {
+      <<record>>
+      String redactedMessage;
+      Recoverability recoverability
+    }
+    class Session {
+      <<record>>
+    }
+    class RuntimeEvent {
+      <<record>>
+    }
+    class EventId {
+      <<record>>
+    }
+    class RuntimeSessionEventContractTests {
+      projectsEventsIdempotentlyByEventId()
+    }
 
     SessionProjector --> Session
     SessionProjector --> RuntimeEvent

@@ -28,21 +28,84 @@ rules.
 
 ```mermaid
 classDiagram
-    class EventId { <<record>> String value }
-    class EventType { <<enum>> SESSION_CREATED SESSION_UPDATED TURN_STARTED USER_INPUT TURN_COMPLETED WARNING_RAISED ERROR_RAISED }
-    class EventSource { <<enum>> RUNTIME SESSION CLIENT SYSTEM }
-    class EventVisibility { <<enum>> USER_VISIBLE INTERNAL AUDIT }
-    class EventEnvelope { <<record>> EventId id; EventType type; SessionId sessionId; Optional~TurnId~ turnId; long sessionSequence; OptionalLong turnSequence }
-    class RuntimeEvent { <<record>> EventEnvelope envelope; EventPayload payload }
-    class EventPayload { <<sealed interface>> }
-    class SessionCreated { <<record>> SessionId sessionId }
-    class SessionUpdated { <<record>> SessionStatus status }
-    class TurnStarted { <<record>> TurnId turnId; AgentMode mode }
-    class UserInputAccepted { <<record>> String redactedSummary }
-    class TurnCompleted { <<record>> TurnId turnId; TurnStatus status }
-    class WarningRaised { <<record>> String redactedMessage }
-    class ErrorRaised { <<record>> String redactedMessage; Recoverability recoverability }
-    class RuntimeSessionEventContractTests { assignsMonotonicSessionEventSequence() }
+    class EventId {
+      <<record>>
+      String value
+    }
+    class EventType {
+      <<enum>>
+      SESSION_CREATED
+      SESSION_UPDATED
+      TURN_STARTED
+      USER_INPUT
+      TURN_COMPLETED
+      WARNING_RAISED
+      ERROR_RAISED
+    }
+    class EventSource {
+      <<enum>>
+      RUNTIME
+      SESSION
+      CLIENT
+      SYSTEM
+    }
+    class EventVisibility {
+      <<enum>>
+      USER_VISIBLE
+      INTERNAL
+      AUDIT
+    }
+    class EventEnvelope {
+      <<record>>
+      EventId id;
+      EventType type;
+      SessionId sessionId;
+      Optional~TurnId~ turnId;
+      long sessionSequence;
+      OptionalLong turnSequence
+    }
+    class RuntimeEvent {
+      <<record>>
+      EventEnvelope envelope;
+      EventPayload payload
+    }
+    class EventPayload {
+      <<sealed interface>>
+    }
+    class SessionCreated {
+      <<record>>
+      SessionId sessionId
+    }
+    class SessionUpdated {
+      <<record>>
+      SessionStatus status
+    }
+    class TurnStarted {
+      <<record>>
+      TurnId turnId;
+      AgentMode mode
+    }
+    class UserInputAccepted {
+      <<record>>
+      String redactedSummary
+    }
+    class TurnCompleted {
+      <<record>>
+      TurnId turnId;
+      TurnStatus status
+    }
+    class WarningRaised {
+      <<record>>
+      String redactedMessage
+    }
+    class ErrorRaised {
+      <<record>>
+      String redactedMessage;
+      Recoverability recoverability
+    }
+    class RuntimeSessionEventContractTests {
+      assignsMonotonicSessionEventSequence()
+    }
 
     RuntimeEvent --> EventEnvelope
     RuntimeEvent --> EventPayload

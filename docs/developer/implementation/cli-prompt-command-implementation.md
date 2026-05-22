@@ -29,18 +29,36 @@ shell, TUI, server, or async workflows.
 ```mermaid
 classDiagram
     namespace ai.codegeist.cli {
-        class PromptCommands { <<class>> plan(String,String) String; build(String,String) String }
-        class PromptCommandRequestFactory { <<class>> create(AgentMode,String,String) PromptRequest }
-        class PromptCommandOutputFormatter { <<class>> format(PromptAcceptance) String; formatFailure(RuntimeContractFailure) String }
-        class PromptCommandFailure { <<record>> String redactedMessage }
-        class CliRequestIds { <<class>> }
+        class PromptCommands {
+          <<class>>
+          plan(String,String) String;
+          build(String,String) String
+        }
+        class PromptCommandRequestFactory {
+          <<class>>
+          create(AgentMode,String,String) PromptRequest
+        }
+        class PromptCommandOutputFormatter {
+          <<class>>
+          format(PromptAcceptance) String;
+          formatFailure(RuntimeContractFailure) String
+        }
+        class PromptCommandFailure {
+          <<record>>
+          String redactedMessage
+        }
+        class CliRequestIds {
+          <<class>>
+        }
     }
 
     namespace ai.codegeist.cli.tests {
         class PromptCommandsAdapterTests
         class PromptCommandRegistrationTests
         class PromptCommandBoundaryDependencyTests
-        class RecordingRuntimePromptPort { <<class>> }
+        class RecordingRuntimePromptPort {
+          <<class>>
+        }
     }
 
     PromptCommands --> PromptCommandRequestFactory

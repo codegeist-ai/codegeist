@@ -28,26 +28,147 @@ summaries. Real process execution remains deferred.
 ```mermaid
 classDiagram
     namespace ai.codegeist.shell {
-        class ShellRequestId { <<record>> String value }
-        class ShellVerificationRequest { <<record>> ShellRequestId id; SessionId sessionId; TurnId turnId; AgentMode mode; CorrelationId correlationId; ShellCommandShape command; ShellCommandPurpose purpose; DestructivePosture destructive; WorkspaceCommandCwd cwd; ShellEnvPolicy env; StdinPolicy stdin; ShellTimeout timeout; ShellOutputLimit outputLimit; String redactedSummary }
-        class ShellCommandShape { <<sealed interface>> }
-        class ArgvCommand { <<record>> List~String~ argv }
-        class ShellSnippet { <<record>> String redactedSnippetSummary }
-        class ShellCommandPurpose { <<enum>> VERIFY BUILD TEST INSPECT MUTATE_WORKSPACE DEPLOY NETWORK UNKNOWN }
-        class DestructivePosture { <<enum>> NON_DESTRUCTIVE REQUIRES_EXPLICIT_INTENT DENIED_BY_DEFAULT UNKNOWN }
-        class WorkspaceCommandCwd { <<record>> WorkspaceToolTarget target }
-        class ShellEnvPolicy { <<record>> Set~String~ inherited; Set~String~ removed; Set~String~ redacted }
-        class StdinPolicy { <<enum>> IGNORE EMPTY DENY_INTERACTIVE }
-        class ShellTimeout { <<record>> Duration value }
-        class ShellOutputLimit { <<record>> int stdoutChars; int stderrChars; boolean outputRefRequired }
-        class ApprovedShellExecution { <<record>> ShellRequestId requestId; PermissionDecisionId decisionId; WorkspaceCommandCwd cwd; ShellCommandShape command; ShellTimeout timeout; StdinPolicy stdin; ShellOutputLimit outputLimit }
-        class ShellExecutor { <<interface>> execute(ApprovedShellExecution) ShellVerificationResult }
-        class FakeShellExecutor { <<class>> }
-        class ShellVerificationResult { <<record>> ShellRequestId requestId; ShellResultStatus status; OptionalInt exitCode; ShellOutputSummary output; Optional~ShellFailure~ failure }
-        class ShellResultStatus { <<enum>> DENIED APPROVAL_REQUIRED STARTED COMPLETED FAILED CANCELLED TIMED_OUT }
-        class ShellOutputSummary { <<record>> String stdoutPreview; String stderrPreview; boolean truncated; List~OutputRef~ outputRefs }
-        class ShellFailure { <<record>> ShellFailureKind kind; String redactedMessage; Recoverability recoverability }
-        class ShellFailureKind { <<enum>> MODE_DENIED SAFETY_DENIED PERMISSION_DENIED WORKSPACE_DENIED INVALID_COMMAND_SHAPE INVALID_CWD INVALID_ENV_POLICY STDIN_DENIED TIMEOUT CANCELLED NON_ZERO_EXIT OUTPUT_OVERFLOW EXECUTOR_UNAVAILABLE UNEXPECTED_PROCESS_FAILURE }
+        class ShellRequestId {
+          <<record>>
+          String value
+        }
+        class ShellVerificationRequest {
+          <<record>>
+          ShellRequestId id;
+          SessionId sessionId;
+          TurnId turnId;
+          AgentMode mode;
+          CorrelationId correlationId;
+          ShellCommandShape command;
+          ShellCommandPurpose purpose;
+          DestructivePosture destructive;
+          WorkspaceCommandCwd cwd;
+          ShellEnvPolicy env;
+          StdinPolicy stdin;
+          ShellTimeout timeout;
+          ShellOutputLimit outputLimit;
+          String redactedSummary
+        }
+        class ShellCommandShape {
+          <<sealed interface>>
+        }
+        class ArgvCommand {
+          <<record>>
+          List~String~ argv
+        }
+        class ShellSnippet {
+          <<record>>
+          String redactedSnippetSummary
+        }
+        class ShellCommandPurpose {
+          <<enum>>
+          VERIFY
+          BUILD
+          TEST
+          INSPECT
+          MUTATE_WORKSPACE
+          DEPLOY
+          NETWORK
+          UNKNOWN
+        }
+        class DestructivePosture {
+          <<enum>>
+          NON_DESTRUCTIVE
+          REQUIRES_EXPLICIT_INTENT
+          DENIED_BY_DEFAULT
+          UNKNOWN
+        }
+        class WorkspaceCommandCwd {
+          <<record>>
+          WorkspaceToolTarget target
+        }
+        class ShellEnvPolicy {
+          <<record>>
+          Set~String~ inherited;
+          Set~String~ removed;
+          Set~String~ redacted
+        }
+        class StdinPolicy {
+          <<enum>>
+          IGNORE
+          EMPTY
+          DENY_INTERACTIVE
+        }
+        class ShellTimeout {
+          <<record>>
+          Duration value
+        }
+        class ShellOutputLimit {
+          <<record>>
+          int stdoutChars;
+          int stderrChars;
+          boolean outputRefRequired
+        }
+        class ApprovedShellExecution {
+          <<record>>
+          ShellRequestId requestId;
+          PermissionDecisionId decisionId;
+          WorkspaceCommandCwd cwd;
+          ShellCommandShape command;
+          ShellTimeout timeout;
+          StdinPolicy stdin;
+          ShellOutputLimit outputLimit
+        }
+        class ShellExecutor {
+          <<interface>>
+          execute(ApprovedShellExecution) ShellVerificationResult
+        }
+        class FakeShellExecutor {
+          <<class>>
+        }
+        class ShellVerificationResult {
+          <<record>>
+          ShellRequestId requestId;
+          ShellResultStatus status;
+          OptionalInt exitCode;
+          ShellOutputSummary output;
+          Optional~ShellFailure~ failure
+        }
+        class ShellResultStatus {
+          <<enum>>
+          DENIED
+          APPROVAL_REQUIRED
+          STARTED
+          COMPLETED
+          FAILED
+          CANCELLED
+          TIMED_OUT
+        }
+        class ShellOutputSummary {
+          <<record>>
+          String stdoutPreview;
+          String stderrPreview;
+          boolean truncated;
+          List~OutputRef~ outputRefs
+        }
+        class ShellFailure {
+          <<record>>
+          ShellFailureKind kind;
+          String redactedMessage;
+          Recoverability recoverability
+        }
+        class ShellFailureKind {
+          <<enum>>
+          MODE_DENIED
+          SAFETY_DENIED
+          PERMISSION_DENIED
+          WORKSPACE_DENIED
+          INVALID_COMMAND_SHAPE
+          INVALID_CWD
+          INVALID_ENV_POLICY
+          STDIN_DENIED
+          TIMEOUT
+          CANCELLED
+          NON_ZERO_EXIT
+          OUTPUT_OVERFLOW
+          EXECUTOR_UNAVAILABLE
+          UNEXPECTED_PROCESS_FAILURE
+        }
     }
 
     namespace ai.codegeist.shell.tests {

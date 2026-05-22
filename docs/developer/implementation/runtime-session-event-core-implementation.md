@@ -124,22 +124,71 @@ renders remain readable in markdown.
 
 ```mermaid
 classDiagram
-    class PromptRequestId { <<record>> String value }
-    class CorrelationId { <<record>> String value }
-    class WorkspaceRef { <<record>> String value }
-    class AgentMode { <<enum>> PLAN BUILD REVIEW }
-    class SourceClient { <<enum>> CLI TUI SERVER VAADIN EXTENSION SYSTEM }
-    class Recoverability { <<enum>> RECOVERABLE TERMINAL }
-    class PromptRequest { <<record>> }
-    class PromptAcceptance { <<record>> }
-    class RuntimePromptPort { <<interface>> accept(PromptRequest) PromptAcceptance }
-    class PromptRequestValidator { validate(PromptRequest) Optional~RuntimeContractFailure~ }
-    class RuntimeContractFailure { <<sealed interface>> redactedMessage(); recoverability() }
-    class InvalidPromptRequest { <<record>> }
-    class InvalidIdentifier { <<record>> }
-    class InvalidSequence { <<record>> }
-    class ProjectionConflict { <<record>> }
-    class UnsupportedMode { <<record>> }
+    class PromptRequestId {
+      <<record>>
+      String value
+    }
+    class CorrelationId {
+      <<record>>
+      String value
+    }
+    class WorkspaceRef {
+      <<record>>
+      String value
+    }
+    class AgentMode {
+      <<enum>>
+      PLAN
+      BUILD
+      REVIEW
+    }
+    class SourceClient {
+      <<enum>>
+      CLI
+      TUI
+      SERVER
+      VAADIN
+      EXTENSION
+      SYSTEM
+    }
+    class Recoverability {
+      <<enum>>
+      RECOVERABLE
+      TERMINAL
+    }
+    class PromptRequest {
+      <<record>>
+    }
+    class PromptAcceptance {
+      <<record>>
+    }
+    class RuntimePromptPort {
+      <<interface>>
+      accept(PromptRequest) PromptAcceptance
+    }
+    class PromptRequestValidator {
+      validate(PromptRequest) Optional~RuntimeContractFailure~
+    }
+    class RuntimeContractFailure {
+      <<sealed interface>>
+      redactedMessage();
+      recoverability()
+    }
+    class InvalidPromptRequest {
+      <<record>>
+    }
+    class InvalidIdentifier {
+      <<record>>
+    }
+    class InvalidSequence {
+      <<record>>
+    }
+    class ProjectionConflict {
+      <<record>>
+    }
+    class UnsupportedMode {
+      <<record>>
+    }
 
     PromptRequest --> PromptRequestId
     PromptRequest --> AgentMode
@@ -161,19 +210,75 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class SessionId { <<record>> String value }
-    class TurnId { <<record>> String value }
-    class PartId { <<record>> String value }
-    class SessionStatus { <<enum>> ACTIVE COMPLETED FAILED ARCHIVED }
-    class TurnStatus { <<enum>> ACCEPTED RUNNING COMPLETED FAILED }
-    class MessagePartType { <<enum>> USER_PROMPT ASSISTANT_SUMMARY DIAGNOSTIC }
-    class MessagePart { <<record>> PartId id; long sequence; MessagePartType type }
-    class Turn { <<record>> TurnId id; long sequence; TurnStatus status }
-    class Session { <<record>> SessionId id; SessionStatus status }
-    class MessagePartProjection { <<record>> PartId id; long sequence; MessagePartType type }
-    class TurnProjection { <<record>> TurnId id; long sequence; TurnStatus status }
-    class SessionProjection { <<record>> SessionId sessionId; SessionStatus status }
-    class SessionProjector { project(Session, List~RuntimeEvent~) SessionProjection }
+    class SessionId {
+      <<record>>
+      String value
+    }
+    class TurnId {
+      <<record>>
+      String value
+    }
+    class PartId {
+      <<record>>
+      String value
+    }
+    class SessionStatus {
+      <<enum>>
+      ACTIVE
+      COMPLETED
+      FAILED
+      ARCHIVED
+    }
+    class TurnStatus {
+      <<enum>>
+      ACCEPTED
+      RUNNING
+      COMPLETED
+      FAILED
+    }
+    class MessagePartType {
+      <<enum>>
+      USER_PROMPT
+      ASSISTANT_SUMMARY
+      DIAGNOSTIC
+    }
+    class MessagePart {
+      <<record>>
+      PartId id;
+      long sequence;
+      MessagePartType type
+    }
+    class Turn {
+      <<record>>
+      TurnId id;
+      long sequence;
+      TurnStatus status
+    }
+    class Session {
+      <<record>>
+      SessionId id;
+      SessionStatus status
+    }
+    class MessagePartProjection {
+      <<record>>
+      PartId id;
+      long sequence;
+      MessagePartType type
+    }
+    class TurnProjection {
+      <<record>>
+      TurnId id;
+      long sequence;
+      TurnStatus status
+    }
+    class SessionProjection {
+      <<record>>
+      SessionId sessionId;
+      SessionStatus status
+    }
+    class SessionProjector {
+      project(Session, List~RuntimeEvent~) SessionProjection
+    }
 
     Session "1" --> "0..*" Turn
     Turn "1" --> "0..*" MessagePart
@@ -193,20 +298,78 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class EventId { <<record>> String value }
-    class EventType { <<enum>> SESSION_CREATED SESSION_UPDATED TURN_STARTED USER_INPUT TURN_COMPLETED WARNING_RAISED ERROR_RAISED }
-    class EventSource { <<enum>> RUNTIME SESSION CLIENT SYSTEM }
-    class EventVisibility { <<enum>> USER_VISIBLE INTERNAL AUDIT }
-    class EventEnvelope { <<record>> EventId id; EventType type; long sessionSequence }
-    class RuntimeEvent { <<record>> EventEnvelope envelope; EventPayload payload }
-    class EventPayload { <<sealed interface>> }
-    class SessionCreated { <<record>> SessionId sessionId }
-    class SessionUpdated { <<record>> SessionStatus status }
-    class TurnStarted { <<record>> TurnId turnId; AgentMode mode }
-    class UserInputAccepted { <<record>> String redactedSummary }
-    class TurnCompleted { <<record>> TurnId turnId; TurnStatus status }
-    class WarningRaised { <<record>> String redactedMessage }
-    class ErrorRaised { <<record>> String redactedMessage; Recoverability recoverability }
+    class EventId {
+      <<record>>
+      String value
+    }
+    class EventType {
+      <<enum>>
+      SESSION_CREATED
+      SESSION_UPDATED
+      TURN_STARTED
+      USER_INPUT
+      TURN_COMPLETED
+      WARNING_RAISED
+      ERROR_RAISED
+    }
+    class EventSource {
+      <<enum>>
+      RUNTIME
+      SESSION
+      CLIENT
+      SYSTEM
+    }
+    class EventVisibility {
+      <<enum>>
+      USER_VISIBLE
+      INTERNAL
+      AUDIT
+    }
+    class EventEnvelope {
+      <<record>>
+      EventId id;
+      EventType type;
+      long sessionSequence
+    }
+    class RuntimeEvent {
+      <<record>>
+      EventEnvelope envelope;
+      EventPayload payload
+    }
+    class EventPayload {
+      <<sealed interface>>
+    }
+    class SessionCreated {
+      <<record>>
+      SessionId sessionId
+    }
+    class SessionUpdated {
+      <<record>>
+      SessionStatus status
+    }
+    class TurnStarted {
+      <<record>>
+      TurnId turnId;
+      AgentMode mode
+    }
+    class UserInputAccepted {
+      <<record>>
+      String redactedSummary
+    }
+    class TurnCompleted {
+      <<record>>
+      TurnId turnId;
+      TurnStatus status
+    }
+    class WarningRaised {
+      <<record>>
+      String redactedMessage
+    }
+    class ErrorRaised {
+      <<record>>
+      String redactedMessage;
+      Recoverability recoverability
+    }
 
     EventEnvelope --> EventId
     EventEnvelope --> EventType

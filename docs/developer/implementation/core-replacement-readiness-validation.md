@@ -30,10 +30,33 @@ classDiagram
         class CoreReplacementReadinessTests
         class ReadinessScenarioFixture
         class ReadinessReportTests
-        class ReadinessScenario { <<enum>> PLAN_PROMPT BUILD_PROMPT CONTINUE_SESSION TOOL_PERMISSION_DENIAL PACKAGING_STARTUP }
-        class ReadinessGate { <<record>> ReadinessScenario scenario; ReadinessStatus status; String reason; boolean blocking }
-        class ReadinessStatus { <<enum>> PASSED SKIPPED FAILED }
-        class ReadinessGap { <<record>> String title; String summary; boolean blocksReplacement }
+        class ReadinessScenario {
+          <<enum>>
+          PLAN_PROMPT
+          BUILD_PROMPT
+          CONTINUE_SESSION
+          TOOL_PERMISSION_DENIAL
+          PACKAGING_STARTUP
+        }
+        class ReadinessGate {
+          <<record>>
+          ReadinessScenario scenario;
+          ReadinessStatus status;
+          String reason;
+          boolean blocking
+        }
+        class ReadinessStatus {
+          <<enum>>
+          PASSED
+          SKIPPED
+          FAILED
+        }
+        class ReadinessGap {
+          <<record>>
+          String title;
+          String summary;
+          boolean blocksReplacement
+        }
     }
 
     CoreReplacementReadinessTests --> ReadinessScenarioFixture

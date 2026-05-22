@@ -30,40 +30,193 @@ calls, runtime orchestration, CLI flags, or tool callbacks.
 ```mermaid
 classDiagram
     namespace ai.codegeist.provider {
-        class ProviderId { <<record>> String value }
-        class ModelId { <<record>> String value }
-        class ProviderModelRef { <<record>> ProviderId providerId; ModelId modelId }
-        class ProviderType { <<enum>> OPENAI_COMPATIBLE OPENAI OLLAMA SPRING_AI_SUPPORTED }
-        class ProviderConfig { <<record>> ProviderId id; ProviderType type; boolean enabled; CredentialSourceRef credential; List~ProviderModelConfig~ models }
-        class ProviderModelConfig { <<record>> ProviderModelRef ref; ProviderCapabilitySet capabilities; ProviderOptionsProfile defaults; VerificationStatus status }
-        class ProviderCapabilitySet { <<record>> boolean streaming; boolean toolCalling; boolean local; boolean networkRequired }
-        class ProviderOptionsProfile { <<record>> OptionalDouble temperature; OptionalInt maxTokens; List~String~ stopSequences }
-        class CredentialSourceRef { <<record>> CredentialSourceKind kind; String name }
-        class CredentialSourceKind { <<enum>> ENV SECRET_STORE LOCAL_PROFILE NONE }
-        class VerificationStatus { <<enum>> UNKNOWN CONFIGURED VALIDATED FAILED DISABLED }
-        class ProviderValidationResult { <<record>> ProviderId providerId; VerificationStatus status; List~ProviderDiagnostic~ diagnostics }
-        class ProviderDiagnostic { <<record>> ProviderDiagnosticKind kind; String redactedMessage }
-        class ProviderDiagnosticKind { <<enum>> CONFIGURED DISABLED MISSING_MODEL MISSING_CREDENTIAL INVALID_ENDPOINT UNSUPPORTED_CAPABILITY }
-        class ProviderAdapter { <<interface>> validate(ProviderConfig) ProviderValidationResult; call(ProviderRequest) ProviderResponse; stream(ProviderRequest) ProviderStream }
-        class ProviderRequestId { <<record>> String value }
-        class ProviderRequest { <<record>> ProviderRequestId id; ProviderModelRef model; AgentMode mode; SessionId sessionId; TurnId turnId; CorrelationId correlationId; RedactedPrompt prompt; ProviderOptionsProfile options }
-        class RedactedPrompt { <<record>> String summary }
-        class ProviderResponse { <<record>> ProviderModelRef model; String assistantText; ProviderUsage usage; List~ProviderDiagnostic~ diagnostics }
-        class ProviderStream { <<interface>> }
-        class ProviderStreamChunk { <<record>> ProviderStreamChunkType type; Optional~String~ textDelta; Optional~ProviderUsage~ usageDelta }
-        class ProviderStreamChunkType { <<enum>> TEXT USAGE DIAGNOSTIC COMPLETE }
-        class ProviderUsage { <<record>> OptionalInt inputTokens; OptionalInt outputTokens }
-        class ProviderError { <<record>> ProviderErrorCode code; String redactedMessage; Recoverability recoverability; Optional~String~ providerErrorRef }
-        class ProviderErrorCode { <<enum>> PROVIDER_NOT_SELECTED PROVIDER_DISABLED MODEL_NOT_SELECTED MODEL_UNAVAILABLE CREDENTIAL_SOURCE_MISSING CREDENTIAL_UNAVAILABLE ENDPOINT_INVALID CAPABILITY_UNSUPPORTED TOOL_CALLING_DISABLED STREAMING_UNAVAILABLE PROVIDER_UNAVAILABLE PROVIDER_RATE_LIMITED PROVIDER_AUTH_FAILED PROVIDER_TIMEOUT PROVIDER_RESPONSE_INVALID }
+        class ProviderId {
+          <<record>>
+          String value
+        }
+        class ModelId {
+          <<record>>
+          String value
+        }
+        class ProviderModelRef {
+          <<record>>
+          ProviderId providerId;
+          ModelId modelId
+        }
+        class ProviderType {
+          <<enum>>
+          OPENAI_COMPATIBLE
+          OPENAI
+          OLLAMA
+          SPRING_AI_SUPPORTED
+        }
+        class ProviderConfig {
+          <<record>>
+          ProviderId id;
+          ProviderType type;
+          boolean enabled;
+          CredentialSourceRef credential;
+          List~ProviderModelConfig~ models
+        }
+        class ProviderModelConfig {
+          <<record>>
+          ProviderModelRef ref;
+          ProviderCapabilitySet capabilities;
+          ProviderOptionsProfile defaults;
+          VerificationStatus status
+        }
+        class ProviderCapabilitySet {
+          <<record>>
+          boolean streaming;
+          boolean toolCalling;
+          boolean local;
+          boolean networkRequired
+        }
+        class ProviderOptionsProfile {
+          <<record>>
+          OptionalDouble temperature;
+          OptionalInt maxTokens;
+          List~String~ stopSequences
+        }
+        class CredentialSourceRef {
+          <<record>>
+          CredentialSourceKind kind;
+          String name
+        }
+        class CredentialSourceKind {
+          <<enum>>
+          ENV
+          SECRET_STORE
+          LOCAL_PROFILE
+          NONE
+        }
+        class VerificationStatus {
+          <<enum>>
+          UNKNOWN
+          CONFIGURED
+          VALIDATED
+          FAILED
+          DISABLED
+        }
+        class ProviderValidationResult {
+          <<record>>
+          ProviderId providerId;
+          VerificationStatus status;
+          List~ProviderDiagnostic~ diagnostics
+        }
+        class ProviderDiagnostic {
+          <<record>>
+          ProviderDiagnosticKind kind;
+          String redactedMessage
+        }
+        class ProviderDiagnosticKind {
+          <<enum>>
+          CONFIGURED
+          DISABLED
+          MISSING_MODEL
+          MISSING_CREDENTIAL
+          INVALID_ENDPOINT
+          UNSUPPORTED_CAPABILITY
+        }
+        class ProviderAdapter {
+          <<interface>>
+          validate(ProviderConfig) ProviderValidationResult;
+          call(ProviderRequest) ProviderResponse;
+          stream(ProviderRequest) ProviderStream
+        }
+        class ProviderRequestId {
+          <<record>>
+          String value
+        }
+        class ProviderRequest {
+          <<record>>
+          ProviderRequestId id;
+          ProviderModelRef model;
+          AgentMode mode;
+          SessionId sessionId;
+          TurnId turnId;
+          CorrelationId correlationId;
+          RedactedPrompt prompt;
+          ProviderOptionsProfile options
+        }
+        class RedactedPrompt {
+          <<record>>
+          String summary
+        }
+        class ProviderResponse {
+          <<record>>
+          ProviderModelRef model;
+          String assistantText;
+          ProviderUsage usage;
+          List~ProviderDiagnostic~ diagnostics
+        }
+        class ProviderStream {
+          <<interface>>
+        }
+        class ProviderStreamChunk {
+          <<record>>
+          ProviderStreamChunkType type;
+          Optional~String~ textDelta;
+          Optional~ProviderUsage~ usageDelta
+        }
+        class ProviderStreamChunkType {
+          <<enum>>
+          TEXT
+          USAGE
+          DIAGNOSTIC
+          COMPLETE
+        }
+        class ProviderUsage {
+          <<record>>
+          OptionalInt inputTokens;
+          OptionalInt outputTokens
+        }
+        class ProviderError {
+          <<record>>
+          ProviderErrorCode code;
+          String redactedMessage;
+          Recoverability recoverability;
+          Optional~String~ providerErrorRef
+        }
+        class ProviderErrorCode {
+          <<enum>>
+          PROVIDER_NOT_SELECTED
+          PROVIDER_DISABLED
+          MODEL_NOT_SELECTED
+          MODEL_UNAVAILABLE
+          CREDENTIAL_SOURCE_MISSING
+          CREDENTIAL_UNAVAILABLE
+          ENDPOINT_INVALID
+          CAPABILITY_UNSUPPORTED
+          TOOL_CALLING_DISABLED
+          STREAMING_UNAVAILABLE
+          PROVIDER_UNAVAILABLE
+          PROVIDER_RATE_LIMITED
+          PROVIDER_AUTH_FAILED
+          PROVIDER_TIMEOUT
+          PROVIDER_RESPONSE_INVALID
+        }
     }
 
     namespace ai.codegeist.provider.springai {
-        class SpringAiProviderAdapterFactory { <<class>> }
-        class SpringAiPromptMapper { <<class>> }
-        class SpringAiResponseMapper { <<class>> }
-        class SpringAiProviderExceptionMapper { <<class>> }
-        class OpenAiCompatibleProviderDescriptor { <<class>> }
-        class OllamaProviderDescriptor { <<class>> }
+        class SpringAiProviderAdapterFactory {
+          <<class>>
+        }
+        class SpringAiPromptMapper {
+          <<class>>
+        }
+        class SpringAiResponseMapper {
+          <<class>>
+        }
+        class SpringAiProviderExceptionMapper {
+          <<class>>
+        }
+        class OpenAiCompatibleProviderDescriptor {
+          <<class>>
+        }
+        class OllamaProviderDescriptor {
+          <<class>>
+        }
     }
 
     namespace ai.codegeist.provider.tests {

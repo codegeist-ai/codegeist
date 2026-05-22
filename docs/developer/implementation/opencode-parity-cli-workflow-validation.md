@@ -29,9 +29,23 @@ classDiagram
         class OpenCodeParityCliWorkflowTests
         class CliWorkflowSmokeTests
         class ParityGapReportTests
-        class CliWorkflowFixture { <<class>> }
-        class ParityGap { <<record>> String workflow; String summary; boolean blocking }
-        class ParityWorkflow { <<enum>> PLAN_PROMPT BUILD_PROMPT CONTINUE_SESSION TOOL_DENIAL STORAGE_SUMMARY }
+        class CliWorkflowFixture {
+          <<class>>
+        }
+        class ParityGap {
+          <<record>>
+          String workflow;
+          String summary;
+          boolean blocking
+        }
+        class ParityWorkflow {
+          <<enum>>
+          PLAN_PROMPT
+          BUILD_PROMPT
+          CONTINUE_SESSION
+          TOOL_DENIAL
+          STORAGE_SUMMARY
+        }
     }
 
     OpenCodeParityCliWorkflowTests --> CliWorkflowFixture

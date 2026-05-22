@@ -27,11 +27,45 @@ publish releases, add signing keys, or create a full release pipeline.
 ```mermaid
 classDiagram
     namespace ai.codegeist.diagnostic {
-        class PackagingCheckStatus { <<enum>> PASSED SKIPPED FAILED }
-        class PackagingCheckKind { <<enum>> MAVEN_TEST JVM_PACKAGE JVM_STARTUP NATIVE_COMPILE NATIVE_STARTUP CHECKSUM }
-        class PackagingCheckResult { <<record>> PackagingCheckKind kind; PackagingCheckStatus status; String command; String reason; Optional~Duration~ duration }
-        class NativeBlockerCategory { <<enum>> REFLECTION_METADATA DYNAMIC_CLASS_LOADING PROCESS_EXECUTION PROVIDER_LIBRARY SERVER_OR_VAADIN STORAGE_OR_ARTIFACT TOOLCHAIN }
-        class NativeBlocker { <<record>> NativeBlockerCategory category; String summary; String owner }
+        class PackagingCheckStatus {
+          <<enum>>
+          PASSED
+          SKIPPED
+          FAILED
+        }
+        class PackagingCheckKind {
+          <<enum>>
+          MAVEN_TEST
+          JVM_PACKAGE
+          JVM_STARTUP
+          NATIVE_COMPILE
+          NATIVE_STARTUP
+          CHECKSUM
+        }
+        class PackagingCheckResult {
+          <<record>>
+          PackagingCheckKind kind;
+          PackagingCheckStatus status;
+          String command;
+          String reason;
+          Optional~Duration~ duration
+        }
+        class NativeBlockerCategory {
+          <<enum>>
+          REFLECTION_METADATA
+          DYNAMIC_CLASS_LOADING
+          PROCESS_EXECUTION
+          PROVIDER_LIBRARY
+          SERVER_OR_VAADIN
+          STORAGE_OR_ARTIFACT
+          TOOLCHAIN
+        }
+        class NativeBlocker {
+          <<record>>
+          NativeBlockerCategory category;
+          String summary;
+          String owner
+        }
     }
 
     namespace ai.codegeist.diagnostic.tests {

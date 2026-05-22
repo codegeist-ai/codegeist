@@ -28,17 +28,65 @@ turn and message-part sequences are positive and monotonic, using
 
 ```mermaid
 classDiagram
-    class SessionId { <<record>> String value }
-    class TurnId { <<record>> String value }
-    class PartId { <<record>> String value }
-    class SessionStatus { <<enum>> ACTIVE COMPLETED FAILED ARCHIVED }
-    class TurnStatus { <<enum>> ACCEPTED RUNNING COMPLETED FAILED }
-    class MessagePartType { <<enum>> USER_PROMPT ASSISTANT_SUMMARY DIAGNOSTIC }
-    class MessagePart { <<record>> PartId id; long sequence; MessagePartType type; String summary }
-    class Turn { <<record>> TurnId id; long sequence; TurnStatus status; List~MessagePart~ parts }
-    class Session { <<record>> SessionId id; SessionStatus status; AgentMode defaultMode; List~Turn~ turns }
-    class InvalidSequence { <<record>> }
-    class RuntimeSessionEventContractTests { appendsTurnsAndPartsInOrder() }
+    class SessionId {
+      <<record>>
+      String value
+    }
+    class TurnId {
+      <<record>>
+      String value
+    }
+    class PartId {
+      <<record>>
+      String value
+    }
+    class SessionStatus {
+      <<enum>>
+      ACTIVE
+      COMPLETED
+      FAILED
+      ARCHIVED
+    }
+    class TurnStatus {
+      <<enum>>
+      ACCEPTED
+      RUNNING
+      COMPLETED
+      FAILED
+    }
+    class MessagePartType {
+      <<enum>>
+      USER_PROMPT
+      ASSISTANT_SUMMARY
+      DIAGNOSTIC
+    }
+    class MessagePart {
+      <<record>>
+      PartId id;
+      long sequence;
+      MessagePartType type;
+      String summary
+    }
+    class Turn {
+      <<record>>
+      TurnId id;
+      long sequence;
+      TurnStatus status;
+      List~MessagePart~ parts
+    }
+    class Session {
+      <<record>>
+      SessionId id;
+      SessionStatus status;
+      AgentMode defaultMode;
+      List~Turn~ turns
+    }
+    class InvalidSequence {
+      <<record>>
+    }
+    class RuntimeSessionEventContractTests {
+      appendsTurnsAndPartsInOrder()
+    }
 
     Session --> SessionId
     Session --> SessionStatus

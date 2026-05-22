@@ -88,6 +88,23 @@ specification documentation under `docs/developer/architecture/` and
 - Keep implemented and planned concepts visibly separate.
 - Prefer concrete file paths and class names over vague descriptions.
 - Keep diagrams small enough for a coding agent to scan quickly.
+- Keep Mermaid class diagrams readable on a single DIN A4 landscape page when
+  rendered or printed. Split large diagrams into focused views instead of forcing
+  many classes onto one page.
+- In Mermaid `classDiagram` blocks, format class attributes and methods on their
+  own lines inside the class body instead of compressing them onto one line. Use
+  this shape so records, enums, and method lists stay readable:
+
+  ```mermaid
+  classDiagram
+      class MessagePartProjection {
+        <<record>>
+        PartId id;
+        long sequence;
+        MessagePartType type;
+        String summary
+      }
+  ```
 - Update diagrams when the described structure changes.
 - Keep architecture docs, implementation, and tests synchronized. The order may be
   docs-first or implementation-first, but the final task state must not leave them
