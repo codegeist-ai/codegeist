@@ -1,7 +1,7 @@
 # Spring AI Agent Utils Phase Guidance
 
-Use this hint during specify, plan, and solve phases for T004 Java implementation
-tasks or any later Codegeist task that implements Spring AI-facing agent behavior.
+Use this hint during specify, plan, and solve phases for Codegeist Java
+implementation tasks that touch Spring AI-facing agent behavior.
 
 ## Guidance
 
@@ -29,7 +29,8 @@ tasks or any later Codegeist task that implements Spring AI-facing agent behavio
 
 ## High-Value Source Questions
 
-Use focused questions like these during T004 specify, plan, and solve phases:
+Use focused questions like these during implementation specify, plan, and solve
+phases:
 
 ```text
 /ask-project spring-ai-agent-utils "Which classes already implement grep, glob, list-directory, and file read behavior, and what validation or output bounding do they apply? Cite source files and tests."
@@ -50,7 +51,7 @@ Use focused questions like these during T004 specify, plan, and solve phases:
 ## Example Usage
 
 ```text
-/specify-task T004_04 docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md
-/plan-task T004_04 docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md
-/solve-task T004_04 docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md
+/specify-task <task-ref> docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md
+/plan-task <task-ref> docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md
+/solve-task <task-ref> docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md
 ```

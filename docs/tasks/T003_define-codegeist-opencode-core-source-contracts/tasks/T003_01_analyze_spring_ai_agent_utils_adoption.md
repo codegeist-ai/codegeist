@@ -87,17 +87,14 @@ record whether a utility helps or constrains those future surfaces.
 - `app/codegeist/cli/pom.xml` is the current build baseline: Spring Boot `4.0.6`,
   Spring AI BOM `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, Spring Shell `4.0.2`,
   Java `25`, and GraalVM build tools `0.10.6`.
-- `docs/developer/specification/provider-configuration-contracts.md` defines the Spring AI
-  adapter boundary. Spring AI `ToolCallback` use must remain mediated by
+- Current Codegeist guidance keeps Spring AI `ToolCallback` use mediated by
   Codegeist-owned provider and tool policy.
-- `docs/developer/specification/tool-permission-workspace-contracts.md` defines the tool,
-  permission, workspace, bounded-result, event, and session gates that any adopted
-  tool utility must satisfy.
-- `docs/developer/specification/shell-verification-contracts.md` defines shell execution as a
-  high-risk verification tool, not a generic process-execution shortcut.
-- `docs/developer/specification/storage-port-posture.md` keeps storage in-memory-first and
-  replaceable behind ports; external memory utilities must not own Codegeist
-  persistence behavior.
+- Current Codegeist guidance keeps tools behind permission, workspace,
+  bounded-result, event, and session gates.
+- Current Codegeist guidance treats shell execution as a high-risk verification
+  tool, not a generic process-execution shortcut.
+- Current Codegeist guidance keeps storage behavior Codegeist-owned; external
+  memory utilities must not own Codegeist persistence behavior.
 - `docs/developer/specification/native-packaging-posture.md` requires native status to be
   reported as `passed`, `skipped`, or `failed` with a concrete reason when native
   validation matters.
@@ -298,11 +295,7 @@ questions through evidence.
   and `.oc_local/rules/architecture-doc.md`.
 - Related context files read: `app/codegeist/cli/pom.xml`,
   `docs/developer/architecture/architecture.md`,
-  `docs/developer/specification/codegeist-opencode-parity.md`,
-  `docs/developer/specification/provider-configuration-contracts.md`,
-  `docs/developer/specification/tool-permission-workspace-contracts.md`,
-  `docs/developer/specification/shell-verification-contracts.md`,
-  `docs/developer/specification/storage-port-posture.md`, and
+  `docs/developer/specification/codegeist-opencode-parity.md`, and
   `docs/developer/specification/native-packaging-posture.md`.
 - Upstream phase dependency: satisfied by the recorded `/specify-task` pass in
   this task.
@@ -357,10 +350,6 @@ git --no-pager diff --check
 - Related context files read: `app/codegeist/cli/pom.xml`,
   `docs/developer/architecture/architecture.md`,
   `docs/developer/specification/codegeist-opencode-parity.md`,
-  `docs/developer/specification/provider-configuration-contracts.md`,
-  `docs/developer/specification/tool-permission-workspace-contracts.md`,
-  `docs/developer/specification/shell-verification-contracts.md`,
-  `docs/developer/specification/storage-port-posture.md`,
   `docs/developer/specification/native-packaging-posture.md`,
   `docs/third-party/spring-ai-agent-utils/README.md`, and
   `docs/third-party/spring-ai-agent-utils/ANALYSIS_REPORT.md`.

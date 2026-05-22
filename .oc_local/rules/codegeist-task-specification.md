@@ -66,29 +66,34 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   GitHub Releases are the release target, Windows/Linux/macOS support must be
   proven explicitly, and each platform check should report `passed`, `skipped`
   with reason, or `failed` with blocker.
-- For T003 implementation slots, prefer a documentation-only source-generation
-  contract before creating Java source when the boundary still spans runtime,
-  CLI, context/workspace, provider, tool/permission/workspace, patch/edit, shell,
-  or storage behavior. Use the finalized `*-source-generation-contract.md`
-  documents under `docs/developer/specification/` as the handoff for later
-  source-generating tasks.
-- T004 is the real implementation epic derived from the finalized T003 handoffs.
-  Do not run `/solve-task` for a T004 child until `/plan-task` has created an
-  implementation document under `docs/developer/implementation/` with an UML class
-  diagram covering every planned class, record, interface, enum, sealed interface,
-  failure type, configuration type, and test class for that task.
-- During T004 specify, plan, and solve phases, use
+- For T003 and later implementation slots, do not create source-generation
+  handoff documents before writing code. Keep the active task small, write or
+  update the focused test first when practical, and let real Spring behavior drive
+  any new Java type or package boundary.
+- The previous T004 implementation epic was discarded. When a replacement
+  implementation epic is created, keep it iterative and Spring-first. Do not create
+  broad implementation handoff documents under `docs/developer/implementation/`;
+  that directory's previous handoffs are obsolete. Before solving implementation
+  tasks, keep the active task file scoped to the next smallest tested Spring
+  workflow and avoid placeholder classes, ids, ports, enums, package layers, or
+  validation hierarchies.
+- For the first provider-backed workflow in the replacement epic, use a pinned
+  local Ollama Testcontainer with `llama3` instead of a fake provider. Pin the
+  Ollama image and model tag, set `temperature=0`, use a fixed seed when the active
+  Spring AI and Ollama versions support it, and keep assertions constrained enough
+  to be stable.
+- During implementation specify, plan, and solve phases, use
   `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md`: first ask
   `/ask-project spring-ai-agent-utils ...` for Java/Spring-side equivalents. When
   Agent Utils already fits, prefer it as a private implementation detail or behind
   a thin Codegeist wrapper for policy, workspace, permission, session/event,
   output, and result mapping.
-- During the same T004 phases, when behavior is not already present in Java or
+- During the same implementation phases, when behavior is not already present in Java or
   covered by a suitable Spring AI Agent Utils equivalent, use `/ask-project
   opencode ...` to inspect how OpenCode implements the behavior before translating
   the relevant contract and flow into Codegeist's Java-first architecture.
-- T004 solve phases may write Java source and tests, but they must follow the
-  current plan, start from the planned failing test where practical, run the
+- Implementation solve phases may write Java source and tests, but they must follow
+  the current plan, start from the planned failing test where practical, run the
   planned narrow test commands, report timing, and update
-  `docs/developer/architecture/architecture.md` when implemented packages,
-  classes, configuration, or tests change.
+  `docs/developer/architecture/architecture.md` when implemented packages, classes,
+  configuration, or tests change.

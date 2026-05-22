@@ -275,9 +275,9 @@ Before publishing or approving a release candidate, verify:
 
 Likely follow-up owners:
 
-- `T003_15_validate_packaging_native_and_startup_posture` should validate the JVM
-  package, native posture, startup behavior, and executable smoke behavior when the
-  implementation reaches packaging-readiness.
+- A future packaging task should validate the JVM package, native posture, startup
+  behavior, and executable smoke behavior when the implementation reaches
+  packaging-readiness.
 - A later release automation task should create GitHub Actions workflows, artifact
   naming scripts, checksum generation, release draft/upload behavior, and platform
   smoke jobs.

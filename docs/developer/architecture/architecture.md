@@ -4,111 +4,29 @@ Current-state architecture overview for coding agents and contributors.
 
 ## Scope
 
-This document describes the system that exists in this repository now. It is not
-the target architecture, the OpenCode parity plan, or an implementation backlog.
-Use it as the compact current-state map before changing Codegeist source,
-configuration, build, or verification behavior.
+This document describes what exists in the repository now. It is not an
+implementation backlog and must not be used as a source-generation checklist.
 
-For target architecture and future design decisions, see
-`docs/developer/specification/codegeist-opencode-parity.md`. For the
-Codegeist Java/Spring source-generation guidance, see
-`docs/developer/specification/java-generation-guidance.md`. For the Codegeist
-testing and coding-agent workflow guidance, see
-`docs/developer/specification/testing-strategy-and-agent-rules.md`. For the
-Codegeist-owned runtime vocabulary and boundary diagram, see
-`docs/developer/specification/runtime-vocabulary.md`. For the future
-runtime/session/event contract blueprint and diagrams, see
-`docs/developer/specification/runtime-session-event-contracts.md`. For the future
-runtime/session/event source-generation handoff, see
-`docs/developer/specification/runtime-session-event-source-generation-contract.md`.
-For the future CLI prompt command source-generation handoff, see
-`docs/developer/specification/cli-prompt-command-source-generation-contract.md`.
-For the future context-loading and workspace-manifest blueprint, see
-`docs/developer/specification/context-workspace-manifest.md`. For the future
-context/workspace loading source-generation handoff, see
-`docs/developer/specification/context-workspace-loading-source-generation-contract.md`.
-For the future provider configuration and Spring AI adapter blueprint, see
-`docs/developer/specification/provider-configuration-contracts.md`. For the future
-provider Spring AI adapter source-generation handoff, see
-`docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`.
-For the future
-tool, permission, and workspace execution blueprint, see
-`docs/developer/specification/tool-permission-workspace-contracts.md`. For the
-future tool, permission, and workspace source-generation handoff, see
-`docs/developer/specification/tool-permission-workspace-source-generation-contract.md`.
-For the future patch/edit proposal blueprint, see
-`docs/developer/specification/patch-edit-proposal-contracts.md`. For the future
-patch/edit proposal source-generation handoff, see
-`docs/developer/specification/patch-edit-proposal-source-generation-contract.md`.
-For the future
-controlled shell verification blueprint, see
-`docs/developer/specification/shell-verification-contracts.md`. For the future
-controlled shell tool source-generation handoff, see
-`docs/developer/specification/controlled-shell-tool-source-generation-contract.md`.
-For the future
-storage port posture blueprint, see
-`docs/developer/specification/storage-port-posture.md`. For the future
-storage/session continuation source-generation handoff, see
-`docs/developer/specification/storage-session-continuation-source-generation-contract.md`.
-For the future JVM jar and GraalVM native-image packaging posture, see
-`docs/developer/specification/native-packaging-posture.md`. For the future build,
-GitHub release, platform support, and binary smoke strategy, see
-`docs/developer/specification/build-release-and-binary-smoke-strategy.md`. For the
-future extension/client readiness gates, see
-`docs/developer/specification/extension-client-readiness-gates.md`.
+For future direction, use only the compact, current specification set under
+`docs/developer/specification/`:
+
+- `codegeist-opencode-parity.md` - behavior reference and OpenCode parity posture.
+- `java-generation-guidance.md` - iterative Java/Spring implementation rules.
+- `testing-strategy-and-agent-rules.md` - test-first workflow and timing rules.
+- `runtime-vocabulary.md` - vocabulary only, not package or class requirements.
+- `build-release-and-binary-smoke-strategy.md` and `native-packaging-posture.md` -
+  packaging strategy for later implemented workflows.
 
 ## Current System State
 
 Codegeist currently contains one Java/Spring Boot CLI application under
-`app/codegeist/cli`. The implemented runtime behavior is limited to Spring Boot
+`app/codegeist/cli`. Implemented runtime behavior is limited to Spring Boot
 application startup. Spring Shell is present as a dependency and configuration
 surface, but no shell commands are implemented yet.
 
-The repository also contains planning documentation for a broader coding-agent
-runtime. Those future runtime, session, event, provider, tool, permission,
-workspace, storage, extension, server, and UI concepts are not implemented in the
-application code yet. Their current vocabulary and ownership boundaries are
-documented in `docs/developer/specification/runtime-vocabulary.md`; the future
-runtime/session/event contract shape is described in
-`docs/developer/specification/runtime-session-event-contracts.md`; the future
-runtime/session/event source-generation handoff is described in
-`docs/developer/specification/runtime-session-event-source-generation-contract.md`;
-the future CLI prompt command source-generation handoff is described in
-`docs/developer/specification/cli-prompt-command-source-generation-contract.md`;
-and the future context/workspace manifest shape is described in
-`docs/developer/specification/context-workspace-manifest.md`; the future
-context/workspace loading source-generation handoff is described in
-`docs/developer/specification/context-workspace-loading-source-generation-contract.md`.
-Future provider configuration, validation, and Spring AI adapter boundaries are
-described in
-`docs/developer/specification/provider-configuration-contracts.md`; the future
-provider Spring AI adapter source-generation handoff is described in
-`docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`;
-future tool
-descriptors, permission decisions, workspace validation, and bounded tool results
-are described in
-`docs/developer/specification/tool-permission-workspace-contracts.md`; future
-tool, permission, and workspace source-generation guidance is described in
-`docs/developer/specification/tool-permission-workspace-source-generation-contract.md`;
-future patch/edit proposal contracts are described in
-`docs/developer/specification/patch-edit-proposal-contracts.md`; future patch/edit
-proposal source-generation guidance is described in
-`docs/developer/specification/patch-edit-proposal-source-generation-contract.md`;
-future controlled
-shell verification contracts are described in
-`docs/developer/specification/shell-verification-contracts.md`; future controlled
-shell tool source-generation guidance is described in
-`docs/developer/specification/controlled-shell-tool-source-generation-contract.md`;
-future storage port posture is described in
-`docs/developer/specification/storage-port-posture.md`; future storage/session
-continuation source-generation guidance is described in
-`docs/developer/specification/storage-session-continuation-source-generation-contract.md`;
-future JVM jar and GraalVM native-image verification posture is described in
-`docs/developer/specification/native-packaging-posture.md`; future GitHub Release,
-platform artifact, and binary smoke strategy is described in
-`docs/developer/specification/build-release-and-binary-smoke-strategy.md`; and future
-extension/client readiness gates are described in
-`docs/developer/specification/extension-client-readiness-gates.md`.
+The previous source-generation contracts and T004 implementation epic were removed
+because they encouraged placeholder classes. Future implementation should start
+from focused tests and add only the source needed by the current behavior.
 
 ## Build Baseline
 
@@ -165,72 +83,22 @@ flowchart TD
 
 ## Runtime Components
 
-The current implemented component graph is intentionally small.
-
-```mermaid
-flowchart LR
-    User[User or task command]
-    Taskfile[app/codegeist/cli/Taskfile.yml]
-    Maven[Maven]
-    App[Spring Boot app]
-    Test[Context-load test]
-    Native[GraalVM native profile]
-
-    User --> Taskfile
-    Taskfile --> Maven
-    Maven --> App
-    Maven --> Test
-    Maven -. optional .-> Native
-```
-
 Current behavior:
 
 - `task run` builds the jar and runs `java -jar target/codegeist.jar`.
 - The app starts a Spring Boot context using `application.yaml`.
 - `application.yaml` sets `spring.application.name` to `codegeist` and enables
   interactive Spring Shell.
-- There are no implemented shell commands, runtime services, provider calls, tool
-  executions, permission prompts, workspace policies, storage adapters, server
-  endpoints, Vaadin views, PF4J plugins, or JBang execution paths.
-
-## Current Package Boundary
-
-```mermaid
-flowchart TD
-    AppPackage[ai.codegeist.app]
-
-    AppPackage --> Entry[CodegeistApplication]
-
-    Runtime[ai.codegeist.runtime<br/>not implemented]
-    Session[ai.codegeist.session<br/>not implemented]
-    Event[ai.codegeist.event<br/>not implemented]
-    Provider[ai.codegeist.provider<br/>not implemented]
-    Tool[ai.codegeist.tool<br/>not implemented]
-    Permission[ai.codegeist.permission<br/>not implemented]
-    Workspace[ai.codegeist.workspace<br/>not implemented]
-    Storage[ai.codegeist.storage<br/>not implemented]
-
-    Entry -. future architecture references .-> Runtime
-    Runtime -. planned boundary .-> Session
-    Runtime -. planned boundary .-> Event
-    Runtime -. planned boundary .-> Provider
-    Runtime -. planned boundary .-> Tool
-    Runtime -. planned boundary .-> Permission
-    Runtime -. planned boundary .-> Workspace
-    Runtime -. planned boundary .-> Storage
-```
-
-The dotted nodes are planned architecture concepts documented elsewhere. They are
-included here only to prevent coding agents from assuming those packages already
-exist. The vocabulary and dependency direction for those concepts are documented
-in `docs/developer/specification/runtime-vocabulary.md`, and their future contract blueprint is
-documented in `docs/developer/specification/runtime-session-event-contracts.md`.
+- There are no implemented prompt workflows, model calls, shell commands, runtime
+  services, provider adapters, tool executions, permission prompts, workspace
+  policies, storage adapters, server endpoints, Vaadin views, PF4J plugins, or
+  JBang execution paths.
 
 ## Test Architecture
 
-`CodegeistApplicationTests` is a Spring Boot context-load test. It disables
-Spring Shell auto-configuration for the test context so the bootstrap can be
-verified without starting an interactive or noninteractive shell runner.
+`CodegeistApplicationTests` is a Spring Boot context-load test. It disables Spring
+Shell auto-configuration for the test context so bootstrap can be verified without
+starting an interactive or noninteractive shell runner.
 
 ```mermaid
 sequenceDiagram
@@ -244,9 +112,6 @@ sequenceDiagram
     Spring-->>Test: contextLoads passes on successful startup
 ```
 
-The test does not verify CLI commands, runtime behavior, provider integration,
-native-image compatibility, or packaging output.
-
 ## Taskfile Verification Flow
 
 `app/codegeist/cli/Taskfile.yml` provides the current developer entrypoints.
@@ -258,46 +123,16 @@ native-image compatibility, or packaging output.
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM native posture when practical |
 | `task run` | `java -jar target/codegeist.jar` after `build` | Starts the packaged Spring Boot application |
 
-```mermaid
-flowchart TD
-    Test[task test] --> MavenTest[mvn test]
-    Build[task build] --> MavenPackage[mvn clean package -DskipTests]
-    Native[task native] --> NativeCompile[mvn -Pnative clean native:compile -DskipTests]
-    Run[task run] --> Build
-    Build --> Jar[target/codegeist.jar]
-    Run --> JavaJar[java -jar target/codegeist.jar]
-```
-
-## Configuration
-
-`app/codegeist/cli/src/main/resources/application.yaml` currently contains only the
-application name and Spring Shell interactive setting:
-
-```yaml
-spring:
-  application:
-    name: codegeist
-  shell:
-    interactive:
-      enabled: true
-```
-
-No provider credentials, model configuration, workspace roots, permission policy,
-storage locations, extension configuration, server configuration, or Vaadin
-configuration are implemented.
-
 ## Not Implemented Yet
 
-The following concepts are planned or discussed in architecture tasks, but they
-are not implemented in the current Java application:
+The following concepts are discussed in strategy docs but are not implemented in
+Java source:
 
+- Prompt workflows.
+- Spring AI Ollama provider calls.
 - Runtime orchestration.
-- Session domain model.
-- Runtime event model.
-- Agent modes such as Plan and Build.
-- Context loading from profile-selected instructions, state, work items,
-  repository knowledge, or bounded source snippets.
-- Spring AI provider adapter or model calls.
+- Session or event models.
+- Context loading.
 - Tool registry or tool execution.
 - Permission approval flow.
 - Workspace and file-access policy.
@@ -311,98 +146,4 @@ are not implemented in the current Java application:
 - JBang extension execution.
 
 When implementing any of these concepts, update this document in the same task so
-future coding agents can distinguish current code from future architecture.
-
-## Related Documents
-
-- `docs/developer/specification/codegeist-opencode-parity.md` records target architecture,
-  OpenCode parity mapping, planned boundaries, MVP cut, risks, and backlog.
-- `docs/developer/specification/java-generation-guidance.md` records Java/Spring
-  generation guidance for planned package ownership, dependency direction,
-  framework and Agent Utils boundaries, CLI/TUI adapter expectations, future test
-  expectations, and illustrative examples without implementing Java source.
-- `docs/developer/specification/testing-strategy-and-agent-rules.md` records TDD,
-  test taxonomy, individual execution, startup-sensitive testing, and solve-result
-  timing guidance for future implementation tasks without adding test source,
-  Maven configuration, Taskfile wrappers, or runtime behavior.
-- `docs/developer/specification/runtime-vocabulary.md` records the Codegeist-owned runtime
-  vocabulary and boundary diagram without requiring Java packages or classes to
-  exist.
-- `docs/developer/specification/runtime-session-event-contracts.md` records the planned
-  runtime/session/event contract shape, OpenCode source evidence, diagrams, and
-  illustrative Java snippets without implementing Java source.
-- `docs/developer/specification/runtime-session-event-source-generation-contract.md`
-  records the planned first runtime/session/event source-generation handoff,
-  minimum Java shapes, event-family cut, sequencing rules, and TDD handoff without
-  implementing Java source.
-- `docs/developer/specification/cli-prompt-command-source-generation-contract.md`
-  records the planned first CLI prompt command source-generation handoff for
-  `plan` and `build`, runtime delegation, adapter examples, and TDD handoff without
-  implementing CLI commands or Java source.
-- `docs/developer/specification/context-workspace-manifest.md` records the planned deterministic
-  context-loading and workspace-validation manifest contract without implementing
-  Java source, readers, provider calls, embeddings, Graphify, or Repomix.
-- `docs/developer/specification/provider-configuration-contracts.md` records the planned
-  provider configuration, validation, typed provider error, and Spring AI adapter
-  boundary without implementing Java source, provider starters, credentials, live
-  model calls, or tests.
-- `docs/developer/specification/provider-spring-ai-adapter-source-generation-contract.md`
-  records the planned first provider configuration and Spring AI adapter
-  source-generation handoff, OpenAI-compatible/OpenAI and Ollama first-wave
-  posture, Spring AI type isolation, disabled tool-callback posture, typed provider
-  errors, and TDD handoff without implementing Java source, provider starters,
-  credentials, live model calls, or tests.
-- `docs/developer/specification/tool-permission-workspace-contracts.md` records the planned tool
-  descriptor, permission decision, workspace validation, and bounded result
-  boundary without implementing Java source, tool execution, permission UI,
-  provider callbacks, shell execution, patch/edit behavior, or tests.
-- `docs/developer/specification/tool-permission-workspace-source-generation-contract.md`
-  records the planned first tool, permission, and workspace source-generation
-  handoff, descriptor classification, mode gates, permission/workspace policy,
-  provider tool-call mediation, bounded results, and TDD handoff without
-  implementing Java source or tool behavior.
-- `docs/developer/specification/patch-edit-proposal-contracts.md` records the planned
-  reviewable patch/edit proposal, apply request, typed apply failure, workspace
-  validation, and bounded result boundary without implementing Java source, patch
-  parsing, apply logic, file writes, rollback, formatter integration, or tests.
-- `docs/developer/specification/patch-edit-proposal-source-generation-contract.md`
-  records the planned first patch/edit proposal and apply-result source-generation
-  handoff, proposal identity, target summaries, freshness, exact approval binding,
-  typed apply failures, output references, and TDD handoff without implementing
-  Java source or patch/edit behavior.
-- `docs/developer/specification/shell-verification-contracts.md` records the planned controlled
-  shell verification request, permission gate, workspace-cwd validation, typed
-  shell failure, and bounded output boundary without implementing Java source,
-  tests, process execution, PTY support, terminal UI, remote execution, JBang
-  execution, or shell sandboxing.
-- `docs/developer/specification/controlled-shell-tool-source-generation-contract.md`
-  records the planned first controlled shell tool source-generation handoff,
-  command shapes, destructive posture, gate order, approved executor handoff,
-  typed shell results, bounded stdout/stderr summaries, output references, and TDD
-  handoff without implementing Java source, tests, shell commands, process
-  execution, or shell behavior.
-- `docs/developer/specification/storage-port-posture.md` records the planned in-memory-first
-  storage port posture, session/message projection boundaries, redaction rules,
-  and later file/database adapter gates without implementing Java source, tests,
-  storage ports, storage adapters, database schemas, migrations, or event sourcing.
-- `docs/developer/specification/native-packaging-posture.md` records the planned JVM jar and
-  GraalVM native-image verification posture, native status reporting, and blocker
-  classification without changing Java source, Maven configuration, Taskfile
-  commands, tests, or packaging behavior.
-- `docs/developer/specification/build-release-and-binary-smoke-strategy.md` records the planned
-  GitHub Release target, Windows/Linux/macOS platform matrix, artifact naming,
-  checksum posture, binary smoke scenarios, startup budgets, and skip/failure
-  reporting without adding workflows, scripts, tests, or release behavior.
-- `docs/developer/specification/extension-client-readiness-gates.md` records the planned
-  readiness gates for deferred PF4J, JBang, server, Vaadin, SDK/OpenAPI, and TUI
-  surfaces without implementing adapters, routes, plugins, scripts, UI, tests, or
-  runtime behavior.
-- `docs/tasks/T002_define-codegeist-mvp-foundation-blueprints/` contains active
-  blueprint tasks for moving from the current bootstrap toward the MVP foundation.
-- `docs/tasks/T004_implement-codegeist-opencode-core-application/` contains the
-  new real implementation epic derived from the finalized T003 source-generation
-  contracts. Its child tasks must be planned with implementation docs, UML class
-  diagrams, file maps, TDD sequences, and verification commands before
-  `solve-task` writes Java source.
-- `.oc_local/rules/architecture-doc.md` defines how this current-state
-  architecture document should be used and maintained.
+future coding agents can distinguish current code from future direction.

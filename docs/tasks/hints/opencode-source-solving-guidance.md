@@ -95,7 +95,7 @@ This hint is usually inherited from a parent task's `Default Phase Hints` sectio
 When needed explicitly:
 
 ```text
-/specify-task T004_04 docs/tasks/hints/opencode-source-solving-guidance.md
-/plan-task T004_04 docs/tasks/hints/opencode-source-solving-guidance.md
+/specify-task <task-ref> docs/tasks/hints/opencode-source-solving-guidance.md
+/plan-task <task-ref> docs/tasks/hints/opencode-source-solving-guidance.md
 /solve-task T002_06 docs/tasks/hints/opencode-source-solving-guidance.md
 ```

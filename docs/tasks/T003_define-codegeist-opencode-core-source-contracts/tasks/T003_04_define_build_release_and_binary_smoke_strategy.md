@@ -158,7 +158,7 @@ runner, toolchain, signing/notarization prerequisite, or implementation follow-u
   not describe planned workflows as implemented CI.
 - Update `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`
   during solve or finalization if the completed guide changes parent progress
-  notes or later child-task boundaries, especially `T003_15`.
+  notes or later packaging task boundaries.
 - Update `docs/memory-bank/chat.md` only if the solve or finalization result
   changes active T003 state that future sessions need immediately.
 - Do not change Java source, Java tests, package directories, Maven files,
@@ -209,10 +209,9 @@ equivalent while preserving the same scope:
     future CI matrix without creating `.github/workflows` files in this task.
 11. Release candidate checklist: provide a concise checklist for later tasks before
     a candidate can be published or marked blocked.
-12. Future implementation handoff: name likely follow-up owners, especially
-    `T003_15_validate_packaging_native_and_startup_posture` for implementing or
-    validating the packaging/native/startup checks and any later release automation
-    task that creates GitHub Actions or scripts.
+12. Future implementation handoff: name likely follow-up owners for implementing
+    or validating the packaging/native/startup checks and any later release
+    automation task that creates GitHub Actions or scripts.
 
 ### Implementation Steps
 
@@ -391,7 +390,7 @@ git --no-pager diff --check
   `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md` now
   records that `T003_04` is finalized and that future packaging, release
   automation, and platform-smoke work should use the completed strategy. No
-  `T003_15` task file exists yet, so no child implementation task was updated.
+  child implementation task was updated.
 - Documentation updates reviewed:
   `docs/developer/specification/build-release-and-binary-smoke-strategy.md`,
   `docs/developer/architecture/architecture.md`, and
@@ -399,9 +398,8 @@ git --no-pager diff --check
 - Documentation updates made during finalization:
   `docs/tasks/T003_define-codegeist-opencode-core-source-contracts/task.md`, this
   task file, and `docs/memory-bank/chat.md`.
-- Remaining follow-ups: create later packaging/release implementation tasks when
-  T003 reaches that stage, especially the planned `T003_15` packaging, native,
-  startup, and executable-smoke validation task.
+- Remaining follow-ups: create a later packaging/release implementation task when
+  the project reaches packaging, native, startup, and executable-smoke validation.
 - Verification: `git --no-pager diff --check`.
 - Result: finalized as a documentation-only build, GitHub release, platform
   support, and binary-smoke strategy task.

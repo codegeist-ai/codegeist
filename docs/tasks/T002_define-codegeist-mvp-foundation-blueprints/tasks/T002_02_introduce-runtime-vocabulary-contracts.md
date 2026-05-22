@@ -124,15 +124,16 @@ changed. This slice is documentation-only.
 - `/finalize-task` dependency: satisfied by the successful documentation solve
   status and `Status: solved` task note.
 - `/finalize-task` impact review: updated the parent task language away from Java
-  package vocabulary, updated `T002_03` to depend on the documented vocabulary,
-  and refreshed repo memory so it no longer asks to plan or solve this task.
+  package vocabulary and refreshed repo memory so it no longer asks to plan or
+  solve this task. The later runtime/session/event blueprint task was removed
+  during the placeholder blueprint cleanup.
 - `/finalize-task` documentation review: `docs/developer/README.md`,
   `docs/developer/architecture/architecture.md`, and
   `docs/developer/specification/codegeist-opencode-parity.md` already point to the new runtime
   vocabulary document; no additional README or rule update was needed.
 - `/finalize-task` verification: `git --no-pager diff --check`.
-- `/finalize-task` result: finalized. The next recommended phase is to continue
-  with `T002_03_introduce-runtime-session-event-contracts.md`.
+- `/finalize-task` result: finalized. Future runtime work should be recreated as
+  a small tested implementation task when needed.
 
 ## Creation Note
 

@@ -301,10 +301,6 @@ git --no-pager diff --check
   `docs/developer/architecture/architecture.md`,
   `docs/developer/specification/codegeist-opencode-parity.md`,
   `docs/developer/specification/runtime-vocabulary.md`,
-  `docs/developer/specification/runtime-session-event-contracts.md`,
-  `docs/developer/specification/provider-configuration-contracts.md`,
-  `docs/developer/specification/tool-permission-workspace-contracts.md`,
-  `docs/developer/specification/extension-client-readiness-gates.md`, and
   `docs/developer/spring-ai-agent-utils-adoption.md`.
 - Implemented solution: created
   `docs/developer/specification/java-generation-guidance.md` as the durable
