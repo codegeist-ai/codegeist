@@ -35,8 +35,10 @@
   `nix` is available on `PATH` in container login shells.
 - The local OpenCode overlay `.oc_local/` contains the commands
   `/analyse-project` and `/ask-project`, the `@repomix` subagent, and the AI
-  script `render-mermaid.sh` for Mermaid SVG rendering. The task phase commands
-  now come from the shared `.opencode` agent kit.
+  script `render-mermaid.sh` for Mermaid SVG rendering. `.oc_local/opencode.json`
+  loads the Codegeist local rules so OpenCode can discover the local overlay when
+  `OPENCODE_CONFIG_DIR` points at `.oc_local`. The task phase commands now come
+  from the shared `.opencode` agent kit.
 - `docs/third-party/opencode/source` is a submodule for
   `https://github.com/anomalyco/opencode.git` on branch `dev` and points to
   `22e64ca`.
@@ -496,6 +498,19 @@
   task plus every implementation handoff under `docs/developer/implementation/`
   records the concrete planning consequence. No Java source or tests have been
   generated yet.
+- `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md` is the default
+  phase guidance for T004 Java implementation. Before specifying, planning,
+  designing, or writing Java code, use
+  `/ask-project spring-ai-agent-utils "<specific implementation question>"` via
+  `.oc_local/commands/ask-project.md` to check what Agent Utils already provides;
+  when it fits, use it as a private implementation detail or wrap it thinly behind
+  Codegeist policy, workspace, permission, session/event, output, and result
+  mapping boundaries.
+- For T004 implementation gaps that are not already present in Java or covered by
+  a suitable Spring AI Agent Utils equivalent, use `/ask-project opencode
+  "<specific implementation question>"` during specify, plan, and solve to
+  inspect how OpenCode already implements the behavior, then translate the
+  relevant contract and flow into Codegeist's Java-first runtime boundaries.
 - Next recommended phase: `/plan-task T004_01_01` to plan the first split runtime
   prompt-contract slice before any Java source is written.
 - The local `/analyse-project` workflow has created
@@ -510,3 +525,7 @@
   Graphify, Repomix, manifest, verification, and durable docs; `/ask-project`
   consumes that workspace for focused answers, diagrams, and Repomix-backed
   source deep dives via the `@repomix` subagent when needed.
+- The Spring AI Agent Utils analysis workspace was refreshed with ignored local
+  Repomix, manifest, and verification artifacts. Durable docs now state that the
+  current graph is AST-focused navigation evidence and runtime behavior still
+  needs source/test verification before adoption decisions.

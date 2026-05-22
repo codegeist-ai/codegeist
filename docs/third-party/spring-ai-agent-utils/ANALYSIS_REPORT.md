@@ -2,6 +2,9 @@
 
 Preliminary third-party analysis for Codegeist adoption planning.
 
+Last local refresh: 2026-05-21 against source commit
+`c07ea0c80050fc94f750e282270986740f171451`.
+
 ## Executive Summary
 
 Spring AI Agent Utils is a Java 17+ Spring AI utility library that reimplements
@@ -48,6 +51,20 @@ The local `/analyse-project` run generated an AST-focused Graphify cache under
 The graph is useful for navigation and follow-up questions, but it is not a full
 semantic audit. The T003 adoption report should still inspect source files and
 tests directly before making adoption decisions.
+
+## Repomix Packed Source
+
+The local refresh regenerated
+`docs/third-party/spring-ai-agent-utils/repomix-output.xml` from the source
+checkout for `/ask-project` deep dives.
+
+- Packed files: 222.
+- Output size: 1,922,089 bytes.
+- Security scan: Repomix reported no suspicious files.
+- Excluded by command: `.git`, Maven `target/` output, wrapper jars, class/jar
+  files, image files, dependency directories, and common build output.
+- Largest packed item: `spring-ai-agent-utils/src/test/resources/messages(4).json`,
+  which is a test fixture and should be treated as context-heavy when queried.
 
 ## Codegeist-Relevant Surfaces
 
@@ -145,6 +162,8 @@ code:
   wrapper implementation.
 - Decide whether semantic Graphify extraction is needed for a deeper research pass
   before the final T003 adoption report.
+- Run upstream tests only if a future task needs runtime evidence. This refresh
+  used static source, Repomix, and the existing Graphify cache only.
 
 ## Next Codegeist Step
 

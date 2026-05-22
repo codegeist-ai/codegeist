@@ -77,6 +77,16 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   implementation document under `docs/developer/implementation/` with an UML class
   diagram covering every planned class, record, interface, enum, sealed interface,
   failure type, configuration type, and test class for that task.
+- During T004 specify, plan, and solve phases, use
+  `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md`: first ask
+  `/ask-project spring-ai-agent-utils ...` for Java/Spring-side equivalents. When
+  Agent Utils already fits, prefer it as a private implementation detail or behind
+  a thin Codegeist wrapper for policy, workspace, permission, session/event,
+  output, and result mapping.
+- During the same T004 phases, when behavior is not already present in Java or
+  covered by a suitable Spring AI Agent Utils equivalent, use `/ask-project
+  opencode ...` to inspect how OpenCode implements the behavior before translating
+  the relevant contract and flow into Codegeist's Java-first architecture.
 - T004 solve phases may write Java source and tests, but they must follow the
   current plan, start from the planned failing test where practical, run the
   planned narrow test commands, report timing, and update

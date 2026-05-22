@@ -1,0 +1,8 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    ".oc_local/rules/architecture-doc.md",
+    ".oc_local/rules/codegeist-task-specification.md",
+    ".oc_local/rules/third-party-analysis-workflow.md"
+  ]
+}

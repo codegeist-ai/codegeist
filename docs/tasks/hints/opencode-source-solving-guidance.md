@@ -24,6 +24,12 @@ OpenCode-to-Codegeist translation posture.
 - Ask source questions before designing Codegeist tasks for provider, tool, MCP,
   permission, session, event, context, shell, patch/edit, extension, server, or
   storage behavior.
+- For Java implementation tasks, use `/ask-project opencode "<specific
+  implementation question>"` during specify, plan, and solve whenever the needed
+  behavior is not already present in Codegeist or is not covered by a suitable
+  Spring AI Agent Utils equivalent. First understand how OpenCode already
+  implements the behavior, then translate only the required contract and runtime
+  flow into Codegeist's Java-first architecture.
 - Require source-path citations for important claims. Do not treat memory or
   generated summaries as enough evidence when the task depends on exact OpenCode
   behavior.
@@ -51,7 +57,8 @@ OpenCode-to-Codegeist translation posture.
 
 ## High-Value Source Questions
 
-Use focused questions like these during `/solve-task` runs:
+Use focused questions like these during `/specify-task`, `/plan-task`, and
+`/solve-task` runs:
 
 ```text
 /ask-project opencode "Which source files implement provider selection, model configuration, streaming, and tool-call mediation? Cite files and create a Mermaid sequence diagram if useful."
@@ -76,17 +83,19 @@ Use focused questions like these during `/solve-task` runs:
 
 ## Non-Goals
 
-- Do not run Graphify directly from a solve task. Use `/ask-project` or
+- Do not run Graphify directly from a task phase. Use `/ask-project` or
   `/analyse-project` ownership when graph artifacts need refresh.
-- Do not load the full `repomix-output.xml` into the parent solve context.
+- Do not load the full `repomix-output.xml` into the parent task-phase context.
 - Do not add source-derived implementation details to Codegeist unless they fit
   the current task's scope and Java-first architecture boundaries.
 
 ## Example Usage
 
-This hint is usually inherited from a parent task's `Default Solve Hints` section.
+This hint is usually inherited from a parent task's `Default Phase Hints` section.
 When needed explicitly:
 
 ```text
+/specify-task T004_04 docs/tasks/hints/opencode-source-solving-guidance.md
+/plan-task T004_04 docs/tasks/hints/opencode-source-solving-guidance.md
 /solve-task T002_06 docs/tasks/hints/opencode-source-solving-guidance.md
 ```

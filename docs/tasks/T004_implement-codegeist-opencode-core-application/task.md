@@ -85,6 +85,25 @@ All child tasks have been specified and planned. The Agent Utils equivalence sca
 below has been folded into each child implementation handoff, so solve phases may
 start in dependency order.
 
+## Default Phase Hints
+
+- Apply `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md` during every
+  T004 Java implementation specify, plan, and solve phase.
+- Before specifying, planning, designing, or writing Java implementation code, use
+  the local `/ask-project spring-ai-agent-utils "<specific implementation
+  question>"` workflow from `.oc_local/commands/ask-project.md` to check what
+  Spring AI Agent Utils already implements.
+- If an existing Agent Utils implementation fits after Codegeist validates policy,
+  workspace, permissions, session/event projection, output bounding, and result
+  mapping, use it as a private implementation detail or add only a thin Codegeist
+  wrapper.
+- If it does not fit, keep the Codegeist-owned contract and cite Agent Utils only
+  as concept or test-pattern evidence.
+- When the needed behavior is not already implemented in Java or covered by a
+  suitable Spring AI Agent Utils equivalent, use `/ask-project opencode
+  "<specific implementation question>"` to inspect how OpenCode implements it
+  before translating the behavior into Codegeist's Java-first contracts.
+
 ## Derivation Map
 
 | Child task | Primary inputs | Purpose |
@@ -310,6 +329,23 @@ Taskfile commands from `app/codegeist/cli` and report timing in solve results.
   respect task dependency order and may adjust implementation details only for
   concrete source/API facts.
 - Next recommended phase: `/solve-task t004_01`.
+
+## Phase Hint Update Result
+
+- Context or instructions considered: before T004 Java implementation phases,
+  always use `.oc_local/commands/ask-project.md` with project
+  `spring-ai-agent-utils` to check what Agent Utils already implements; when it
+  fits, use it directly or through a thin Codegeist wrapper.
+- Result: added `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md` and
+  linked it from this task's default phase hints.
+- Phase requirement: each T004 specify, plan, and solve phase must check the
+  relevant Agent Utils source evidence first, then decide whether to use the
+  existing implementation, add a thin wrapper for Codegeist policy/result mapping,
+  or keep a Codegeist-owned implementation with Agent Utils as concept/test
+  evidence only.
+- OpenCode fallback: when Agent Utils has no fitting Java-side behavior, the phase
+  must use `/ask-project opencode ...` to inspect the implemented OpenCode
+  behavior before designing the Codegeist equivalent.
 
 ## Creation Note
 

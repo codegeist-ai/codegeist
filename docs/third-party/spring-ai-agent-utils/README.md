@@ -29,14 +29,25 @@ analysis workflow.
   ignored by git.
 - The current Graphify run is structural/AST-focused. It found 1,030 graph nodes,
   1,604 edges, and 47 communities from 156 supported files.
+- `repomix-output.xml` was regenerated locally from the source checkout with
+  generated build output, binaries, dependency directories, and image files
+  excluded. The packed output contains 222 files and is intentionally ignored by
+  git.
+- `analysis-manifest.json` and `VERIFY_REPORT.md` record the local regeneration
+  inputs, skipped phases, and verification status. They are ignored because they
+  are reproducible run artifacts.
 - No semantic chunk-agent extraction was added to the durable docs in this pass;
-  use the generated graph as navigation evidence, not as a complete behavioral
-  audit.
+  use the generated graph and packed source as navigation evidence, not as a
+  complete behavioral audit.
 
 ## Durable Docs
 
 - `ANALYSIS_REPORT.md` - high-level project findings and Codegeist relevance.
 - `REGENERATE.md` - how to refresh this workspace.
+- `graphify-out/GRAPH_REPORT.md` - ignored graph audit report for local follow-up
+  questions.
+- `repomix-output.xml` - ignored packed-source artifact for broad source-level
+  `/ask-project` deep dives.
 
 ## Useful Follow-Up Questions
 

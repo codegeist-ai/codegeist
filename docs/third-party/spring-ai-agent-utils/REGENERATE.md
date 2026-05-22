@@ -22,6 +22,15 @@ through the local command workflow, not by inventing a separate script:
 /analyse-project https://github.com/spring-ai-community/spring-ai-agent-utils --project spring-ai-agent-utils
 ```
 
+The Repomix step used for the current local refresh was:
+
+```bash
+npx -y repomix "docs/third-party/spring-ai-agent-utils/source" \
+  --output "docs/third-party/spring-ai-agent-utils/repomix-output.xml" \
+  --style xml \
+  --ignore "**/target/**,**/.git/**,**/.mvn/wrapper/maven-wrapper.jar,**/*.class,**/*.jar,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,**/node_modules/**,**/dist/**,**/build/**"
+```
+
 Expected ignored outputs:
 
 ```text
