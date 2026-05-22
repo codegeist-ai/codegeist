@@ -2,7 +2,7 @@
 
 Parent: `T004_implement-codegeist-opencode-core-application`
 
-Status: specified
+Status: planned
 
 ## Goal
 
@@ -62,6 +62,18 @@ inside its own `/solve-task` pass.
   package relationships.
 - Include a short description for every planned runtime/session/event class,
   record, interface, enum, sealed interface, failure type, and test class.
+- For each `T004_01_*` child task, create or update a child-specific
+  implementation plan before solving. The plan must include a class diagram for
+  every class, record, interface, enum, sealed interface, failure type, and test
+  class that child expects to create or modify.
+- Each child plan must explain every planned type in detail: responsibility,
+  key fields or methods, ownership boundary, validation or failure behavior, and
+  how the type relates to earlier and later `T004_01` slices.
+- Each child plan must include a Spring usage section that names the exact Spring
+  Framework, Spring Boot, Spring AI, Spring Shell, or Spring AI Agent Utils
+  classes the solve phase should use. If the correct boundary is no Spring usage,
+  the plan must state that explicitly and explain why public runtime, session, and
+  event contracts stay Spring-free.
 - Include UML class diagrams covering every planned type, but split the diagrams
   into small readable Mermaid views instead of one oversized diagram.
 - Name the exact Java and test files to add or change.
@@ -263,3 +275,79 @@ The planning phase must define Java test commands for the solve phase.
   child tasks under `tasks/`.
 - Open decisions or blockers: none.
 - Next recommended phase: `/plan-task T004_01_01`.
+
+## Child Diagram Detail Specification Result
+
+- Phase command: `/specify-task t004_01`.
+- Context or instructions considered: user input requested that every task create
+  a class diagram for the classes it will generate, explain each class in detail,
+  and show which Spring classes should be used; the original user text was in
+  German and is summarized here in English for durable task documentation.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Child task docs considered: `T004_01_01` through `T004_01_06` under this task's
+  `tasks/` directory.
+- Discovered hints considered:
+  `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md`,
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Upstream phase dependency: none for specification; child planning is still
+  required before any child solve phase writes Java source.
+- Result: clarified that every split `T004_01_*` child plan must include its own
+  class diagram, detailed per-type explanations, and an explicit Spring usage
+  section that either names concrete Spring classes or records why none should be
+  used in the public core contracts.
+- Open decisions or blockers: none at specification depth; concrete file targets,
+  implementation sequence, and exact Spring usage decisions remain owned by each
+  child `/plan-task` pass.
+- Next recommended phase: `/plan-task T004_01_01`.
+
+## Child Planning Routing Result
+
+- Phase command: `/plan-task t004_01`.
+- Context or instructions considered: user input `t004_01`.
+- Selected option: route planning to the first ordered child task,
+  `T004_01_01 Define Runtime Prompt Contracts`, because this task is now a grouped
+  parent with six child slices and the specification recommends planning
+  `T004_01_01` next.
+- Duplicate check result: no duplicate parent-level implementation task was
+  created; the existing parent overview remains
+  `docs/developer/implementation/runtime-session-event-core-implementation.md`.
+- Result: `T004_01_01` now owns the concrete child-specific implementation plan at
+  `docs/developer/implementation/runtime-prompt-contracts-implementation.md`.
+- Open decisions or blockers: none at parent planning depth.
+- Next recommended phase: `/solve-task T004_01_01`.
+
+## All Child Planning Result
+
+- Phase command: `/plan-task T004_01` across all existing child tasks.
+- Context or instructions considered: user input `für alle subtasks in t004_01
+  ausführen`, interpreted as explicit permission to plan all six existing
+  `T004_01_*` child tasks.
+- Parent task considered:
+  `docs/tasks/T004_implement-codegeist-opencode-core-application/task.md`.
+- Child task docs considered: `T004_01_01` through `T004_01_06` under this task's
+  `tasks/` directory.
+- Duplicate check result: no duplicate task files were created. Existing child
+  tasks were sharpened with child-specific implementation handoffs under
+  `docs/developer/implementation/`.
+- Discovered hints considered:
+  `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md`,
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read:
+  `docs/developer/architecture/architecture.md`,
+  `docs/developer/specification/runtime-session-event-source-generation-contract.md`,
+  `docs/developer/specification/testing-strategy-and-agent-rules.md`,
+  `docs/developer/spring-ai-agent-utils-adoption.md`, `app/codegeist/cli/pom.xml`,
+  `CodegeistApplication.java`, and `CodegeistApplicationTests.java`.
+- Result: all six `T004_01_*` child tasks now have top-level `Status: planned` and
+  child-specific implementation handoffs for runtime prompt contracts, runtime
+  failures and validation, session core contracts, event core contracts, session
+  projection core, and dependency-boundary verification.
+- Open decisions or blockers: none at planning depth. Solve order still matters:
+  `T004_01_01` must be solved before `T004_01_02`, and each later child depends on
+  the earlier child slices named in its plan.
+- Next recommended phase: `/solve-task T004_01_01`.

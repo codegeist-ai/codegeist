@@ -2,7 +2,7 @@
 
 Parent: `T004_01_implement_runtime_session_event_core`
 
-Status: specified
+Status: planned
 
 ## Goal
 
@@ -30,6 +30,20 @@ architecture documentation update for the implemented packages.
 
 - `RuntimeSessionEventDependencyTests`
 - `RuntimeSessionEventDependencyTests#coreContractsDoNotExposeFrameworkTypes`
+
+## Planning Requirements
+
+- Create or update a child-specific implementation plan before solving this task.
+- Include a Mermaid or PlantUML class diagram covering the dependency-boundary test
+  class and the core public-contract packages or representative types it verifies.
+- Explain every planned test helper or verification type in detail:
+  responsibility, inspected contracts, forbidden dependency set, failure reporting,
+  and relationship to the completed `T004_01_01` through `T004_01_05` slices.
+- Include a Spring usage section that names every Spring Framework, Spring Boot,
+  Spring AI, Spring Shell, or Spring AI Agent Utils class the solve phase should
+  use or explicitly forbid. This slice is expected to verify that public core
+  contracts expose none of those Spring or Agent Utils types.
+- Name the first failing test and the narrow Maven command for this child slice.
 
 ## Non-Goals
 
@@ -66,6 +80,30 @@ mvn --batch-mode --no-transfer-progress -Dtest=RuntimeSessionEventDependencyTest
 mvn --batch-mode --no-transfer-progress test
 ```
 
+## Implementation Plan
+
+The implementation plan is recorded in
+`docs/developer/implementation/runtime-session-event-dependency-boundaries-implementation.md`.
+
+Planned solve-phase test file:
+
+```text
+app/codegeist/cli/src/test/java/ai/codegeist/runtime/RuntimeSessionEventDependencyTests.java
+```
+
+Documentation and task files to update after solve:
+
+```text
+docs/developer/architecture/architecture.md
+docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/task.md
+docs/tasks/T004_implement-codegeist-opencode-core-application/tasks/T004_01_implement_runtime_session_event_core/tasks/T004_01_06_verify_core_dependency_boundaries.md
+```
+
+Spring usage decision: the test should explicitly forbid public exposure of
+Spring Framework, Spring Boot, Spring AI, Spring Shell, and Spring AI Agent Utils
+types from core contracts. The test itself should use JUnit Jupiter, AssertJ, and
+Java reflection only.
+
 ## Specification Result
 
 - Phase command: subdivision of `T004_01`.
@@ -77,3 +115,33 @@ mvn --batch-mode --no-transfer-progress test
   synchronization for `T004_01`.
 - Open decisions or blockers: depends on `T004_01_01` through `T004_01_05`.
 - Next recommended phase: `/plan-task T004_01_06` after dependencies are solved.
+
+## Planning Result
+
+- Phase command: `/plan-task T004_01_06` as part of user input to plan all
+  subtasks in `T004_01`.
+- Context or instructions considered: user input `für alle subtasks in t004_01
+  ausführen`, interpreted as explicit permission to plan every existing
+  `T004_01_*` child task.
+- Selected option: sharpen this existing child task with a child-specific
+  implementation plan.
+- Duplicate check result: no child-specific implementation plan existed for this
+  task.
+- Discovered hints considered:
+  `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md`,
+  `docs/tasks/hints/java-spring-architecture-planning-guidance.md`,
+  `docs/tasks/hints/opencode-solving-guidance.md`, and
+  `docs/tasks/hints/opencode-source-solving-guidance.md`.
+- Related context files read: T004 parent, T004_01 parent, adjacent child tasks,
+  `runtime-session-event-source-generation-contract.md`,
+  `testing-strategy-and-agent-rules.md`, `architecture.md`, and the existing
+  `T004_01_01` implementation handoff.
+- Upstream phase dependency: satisfied by specification; solve remains blocked
+  until `T004_01_01` through `T004_01_05` are solved.
+- Result: created
+  `docs/developer/implementation/runtime-session-event-dependency-boundaries-implementation.md`
+  with a class diagram, detailed test-helper catalog, Spring usage and forbidden
+  dependency decision, file map, ordered implementation steps, TDD sequence,
+  acceptance criteria, dependencies, risks, and verification strategy.
+- Open decisions or blockers: none at planning depth.
+- Next recommended phase: `/solve-task T004_01_06` after dependencies are solved.

@@ -491,6 +491,32 @@
   diagram, type catalog, split UML class diagrams, TDD sequence, targeted Maven
   commands, architecture-doc update, dependencies, and non-goals. No Java source or
   tests have been generated yet.
+- A later `/specify-task t004_01` pass clarified that every split `T004_01_*`
+  child task must create or update its own child-specific implementation plan
+  before solving. Each child plan must include a class diagram for every generated
+  or modified type, detailed explanations of every planned type, and a Spring usage
+  section that names exact Spring classes or explicitly records that public
+  runtime/session/event contracts stay Spring-free.
+- `/plan-task t004_01` was routed to the first ordered child slice,
+  `T004_01_01_define_runtime_prompt_contracts.md`, instead of creating a duplicate
+  parent-level plan. The child is now `Status: planned` and has the handoff
+  `docs/developer/implementation/runtime-prompt-contracts-implementation.md` for
+  the first `ai.codegeist.runtime` prompt-intake records, enums, and
+  `RuntimePromptPort` contract. The plan explicitly uses no Spring Framework,
+  Spring Boot, Spring AI, Spring Shell, or Agent Utils classes in public runtime
+  prompt contracts; its plain JVM test may use JUnit Jupiter and AssertJ.
+- A follow-up `/plan-task` pass for `für alle subtasks in t004_01 ausführen`
+  planned all remaining split children. `T004_01` and all six child tasks are now
+  `Status: planned`. The child-specific handoffs are:
+  `runtime-prompt-contracts-implementation.md`,
+  `runtime-failures-validation-implementation.md`,
+  `session-core-contracts-implementation.md`,
+  `event-core-contracts-implementation.md`,
+  `session-projection-core-implementation.md`, and
+  `runtime-session-event-dependency-boundaries-implementation.md`. Each plan
+  includes a class diagram, detailed type or test-helper explanations, Spring
+  usage or forbidden-dependency decisions, file maps, TDD commands, dependencies,
+  risks, and verification strategy.
 - The full T004 task family has been rechecked with `/specify-task` semantics,
   planned with `/plan-task` semantics, re-specified against Spring AI Agent Utils,
   and re-planned after that equivalence scan. The parent T004 task contains an
@@ -511,8 +537,9 @@
   "<specific implementation question>"` during specify, plan, and solve to
   inspect how OpenCode already implements the behavior, then translate the
   relevant contract and flow into Codegeist's Java-first runtime boundaries.
-- Next recommended phase: `/plan-task T004_01_01` to plan the first split runtime
-  prompt-contract slice before any Java source is written.
+- Next recommended phase: `/solve-task T004_01_01` to implement the planned
+  runtime prompt-contract slice with TDD. Later `T004_01_*` solve phases should
+  follow the dependency order recorded in their plans.
 - The local `/analyse-project` workflow has created
   `docs/third-party/spring-ai-agent-utils/` with a source submodule, durable
   `README.md`, `ANALYSIS_REPORT.md`, and `REGENERATE.md`, plus an ignored
