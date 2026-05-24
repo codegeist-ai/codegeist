@@ -34,7 +34,8 @@
 - `docs/developer/implementation/` was removed. Do not recreate it as a broad
   handoff layer.
 - The previous T004 implementation epic was discarded and removed. A replacement
-  implementation epic should be created from scratch when ready.
+  implementation epic was replaced by a tiny first implementation task:
+  `docs/tasks/T004_implement-codegeist-version-flag.md`.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -107,8 +108,9 @@
 
 ## Open Points
 
-- Create a fresh, small implementation epic or task for the first tested Spring
-  workflow.
+- Solve `docs/tasks/T004_implement-codegeist-version-flag.md`: implement only the
+  Codegeist `0.0.1` `--version` behavior first, without Ollama, prompts, tools,
+  sessions, or placeholder architecture.
 - Keep `docs/developer/architecture/architecture.md` synchronized whenever
   implemented packages, classes, configuration, runtime flows, or tests change.
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
