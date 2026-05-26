@@ -1,6 +1,8 @@
 spring:
   application:
     name: codegeist
+  main:
+    banner-mode: off
   shell:
     interactive:
-      enabled: true
+      enabled: false

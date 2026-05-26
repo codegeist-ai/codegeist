@@ -61,11 +61,47 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   default, tests should stay individually executable, and solve results should
   report targeted commands plus enough timing detail to spot slow tests or slow
   startup.
+- For Spring Boot tests that need to assert stdout or stderr, prefer Spring
+  Boot's `OutputCaptureExtension` and `CapturedOutput` over custom
+  `System.setOut` or `System.setErr` helpers.
+- For Spring Shell CLI command behavior, prefer Spring integration tests that run
+  through `@SpringBootTest` and command arguments over unit tests that instantiate
+  command classes manually.
+- For Codegeist application version output, prefer Spring Boot's
+  `BuildProperties` bean over manually parsing `META-INF/build-info.properties`.
+  Keep `META-INF/build-info.properties` available as the generated build-info
+  source and include it in GraalVM resource metadata when the native image needs
+  it.
+- For Spring Shell command output, prefer the command `CommandContext` and
+  `CommandContext.outputWriter()` over direct `System.out`/`System.err` usage or
+  a custom stdout service bean. Flush the writer after no-newline command output
+  such as `--version`.
 - For packaging, release, platform, or binary-smoke work, use
   `docs/developer/specification/build-release-and-binary-smoke-strategy.md`:
   GitHub Releases are the release target, Windows/Linux/macOS support must be
   proven explicitly, and each platform check should report `passed`, `skipped`
   with reason, or `failed` with blocker.
+- For Spring Shell command-line arguments such as `--version`, keep the current
+  default command path noninteractive with
+  `spring.shell.interactive.enabled=false` until a task intentionally implements
+  interactive shell behavior. Spring Shell's interactive runner ignores process
+  arguments; do not add a custom runner class unless the task explicitly needs one
+  binary to support both REPL startup and argument dispatch.
+- For GraalVM native-image work, remember that Spring AOT fixes conditional bean
+  choices such as the Spring Shell runner during native compilation. Configure
+  the intended mode before the native build and prove it with `task native-smoke`.
+- For Codegeist native smoke scripts, keep smoke artifacts under
+  `target/smoke-test`, delete and recreate that directory at the start of each
+  smoke run, route `LOG_FILE` to `target/smoke-test/codegeist.log`, and keep the
+  Taskfile path as a sourced function call such as
+  `source scripts/native-smoke.sh; run-native-smoke-tests`.
+- For GraalVM resource inclusion, prefer metadata under
+  `src/main/resources/META-INF/native-image/resource-config.json` for simple
+  resource patterns such as `logback.xml` and `META-INF/build-info.properties`.
+  Avoid Java `RuntimeHints` when the user wants native configuration out of code,
+  and do not use nonstandard filenames such as
+  `META-INF/native-image-resource-config.json` unless the native-image command is
+  explicitly configured to load them.
 - For T003 and later implementation slots, do not create source-generation
   handoff documents before writing code. Keep the active task small, write or
   update the focused test first when practical, and let real Spring behavior drive

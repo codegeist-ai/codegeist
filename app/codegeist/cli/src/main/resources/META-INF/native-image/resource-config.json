@@ -1,0 +1,18 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "\\Qlogback.xml\\E"
+      },
+      {
+        "pattern": "\\Qch/qos/logback/core/logback-core-version.properties\\E"
+      },
+      {
+        "pattern": "\\Qch/qos/logback/classic/logback-classic-version.properties\\E"
+      },
+      {
+        "pattern": "\\QMETA-INF/build-info.properties\\E"
+      }
+    ]
+  }
+}

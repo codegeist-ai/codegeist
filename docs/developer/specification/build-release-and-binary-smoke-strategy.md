@@ -131,8 +131,8 @@ Required smoke checks once the corresponding CLI behavior exists:
   `0` with bounded output.
 - Version output: run `--version` once Codegeist owns version reporting; before
   that exists, record the check as `skipped` with a feature-follow-up reason.
-- Non-interactive startup: run with `--spring.shell.interactive.enabled=false` and
-  require the process to exit or report readiness within the timeout defined by the
+- Noninteractive startup: run the default no-side-effect command path and require
+  the process to exit or report readiness within the timeout defined by the
   release task.
 - Basic command invocation: run a stable no-side-effect command once CLI commands
   exist.
@@ -144,15 +144,15 @@ Required smoke checks once the corresponding CLI behavior exists:
 Planned command shapes for future CI jobs:
 
 ```bash
-java -jar codegeist-<version>.jar --spring.shell.interactive.enabled=false
+java -jar codegeist-<version>.jar --version
 java -jar codegeist-<version>.jar --help
-./codegeist-<version>-linux-x64 --spring.shell.interactive.enabled=false
-./codegeist-<version>-macos-x64 --spring.shell.interactive.enabled=false
-./codegeist-<version>-macos-aarch64 --spring.shell.interactive.enabled=false
+./codegeist-<version>-linux-x64 --version
+./codegeist-<version>-macos-x64 --version
+./codegeist-<version>-macos-aarch64 --version
 ```
 
 ```powershell
-.\codegeist-<version>-windows-x64.exe --spring.shell.interactive.enabled=false
+.\codegeist-<version>-windows-x64.exe --version
 .\codegeist-<version>-windows-x64.exe --help
 ```
 
@@ -219,7 +219,7 @@ Example status shape:
 Platform smoke status: skipped
 Platform: macOS arm64
 Artifact: codegeist-0.1.0-macos-aarch64
-Command: ./codegeist-0.1.0-macos-aarch64 --spring.shell.interactive.enabled=false
+Command: ./codegeist-0.1.0-macos-aarch64 --version
 Reason: no Apple Silicon release runner configured yet
 Owner: future release automation task
 Release decision: non-blocking for this pre-matrix release; must be listed in release notes

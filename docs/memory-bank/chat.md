@@ -19,7 +19,20 @@
 - `app/codegeist/cli` is the only implemented Codegeist application module. It is
   a Spring Boot 4 and Spring Shell 4 CLI bootstrap with Java 25, Maven, Spring AI
   `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, and GraalVM native build posture.
-- `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, and `native`.
+- `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
+  through `CommandContext.outputWriter()` and prints only the Spring Boot build
+  version, currently `0.1.0-SNAPSHOT`.
+- `application.yaml` sets `spring.shell.interactive.enabled=false` so Spring
+  Shell's noninteractive runner handles `--version` by default without a custom
+  runner class. Interactive shell behavior is deferred.
+- `app/codegeist/cli/src/main/resources/logback.xml` routes logs only to
+  `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
+  output.
+- `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`, and
+  `native-smoke`. `native-smoke` builds the native executable and delegates the
+  command-output and file-logging checks to `run-native-smoke-tests` from
+  `scripts/native-smoke.sh`; each run recreates `target/smoke-test` and writes
+  `target/smoke-test/codegeist.log`.
 - `docs/developer/architecture/architecture.md` is the current-state architecture
   map. It must describe only implemented repository state and explicitly mark
   not-yet-implemented boundaries.
@@ -33,9 +46,9 @@
   - `runtime-vocabulary.md`
 - `docs/developer/implementation/` was removed. Do not recreate it as a broad
   handoff layer.
-- The previous T004 implementation epic was discarded and removed. A replacement
-  implementation epic was replaced by a tiny first implementation task:
-  `docs/tasks/T004_implement-codegeist-version-flag.md`.
+- The previous T004 implementation epic was discarded and removed. Its replacement
+  tiny implementation task, `docs/tasks/T004_implement-codegeist-version-flag.md`,
+  is solved with the current Spring Shell `--version` behavior.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -108,9 +121,6 @@
 
 ## Open Points
 
-- Solve `docs/tasks/T004_implement-codegeist-version-flag.md`: implement only the
-  Codegeist `0.0.1` `--version` behavior first, without Ollama, prompts, tools,
-  sessions, or placeholder architecture.
 - Keep `docs/developer/architecture/architecture.md` synchronized whenever
   implemented packages, classes, configuration, runtime flows, or tests change.
 - Revisit `docs/developer/specification/native-packaging-posture.md` and

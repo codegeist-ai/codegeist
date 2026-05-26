@@ -16,6 +16,13 @@ tasks:
     cmds:
       - mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile
 
+  native-smoke:
+    desc: Build the native executable and smoke-test the version command
+    deps:
+      - native
+    cmds:
+      - bash -lc 'source scripts/native-smoke.sh; run-native-smoke-tests'
+
   run:
     desc: Build and run the Codegeist application
     deps:
