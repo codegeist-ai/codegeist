@@ -49,6 +49,9 @@
 - The previous T004 implementation epic was discarded and removed. Its replacement
   tiny implementation task, `docs/tasks/T004_implement-codegeist-version-flag.md`,
   is solved with the current Spring Shell `--version` behavior.
+- `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
+  release-readiness task group. It is split into local Linux/Windows build-smoke
+  work first and GitHub-hosted release builds second.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -92,6 +95,10 @@
   timing.
 - Use `docs/developer/specification/build-release-and-binary-smoke-strategy.md`
   for packaging, release, platform, or binary-smoke work.
+- For the active T005 release work, validate Linux and Windows locally before the
+  release path where practical, use GitHub-hosted runners for Linux, Windows, and
+  macOS release builds, and use `gh` pre-tag validation before creating the final
+  `v*` release tag.
 - For Codegeist architecture or implementation tasks, read
   `docs/developer/specification/codegeist-opencode-parity.md` when the target
   touches OpenCode parity, runtime boundaries, provider behavior, tools,
@@ -126,3 +133,5 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
+- Specify and solve `T005_01` before `T005_02`: local Linux/Windows build-smoke
+  comes first, then GitHub Actions release automation and release publication.

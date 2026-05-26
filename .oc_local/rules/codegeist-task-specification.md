@@ -81,6 +81,13 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   GitHub Releases are the release target, Windows/Linux/macOS support must be
   proven explicitly, and each platform check should report `passed`, `skipped`
   with reason, or `failed` with blocker.
+- For cross-platform release implementation, split local validation from GitHub
+  release automation when practical: solve local Linux/Windows build-smoke work
+  before GitHub release publication, use GitHub-hosted macOS runners for macOS
+  release artifacts, and require a `gh`-triggered pre-tag workflow validation
+  before creating the final `v*` release tag. Treat Wine only as an optional,
+  non-authoritative smoke for an already-built Windows executable, not as the
+  Windows native build source of truth.
 - For Spring Shell command-line arguments such as `--version`, keep the current
   default command path noninteractive with
   `spring.shell.interactive.enabled=false` until a task intentionally implements
