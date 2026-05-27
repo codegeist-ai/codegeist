@@ -1,0 +1,506 @@
+# release.yml - Codegeist release artifact workflow.
+#
+# Purpose:
+# - Validate release-shaped JVM and native artifacts on GitHub-hosted runners.
+# - Publish a draft GitHub Release only for pushed v* tags.
+#
+# Inputs and side effects:
+# - Branch validation derives the version from release/v* branches, for example
+#   release/v0.1.0-github-release-build -> 0.1.0.
+# - workflow_dispatch may pass release_version for pre-tag validation.
+# - Tag runs create or update a draft GitHub Release and upload artifacts.
+#
+# Related files:
+# - app/codegeist/cli/pom.xml
+# - docs/developer/release/github-release-build.md
+name: Codegeist Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: SemVer without leading v. Leave empty to derive from the selected ref.
+        required: false
+        type: string
+  push:
+    branches:
+      - "release/v*"
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codegeist-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  JAVA_VERSION: "25"
+  GRAALVM_DISTRIBUTION: graalvm-community
+  JAR_SMOKE_TIMEOUT_SECONDS: "15"
+  NATIVE_SMOKE_TIMEOUT_SECONDS: "5"
+
+jobs:
+  metadata:
+    name: Resolve release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.resolve.outputs.release_version }}
+      publish_release: ${{ steps.resolve.outputs.publish_release }}
+    steps:
+      - name: Resolve release version
+        id: resolve
+        shell: bash
+        env:
+          INPUT_RELEASE_VERSION: ${{ github.event.inputs.release_version || '' }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+
+          version="${INPUT_RELEASE_VERSION#v}"
+          source="workflow input"
+
+          if [ -z "$version" ]; then
+            if [ "$REF_TYPE" = "tag" ] && [[ "$REF_NAME" =~ ^v(.+)$ ]]; then
+              version="${BASH_REMATCH[1]}"
+              source="tag"
+            elif [[ "$REF_NAME" =~ ^release/v([0-9]+[.][0-9]+[.][0-9]+)($|[-/]) ]]; then
+              version="${BASH_REMATCH[1]}"
+              source="release branch"
+            else
+              printf 'Could not derive a release version from ref %s.\n' "$REF_NAME" >&2
+              printf 'Use a release/v<major>.<minor>.<patch>-... branch or pass release_version.\n' >&2
+              exit 1
+            fi
+          fi
+
+          semver='^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[0-9A-Za-z][0-9A-Za-z.-]*)?$'
+          if ! [[ "$version" =~ $semver ]]; then
+            printf 'Release version must be SemVer without leading v: %s\n' "$version" >&2
+            exit 1
+          fi
+
+          publish_release=false
+          if [ "$REF_TYPE" = "tag" ]; then
+            expected_ref="v$version"
+            if [ "$REF_NAME" != "$expected_ref" ]; then
+              printf 'Tag %s does not match resolved release version %s.\n' "$REF_NAME" "$version" >&2
+              exit 1
+            fi
+            publish_release=true
+          fi
+
+          printf 'release_version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'publish_release=%s\n' "$publish_release" >> "$GITHUB_OUTPUT"
+
+          {
+            printf '### Release metadata\n'
+            printf '\n'
+            printf -- '- Version: `%s`\n' "$version"
+            printf -- '- Source: `%s`\n' "$source"
+            printf -- '- Ref: `%s`\n' "$REF_NAME"
+            printf -- '- Draft GitHub Release: `%s`\n' "$publish_release"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build-jvm:
+    name: Build and smoke JVM jar
+    runs-on: ubuntu-latest
+    needs: metadata
+    env:
+      RELEASE_VERSION: ${{ needs.metadata.outputs.release_version }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.GRAALVM_DISTRIBUTION }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: maven
+
+      - name: Run Maven tests
+        working-directory: app/codegeist/cli
+        shell: bash
+        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" test
+
+      - name: Build executable jar
+        working-directory: app/codegeist/cli
+        shell: bash
+        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -DskipTests clean package
+
+      - name: Smoke version command and stage jar asset
+        working-directory: app/codegeist/cli
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p target/dist target/smoke-test
+          jar_asset="target/dist/codegeist-$RELEASE_VERSION-jvm-any.jar"
+          cp -p target/codegeist.jar "$jar_asset"
+
+          log_file="$PWD/target/smoke-test/codegeist-jvm.log"
+          actual="$(LOG_FILE="$log_file" timeout "${JAR_SMOKE_TIMEOUT_SECONDS}s" java -jar "$jar_asset" --version 2>&1)"
+
+          if [ "$actual" != "$RELEASE_VERSION" ]; then
+            printf 'Expected jar version %s, got %s\n' "$RELEASE_VERSION" "$actual" >&2
+            exit 1
+          fi
+
+          if [ ! -s "$log_file" ]; then
+            printf 'Expected non-empty jar smoke log: %s\n' "$log_file" >&2
+            exit 1
+          fi
+
+          printf 'JVM jar smoke passed: %s\n' "$jar_asset"
+
+      - name: Upload JVM jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codegeist-${{ needs.metadata.outputs.release_version }}-jvm-any
+          if-no-files-found: error
+          path: app/codegeist/cli/target/dist/codegeist-${{ needs.metadata.outputs.release_version }}-jvm-any.jar
+
+  build-native:
+    name: Build and smoke native ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    needs:
+      - metadata
+      - build-jvm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            os: ubuntu-latest
+            extension: tar.gz
+          - platform: windows-x64
+            os: windows-latest
+            extension: zip
+          - platform: macos-x64
+            os: macos-13
+            extension: tar.gz
+    env:
+      RELEASE_VERSION: ${{ needs.metadata.outputs.release_version }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.GRAALVM_DISTRIBUTION }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: maven
+          native-image-job-reports: "true"
+
+      - name: Build native executable
+        if: runner.os != 'Windows'
+        working-directory: app/codegeist/cli
+        shell: bash
+        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -DskipTests -Pnative clean native:compile
+
+      - name: Build native executable with MSVC
+        if: runner.os == 'Windows'
+        working-directory: app/codegeist/cli
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path -LiteralPath $vswhere)) {
+              throw "vswhere.exe was not found: $vswhere"
+          }
+
+          $installationPath = & $vswhere "-latest" "-products" "*" "-requires" "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" "-property" "installationPath"
+          if (-not $installationPath) {
+              throw "No Visual Studio installation with MSVC x64 tools was found."
+          }
+
+          $vsDevCmd = Join-Path $installationPath "Common7\Tools\VsDevCmd.bat"
+          if (-not (Test-Path -LiteralPath $vsDevCmd)) {
+              throw "VsDevCmd.bat was not found: $vsDevCmd"
+          }
+
+          $command = "`"$vsDevCmd`" -arch=x64 && mvn --batch-mode --no-transfer-progress -Drevision=$env:RELEASE_VERSION -DskipTests -Pnative clean native:compile"
+          cmd /d /s /c $command
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
+
+      - name: Package and smoke native archive
+        if: runner.os != 'Windows'
+        working-directory: app/codegeist/cli
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          platform="${{ matrix.platform }}"
+          package_name="codegeist-$RELEASE_VERSION-$platform"
+          dist_dir="$PWD/target/dist"
+          package_dir="$dist_dir/$package_name"
+          archive="$dist_dir/$package_name.tar.gz"
+          smoke_dir="$PWD/target/smoke-test"
+
+          if [ ! -x target/codegeist ]; then
+            printf 'Native executable is missing or not executable: target/codegeist\n' >&2
+            exit 1
+          fi
+
+          rm -rf "$package_dir" "$archive" "$smoke_dir"
+          mkdir -p "$package_dir" "$smoke_dir"
+          cp -p target/codegeist "$package_dir/codegeist"
+
+          shopt -s nullglob
+          if [ "$platform" = "linux-x64" ]; then
+            sidecars=(target/lib*.so)
+          else
+            sidecars=(target/*.dylib)
+          fi
+          shopt -u nullglob
+
+          if [ "${#sidecars[@]}" -gt 0 ]; then
+            cp -p "${sidecars[@]}" "$package_dir/"
+          fi
+
+          tar -C "$dist_dir" -czf "$archive" "$package_name"
+
+          temp_dir="$(mktemp -d)"
+          trap 'rm -rf "$temp_dir"' EXIT
+          tar -xzf "$archive" -C "$temp_dir"
+
+          python3 - "$temp_dir/$package_name" "$smoke_dir/codegeist-$platform-native.log" "$NATIVE_SMOKE_TIMEOUT_SECONDS" "$RELEASE_VERSION" <<'PY'
+          import os
+          import subprocess
+          import sys
+
+          package_dir, log_file, timeout_seconds, expected = sys.argv[1:5]
+          env = os.environ.copy()
+          env["LOG_FILE"] = log_file
+
+          try:
+              completed = subprocess.run(
+                  ["./codegeist", "--version"],
+                  cwd=package_dir,
+                  env=env,
+                  text=True,
+                  capture_output=True,
+                  timeout=int(timeout_seconds),
+              )
+          except subprocess.TimeoutExpired:
+              print(f"Native version smoke timed out after {timeout_seconds}s", file=sys.stderr)
+              sys.exit(1)
+
+          actual = (completed.stdout + completed.stderr).rstrip("\r\n")
+          if completed.returncode != 0:
+              print(f"Native version smoke failed with exit code {completed.returncode}: {actual}", file=sys.stderr)
+              sys.exit(completed.returncode)
+
+          if actual != expected:
+              print(f"Expected native version {expected}, got {actual}", file=sys.stderr)
+              sys.exit(1)
+
+          if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
+              print(f"Expected non-empty native smoke log: {log_file}", file=sys.stderr)
+              sys.exit(1)
+          PY
+
+          printf 'Native archive smoke passed: %s\n' "$archive"
+
+      - name: Package and smoke Windows native archive
+        if: runner.os == 'Windows'
+        working-directory: app/codegeist/cli
+        shell: pwsh
+        run: |
+          $cliDir = (Get-Location).Path
+          $distDir = Join-Path $cliDir "target/dist"
+          $smokeDir = Join-Path $cliDir "target/smoke-test"
+          $packageName = "codegeist-$env:RELEASE_VERSION-windows-x64"
+          $packageDir = Join-Path $distDir $packageName
+          $archive = Join-Path $distDir "$packageName.zip"
+          $nativeExe = Join-Path $cliDir "target/codegeist.exe"
+
+          if (-not (Test-Path -LiteralPath $nativeExe)) {
+              throw "Native executable was not written: $nativeExe"
+          }
+
+          Remove-Item -Recurse -Force -LiteralPath $packageDir -ErrorAction SilentlyContinue
+          Remove-Item -Force -LiteralPath $archive -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force -LiteralPath $smokeDir -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
+
+          Copy-Item -LiteralPath $nativeExe -Destination (Join-Path $packageDir "codegeist.exe") -Force
+          Get-ChildItem -LiteralPath (Join-Path $cliDir "target") -Filter "*.dll" -File -ErrorAction SilentlyContinue |
+              ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $packageDir -Force }
+
+          Compress-Archive -Path $packageDir -DestinationPath $archive -Force
+
+          $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("codegeist-smoke-" + [guid]::NewGuid().ToString("N"))
+          New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
+
+          try {
+              Expand-Archive -LiteralPath $archive -DestinationPath $tempRoot -Force
+              $runDir = Join-Path $tempRoot $packageName
+              $packageExe = Join-Path $runDir "codegeist.exe"
+              if (-not (Test-Path -LiteralPath $packageExe)) {
+                  throw "Packaged native executable was not found after unzip: $packageExe"
+              }
+
+              $stdoutFile = Join-Path $smokeDir "codegeist-windows-native.out"
+              $stderrFile = Join-Path $smokeDir "codegeist-windows-native.err"
+              $logFile = Join-Path $smokeDir "codegeist-windows-native.log"
+              Remove-Item -Force -LiteralPath $stdoutFile, $stderrFile, $logFile -ErrorAction SilentlyContinue
+
+              $env:LOG_FILE = $logFile
+              $process = Start-Process -FilePath $packageExe -ArgumentList "--version" -WorkingDirectory $runDir -NoNewWindow -PassThru -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
+              if (-not $process.WaitForExit([int]$env:NATIVE_SMOKE_TIMEOUT_SECONDS * 1000)) {
+                  $process.Kill()
+                  $process.WaitForExit()
+                  throw "Native version smoke timed out after $env:NATIVE_SMOKE_TIMEOUT_SECONDS seconds"
+              }
+
+              $stdout = if (Test-Path -LiteralPath $stdoutFile) { Get-Content -LiteralPath $stdoutFile -Raw } else { "" }
+              $stderr = if (Test-Path -LiteralPath $stderrFile) { Get-Content -LiteralPath $stderrFile -Raw } else { "" }
+              $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
+
+              if ($process.ExitCode -ne 0) {
+                  throw "Native version smoke failed with exit code $($process.ExitCode): $actual"
+              }
+
+              if ($actual -ne $env:RELEASE_VERSION) {
+                  throw "Expected native version $env:RELEASE_VERSION, got $actual"
+              }
+
+              if (-not (Test-Path -LiteralPath $logFile) -or (Get-Item -LiteralPath $logFile).Length -eq 0) {
+                  throw "Expected non-empty native smoke log: $logFile"
+              }
+          }
+          finally {
+              Remove-Item -Recurse -Force -LiteralPath $tempRoot -ErrorAction SilentlyContinue
+          }
+
+          Write-Host "Native archive smoke passed: $archive"
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codegeist-${{ needs.metadata.outputs.release_version }}-${{ matrix.platform }}
+          if-no-files-found: error
+          path: app/codegeist/cli/target/dist/codegeist-${{ needs.metadata.outputs.release_version }}-${{ matrix.platform }}.${{ matrix.extension }}
+
+  checksums:
+    name: Generate and verify checksums
+    runs-on: ubuntu-latest
+    needs:
+      - metadata
+      - build-jvm
+      - build-native
+    env:
+      RELEASE_VERSION: ${{ needs.metadata.outputs.release_version }}
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate SHA256SUMS
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+          count=0
+          for file in artifacts/*/codegeist-"$RELEASE_VERSION"*; do
+            if [ ! -f "$file" ]; then
+              continue
+            fi
+            cp -p "$file" dist/
+            count=$((count + 1))
+          done
+
+          if [ "$count" -eq 0 ]; then
+            printf 'No release artifacts were downloaded.\n' >&2
+            exit 1
+          fi
+
+          cd dist
+          checksum_file="codegeist-$RELEASE_VERSION-SHA256SUMS.txt"
+          sha256sum codegeist-"$RELEASE_VERSION"* > "$checksum_file"
+          sha256sum -c "$checksum_file"
+
+          {
+            printf '### Release assets\n'
+            printf '\n'
+            for asset in *; do
+              printf -- '- `%s`\n' "$asset"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload checksum artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codegeist-${{ needs.metadata.outputs.release_version }}-checksums
+          if-no-files-found: error
+          path: dist/codegeist-${{ needs.metadata.outputs.release_version }}-SHA256SUMS.txt
+
+  release:
+    name: Create draft GitHub Release
+    if: needs.metadata.outputs.publish_release == 'true'
+    runs-on: ubuntu-latest
+    needs:
+      - metadata
+      - checksums
+    permissions:
+      contents: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Stage release assets
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.release_version }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p release-assets
+          count=0
+          for file in artifacts/*/codegeist-"$RELEASE_VERSION"*; do
+            if [ ! -f "$file" ]; then
+              continue
+            fi
+            cp -p "$file" release-assets/
+            count=$((count + 1))
+          done
+
+          if [ "$count" -eq 0 ]; then
+            printf 'No release assets were downloaded.\n' >&2
+            exit 1
+          fi
+
+          cat > release-notes.md <<EOF
+          Codegeist $RELEASE_VERSION draft release.
+
+          Validation completed in this workflow run before upload:
+
+          - Maven test suite passed before packaging.
+          - JVM jar was packaged and smoke-tested with --version.
+          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version.
+          - The versioned SHA-256 checksum file was generated and verified before upload.
+
+          This draft release intentionally excludes installers, signing, notarization, SBOM, and SLSA provenance.
+          EOF
+
+      - name: Upload draft release
+        uses: softprops/action-gh-release@v3
+        with:
+          draft: true
+          prerelease: ${{ contains(needs.metadata.outputs.release_version, '-') }}
+          name: Codegeist ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: release-assets/*

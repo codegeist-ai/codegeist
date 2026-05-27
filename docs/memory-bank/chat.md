@@ -36,6 +36,19 @@
   `target/dist/codegeist-<version>-linux-x64.tar.gz`, unpacks it into a fresh temp
   directory, runs packaged `./codegeist --version`, and writes
   `target/smoke-test/codegeist.log`.
+- Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
+  for GitHub-hosted release validation. Pushes to `release/v*` validate without
+  publishing, `workflow_dispatch` supports pre-tag validation with
+  `release_version=0.1.0`, and pushed `v*` tags upload versioned assets to a draft
+  GitHub Release.
+- `app/codegeist/cli/pom.xml` now uses CI-friendly `${revision}` with local default
+  `0.1.0-SNAPSHOT`; release CI passes `-Drevision=0.1.0` so artifact smokes print
+  `0.1.0`.
+- GitHub release assets are `codegeist-<version>-jvm-any.jar`,
+  `codegeist-<version>-linux-x64.tar.gz`,
+  `codegeist-<version>-windows-x64.zip`,
+  `codegeist-<version>-macos-x64.tar.gz`, and
+  `codegeist-<version>-SHA256SUMS.txt`.
 - `scripts/tests/final-smoke-suite.sh` is the local final smoke entrypoint. It
   runs Linux direct smoke and automated Windows QEMU/SSH smoke. Default mode
   requires both platforms to pass; `--allow-skips` is developer-only. The suite
@@ -76,8 +89,9 @@
   is solved with the current Spring Shell `--version` behavior.
 - `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
   release-readiness task group. `T005_01` is solved with local Linux/Windows
-  build-smoke entrypoints under `scripts/tests/`; `T005_02` remains the
-  GitHub-hosted release build follow-up.
+  build-smoke entrypoints under `scripts/tests/`; `T005_02` is implemented locally
+  on `release/v0.1.0-github-release-build` and still needs GitHub branch workflow
+  validation after `gh` authentication is available.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -166,5 +180,6 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
-- Solve `T005_02` next: GitHub Actions release automation and release publication
-  comes after the local Linux/Windows build-smoke entrypoints.
+- Finish `T005_02`: authenticate `gh`, push
+  `release/v0.1.0-github-release-build`, watch the branch workflow, fix any CI
+  issues, then record the branch-validation result before merging or tagging.

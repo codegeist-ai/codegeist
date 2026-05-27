@@ -11,6 +11,8 @@ constraints here.
 
 ## Release Documents
 
+- `release/github-release-build.md` - GitHub-hosted release workflow triggers,
+  artifacts, branch validation, pre-tag validation, and draft release behavior.
 - `release/local-build-smoke.md` - local Linux and Windows build-smoke entrypoints
   and final local smoke-suite usage.
 - `release/native-distribution-packaging.md` - native archive layout, sidecar

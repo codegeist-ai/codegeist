@@ -130,6 +130,51 @@ release workflow without manually opening the GitHub Actions UI.
 If a GitHub platform smoke is skipped, record `skipped` with the concrete reason,
 platform, artifact, command, and follow-up owner.
 
+## Implementation Notes
+
+- Created the implementation on branch `release/v0.1.0-github-release-build` so
+  `main` stays unchanged while the workflow is tested.
+- Added `.github/workflows/release.yml` for `release/v*` branch validation,
+  `workflow_dispatch` pre-tag validation, and `v*` tag draft release upload.
+- The workflow derives version `0.1.0` from branch
+  `release/v0.1.0-github-release-build`, accepts `release_version=0.1.0` for
+  `workflow_dispatch`, and passes Maven `-Drevision=0.1.0` so `--version` prints
+  the release version instead of `0.1.0-SNAPSHOT`.
+- Added CI-friendly Maven revision support in `app/codegeist/cli/pom.xml` while
+  keeping the local default version `0.1.0-SNAPSHOT`.
+- The workflow builds and smokes `codegeist-<version>-jvm-any.jar`,
+  `codegeist-<version>-linux-x64.tar.gz`,
+  `codegeist-<version>-windows-x64.zip`, and
+  `codegeist-<version>-macos-x64.tar.gz`, then generates and verifies
+  `codegeist-<version>-SHA256SUMS.txt`.
+- GitHub Release upload is guarded to `v*` tag runs only and creates a draft
+  release. Branch and `workflow_dispatch` runs validate artifacts without
+  publishing.
+- Added `docs/developer/release/github-release-build.md` and updated current-state
+  architecture, release strategy, native packaging notes, developer docs, README,
+  and project memory for the implemented workflow.
+
+## Verification Notes
+
+- `git --no-pager diff --check` passed.
+- `.github/workflows/release.yml` parsed successfully with Python `yaml.safe_load`.
+- `actionlint` was not installed in the local environment, so actionlint validation
+  was skipped locally.
+- From `app/codegeist/cli`, the following local release-version path passed:
+
+```bash
+mvn --batch-mode --no-transfer-progress test
+mvn --batch-mode --no-transfer-progress -Drevision=0.1.0 -DskipTests package
+java -jar target/codegeist.jar --version
+```
+
+- The jar smoke printed `0.1.0`, proving the release workflow can override the
+  default `0.1.0-SNAPSHOT` project version with Maven `-Drevision=0.1.0`.
+- GitHub branch validation is still pending because this local session is not
+  authenticated with GitHub CLI. `gh auth login --hostname github.com --web
+  --git-protocol https` was started, but the device flow was not completed before
+  timeout; `gh auth status` still reports no login.
+
 ## Planning Notes
 
 - Keep GitHub workflow steps visible: tests, jar package, jar smoke, native build,

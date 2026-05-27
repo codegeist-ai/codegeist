@@ -1,24 +1,24 @@
 # Build Release And Binary Smoke Strategy
 
-Planned release strategy for Codegeist GitHub Releases, cross-platform artifacts,
-and platform-native binary smoke validation.
+Release strategy for Codegeist GitHub Releases, cross-platform artifacts, and
+platform-native binary smoke validation.
 
 ## Purpose And Status
 
-This document defines how Codegeist should build, package, publish, and verify
-release artifacts once release automation is implemented. It is a strategy and
-handoff document only. It does not add GitHub Actions workflows, release scripts,
-Maven plugins, Taskfile commands, Java source, tests, installers, signing keys,
+This document defines how Codegeist builds, packages, publishes, and verifies
+release artifacts. The current implementation is `.github/workflows/release.yml`,
+which validates release-shaped artifacts on GitHub-hosted runners and uploads
+draft GitHub Releases for `v*` tag runs. It does not add installers, signing keys,
 notarization setup, package-manager manifests, or runtime behavior.
 
-Use this guide before implementing release CI, release scripts, native packaging
-checks, startup budgets, or platform smoke suites. Current implementation remains
-the single Spring Boot CLI module under `app/codegeist/cli`.
+Use this guide before changing release CI, release scripts, native packaging
+checks, startup budgets, or platform smoke suites. Current application
+implementation remains the single Spring Boot CLI module under `app/codegeist/cli`.
 
 ## Current Baseline
 
-The repository currently has local developer build and smoke entrypoints, not a
-GitHub release pipeline.
+The repository currently has local developer build and smoke entrypoints and a
+GitHub-hosted release workflow.
 
 | Area | Current state |
 | --- | --- |
@@ -28,13 +28,13 @@ GitHub release pipeline.
 | Spring Shell | `4.0.2` dependency baseline; `--version` command implemented |
 | Spring AI | BOM `2.0.0-M6`; no provider starters or model calls yet |
 | Spring AI Agent Utils | BOM and core dependency `0.7.0` |
-| JVM package | Spring Boot executable jar named `target/codegeist.jar` |
+| JVM package | Spring Boot executable jar named `target/codegeist.jar`; release asset `codegeist-<version>-jvm-any.jar` |
 | Native package | GraalVM native Maven profile using `native-maven-plugin` `0.10.6` |
 | Local commands | `task test`, `task build`, `task native`, `task native-smoke`, `task local-linux-smoke`, `task qemu-windows-smoke`, `task final-smoke-suite`, `task run` |
+| GitHub release workflow | `.github/workflows/release.yml` for `release/v*` branch validation, `workflow_dispatch` pre-tag validation, and `v*` tag draft release upload |
 
-No GitHub release workflow, platform artifact matrix, checksum generation,
-artifact signing, notarization, installer generation, or package-manager
-publishing exists yet.
+No artifact signing, notarization, installer generation, SBOM, SLSA provenance, or
+package-manager publishing exists yet.
 
 The current local smoke suite lives under `scripts/tests/` and verifies the
 implemented `--version` behavior on local Linux artifacts and, when configured, a
@@ -44,9 +44,8 @@ Windows QEMU VM over SSH.
 
 GitHub Releases are the deployment target for Codegeist release artifacts.
 
-A future release workflow should publish artifacts only through a GitHub Release
-draft or published release associated with the release tag. Each release should
-include:
+The implemented release workflow publishes artifacts only through a draft GitHub
+Release associated with a `v*` release tag. Each release includes:
 
 - JVM jar artifact.
 - Platform-native archive artifacts when the platform build is available.
@@ -84,17 +83,18 @@ The JVM jar and native distribution archives have separate responsibilities.
 
 | Artifact | Example name | Built from | Verification posture |
 | --- | --- | --- | --- |
-| JVM jar | `codegeist-<version>.jar` | `task build` / Maven package | Release-blocking once runtime behavior exists. |
-| Linux native archive | `codegeist-<version>-linux-x64.tar.gz` | Native compile and package on Linux x64 | Release target; blocking once runner, toolchain, package script, and smoke command are stable. |
-| Windows native archive | `codegeist-<version>-windows-x64.zip` | Native compile and package on Windows x64 | Release target; blocking once runner, toolchain, package script, and smoke command are stable. |
-| macOS Intel native archive | `codegeist-<version>-macos-x64.tar.gz` | Native compile and package on macOS x64 | Release target; skip only with explicit runner/toolchain reason. |
+| JVM jar | `codegeist-<version>-jvm-any.jar` | Maven package on Ubuntu | Release-blocking for the current `--version` artifact contract. |
+| Linux native archive | `codegeist-<version>-linux-x64.tar.gz` | Native compile and package on Linux x64 | Release-blocking in the implemented workflow. |
+| Windows native archive | `codegeist-<version>-windows-x64.zip` | Native compile and package on Windows x64 | Release-blocking in the implemented workflow. |
+| macOS Intel native archive | `codegeist-<version>-macos-x64.tar.gz` | Native compile and package on macOS x64 | Release-blocking in the implemented workflow. |
 | macOS Apple Silicon native archive | `codegeist-<version>-macos-aarch64.tar.gz` | Native compile and package on macOS arm64 | Compatibility target; skip only with explicit runner/toolchain reason. |
-| Checksums | `SHA256SUMS` or per-artifact `.sha256` files | Platform-neutral checksum step | Required for every uploaded artifact. |
+| Checksums | `codegeist-<version>-SHA256SUMS.txt` | Platform-neutral checksum step | Required for every uploaded artifact. |
 
-Use names that include the project, version, operating system, and architecture.
-Do not reuse `target/codegeist.jar`, `target/codegeist`, or `target/codegeist.exe`
-as final release asset names because they do not identify version or platform and
-do not package required sidecar libraries.
+Use names that include the project, version, platform, and architecture. The JVM
+jar uses `jvm-any` because it is not tied to one operating system or CPU. Do not
+reuse `target/codegeist.jar`, `target/codegeist`, or `target/codegeist.exe` as
+final release asset names because they do not identify version or platform and do
+not package required sidecar libraries.
 
 Native release artifacts are archives, not true single executable files. The
 archive is the user download. The extracted directory is the runtime unit because
@@ -104,8 +104,8 @@ full packaging rationale.
 
 ## Verification Gates
 
-Future release CI should use ordered gates so a failure explains which part of the
-release is unsafe.
+Release CI uses ordered gates so a failure explains which part of the release is
+unsafe.
 
 1. Source hygiene: checkout tag, verify clean workspace, run `git --no-pager diff
    --check` for generated release changes when applicable.
@@ -122,16 +122,14 @@ release is unsafe.
    run the packaged executable on its own platform with the same bounded startup
    policy.
 8. Artifact integrity: generate checksums and verify every checksum before upload.
-9. Release draft validation: create or update a GitHub Release draft and attach all
-   artifacts, checksums, and validation summaries.
-10. Publication: publish the GitHub Release only when required gates passed and all
-   skips or failures have approved release notes.
+9. Release draft validation: on `v*` tag runs only, create or update a GitHub
+   Release draft and attach all artifacts and checksums.
+10. Publication: a human publishes the draft only when required gates passed and all
+    skips or failures have approved release notes.
 
-The JVM jar should be the first release-blocking artifact. Native archives are
-named release targets and should become blocking for each platform as soon as that
-platform's runner, GraalVM toolchain, package naming, unpack step, and smoke
-command are stable. Until then, missing native checks must be recorded as
-`skipped`, not left implicit.
+The JVM jar is a release-blocking artifact. Linux x64, Windows x64, and macOS x64
+native archives are release-blocking in the implemented GitHub workflow. Missing
+native checks must be recorded as `skipped`, not left implicit.
 
 ## Binary Smoke Scenarios
 
@@ -155,11 +153,10 @@ Required smoke checks once the corresponding CLI behavior exists:
 - Artifact integrity: verify the downloaded artifact checksum before execution.
 - Timeout handling: fail the smoke if the process hangs beyond the smoke budget.
 
-Planned command shapes for future CI jobs:
+Implemented CI smoke command shapes:
 
 ```bash
-java -jar codegeist-<version>.jar --version
-java -jar codegeist-<version>.jar --help
+java -jar codegeist-<version>-jvm-any.jar --version
 tar -xzf codegeist-<version>-linux-x64.tar.gz -C /tmp/codegeist-smoke
 cd /tmp/codegeist-smoke/codegeist-<version>-linux-x64
 ./codegeist --version
@@ -175,13 +172,14 @@ Set-Location $env:TEMP\codegeist-smoke\codegeist-<version>-windows-x64
 .\codegeist.exe --version
 ```
 
-These examples are planned smoke shapes. They must not be reported as executed
-until the corresponding release job or local verification really runs them.
+These examples reflect the implemented release workflow's `--version` smoke shape.
+Do not report broader commands such as `--help` as executed until the CLI owns that
+behavior and the corresponding release job really runs it.
 
 ## Implemented Local Smoke Suite
 
-The implemented local suite is a pre-release validation aid until GitHub Actions
-release jobs exist.
+The implemented local suite is a pre-release validation aid alongside GitHub
+Actions release jobs.
 
 | Script | Current behavior |
 | --- | --- |
@@ -193,7 +191,7 @@ release jobs exist.
 
 The local suite is intentionally not a release publisher. It does not upload
 artifacts, generate checksums, create GitHub Releases, sign binaries, or replace
-the future GitHub-hosted Linux, Windows, and macOS release matrix.
+the GitHub-hosted Linux, Windows, and macOS release matrix.
 
 ## Timing And Budgets
 
@@ -220,8 +218,7 @@ Initial provisional budgets until baseline measurements exist:
 | Platform smoke suite | 60 seconds per artifact | Excludes native compilation time. |
 
 Treat these as release smoke budgets, not ordinary unit-test budgets. A later task
-should replace them with measured values after the first stable release matrix is
-implemented.
+can replace them with measured values after several stable release matrix runs.
 
 ## Skip And Failure Policy
 
@@ -261,41 +258,35 @@ Owner: future release automation task
 Release decision: non-blocking for this pre-matrix release; must be listed in release notes
 ```
 
-## GitHub Actions Handoff
+## Implemented GitHub Actions Matrix
 
-A later task should implement the workflow. This document only defines the shape.
-
-Illustrative matrix outline:
+`.github/workflows/release.yml` implements the first release matrix:
 
 ```yaml
 strategy:
   matrix:
     include:
-      - os: ubuntu-latest
-        artifact_suffix: linux-x64.tar.gz
-        native: true
-      - os: windows-latest
-        artifact_suffix: windows-x64.zip
-        native: true
-      - os: macos-latest
-        artifact_suffix: macos-x64.tar.gz
-        native: true
-      - os: macos-latest
-        artifact_suffix: macos-aarch64.tar.gz
-        native: skip-until-runner-confirmed
+      - platform: linux-x64
+        os: ubuntu-latest
+        extension: tar.gz
+      - platform: windows-x64
+        os: windows-latest
+        extension: zip
+      - platform: macos-x64
+        os: macos-13
+        extension: tar.gz
 ```
 
-The future workflow should keep build, package, unpacked smoke, checksum,
-release-draft, and publish steps visible as separate stages. It should upload logs
-as CI artifacts when useful, but release notes should contain only concise
-validation summaries.
+The workflow keeps build, package, unpacked smoke, checksum, release-draft, and
+publish steps visible as separate stages. Release notes should contain concise
+validation summaries instead of raw logs.
 
 ## Release Candidate Checklist
 
 Before publishing or approving a release candidate, verify:
 
 - Release tag is selected and matches artifact version names.
-- `task test` passed from `app/codegeist/cli`.
+- Maven tests passed from `app/codegeist/cli` with the selected `-Drevision`.
 - JVM jar was built, renamed for release, checksumed, and smoke tested.
 - Each platform-native archive is either unpacked and smoke tested on its own
   platform or recorded as `skipped` or `failed` with required details.
@@ -312,16 +303,15 @@ Before publishing or approving a release candidate, verify:
 
 Likely follow-up owners:
 
-- A future packaging task should validate the JVM package, native archive shape,
-  sidecar-library collection, startup behavior, and unpacked executable smoke
-  behavior when the implementation reaches packaging-readiness.
-- A later release automation task should create GitHub Actions workflows, artifact
-  naming scripts, native archive packaging, checksum generation, release
-  draft/upload behavior, and platform smoke jobs.
+- A future packaging hardening task can add macOS arm64 once runner capacity and
+  toolchain behavior are confirmed.
+- A future release hardening task can add signing, notarization, SBOM, SLSA
+  provenance, and installer/package-manager artifacts when they become release
+  goals.
 - A later CLI task should add stable `--help` and broader no-side-effect command
   behavior. Release smoke checks can already assert the implemented `--version`
   command.
 
 When any of those tasks implements real behavior, update
 `docs/developer/architecture/architecture.md` so it continues to describe current
-state rather than planned release strategy.
+state rather than stale release strategy.
