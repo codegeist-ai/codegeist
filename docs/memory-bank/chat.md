@@ -43,6 +43,10 @@
   GitHub Release. Branch run `26535014716` passed JVM, Linux x64, Windows x64,
   macOS x64, and checksum jobs; the release job was correctly skipped on the branch
   run.
+- Codegeist `v0.1.0` is published on GitHub Releases:
+  `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0`. Pre-tag
+  validation run `26537663964`, tag run `26538176834`, and downloaded asset
+  checksum verification all passed.
 - `app/codegeist/cli/pom.xml` now uses CI-friendly `${revision}` with local default
   `0.1.0-SNAPSHOT`; release CI passes `-Drevision=0.1.0` so artifact smokes print
   `0.1.0`.
@@ -92,7 +96,8 @@
 - `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
   release-readiness task group. `T005_01` is solved with local Linux/Windows
   build-smoke entrypoints under `scripts/tests/`; `T005_02` is solved on
-  `release/v0.1.0-github-release-build` with passing GitHub branch validation.
+  `release/v0.1.0-github-release-build` with passing GitHub branch validation,
+  passing pre-tag validation on `main`, and published `v0.1.0` release assets.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -182,7 +187,5 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
-- After merging `release/v0.1.0-github-release-build` to `main`, run
-  `/codegeist-release v0.1.0`. The command validates `main`, creates and pushes the
-  annotated tag, waits for the tag workflow, and verifies the published release
-  assets and checksums.
+- For the next release, run `/codegeist-release v<version>` from a clean `main`
+  after the release workflow changes are merged and branch validation has passed.

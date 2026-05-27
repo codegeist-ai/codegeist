@@ -81,12 +81,13 @@ codegeist-<version>-macos-x64.tar.gz
 codegeist-<version>-SHA256SUMS.txt
 ```
 
-16. Download the release assets into a temporary directory under `/tmp/opencode`
-    and verify checksums:
+16. Download the release assets into a temporary directory and verify checksums.
+    Prefer `/tmp/opencode` when it is writable; otherwise use an ignored generated
+    path such as `app/codegeist/cli/target/release-verify-<tag>.*`.
 
 ```bash
 gh release download <tag> --dir <tmp-dir>
-sha256sum -c codegeist-<version>-SHA256SUMS.txt
+(cd <tmp-dir> && sha256sum -c codegeist-<version>-SHA256SUMS.txt)
 ```
 
 17. Report the release URL, tag, validated workflow run ids, assets, checksum

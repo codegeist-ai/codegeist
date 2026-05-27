@@ -187,6 +187,19 @@ java -jar target/codegeist.jar --version
 - Full pre-tag validation with `workflow_dispatch` and automatic release
   publication on a `v0.1.0` tag remain release-cycle steps after this branch is
   merged to `main`.
+- The release workflow was merged to `main` through PR
+  `https://github.com/codegeist-ai/codegeist/pull/1`.
+- Pre-tag validation on `main` passed:
+  `https://github.com/codegeist-ai/codegeist/actions/runs/26537663964`.
+- The annotated tag `v0.1.0` was pushed and the tag-triggered workflow published
+  the GitHub Release:
+  `https://github.com/codegeist-ai/codegeist/actions/runs/26538176834`.
+- The published release is available at
+  `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0` and is not a
+  draft.
+- Downloaded release assets verified with
+  `sha256sum -c codegeist-0.1.0-SHA256SUMS.txt` under
+  `app/codegeist/cli/target/release-verify-v0.1.0.0zZZH3`.
 
 ## Planning Notes
 

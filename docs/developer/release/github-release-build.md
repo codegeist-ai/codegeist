@@ -139,6 +139,14 @@ It runs pre-tag validation, creates and pushes the annotated tag after validatio
 passes, waits for the tag-triggered workflow, then verifies the published release
 assets and checksums.
 
+For local post-release verification downloads, prefer a temporary directory outside
+the repo when it is writable. In this workspace, using an ignored generated path
+under `app/codegeist/cli/target/` is also acceptable:
+
+```bash
+gh release download v0.1.0 --dir app/codegeist/cli/target/release-verify-v0.1.0
+```
+
 ## Status And Skips
 
 Normal release validation expects Linux x64, Windows x64, and macOS x64 jobs to
