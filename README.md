@@ -22,6 +22,9 @@ vision:
 - a Spring Shell `--version` command backed by Spring Boot build metadata
 - a GraalVM native-image Maven profile and local native smoke check
 - local Linux and Windows smoke scripts under `scripts/tests/`
+- a GitHub Actions release workflow for branch validation, pre-tag validation,
+  tag-triggered published releases, checksums, and Linux/Windows/macOS native
+  smokes
 - repo-local agent workflow rules, commands, and configuration
 - lightweight project memory in `docs/memory-bank/chat.md`
 
@@ -128,6 +131,26 @@ Native release downloads are planned as platform archives, not true single-file
 executables. See `docs/developer/release/native-distribution-packaging.md` for the
 Linux `tar.gz`, Windows `zip`, sidecar-library, and no-single-executable rationale.
 
+## GitHub Release Build
+
+The GitHub release workflow lives at `.github/workflows/release.yml`.
+
+It validates versioned release artifacts on GitHub-hosted runners:
+
+- `codegeist-<version>-jvm-any.jar`
+- `codegeist-<version>-linux-x64.tar.gz`
+- `codegeist-<version>-windows-x64.zip`
+- `codegeist-<version>-macos-x64.tar.gz`
+- `codegeist-<version>-SHA256SUMS.txt`
+
+Push a versioned release branch such as
+`release/v0.1.0-github-release-build` to test the workflow without publishing.
+After the workflow is on `main`, use `gh workflow run release.yml --ref main -f
+release_version=0.1.0` for pre-tag validation. A pushed `v*` tag starts the same
+workflow and publishes the assets to a GitHub Release.
+
+See `docs/developer/release/github-release-build.md` for the full operator flow.
+
 ## Getting Started
 
 1. Clone the repository with `git clone --recurse-submodules <repo-url>` so the nested `.opencode` and `.devcontainer` checkouts are available from the start.
@@ -171,8 +194,7 @@ If an older checkout is missing nested submodules, initialize them with
 
 ## Status
 
-The repository is still early, but it now has a real application entrypoint and
-an end-to-end local build/run workflow in the devcontainer. It also has local
-Linux and Windows smoke-test entrypoints for the current `--version` artifact
-contract. The next release-readiness step is GitHub-hosted release automation for
-Linux, Windows, and macOS artifacts.
+The repository is still early, but it now has a real application entrypoint, an
+end-to-end local build/run workflow in the devcontainer, local Linux and Windows
+smoke-test entrypoints, and GitHub-hosted release automation for the current
+`--version` artifact contract.

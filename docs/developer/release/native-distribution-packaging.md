@@ -11,7 +11,7 @@ Use one downloadable archive per platform and architecture:
 | --- | --- | --- |
 | Linux x64 | `codegeist-<version>-linux-x64.tar.gz` | `codegeist` plus required `.so` libraries in one directory. |
 | Windows x64 | `codegeist-<version>-windows-x64.zip` | `codegeist.exe` plus required `.dll` libraries in one directory. |
-| macOS x64 | `codegeist-<version>-macos-x64.tar.gz` | Future native binary plus required dynamic libraries in one directory. |
+| macOS x64 | `codegeist-<version>-macos-x64.tar.gz` | Native binary plus required dynamic libraries in one directory. |
 | macOS arm64 | `codegeist-<version>-macos-aarch64.tar.gz` | Future native binary plus required dynamic libraries in one directory. |
 
 The archive is the single download artifact. The extracted directory is the runtime

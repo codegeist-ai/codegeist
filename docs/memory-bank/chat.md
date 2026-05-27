@@ -36,6 +36,21 @@
   `target/dist/codegeist-<version>-linux-x64.tar.gz`, unpacks it into a fresh temp
   directory, runs packaged `./codegeist --version`, and writes
   `target/smoke-test/codegeist.log`.
+- Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
+  for GitHub-hosted release validation. Pushes to `release/v*` validate without
+  publishing, `workflow_dispatch` supports pre-tag validation with
+  `release_version=0.1.0`, and pushed `v*` tags publish versioned assets to a
+  GitHub Release. Branch run `26535014716` passed JVM, Linux x64, Windows x64,
+  macOS x64, and checksum jobs; the release job was correctly skipped on the branch
+  run.
+- `app/codegeist/cli/pom.xml` now uses CI-friendly `${revision}` with local default
+  `0.1.0-SNAPSHOT`; release CI passes `-Drevision=0.1.0` so artifact smokes print
+  `0.1.0`.
+- GitHub release assets are `codegeist-<version>-jvm-any.jar`,
+  `codegeist-<version>-linux-x64.tar.gz`,
+  `codegeist-<version>-windows-x64.zip`,
+  `codegeist-<version>-macos-x64.tar.gz`, and
+  `codegeist-<version>-SHA256SUMS.txt`.
 - `scripts/tests/final-smoke-suite.sh` is the local final smoke entrypoint. It
   runs Linux direct smoke and automated Windows QEMU/SSH smoke. Default mode
   requires both platforms to pass; `--allow-skips` is developer-only. The suite
@@ -76,8 +91,8 @@
   is solved with the current Spring Shell `--version` behavior.
 - `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
   release-readiness task group. `T005_01` is solved with local Linux/Windows
-  build-smoke entrypoints under `scripts/tests/`; `T005_02` remains the
-  GitHub-hosted release build follow-up.
+  build-smoke entrypoints under `scripts/tests/`; `T005_02` is solved on
+  `release/v0.1.0-github-release-build` with passing GitHub branch validation.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -123,8 +138,9 @@
   for packaging, release, platform, or binary-smoke work.
 - For the active T005 release work, validate Linux and Windows locally before the
   release path where practical, use GitHub-hosted runners for Linux, Windows, and
-  macOS release builds, and use `gh` pre-tag validation before creating the final
-  `v*` release tag.
+  macOS release builds, and use `/codegeist-release v0.1.0` or the equivalent `gh`
+  pre-tag validation before creating the final `v*` release tag. Tag runs publish
+  the GitHub Release automatically.
 - Keep test and smoke helper scripts under `scripts/tests/`. Local Windows release
   validation uses a real Windows QEMU VM over SSH or a matching GitHub Windows
   runner; do not add local compatibility-layer smoke paths.
@@ -166,5 +182,7 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
-- Solve `T005_02` next: GitHub Actions release automation and release publication
-  comes after the local Linux/Windows build-smoke entrypoints.
+- After merging `release/v0.1.0-github-release-build` to `main`, run
+  `/codegeist-release v0.1.0`. The command validates `main`, creates and pushes the
+  annotated tag, waits for the tag workflow, and verifies the published release
+  assets and checksums.

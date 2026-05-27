@@ -88,6 +88,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   before creating the final `v*` release tag. Keep local Windows validation on a
   real Windows VM over SSH or a matching GitHub Windows runner; do not add local
   compatibility-layer smoke paths for Windows release validation.
+- For publishing a Codegeist GitHub Release, prefer `/codegeist-release v<version>`
+  after the validated release workflow is on `main`. The command owns pre-tag
+  validation, annotated tag creation, automatic tag-run publication, and published
+  asset checksum verification.
 - For Spring Shell command-line arguments such as `--version`, keep the current
   default command path noninteractive with
   `spring.shell.interactive.enabled=false` until a task intentionally implements

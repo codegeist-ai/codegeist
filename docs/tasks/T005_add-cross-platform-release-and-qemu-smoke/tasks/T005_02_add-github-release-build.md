@@ -1,6 +1,6 @@
 # T005_02 Add GitHub Release Build
 
-Status: open
+Status: solved
 
 Parent: `../task.md`
 
@@ -30,8 +30,8 @@ Windows, and macOS using GitHub-hosted runners.
   archives.
 - Publish release assets to GitHub Releases with versioned artifact names.
 - Generate and publish SHA-256 checksums for all release assets.
-- Create the GitHub Release as a draft unless the solve phase intentionally
-  chooses and documents a different publication policy.
+- Publish the GitHub Release automatically from the tag-triggered workflow after
+  pre-tag validation passes.
 - Update current-state architecture and user/developer documentation for the
   implemented GitHub release path.
 
@@ -71,7 +71,7 @@ Windows, and macOS using GitHub-hosted runners.
   running GraalVM `native-image` through Maven.
 - Release asset names include project, version, platform, and architecture.
 - A checksum file is generated, verified, and uploaded with the release assets.
-- The workflow uploads all expected artifacts to a draft GitHub Release.
+- The workflow uploads all expected artifacts to a published GitHub Release.
 - Release documentation describes how to run the workflow and what artifacts it
   produces.
 
@@ -109,7 +109,7 @@ Expected CI verification:
 ```text
 Manual workflow run or v* tag release run completes Linux, Windows, and macOS
 build, native archive packaging, unpacked smoke, checksum, artifact upload, and
-draft release creation jobs.
+release publication jobs.
 ```
 
 Expected pre-tag development verification:
@@ -129,6 +129,64 @@ release workflow without manually opening the GitHub Actions UI.
 
 If a GitHub platform smoke is skipped, record `skipped` with the concrete reason,
 platform, artifact, command, and follow-up owner.
+
+## Implementation Notes
+
+- Created the implementation on branch `release/v0.1.0-github-release-build` so
+  `main` stays unchanged while the workflow is tested.
+- Added `.github/workflows/release.yml` for `release/v*` branch validation,
+  `workflow_dispatch` pre-tag validation, and `v*` tag release publication.
+- The workflow derives version `0.1.0` from branch
+  `release/v0.1.0-github-release-build`, accepts `release_version=0.1.0` for
+  `workflow_dispatch`, and passes Maven `-Drevision=0.1.0` so `--version` prints
+  the release version instead of `0.1.0-SNAPSHOT`.
+- Added CI-friendly Maven revision support in `app/codegeist/cli/pom.xml` while
+  keeping the local default version `0.1.0-SNAPSHOT`.
+- The workflow builds and smokes `codegeist-<version>-jvm-any.jar`,
+  `codegeist-<version>-linux-x64.tar.gz`,
+  `codegeist-<version>-windows-x64.zip`, and
+  `codegeist-<version>-macos-x64.tar.gz`, then generates and verifies
+  `codegeist-<version>-SHA256SUMS.txt`.
+- GitHub Release upload is guarded to `v*` tag runs only and publishes the release
+  automatically. Branch and `workflow_dispatch` runs validate artifacts without
+  publishing.
+- Added `docs/developer/release/github-release-build.md` and updated current-state
+  architecture, release strategy, native packaging notes, developer docs, README,
+  and project memory for the implemented workflow.
+
+## Verification Notes
+
+- `git --no-pager diff --check` passed.
+- `.github/workflows/release.yml` parsed successfully with Python `yaml.safe_load`.
+- `actionlint` was not installed in the local environment, so actionlint validation
+  was skipped locally.
+- From `app/codegeist/cli`, the following local release-version path passed:
+
+```bash
+mvn --batch-mode --no-transfer-progress test
+mvn --batch-mode --no-transfer-progress -Drevision=0.1.0 -DskipTests package
+java -jar target/codegeist.jar --version
+```
+
+- The jar smoke printed `0.1.0`, proving the release workflow can override the
+  default `0.1.0-SNAPSHOT` project version with Maven `-Drevision=0.1.0`.
+- GitHub branch validation passed on
+  `release/v0.1.0-github-release-build`:
+  `https://github.com/codegeist-ai/codegeist/actions/runs/26534205715`.
+- The passing branch run validated metadata resolution, Maven tests,
+  JVM jar package and smoke, Linux x64 native package and smoke, Windows x64 native
+  package and smoke, macOS x64 native package and smoke, checksum generation, and
+  checksum verification.
+- The GitHub Release job was correctly skipped because the validation run was
+  a `release/v*` branch push, not a `v*` tag push.
+- The first attempted branch run,
+  `https://github.com/codegeist-ai/codegeist/actions/runs/26532524977`, proved JVM,
+  Linux, and Windows behavior but was cancelled after the old `macos-13` runner
+  label left the macOS job queued. The workflow now uses `macos-15-intel` for the
+  macOS x64 job.
+- Full pre-tag validation with `workflow_dispatch` and automatic release
+  publication on a `v0.1.0` tag remain release-cycle steps after this branch is
+  merged to `main`.
 
 ## Planning Notes
 
