@@ -87,6 +87,19 @@ gh run list --workflow release.yml --branch release/v0.1.0-github-release-build
 gh run watch <run-id> --exit-status
 ```
 
+Branch-run artifacts are downloaded from the workflow run, not from GitHub
+Releases. Use the run page's `Artifacts` section or GitHub CLI:
+
+```bash
+gh run download <run-id> -n codegeist-0.1.0-linux-x64 -D downloads/linux
+gh run download <run-id> -n codegeist-0.1.0-windows-x64 -D downloads/windows
+gh run download <run-id> -n codegeist-0.1.0-jvm-any -D downloads/jvm
+```
+
+The Linux artifact contains `codegeist-0.1.0-linux-x64.tar.gz`; the Windows
+artifact contains `codegeist-0.1.0-windows-x64.zip`. Extract the archive and keep
+the executable beside its sidecar libraries.
+
 ## Pre-Tag Validation Flow
 
 After the workflow exists on `main`, run the same build and smoke matrix without a

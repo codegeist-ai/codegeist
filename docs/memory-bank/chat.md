@@ -40,7 +40,9 @@
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
   `release_version=0.1.0`, and pushed `v*` tags upload versioned assets to a draft
-  GitHub Release.
+  GitHub Release. Branch run `26534205715` passed JVM, Linux x64, Windows x64,
+  macOS x64, and checksum jobs; the draft release job was correctly skipped on the
+  branch run.
 - `app/codegeist/cli/pom.xml` now uses CI-friendly `${revision}` with local default
   `0.1.0-SNAPSHOT`; release CI passes `-Drevision=0.1.0` so artifact smokes print
   `0.1.0`.
@@ -89,9 +91,8 @@
   is solved with the current Spring Shell `--version` behavior.
 - `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
   release-readiness task group. `T005_01` is solved with local Linux/Windows
-  build-smoke entrypoints under `scripts/tests/`; `T005_02` is implemented locally
-  on `release/v0.1.0-github-release-build` and still needs GitHub branch workflow
-  validation after `gh` authentication is available.
+  build-smoke entrypoints under `scripts/tests/`; `T005_02` is solved on
+  `release/v0.1.0-github-release-build` with passing GitHub branch validation.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -180,6 +181,7 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
-- Finish `T005_02`: authenticate `gh`, push
-  `release/v0.1.0-github-release-build`, watch the branch workflow, fix any CI
-  issues, then record the branch-validation result before merging or tagging.
+- After merging `release/v0.1.0-github-release-build` to `main`, run pre-tag
+  validation with `gh workflow run release.yml --ref main -f release_version=0.1.0`.
+  If that passes, create and push annotated tag `v0.1.0` so the workflow creates
+  the draft GitHub Release.

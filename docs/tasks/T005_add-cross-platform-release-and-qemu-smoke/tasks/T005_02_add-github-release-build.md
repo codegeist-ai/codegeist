@@ -1,6 +1,6 @@
 # T005_02 Add GitHub Release Build
 
-Status: open
+Status: solved
 
 Parent: `../task.md`
 
@@ -170,10 +170,22 @@ java -jar target/codegeist.jar --version
 
 - The jar smoke printed `0.1.0`, proving the release workflow can override the
   default `0.1.0-SNAPSHOT` project version with Maven `-Drevision=0.1.0`.
-- GitHub branch validation is still pending because this local session is not
-  authenticated with GitHub CLI. `gh auth login --hostname github.com --web
-  --git-protocol https` was started, but the device flow was not completed before
-  timeout; `gh auth status` still reports no login.
+- GitHub branch validation passed on
+  `release/v0.1.0-github-release-build`:
+  `https://github.com/codegeist-ai/codegeist/actions/runs/26534205715`.
+- The passing branch run validated metadata resolution, Maven tests,
+  JVM jar package and smoke, Linux x64 native package and smoke, Windows x64 native
+  package and smoke, macOS x64 native package and smoke, checksum generation, and
+  checksum verification.
+- The draft GitHub Release job was correctly skipped because the validation run was
+  a `release/v*` branch push, not a `v*` tag push.
+- The first attempted branch run,
+  `https://github.com/codegeist-ai/codegeist/actions/runs/26532524977`, proved JVM,
+  Linux, and Windows behavior but was cancelled after the old `macos-13` runner
+  label left the macOS job queued. The workflow now uses `macos-15-intel` for the
+  macOS x64 job.
+- Full pre-tag validation with `workflow_dispatch` and draft release upload on a
+  `v0.1.0` tag remain release-cycle steps after this branch is merged to `main`.
 
 ## Planning Notes
 
