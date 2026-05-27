@@ -23,7 +23,8 @@ vision:
 - a GraalVM native-image Maven profile and local native smoke check
 - local Linux and Windows smoke scripts under `scripts/tests/`
 - a GitHub Actions release workflow for branch validation, pre-tag validation,
-  tag-triggered draft releases, checksums, and Linux/Windows/macOS native smokes
+  tag-triggered published releases, checksums, and Linux/Windows/macOS native
+  smokes
 - repo-local agent workflow rules, commands, and configuration
 - lightweight project memory in `docs/memory-bank/chat.md`
 
@@ -146,7 +147,7 @@ Push a versioned release branch such as
 `release/v0.1.0-github-release-build` to test the workflow without publishing.
 After the workflow is on `main`, use `gh workflow run release.yml --ref main -f
 release_version=0.1.0` for pre-tag validation. A pushed `v*` tag starts the same
-workflow and uploads the assets to a draft GitHub Release.
+workflow and publishes the assets to a GitHub Release.
 
 See `docs/developer/release/github-release-build.md` for the full operator flow.
 

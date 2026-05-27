@@ -42,7 +42,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | Spring AI Agent Utils | BOM and core artifact `0.7.0` |
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
-| Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes draft GitHub Releases only from `v*` tags |
+| Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes GitHub Releases only from `v*` tags |
 | Tests | Spring Boot context-load test, Spring-context command test, focused version output tests, native version smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. Spring AI Agent Utils is present as a
@@ -193,14 +193,15 @@ path. It accepts three trigger shapes:
 
 - push to `release/v*` for branch validation without publishing;
 - `workflow_dispatch` for pre-tag validation or reruns without publishing;
-- push to `v*` tags for release-cycle automation and draft GitHub Release upload.
+- push to `v*` tags for release-cycle automation and GitHub Release publication.
 
 The workflow resolves a non-SNAPSHOT SemVer release version, passes it to Maven as
 `-Drevision=<version>`, runs Maven tests before packaging, builds and smoke-tests a
 versioned JVM jar, then builds native archives on GitHub-hosted Linux x64, Windows
 x64, and macOS x64 runners. The Windows native job activates the MSVC tools
+environment before running Maven native compilation. The checksum job generates and
 verifies `codegeist-<version>-SHA256SUMS.txt`; the release job uploads the jar,
-native archives, and checksum file to a draft GitHub Release only for matching
+native archives, and checksum file to a published GitHub Release only for matching
 `v*` tags.
 
 The implemented release artifact names are:

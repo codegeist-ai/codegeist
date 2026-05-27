@@ -7,8 +7,8 @@ platform-native binary smoke validation.
 
 This document defines how Codegeist builds, packages, publishes, and verifies
 release artifacts. The current implementation is `.github/workflows/release.yml`,
-which validates release-shaped artifacts on GitHub-hosted runners and uploads
-draft GitHub Releases for `v*` tag runs. It does not add installers, signing keys,
+which validates release-shaped artifacts on GitHub-hosted runners and publishes
+GitHub Releases for `v*` tag runs. It does not add installers, signing keys,
 notarization setup, package-manager manifests, or runtime behavior.
 
 Use this guide before changing release CI, release scripts, native packaging
@@ -31,7 +31,7 @@ GitHub-hosted release workflow.
 | JVM package | Spring Boot executable jar named `target/codegeist.jar`; release asset `codegeist-<version>-jvm-any.jar` |
 | Native package | GraalVM native Maven profile using `native-maven-plugin` `0.10.6` |
 | Local commands | `task test`, `task build`, `task native`, `task native-smoke`, `task local-linux-smoke`, `task qemu-windows-smoke`, `task final-smoke-suite`, `task run` |
-| GitHub release workflow | `.github/workflows/release.yml` for `release/v*` branch validation, `workflow_dispatch` pre-tag validation, and `v*` tag draft release upload |
+| GitHub release workflow | `.github/workflows/release.yml` for `release/v*` branch validation, `workflow_dispatch` pre-tag validation, and `v*` tag release publication |
 
 No artifact signing, notarization, installer generation, SBOM, SLSA provenance, or
 package-manager publishing exists yet.
@@ -44,8 +44,8 @@ Windows QEMU VM over SSH.
 
 GitHub Releases are the deployment target for Codegeist release artifacts.
 
-The implemented release workflow publishes artifacts only through a draft GitHub
-Release associated with a `v*` release tag. Each release includes:
+The implemented release workflow publishes artifacts only through a GitHub Release
+associated with a `v*` release tag. Each release includes:
 
 - JVM jar artifact.
 - Platform-native archive artifacts when the platform build is available.
@@ -122,10 +122,10 @@ unsafe.
    run the packaged executable on its own platform with the same bounded startup
    policy.
 8. Artifact integrity: generate checksums and verify every checksum before upload.
-9. Release draft validation: on `v*` tag runs only, create or update a GitHub
-   Release draft and attach all artifacts and checksums.
-10. Publication: a human publishes the draft only when required gates passed and all
-    skips or failures have approved release notes.
+9. Release publication: on `v*` tag runs only, create or update a published GitHub
+   Release and attach all artifacts and checksums.
+10. Post-release verification: download the published assets and verify
+    `codegeist-<version>-SHA256SUMS.txt` before reporting the release complete.
 
 The JVM jar is a release-blocking artifact. Linux x64, Windows x64, and macOS x64
 native archives are release-blocking in the implemented GitHub workflow. Missing
@@ -277,9 +277,9 @@ strategy:
         extension: tar.gz
 ```
 
-The workflow keeps build, package, unpacked smoke, checksum, release-draft, and
-publish steps visible as separate stages. Release notes should contain concise
-validation summaries instead of raw logs.
+The workflow keeps build, package, unpacked smoke, checksum, and release publish
+steps visible as separate stages. Release notes should contain concise validation
+summaries instead of raw logs.
 
 ## Release Candidate Checklist
 
@@ -292,7 +292,7 @@ Before publishing or approving a release candidate, verify:
   platform or recorded as `skipped` or `failed` with required details.
 - Checksum verification passed before artifact upload.
 - Release notes list supported platforms and skipped or failed platform checks.
-- GitHub Release draft contains the expected artifacts and checksum files.
+- Published GitHub Release contains the expected artifacts and checksum files.
 - Signing, notarization, SBOM, provenance, installer, or package-manager gaps are
   listed as non-blocking or blocking according to the current release task.
 - Startup and smoke durations are summarized for every executed smoke check.

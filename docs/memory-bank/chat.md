@@ -39,10 +39,10 @@
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
-  `release_version=0.1.0`, and pushed `v*` tags upload versioned assets to a draft
-  GitHub Release. Branch run `26534205715` passed JVM, Linux x64, Windows x64,
-  macOS x64, and checksum jobs; the draft release job was correctly skipped on the
-  branch run.
+  `release_version=0.1.0`, and pushed `v*` tags publish versioned assets to a
+  GitHub Release. Branch run `26535014716` passed JVM, Linux x64, Windows x64,
+  macOS x64, and checksum jobs; the release job was correctly skipped on the branch
+  run.
 - `app/codegeist/cli/pom.xml` now uses CI-friendly `${revision}` with local default
   `0.1.0-SNAPSHOT`; release CI passes `-Drevision=0.1.0` so artifact smokes print
   `0.1.0`.
@@ -138,8 +138,9 @@
   for packaging, release, platform, or binary-smoke work.
 - For the active T005 release work, validate Linux and Windows locally before the
   release path where practical, use GitHub-hosted runners for Linux, Windows, and
-  macOS release builds, and use `gh` pre-tag validation before creating the final
-  `v*` release tag.
+  macOS release builds, and use `/codegeist-release v0.1.0` or the equivalent `gh`
+  pre-tag validation before creating the final `v*` release tag. Tag runs publish
+  the GitHub Release automatically.
 - Keep test and smoke helper scripts under `scripts/tests/`. Local Windows release
   validation uses a real Windows QEMU VM over SSH or a matching GitHub Windows
   runner; do not add local compatibility-layer smoke paths.
@@ -181,7 +182,7 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
-- After merging `release/v0.1.0-github-release-build` to `main`, run pre-tag
-  validation with `gh workflow run release.yml --ref main -f release_version=0.1.0`.
-  If that passes, create and push annotated tag `v0.1.0` so the workflow creates
-  the draft GitHub Release.
+- After merging `release/v0.1.0-github-release-build` to `main`, run
+  `/codegeist-release v0.1.0`. The command validates `main`, creates and pushes the
+  annotated tag, waits for the tag workflow, and verifies the published release
+  assets and checksums.

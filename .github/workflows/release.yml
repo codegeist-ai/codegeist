@@ -2,13 +2,13 @@
 #
 # Purpose:
 # - Validate release-shaped JVM and native artifacts on GitHub-hosted runners.
-# - Publish a draft GitHub Release only for pushed v* tags.
+# - Publish a GitHub Release only for pushed v* tags.
 #
 # Inputs and side effects:
 # - Branch validation derives the version from release/v* branches, for example
 #   release/v0.1.0-github-release-build -> 0.1.0.
 # - workflow_dispatch may pass release_version for pre-tag validation.
-# - Tag runs create or update a draft GitHub Release and upload artifacts.
+# - Tag runs create or update a published GitHub Release and upload artifacts.
 #
 # Related files:
 # - app/codegeist/cli/pom.xml
@@ -101,7 +101,7 @@ jobs:
             printf -- '- Version: `%s`\n' "$version"
             printf -- '- Source: `%s`\n' "$source"
             printf -- '- Ref: `%s`\n' "$REF_NAME"
-            printf -- '- Draft GitHub Release: `%s`\n' "$publish_release"
+            printf -- '- Published GitHub Release: `%s`\n' "$publish_release"
           } >> "$GITHUB_STEP_SUMMARY"
 
   build-jvm:
@@ -447,7 +447,7 @@ jobs:
           path: dist/codegeist-${{ needs.metadata.outputs.release_version }}-SHA256SUMS.txt
 
   release:
-    name: Create draft GitHub Release
+    name: Create GitHub Release
     if: needs.metadata.outputs.publish_release == 'true'
     runs-on: ubuntu-latest
     needs:
@@ -484,7 +484,7 @@ jobs:
           fi
 
           cat > release-notes.md <<EOF
-          Codegeist $RELEASE_VERSION draft release.
+          Codegeist $RELEASE_VERSION release.
 
           Validation completed in this workflow run before upload:
 
@@ -493,13 +493,13 @@ jobs:
           - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version.
           - The versioned SHA-256 checksum file was generated and verified before upload.
 
-          This draft release intentionally excludes installers, signing, notarization, SBOM, and SLSA provenance.
+          This release intentionally excludes installers, signing, notarization, SBOM, and SLSA provenance.
           EOF
 
-      - name: Upload draft release
+      - name: Upload GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          draft: true
+          draft: false
           prerelease: ${{ contains(needs.metadata.outputs.release_version, '-') }}
           name: Codegeist ${{ github.ref_name }}
           body_path: release-notes.md

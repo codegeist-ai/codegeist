@@ -17,7 +17,7 @@ publishing, or runtime behavior beyond the existing command.
 | --- | --- | --- |
 | Push to `release/v*` | Branch-based release workflow validation before merging into `main`. | No |
 | `workflow_dispatch` | Pre-tag validation or operator rerun from GitHub CLI, API, or UI. | No |
-| Push tag `v*` | Release-cycle automation after pre-tag validation passes. | Yes, as a draft release |
+| Push tag `v*` | Release-cycle automation after pre-tag validation passes. | Yes, as a published release |
 
 Branch validation derives the release version from the branch name. The first
 release automation branch is:
@@ -69,7 +69,7 @@ The implemented jobs run these gates in order:
    `--version` from the extracted directory.
 8. Generate and verify `codegeist-<version>-SHA256SUMS.txt`.
 9. Upload all assets as workflow artifacts.
-10. On `v*` tag runs only, upload the same assets to a draft GitHub Release.
+10. On `v*` tag runs only, upload the same assets to a published GitHub Release.
 
 ## Branch Validation Flow
 
@@ -112,7 +112,8 @@ gh run watch <run-id> --exit-status
 ```
 
 The pre-tag run must pass before creating the final release tag unless a release
-decision explicitly records why it was skipped.
+decision explicitly records why it was skipped. Pre-tag validation does not publish
+a GitHub Release.
 
 ## Tag Release Flow
 
@@ -125,8 +126,18 @@ git push origin v0.1.0
 ```
 
 The tag push starts the release workflow automatically. The release job creates or
-updates a draft GitHub Release and uploads the jar, native archives, and checksum
-file.
+updates a published GitHub Release and uploads the jar, native archives, and
+checksum file.
+
+The repo-local OpenCode command wraps the full release sequence:
+
+```text
+/codegeist-release v0.1.0
+```
+
+It runs pre-tag validation, creates and pushes the annotated tag after validation
+passes, waits for the tag-triggered workflow, then verifies the published release
+assets and checksums.
 
 ## Status And Skips
 
