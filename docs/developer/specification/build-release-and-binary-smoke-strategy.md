@@ -273,7 +273,7 @@ strategy:
         os: windows-latest
         extension: zip
       - platform: macos-x64
-        os: macos-13
+        os: macos-15-intel
         extension: tar.gz
 ```
 
