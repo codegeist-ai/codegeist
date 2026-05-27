@@ -21,7 +21,22 @@ tasks:
     deps:
       - native
     cmds:
-      - bash -lc 'source scripts/native-smoke.sh; run-native-smoke-tests'
+      - bash -lc 'source ../../../scripts/tests/native-smoke.sh; run-native-smoke-tests'
+
+  local-linux-smoke:
+    desc: Run local Linux jar and native smoke checks
+    cmds:
+      - bash ../../../scripts/tests/local-linux-smoke.sh
+
+  qemu-windows-smoke:
+    desc: Create or start the Windows QEMU VM and run jar/native smoke checks
+    cmds:
+      - bash ../../../scripts/tests/qemu-windows-vm.sh smoke
+
+  final-smoke-suite:
+    desc: Run the local Linux and Windows final smoke suite
+    cmds:
+      - bash ../../../scripts/tests/final-smoke-suite.sh
 
   run:
     desc: Build and run the Codegeist application

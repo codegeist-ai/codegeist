@@ -42,7 +42,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | Spring AI Agent Utils | BOM and core artifact `0.7.0` |
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
-| Tests | Spring Boot context-load test, Spring-context command test, focused version output tests, and native version smoke |
+| Tests | Spring Boot context-load test, Spring-context command test, focused version output tests, native version smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. Spring AI Agent Utils is present as a
 dependency baseline, but no Agent Utils runtime utility is wired into the app yet.
@@ -53,13 +53,17 @@ dependency baseline, but no Agent Utils runtime utility is wired into the app ye
 app/codegeist/cli/
   pom.xml
   Taskfile.yml
-  src/main/java/ai/codegeist/app/CodegeistApplication.java
-  src/main/java/ai/codegeist/app/VersionCommands.java
-  src/main/resources/META-INF/native-image/resource-config.json
-  src/main/resources/application.yaml
-  src/main/resources/logback.xml
-  src/test/java/ai/codegeist/app/CodegeistApplicationTests.java
-  src/test/java/ai/codegeist/app/VersionCommandsTests.java
+  src/...
+scripts/tests/
+  native-smoke.sh
+  local-linux-smoke.sh
+  qemu-windows-vm.sh
+  qemu-windows-smoke.sh
+  windows-smoke.ps1
+  final-smoke-suite.sh
+  windows-qemu/
+    autounattend.xml
+    setup.ps1
 ```
 
 Implemented Java package:
@@ -102,8 +106,8 @@ Current behavior:
   `CommandContext.outputWriter()` so output is only the version string, for
   example `0.1.0-SNAPSHOT`.
 - `logback.xml` writes logs only to `${LOG_FILE:-logs/codegeist.log}`. Console
-  output is reserved for command output, so plain `./target/codegeist --version`
-  prints only the version.
+  output is reserved for command output, so jar and packaged native `--version`
+  smokes print only the version.
 - There are no implemented prompt workflows, model calls, shell commands beyond
   `--version`, runtime services, provider adapters, tool executions, permission
   prompts, workspace policies, storage adapters, server endpoints, Vaadin views,
@@ -138,18 +142,45 @@ sequenceDiagram
 
 ## Taskfile Verification Flow
 
-`app/codegeist/cli/Taskfile.yml` provides the current developer entrypoints.
-`scripts/native-smoke.sh` defines `run-native-smoke-tests`, which owns the
-native command smoke assertions used by `task native-smoke`. The function deletes
-and recreates `target/smoke-test` for each run, then writes the smoke log to
+`app/codegeist/cli/Taskfile.yml` provides the current developer and local smoke
+entrypoints. Test and smoke helper scripts live under `scripts/tests/`.
+
+`scripts/tests/native-smoke.sh` defines `run-native-smoke-tests`, which owns the
+Linux native archive smoke assertions used by `task native-smoke` and the Linux
+smoke entrypoint. The function writes
+`target/dist/codegeist-<version>-linux-x64.tar.gz`, unpacks it into a fresh temp
+directory, runs packaged `./codegeist --version`, then writes the smoke log to
 `target/smoke-test/codegeist.log`.
+
+`scripts/tests/local-linux-smoke.sh` runs Maven tests, builds the jar, verifies
+`java -jar target/codegeist.jar --version`, and verifies the packaged Linux native
+archive when `native-image` is available.
+
+`scripts/tests/qemu-windows-vm.sh` is the host-side Windows VM automation
+entrypoint. It downloads the official Windows Server Evaluation ISO when no local
+ISO exists, creates or starts the local Windows QEMU VM, generates answer media,
+syncs the repo subset needed by smoke checks, and delegates execution to
+`scripts/tests/qemu-windows-smoke.sh`.
+
+`scripts/tests/qemu-windows-smoke.sh` is the lower-level SSH wrapper. It runs
+`scripts/tests/windows-smoke.ps1` in the Windows VM. Missing Windows VM
+configuration fails by default and can only be skipped when developer-only skip
+mode is explicitly enabled.
+
+`scripts/tests/final-smoke-suite.sh` runs the Linux and Windows smoke entrypoints.
+Default mode requires Linux and Windows to pass and makes native checks required
+by default. `--allow-skips` is the developer-only mode for machines without ISO
+download or VM prerequisites.
 
 | Task | Command | Proves |
 | --- | --- | --- |
 | `task test` | `mvn --batch-mode --no-transfer-progress test` | Maven test lifecycle, Spring context-load test, and version output test |
 | `task build` | `mvn --batch-mode --no-transfer-progress -DskipTests clean package` | Executable jar packaging |
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
-| `task native-smoke` | Builds native, then sources `scripts/native-smoke.sh` and calls `run-native-smoke-tests` | Native command console output equals generated build version and native smoke log file works |
+| `task native-smoke` | Builds native, then sources `scripts/tests/native-smoke.sh` and calls `run-native-smoke-tests` | Linux native archive unpacks in a temp directory, packaged command output equals generated build version, and native smoke log file works |
+| `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.sh` | Local Linux jar smoke, Maven tests, and native smoke when native-image is available |
+| `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM and runs Windows jar/native smoke over SSH |
+| `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.sh` | Local Linux and Windows smoke suite; both platforms must pass by default |
 | `task run` | `java -jar target/codegeist.jar` after `build` | Starts the packaged Spring Boot application |
 
 ## Not Implemented Yet

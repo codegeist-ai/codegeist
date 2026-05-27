@@ -56,7 +56,7 @@ files they changed.
 | JVM package | `task build` from `app/codegeist/cli` | Executable Spring Boot jar is created as `target/codegeist.jar`. | Release candidates and build-layout changes. |
 | JVM startup smoke | `java -jar target/codegeist.jar --version` from `app/codegeist/cli` | Packaged jar can execute the default noninteractive command path. | First release packaging task and later CLI command packaging work. |
 | Native compile | `task native` from `app/codegeist/cli` | GraalVM native-image can compile the current dependency graph. | Native posture tasks when the toolchain is available and time budget allows. |
-| Native startup smoke | `./target/codegeist --version` from `app/codegeist/cli` | Native executable starts with the same noninteractive baseline. | Release candidates after a successful native compile. |
+| Native archive startup smoke | Package the native executable under `target/dist/`, unpack the archive into a fresh temp directory, then run packaged `./codegeist --version`. | The release-shaped native package starts with the same noninteractive baseline. | Release candidates after a successful native compile. |
 | Diff hygiene | `git --no-pager diff --check` from the repository root | Markdown and source diffs have no whitespace errors. | Every task. |
 
 The current documentation-only task only requires `git --no-pager diff --check`.
@@ -125,12 +125,13 @@ flowchart TD
     Jar[task build]
     JarSmoke[java -jar target/codegeist.jar]
     Native[task native]
-    NativeSmoke[target/codegeist]
+    NativePackage[package target/dist archive]
+    NativeSmoke[unpack archive and run packaged binary]
     Record[Record native status]
 
     Change --> Tests --> Jar --> JarSmoke
     JarSmoke --> Native
-    Native -->|passes| NativeSmoke --> Record
+    Native -->|passes| NativePackage --> NativeSmoke --> Record
     Native -->|skipped with reason| Record
     Native -->|fails with blocker| Record
 ```
@@ -204,7 +205,7 @@ tasks should prefer small packaging checks before broad native suites.
 | Status classification | Native status is always `passed`, `skipped`, or `failed`. | Unit-level diagnostic test when status objects exist. |
 | JVM startup | Packaged jar starts with shell interactivity disabled. | Use deterministic command flags; avoid waiting for an interactive prompt. |
 | Native compile | Current dependency graph compiles through GraalVM. | Run only when the GraalVM toolchain is available. |
-| Native startup | Native executable starts with the same basic application config. | Keep first smoke behavior minimal. |
+| Native archive startup | Native release-shaped archive unpacks and its packaged executable starts with the same basic application config. | Keep first smoke behavior minimal and run from a fresh temp directory. |
 | Blocker reporting | Reflection, dynamic loading, provider, process, server/Vaadin, and storage failures are classified. | Do not store raw secrets or giant native-image logs in task docs. |
 
 ## Later Implementation Rules

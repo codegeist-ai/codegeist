@@ -15,7 +15,9 @@ bootstrap.
 ## Child Tasks
 
 - `T005_01_add-local-linux-windows-build-smoke.md` - local Linux and Windows
-  build/smoke workflow using QEMU where needed, plus a documented Wine decision.
+  build/smoke workflow using direct Linux execution and automated Windows QEMU/SSH;
+  verified by `task final-smoke-suite` with Linux and Windows jar/native statuses
+  all `passed`.
 - `T005_02_add-github-release-build.md` - GitHub Actions release build, platform
   matrix, checksums, and GitHub Release upload.
 
@@ -28,10 +30,8 @@ bootstrap.
 - Local validation focuses on Linux and Windows only.
 - Local macOS QEMU setup is not part of this task group. Do not add macOS
   bootloader, installer, bypass, or non-Apple virtualization instructions.
-- Wine may be evaluated only as a non-authoritative convenience smoke for an
-  already-built Windows executable. It is not the supported Windows native build
-  path and must not replace a Windows VM or GitHub Windows runner for release
-  validation.
+- Local Windows validation runs in a real Windows VM over SSH. Compatibility-layer
+  smoke paths are out of scope for this task group.
 
 ## Non-Goals
 

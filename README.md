@@ -19,8 +19,9 @@ vision:
 
 - a compose-based devcontainer setup mounted from the `.devcontainer/` submodule
 - a Spring Boot CLI application under `app/codegeist/cli` built in the devcontainer with Java 25 and GraalVM Community 25
-- a Spring Shell bootstrap application with the built-in shell commands enabled
-- a GraalVM native-image Maven profile prepared for the next build step
+- a Spring Shell `--version` command backed by Spring Boot build metadata
+- a GraalVM native-image Maven profile and local native smoke check
+- local Linux and Windows smoke scripts under `scripts/tests/`
 - repo-local agent workflow rules, commands, and configuration
 - lightweight project memory in `docs/memory-bank/chat.md`
 
@@ -44,6 +45,7 @@ Key properties:
 
 - `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
 - `app/codegeist/cli/` - Spring Boot CLI bootstrap application, Maven project files, and local `Taskfile.yml`
+- `scripts/tests/` - local Linux, Windows QEMU, native, and final smoke-suite scripts
 - `docs/memory-bank/chat.md` - lightweight project memory for the repository
 - `README.md` - project overview
 
@@ -78,7 +80,7 @@ What this does:
 
 1. builds `app/codegeist/cli/target/codegeist.jar`
 2. starts the Spring Shell application
-3. exposes the built-in shell commands such as `help`, `version`, and `quit`
+3. runs the current noninteractive command path
 
 The native build writes the executable to `app/codegeist/cli/target/codegeist`.
 
@@ -87,10 +89,44 @@ Implementation notes:
 - build and run happen directly in the devcontainer with the installed Java 25
   GraalVM toolchain and system Maven
 - Java 25 is the current project baseline
-- the Maven build already includes a `native` profile with the GraalVM native
-  build tools for the later native-image step
-- the application currently relies on the built-in Spring Shell commands only
+- the Maven build includes a `native` profile with the GraalVM native build tools
+- the application currently implements `--version` as the only Codegeist-owned
+  Spring Shell command
 - the runtime configuration lives in `app/codegeist/cli/src/main/resources/application.yaml`
+
+## Local Smoke Tests
+
+Local smoke scripts live under `scripts/tests/`.
+
+Run the local Linux smoke from the repository root:
+
+```bash
+scripts/tests/local-linux-smoke.sh
+```
+
+Run the final local smoke suite:
+
+```bash
+scripts/tests/final-smoke-suite.sh
+```
+
+The final suite requires Linux and Windows to pass by default. It downloads the
+official Windows Server Evaluation ISO when needed, creates or starts the local
+Windows QEMU VM, and fails if download, VM, or smoke prerequisites fail.
+
+For developer-only runs that may skip missing platform prerequisites, use:
+
+```bash
+scripts/tests/final-smoke-suite.sh --allow-skips
+```
+
+The Windows smoke path uses a local Windows QEMU VM over SSH. See
+`docs/developer/release/windows-qemu-smoke.md` for the detailed VM lifecycle,
+ISO, toolchain, artifact, and troubleshooting guide.
+
+Native release downloads are planned as platform archives, not true single-file
+executables. See `docs/developer/release/native-distribution-packaging.md` for the
+Linux `tar.gz`, Windows `zip`, sidecar-library, and no-single-executable rationale.
 
 ## Getting Started
 
@@ -101,7 +137,7 @@ Implementation notes:
    `compose.local.yml`, and the generated compose overlay when they are missing.
 4. Verify that `java -version` and `native-image --version` work inside the workspace.
 5. Run `task -t app/codegeist/cli/Taskfile.yml run` from the repo root, or `task run` inside `app/codegeist/cli/`.
-6. Run `java -jar app/codegeist/cli/target/codegeist.jar help` to verify the built-in shell commands are available.
+6. Run `java -jar app/codegeist/cli/target/codegeist.jar --version` to verify the current command path.
 
 If the repository was cloned without `--recurse-submodules`, Git does not let the
 repository force that clone behavior afterward. Run
@@ -136,6 +172,7 @@ If an older checkout is missing nested submodules, initialize them with
 ## Status
 
 The repository is still early, but it now has a real application entrypoint and
-an end-to-end local build/run workflow in the devcontainer. The next logical
-step is expanding the shell application beyond the built-in commands and
-wiring the first native-image task into the repo workflow.
+an end-to-end local build/run workflow in the devcontainer. It also has local
+Linux and Windows smoke-test entrypoints for the current `--version` artifact
+contract. The next release-readiness step is GitHub-hosted release automation for
+Linux, Windows, and macOS artifacts.

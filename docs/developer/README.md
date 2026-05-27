@@ -9,6 +9,15 @@ constraints here.
 
 - `architecture/architecture.md` - current implemented system state.
 
+## Release Documents
+
+- `release/local-build-smoke.md` - local Linux and Windows build-smoke entrypoints
+  and final local smoke-suite usage.
+- `release/native-distribution-packaging.md` - native archive layout, sidecar
+  libraries, and why Codegeist does not ship true single executable files.
+- `release/windows-qemu-smoke.md` - detailed Windows QEMU smoke lifecycle,
+  configuration, artifacts, and troubleshooting guide.
+
 ## Specification Documents
 
 - `specification/codegeist-opencode-parity.md` - target architecture and OpenCode parity map.

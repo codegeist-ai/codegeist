@@ -7,8 +7,8 @@ Parent: `../task.md`
 ## Goal
 
 Add the GitHub-hosted release build path for Codegeist. The workflow should build,
-smoke-test, checksum, and upload versioned release artifacts for Linux, Windows,
-and macOS using GitHub-hosted runners.
+package, smoke-test, checksum, and upload versioned release artifacts for Linux,
+Windows, and macOS using GitHub-hosted runners.
 
 ## Scope
 
@@ -25,8 +25,9 @@ and macOS using GitHub-hosted runners.
   an operator convenience for pre-release or rerun scenarios.
 - Run the Maven test suite before release packaging.
 - Build and smoke-test the JVM jar on CI.
-- Build and smoke-test native executables on GitHub-hosted Linux, Windows, and
-  macOS runners.
+- Build native executables on GitHub-hosted Linux, Windows, and macOS runners,
+  package them with required sidecar libraries, and smoke-test the unpacked
+  archives.
 - Publish release assets to GitHub Releases with versioned artifact names.
 - Generate and publish SHA-256 checksums for all release assets.
 - Create the GitHub Release as a draft unless the solve phase intentionally
@@ -37,7 +38,7 @@ and macOS using GitHub-hosted runners.
 ## Non-Goals
 
 - Do not add local QEMU VM management in this child task.
-- Do not add local Wine checks in this child task.
+- Do not add local compatibility-layer checks in this child task.
 - Do not implement installers, signing, notarization, package-manager publishing,
   SBOM, or SLSA provenance.
 - Do not change runtime behavior beyond what release smoke checks need to execute
@@ -61,8 +62,11 @@ and macOS using GitHub-hosted runners.
   and waits for or documents how to check completion.
 - The workflow runs tests before packaging release artifacts.
 - The workflow builds a versioned JVM jar asset.
-- The workflow builds and smoke-tests native Linux, Windows, and macOS artifacts
-  on their matching GitHub runner platforms.
+- The workflow builds, packages, and smoke-tests native Linux, Windows, and macOS
+  artifacts on their matching GitHub runner platforms.
+- Linux native release output is a `tar.gz` archive, Windows native release output
+  is a `zip` archive, and each native archive keeps the executable beside required
+  GraalVM sidecar libraries.
 - Windows native compilation activates the MSVC build tools environment before
   running GraalVM `native-image` through Maven.
 - Release asset names include project, version, platform, and architecture.
@@ -104,7 +108,8 @@ Expected CI verification:
 
 ```text
 Manual workflow run or v* tag release run completes Linux, Windows, and macOS
-build, smoke, checksum, artifact upload, and draft release creation jobs.
+build, native archive packaging, unpacked smoke, checksum, artifact upload, and
+draft release creation jobs.
 ```
 
 Expected pre-tag development verification:
@@ -128,7 +133,12 @@ platform, artifact, command, and follow-up owner.
 ## Planning Notes
 
 - Keep GitHub workflow steps visible: tests, jar package, jar smoke, native build,
-  native smoke, checksum, artifact upload, and release creation.
+  native archive packaging, unpacked native smoke, checksum, artifact upload, and
+  release creation.
+- Follow `docs/developer/release/native-distribution-packaging.md`: do not try to
+  publish true single executable native artifacts unless a later task proves a
+  supported, smoke-tested static or wrapper path without hurting first-start
+  latency.
 - Keep pre-tag validation and tagged release publication separated. The pre-tag
   `gh workflow run` path should prove build and smoke behavior, while tag push
   remains the source of truth for creating the release.

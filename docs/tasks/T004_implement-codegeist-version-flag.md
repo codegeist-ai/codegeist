@@ -102,7 +102,7 @@ was non-empty.
 - Updated `task native-smoke` to compare the native command's combined stdout and
   stderr with the generated build version and require the native smoke log file
   at `target/smoke-test/codegeist.log` to be written.
-- Moved the native smoke assertions into `scripts/native-smoke.sh` as the single
+- Moved the native smoke assertions into `scripts/tests/native-smoke.sh` as the single
   `run-native-smoke-tests` function; `task native-smoke` now builds native first,
   sources that script, and calls the function. The function deletes and recreates
   `target/smoke-test` for each run.

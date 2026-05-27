@@ -28,11 +28,36 @@
 - `app/codegeist/cli/src/main/resources/logback.xml` routes logs only to
   `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
   output.
-- `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`, and
-  `native-smoke`. `native-smoke` builds the native executable and delegates the
-  command-output and file-logging checks to `run-native-smoke-tests` from
-  `scripts/native-smoke.sh`; each run recreates `target/smoke-test` and writes
+- `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`,
+  `native-smoke`, `local-linux-smoke`, `qemu-windows-smoke`, and
+  `final-smoke-suite`. Local smoke scripts live under `scripts/tests/`.
+  `native-smoke` sources `scripts/tests/native-smoke.sh`; each native run
+  recreates `target/smoke-test`, packages
+  `target/dist/codegeist-<version>-linux-x64.tar.gz`, unpacks it into a fresh temp
+  directory, runs packaged `./codegeist --version`, and writes
   `target/smoke-test/codegeist.log`.
+- `scripts/tests/final-smoke-suite.sh` is the local final smoke entrypoint. It
+  runs Linux direct smoke and automated Windows QEMU/SSH smoke. Default mode
+  requires both platforms to pass; `--allow-skips` is developer-only. The suite
+  has passed locally with Linux and Windows jar/native statuses all `passed`.
+- `scripts/tests/qemu-windows-vm.sh` downloads the official Windows Server 2025
+  Evaluation ISO with `curl` when no local ISO exists, stores VM state under
+  `.local/windows-qemu`, provisions OpenSSH/GraalVM/Maven/MSVC in the guest, syncs
+  the repo subset, and runs Windows smoke over SSH. It uses `-cpu host` with KVM
+  and `-cpu max` without KVM unless `CODEGEIST_WINDOWS_CPU` overrides the model.
+- Native release artifacts should be platform archives, not true single executable
+  files: Linux uses `codegeist-<version>-linux-x64.tar.gz`, Windows uses
+  `codegeist-<version>-windows-x64.zip`, and each archive keeps the executable next
+  to GraalVM sidecar libraries. This preserves fast first startup by avoiding a
+  self-extracting runtime wrapper. The local Linux and Windows native smokes now
+  package these archives, unpack them into fresh temp directories, and test the
+  packaged executable rather than raw `target/` binaries.
+- `docs/developer/release/native-distribution-packaging.md` documents the archive
+  layout, sidecar libraries, and why Codegeist does not ship true single-file
+  native executables by default.
+- `docs/developer/release/windows-qemu-smoke.md` is the detailed operational guide
+  for the Windows QEMU smoke lifecycle, configuration, artifacts, and
+  troubleshooting.
 - `docs/developer/architecture/architecture.md` is the current-state architecture
   map. It must describe only implemented repository state and explicitly mark
   not-yet-implemented boundaries.
@@ -50,8 +75,9 @@
   tiny implementation task, `docs/tasks/T004_implement-codegeist-version-flag.md`,
   is solved with the current Spring Shell `--version` behavior.
 - `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
-  release-readiness task group. It is split into local Linux/Windows build-smoke
-  work first and GitHub-hosted release builds second.
+  release-readiness task group. `T005_01` is solved with local Linux/Windows
+  build-smoke entrypoints under `scripts/tests/`; `T005_02` remains the
+  GitHub-hosted release build follow-up.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -99,6 +125,13 @@
   release path where practical, use GitHub-hosted runners for Linux, Windows, and
   macOS release builds, and use `gh` pre-tag validation before creating the final
   `v*` release tag.
+- Keep test and smoke helper scripts under `scripts/tests/`. Local Windows release
+  validation uses a real Windows QEMU VM over SSH or a matching GitHub Windows
+  runner; do not add local compatibility-layer smoke paths.
+- For Codegeist smoke scripts, treat expected devcontainer tools such as
+  `timeout` and `curl` as part of the script contract and call them directly.
+  Keep command-existence checks only when they drive real skip, status, or guest
+  installation behavior.
 - For Codegeist architecture or implementation tasks, read
   `docs/developer/specification/codegeist-opencode-parity.md` when the target
   touches OpenCode parity, runtime boundaries, provider behavior, tools,
@@ -133,5 +166,5 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
-- Specify and solve `T005_01` before `T005_02`: local Linux/Windows build-smoke
-  comes first, then GitHub Actions release automation and release publication.
+- Solve `T005_02` next: GitHub Actions release automation and release publication
+  comes after the local Linux/Windows build-smoke entrypoints.

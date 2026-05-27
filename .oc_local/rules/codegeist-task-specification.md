@@ -85,9 +85,9 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   release automation when practical: solve local Linux/Windows build-smoke work
   before GitHub release publication, use GitHub-hosted macOS runners for macOS
   release artifacts, and require a `gh`-triggered pre-tag workflow validation
-  before creating the final `v*` release tag. Treat Wine only as an optional,
-  non-authoritative smoke for an already-built Windows executable, not as the
-  Windows native build source of truth.
+  before creating the final `v*` release tag. Keep local Windows validation on a
+  real Windows VM over SSH or a matching GitHub Windows runner; do not add local
+  compatibility-layer smoke paths for Windows release validation.
 - For Spring Shell command-line arguments such as `--version`, keep the current
   default command path noninteractive with
   `spring.shell.interactive.enabled=false` until a task intentionally implements
@@ -101,7 +101,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `target/smoke-test`, delete and recreate that directory at the start of each
   smoke run, route `LOG_FILE` to `target/smoke-test/codegeist.log`, and keep the
   Taskfile path as a sourced function call such as
-  `source scripts/native-smoke.sh; run-native-smoke-tests`.
+  `source ../../../scripts/tests/native-smoke.sh; run-native-smoke-tests`.
+- For Codegeist smoke scripts, treat expected devcontainer tools such as `timeout`
+  and `curl` as part of the script contract and call them directly. Use
+  command-existence checks only when the result drives real `passed`, `skipped`,
+  `failed`, or guest installation behavior.
 - For GraalVM resource inclusion, prefer metadata under
   `src/main/resources/META-INF/native-image/resource-config.json` for simple
   resource patterns such as `logback.xml` and `META-INF/build-info.properties`.

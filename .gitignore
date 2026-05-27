@@ -8,6 +8,7 @@
 *.log
 *.project
 /.local.env
+/.local/
 /docs/third-party/**/analysis-manifest.json
 /docs/third-party/**/VERIFY_REPORT.md
 /docs/third-party/**/repomix-output.*
