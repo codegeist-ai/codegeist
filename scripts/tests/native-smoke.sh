@@ -17,7 +17,7 @@
 # - The `timeout` command must be available on `PATH`.
 #
 # Side effects:
-# - Writes `app/codegeist/cli/target/dist/codegeist-<version>-linux-x64.tar.gz`.
+# - Writes `app/codegeist/cli/target/dist/codegeist-linux-x64.tar.gz`.
 # - Unpacks the archive into a temporary directory and executes the packaged
 #   `./codegeist --version`.
 #
@@ -49,8 +49,7 @@ codegeist_read_build_version() {
 
 package-linux-native-archive() {
   local cli_dir="$1"
-  local version="$2"
-  local package_name="codegeist-${version}-linux-x64"
+  local package_name="codegeist-linux-x64"
   local dist_dir="$cli_dir/target/dist"
   local package_dir="$dist_dir/$package_name"
   local archive="$dist_dir/$package_name.tar.gz"
@@ -99,12 +98,12 @@ run-native-smoke-tests() {
   cd "$cli_dir"
 
   expected="$(codegeist_read_build_version target/classes/META-INF/build-info.properties)"
-  package_name="codegeist-${expected}-linux-x64"
+  package_name="codegeist-linux-x64"
 
   rm -rf "$smoke_dir"
   mkdir -p "$smoke_dir"
 
-  archive="$(package-linux-native-archive "$cli_dir" "$expected")"
+  archive="$(package-linux-native-archive "$cli_dir")"
   temp_dir="$(mktemp -d)"
   package_dir="$temp_dir/$package_name"
   timeout_budget="${CODEGEIST_NATIVE_SMOKE_TIMEOUT:-5s}"

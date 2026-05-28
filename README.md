@@ -135,19 +135,25 @@ Linux `tar.gz`, Windows `zip`, sidecar-library, and no-single-executable rationa
 
 The GitHub release workflow lives at `.github/workflows/release.yml`.
 
-It validates versioned release artifacts on GitHub-hosted runners:
+It validates release artifacts on GitHub-hosted runners:
 
-- `codegeist-<version>-jvm-any.jar`
-- `codegeist-<version>-linux-x64.tar.gz`
-- `codegeist-<version>-windows-x64.zip`
-- `codegeist-<version>-macos-x64.tar.gz`
-- `codegeist-<version>-SHA256SUMS.txt`
+- `codegeist-jvm.jar`
+- `codegeist-linux-x64.tar.gz`
+- `codegeist-windows-x64.zip`
+- `codegeist-macos-x64.tar.gz`
+- `SHA256SUMS.txt`
 
-Push a versioned release branch such as
+Push a versioned iteration branch such as
 `release/v0.1.0-github-release-build` to test the workflow without publishing.
-After the workflow is on `main`, use `gh workflow run release.yml --ref main -f
-release_version=0.1.0` for pre-tag validation. A pushed `v*` tag starts the same
-workflow and publishes the assets to a GitHub Release.
+When the iteration branch is ready, run
+`/codegeist-release --source <release-branch> --rc 1`. The command infers the
+next SemVer release from the diff between the latest reachable release tag and the
+release branch commit, creates one detailed squash-candidate commit, validates the
+candidate branch, advances `main` by fast-forward only, runs pre-tag validation,
+pushes the final `v*` tag that publishes the GitHub Release, verifies the
+downloaded checksums, moves `latest` to the verified release commit, and creates
+or updates the `latest` GitHub Release with the same verified assets without
+running another build.
 
 See `docs/developer/release/github-release-build.md` for the full operator flow.
 

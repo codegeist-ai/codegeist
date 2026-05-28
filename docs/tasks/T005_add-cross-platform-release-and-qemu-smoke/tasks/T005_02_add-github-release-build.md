@@ -7,7 +7,7 @@ Parent: `../task.md`
 ## Goal
 
 Add the GitHub-hosted release build path for Codegeist. The workflow should build,
-package, smoke-test, checksum, and upload versioned release artifacts for Linux,
+package, smoke-test, checksum, and upload release artifacts for Linux,
 Windows, and macOS using GitHub-hosted runners.
 
 ## Scope
@@ -28,7 +28,8 @@ Windows, and macOS using GitHub-hosted runners.
 - Build native executables on GitHub-hosted Linux, Windows, and macOS runners,
   package them with required sidecar libraries, and smoke-test the unpacked
   archives.
-- Publish release assets to GitHub Releases with versioned artifact names.
+- Publish release assets to GitHub Releases with stable versionless artifact names;
+  the GitHub Release URL and immutable `v*` tag carry the version.
 - Generate and publish SHA-256 checksums for all release assets.
 - Publish the GitHub Release automatically from the tag-triggered workflow after
   pre-tag validation passes.
@@ -69,7 +70,8 @@ Windows, and macOS using GitHub-hosted runners.
   GraalVM sidecar libraries.
 - Windows native compilation activates the MSVC build tools environment before
   running GraalVM `native-image` through Maven.
-- Release asset names include project, version, platform, and architecture.
+- Release asset names include project, artifact family, platform, and architecture
+  when needed, but omit the version.
 - A checksum file is generated, verified, and uploaded with the release assets.
 - The workflow uploads all expected artifacts to a published GitHub Release.
 - Release documentation describes how to run the workflow and what artifacts it
@@ -142,11 +144,9 @@ platform, artifact, command, and follow-up owner.
   the release version instead of `0.1.0-SNAPSHOT`.
 - Added CI-friendly Maven revision support in `app/codegeist/cli/pom.xml` while
   keeping the local default version `0.1.0-SNAPSHOT`.
-- The workflow builds and smokes `codegeist-<version>-jvm-any.jar`,
-  `codegeist-<version>-linux-x64.tar.gz`,
-  `codegeist-<version>-windows-x64.zip`, and
-  `codegeist-<version>-macos-x64.tar.gz`, then generates and verifies
-  `codegeist-<version>-SHA256SUMS.txt`.
+- The workflow builds and smokes `codegeist-jvm.jar`,
+  `codegeist-linux-x64.tar.gz`, `codegeist-windows-x64.zip`, and
+  `codegeist-macos-x64.tar.gz`, then generates and verifies `SHA256SUMS.txt`.
 - GitHub Release upload is guarded to `v*` tag runs only and publishes the release
   automatically. Branch and `workflow_dispatch` runs validate artifacts without
   publishing.
@@ -216,6 +216,17 @@ java -jar target/codegeist.jar --version
 - Prefer tag-push automation as the release-cycle source of truth. Use
   `workflow_dispatch` or `gh workflow run` as explicit operator controls, not as
   the only automated release path.
+- Release workflow iteration branches may contain multiple commits, but they must
+  be promoted through `/codegeist-release --source <release-branch> --rc <n>`. The
+  command infers SemVer from the diff between the latest reachable release tag and
+  the release branch commit, creates a fresh
+  `release/v<version>-codegeist-rc-<n>` branch from current `main`, writes one
+  detailed squash commit, validates the candidate branch, and advances `main` by
+  fast-forward only.
+- Future releases should move the lightweight `latest` tag to the verified `v*`
+  release commit after published asset checksum verification passes, then create
+  or update the `latest` GitHub Release with the same verified downloaded assets.
+  Do not run another build for `latest`.
 - Prefer GitHub-hosted runners as the source of truth for macOS release artifacts.
 - Keep platform-specific command differences small and explicit rather than hiding
   them behind a large release wrapper.

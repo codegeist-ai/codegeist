@@ -50,7 +50,7 @@ The Windows smoke path validates these observable contracts inside Windows:
 - Maven can build the executable Spring Boot jar.
 - `java -jar target/codegeist.jar --version` prints the build version only.
 - GraalVM `native-image` can build `target/codegeist.exe` with MSVC Build Tools.
-- The smoke helper can create `target/dist/codegeist-<version>-windows-x64.zip`
+- The smoke helper can create `target/dist/codegeist-windows-x64.zip`
   with `codegeist.exe` and required DLLs.
 - The zip can be expanded into a fresh temp directory, and extracted
   `codegeist.exe --version` prints the build version only.
@@ -83,7 +83,7 @@ flowchart LR
     SshSmoke[scripts/tests/qemu-windows-smoke.sh]
     WinSmoke[scripts/tests/windows-smoke.ps1]
     BuildTools[GraalVM, Maven, MSVC]
-    Artifacts[target/codegeist.jar and target/dist/codegeist-version-windows-x64.zip]
+    Artifacts[target/codegeist.jar and target/dist/codegeist-windows-x64.zip]
 
     Developer --> Taskfile
     Developer --> VmScript
@@ -292,7 +292,7 @@ Important files include:
 
 - `C:\codegeist\app\codegeist\cli\target\codegeist.jar`
 - `C:\codegeist\app\codegeist\cli\target\codegeist.exe`
-- `C:\codegeist\app\codegeist\cli\target\dist\codegeist-<version>-windows-x64.zip`
+- `C:\codegeist\app\codegeist\cli\target\dist\codegeist-windows-x64.zip`
 - Native support DLLs in the same `target` directory, such as `awt.dll`, `java.dll`, and `jvm.dll`.
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-jar.log`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native.log`
@@ -310,7 +310,7 @@ scp -i .local/windows-qemu/id_ed25519 -P 2222 codegeist@127.0.0.1:'C:/codegeist/
 The raw `target/codegeist.exe` is only a build output. Copy the adjacent DLLs too
 when you need to test that raw executable outside the VM.
 
-The release artifact should be `codegeist-<version>-windows-x64.zip`, containing
+The release artifact should be `codegeist-windows-x64.zip`, containing
 `codegeist.exe` and the required DLLs in one directory. See
 `native-distribution-packaging.md` for the full archive layout and why a true
 single-file Windows executable is not the supported release contract.

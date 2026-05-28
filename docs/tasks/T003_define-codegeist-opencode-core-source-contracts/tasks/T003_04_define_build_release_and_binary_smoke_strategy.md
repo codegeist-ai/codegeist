@@ -186,10 +186,9 @@ equivalent while preserving the same scope:
    Apple Silicon as a target that may start as skipped when native runner capacity
    is unavailable.
 5. Artifact matrix: separate the JVM jar from native archive artifacts such as
-   `codegeist-<version>-linux-x64.tar.gz`,
-   `codegeist-<version>-macos-x64.tar.gz`,
-   `codegeist-<version>-macos-aarch64.tar.gz`, and
-   `codegeist-<version>-windows-x64.zip`, plus checksum files.
+   `codegeist-linux-x64.tar.gz`, `codegeist-macos-x64.tar.gz`,
+   `codegeist-macos-aarch64.tar.gz`, and `codegeist-windows-x64.zip`, plus
+   checksum files.
 6. Verification gates: define ordered stages for source hygiene, tests, JVM jar
    package, JVM startup smoke, native compile, native archive packaging, unpacked
    native startup smoke, checksum verification, artifact upload dry-run or release

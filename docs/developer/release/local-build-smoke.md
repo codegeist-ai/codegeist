@@ -58,7 +58,7 @@ The Linux smoke command runs:
 - `mvn --batch-mode --no-transfer-progress test`
 - `mvn --batch-mode --no-transfer-progress -DskipTests clean package`
 - `java -jar target/codegeist.jar --version`
-- native compile, `target/dist/codegeist-<version>-linux-x64.tar.gz` packaging,
+- native compile, `target/dist/codegeist-linux-x64.tar.gz` packaging,
   archive extraction into a fresh temp directory, and `./codegeist --version`
   from the extracted package when `native-image` is on `PATH`
 

@@ -20,7 +20,7 @@
 # Side effects:
 # - Rebuilds `app/codegeist/cli/target/codegeist.jar`.
 # - May rebuild `app/codegeist/cli/target/codegeist` and write
-#   `app/codegeist/cli/target/dist/codegeist-<version>-linux-x64.tar.gz` when
+#   `app/codegeist/cli/target/dist/codegeist-linux-x64.tar.gz` when
 #   native-image exists.
 # - Writes smoke logs under `app/codegeist/cli/target/smoke-test`.
 #
@@ -105,7 +105,7 @@ if command -v native-image >/dev/null 2>&1; then
   mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile \
     || fail_smoke 'Native compile failed'
 
-  printf 'Command: package target/dist/codegeist-%s-linux-x64.tar.gz and run extracted ./codegeist --version\n' "$expected"
+  printf 'Command: package target/dist/codegeist-linux-x64.tar.gz and run extracted ./codegeist --version\n'
   run-native-smoke-tests || fail_smoke 'Native archive version smoke failed'
   native_status='passed'
   native_reason='none'

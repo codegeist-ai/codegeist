@@ -5,8 +5,9 @@
 # - Publish a GitHub Release only for pushed v* tags.
 #
 # Inputs and side effects:
-# - Branch validation derives the version from release/v* branches, for example
-#   release/v0.1.0-github-release-build -> 0.1.0.
+# - Branch validation derives the version from release/v* branches, including
+#   iteration branches such as release/v0.1.0-github-release-build and candidate
+#   branches such as release/v0.1.0-codegeist-rc-1.
 # - workflow_dispatch may pass release_version for pre-tag validation.
 # - Tag runs create or update a published GitHub Release and upload artifacts.
 #
@@ -139,7 +140,7 @@ jobs:
           set -euo pipefail
 
           mkdir -p target/dist target/smoke-test
-          jar_asset="target/dist/codegeist-$RELEASE_VERSION-jvm-any.jar"
+          jar_asset="target/dist/codegeist-jvm.jar"
           cp -p target/codegeist.jar "$jar_asset"
 
           log_file="$PWD/target/smoke-test/codegeist-jvm.log"
@@ -160,9 +161,9 @@ jobs:
       - name: Upload JVM jar artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codegeist-${{ needs.metadata.outputs.release_version }}-jvm-any
+          name: codegeist-jvm
           if-no-files-found: error
-          path: app/codegeist/cli/target/dist/codegeist-${{ needs.metadata.outputs.release_version }}-jvm-any.jar
+          path: app/codegeist/cli/target/dist/codegeist-jvm.jar
 
   build-native:
     name: Build and smoke native ${{ matrix.platform }}
@@ -238,7 +239,7 @@ jobs:
           set -euo pipefail
 
           platform="${{ matrix.platform }}"
-          package_name="codegeist-$RELEASE_VERSION-$platform"
+          package_name="codegeist-$platform"
           dist_dir="$PWD/target/dist"
           package_dir="$dist_dir/$package_name"
           archive="$dist_dir/$package_name.tar.gz"
@@ -317,7 +318,7 @@ jobs:
           $cliDir = (Get-Location).Path
           $distDir = Join-Path $cliDir "target/dist"
           $smokeDir = Join-Path $cliDir "target/smoke-test"
-          $packageName = "codegeist-$env:RELEASE_VERSION-windows-x64"
+          $packageName = "codegeist-windows-x64"
           $packageDir = Join-Path $distDir $packageName
           $archive = Join-Path $distDir "$packageName.zip"
           $nativeExe = Join-Path $cliDir "target/codegeist.exe"
@@ -387,9 +388,9 @@ jobs:
       - name: Upload native artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codegeist-${{ needs.metadata.outputs.release_version }}-${{ matrix.platform }}
+          name: codegeist-${{ matrix.platform }}
           if-no-files-found: error
-          path: app/codegeist/cli/target/dist/codegeist-${{ needs.metadata.outputs.release_version }}-${{ matrix.platform }}.${{ matrix.extension }}
+          path: app/codegeist/cli/target/dist/codegeist-${{ matrix.platform }}.${{ matrix.extension }}
 
   checksums:
     name: Generate and verify checksums
@@ -398,8 +399,6 @@ jobs:
       - metadata
       - build-jvm
       - build-native
-    env:
-      RELEASE_VERSION: ${{ needs.metadata.outputs.release_version }}
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v4
@@ -412,23 +411,27 @@ jobs:
           set -euo pipefail
 
           mkdir -p dist
-          count=0
-          for file in artifacts/*/codegeist-"$RELEASE_VERSION"*; do
-            if [ ! -f "$file" ]; then
-              continue
-            fi
-            cp -p "$file" dist/
-            count=$((count + 1))
-          done
+          expected_assets=(
+            codegeist-jvm.jar
+            codegeist-linux-x64.tar.gz
+            codegeist-windows-x64.zip
+            codegeist-macos-x64.tar.gz
+          )
 
-          if [ "$count" -eq 0 ]; then
-            printf 'No release artifacts were downloaded.\n' >&2
-            exit 1
-          fi
+          shopt -s nullglob
+          for asset in "${expected_assets[@]}"; do
+            matches=(artifacts/*/"$asset")
+            if [ "${#matches[@]}" -ne 1 ] || [ ! -f "${matches[0]}" ]; then
+              printf 'Expected exactly one workflow artifact named %s, found %s.\n' "$asset" "${#matches[@]}" >&2
+              exit 1
+            fi
+            cp -p "${matches[0]}" dist/
+          done
+          shopt -u nullglob
 
           cd dist
-          checksum_file="codegeist-$RELEASE_VERSION-SHA256SUMS.txt"
-          sha256sum codegeist-"$RELEASE_VERSION"* > "$checksum_file"
+          checksum_file="SHA256SUMS.txt"
+          sha256sum "${expected_assets[@]}" > "$checksum_file"
           sha256sum -c "$checksum_file"
 
           {
@@ -442,9 +445,9 @@ jobs:
       - name: Upload checksum artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codegeist-${{ needs.metadata.outputs.release_version }}-checksums
+          name: codegeist-checksums
           if-no-files-found: error
-          path: dist/codegeist-${{ needs.metadata.outputs.release_version }}-SHA256SUMS.txt
+          path: dist/SHA256SUMS.txt
 
   release:
     name: Create GitHub Release
@@ -469,19 +472,24 @@ jobs:
           set -euo pipefail
 
           mkdir -p release-assets
-          count=0
-          for file in artifacts/*/codegeist-"$RELEASE_VERSION"*; do
-            if [ ! -f "$file" ]; then
-              continue
-            fi
-            cp -p "$file" release-assets/
-            count=$((count + 1))
-          done
+          expected_assets=(
+            codegeist-jvm.jar
+            codegeist-linux-x64.tar.gz
+            codegeist-windows-x64.zip
+            codegeist-macos-x64.tar.gz
+            SHA256SUMS.txt
+          )
 
-          if [ "$count" -eq 0 ]; then
-            printf 'No release assets were downloaded.\n' >&2
-            exit 1
-          fi
+          shopt -s nullglob
+          for asset in "${expected_assets[@]}"; do
+            matches=(artifacts/*/"$asset")
+            if [ "${#matches[@]}" -ne 1 ] || [ ! -f "${matches[0]}" ]; then
+              printf 'Expected exactly one release asset named %s, found %s.\n' "$asset" "${#matches[@]}" >&2
+              exit 1
+            fi
+            cp -p "${matches[0]}" release-assets/
+          done
+          shopt -u nullglob
 
           cat > release-notes.md <<EOF
           Codegeist $RELEASE_VERSION release.
@@ -491,7 +499,7 @@ jobs:
           - Maven test suite passed before packaging.
           - JVM jar was packaged and smoke-tested with --version.
           - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version.
-          - The versioned SHA-256 checksum file was generated and verified before upload.
+          - The SHA-256 checksum file was generated and verified before upload.
 
           This release intentionally excludes installers, signing, notarization, SBOM, and SLSA provenance.
           EOF

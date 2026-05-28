@@ -151,7 +151,7 @@ entrypoints. Test and smoke helper scripts live under `scripts/tests/`.
 `scripts/tests/native-smoke.sh` defines `run-native-smoke-tests`, which owns the
 Linux native archive smoke assertions used by `task native-smoke` and the Linux
 smoke entrypoint. The function writes
-`target/dist/codegeist-<version>-linux-x64.tar.gz`, unpacks it into a fresh temp
+`target/dist/codegeist-linux-x64.tar.gz`, unpacks it into a fresh temp
 directory, runs packaged `./codegeist --version`, then writes the smoke log to
 `target/smoke-test/codegeist.log`.
 
@@ -191,7 +191,8 @@ download or VM prerequisites.
 `.github/workflows/release.yml` is the implemented GitHub-hosted release build
 path. It accepts three trigger shapes:
 
-- push to `release/v*` for branch validation without publishing;
+- push to `release/v*` for iteration-branch and release-candidate validation
+  without publishing;
 - `workflow_dispatch` for pre-tag validation or reruns without publishing;
 - push to `v*` tags for release-cycle automation and GitHub Release publication.
 
@@ -200,17 +201,28 @@ The workflow resolves a non-SNAPSHOT SemVer release version, passes it to Maven 
 versioned JVM jar, then builds native archives on GitHub-hosted Linux x64, Windows
 x64, and macOS x64 runners. The Windows native job activates the MSVC tools
 environment before running Maven native compilation. The checksum job generates and
-verifies `codegeist-<version>-SHA256SUMS.txt`; the release job uploads the jar,
-native archives, and checksum file to a published GitHub Release only for matching
-`v*` tags.
+verifies `SHA256SUMS.txt`; the release job uploads the jar, native archives, and
+checksum file to a published GitHub Release only for matching `v*` tags.
+
+Release workflow changes are promoted through `/codegeist-release --source
+<release-branch> --rc <n>` instead of merging a multi-commit iteration branch
+directly. The command infers SemVer from the diff between the latest reachable
+release tag and the release branch commit, creates
+`release/v<version>-codegeist-rc-<n>` from current `main`, writes one detailed
+squash commit, validates the candidate branch, and advances `main` by
+fast-forward only before tagging and publication. After the published release
+assets verify, the release command moves the lightweight `latest` tag to the same
+commit as the verified `v*` release tag and creates or updates the `latest` GitHub
+Release with the same downloaded assets. The `latest` release does not run another
+build.
 
 The implemented release artifact names are:
 
-- `codegeist-<version>-jvm-any.jar`
-- `codegeist-<version>-linux-x64.tar.gz`
-- `codegeist-<version>-windows-x64.zip`
-- `codegeist-<version>-macos-x64.tar.gz`
-- `codegeist-<version>-SHA256SUMS.txt`
+- `codegeist-jvm.jar`
+- `codegeist-linux-x64.tar.gz`
+- `codegeist-windows-x64.zip`
+- `codegeist-macos-x64.tar.gz`
+- `SHA256SUMS.txt`
 
 ## Not Implemented Yet
 

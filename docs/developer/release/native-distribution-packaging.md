@@ -9,10 +9,10 @@ Use one downloadable archive per platform and architecture:
 
 | Platform | Release artifact | Runtime layout inside artifact |
 | --- | --- | --- |
-| Linux x64 | `codegeist-<version>-linux-x64.tar.gz` | `codegeist` plus required `.so` libraries in one directory. |
-| Windows x64 | `codegeist-<version>-windows-x64.zip` | `codegeist.exe` plus required `.dll` libraries in one directory. |
-| macOS x64 | `codegeist-<version>-macos-x64.tar.gz` | Native binary plus required dynamic libraries in one directory. |
-| macOS arm64 | `codegeist-<version>-macos-aarch64.tar.gz` | Future native binary plus required dynamic libraries in one directory. |
+| Linux x64 | `codegeist-linux-x64.tar.gz` | `codegeist` plus required `.so` libraries in one directory. |
+| Windows x64 | `codegeist-windows-x64.zip` | `codegeist.exe` plus required `.dll` libraries in one directory. |
+| macOS x64 | `codegeist-macos-x64.tar.gz` | Native binary plus required dynamic libraries in one directory. |
+| macOS arm64 | `codegeist-macos-aarch64.tar.gz` | Future native binary plus required dynamic libraries in one directory. |
 
 The archive is the single download artifact. The extracted directory is the runtime
 unit. Users should run the executable from inside that extracted directory so the
@@ -82,8 +82,8 @@ flowchart TD
     Build[Native build on target OS]
     Output[Executable plus GraalVM sidecar libraries]
     Package{Platform package}
-    Linux[codegeist-version-linux-x64.tar.gz]
-    Windows[codegeist-version-windows-x64.zip]
+    Linux[codegeist-linux-x64.tar.gz]
+    Windows[codegeist-windows-x64.zip]
     Smoke[Unpack into clean temp directory]
     Run[Run packaged executable --version]
     Release[Upload archive and checksum]
@@ -232,8 +232,8 @@ explicit permission restoration and smoke coverage for the unpacked binary.
 Planned Linux x64 package:
 
 ```text
-codegeist-<version>-linux-x64.tar.gz
-└── codegeist-<version>-linux-x64/
+codegeist-linux-x64.tar.gz
+└── codegeist-linux-x64/
     ├── codegeist
     ├── libawt.so
     ├── libawt_headless.so
@@ -258,8 +258,8 @@ contract is: run from inside the extracted package directory.
 Planned Windows x64 package:
 
 ```text
-codegeist-<version>-windows-x64.zip
-└── codegeist-<version>-windows-x64\
+codegeist-windows-x64.zip
+└── codegeist-windows-x64\
     ├── codegeist.exe
     ├── awt.dll
     ├── java.dll

@@ -33,16 +33,21 @@
   `final-smoke-suite`. Local smoke scripts live under `scripts/tests/`.
   `native-smoke` sources `scripts/tests/native-smoke.sh`; each native run
   recreates `target/smoke-test`, packages
-  `target/dist/codegeist-<version>-linux-x64.tar.gz`, unpacks it into a fresh temp
+  `target/dist/codegeist-linux-x64.tar.gz`, unpacks it into a fresh temp
   directory, runs packaged `./codegeist --version`, and writes
   `target/smoke-test/codegeist.log`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
-  `release_version=0.1.0`, and pushed `v*` tags publish versioned assets to a
-  GitHub Release. Branch run `26535014716` passed JVM, Linux x64, Windows x64,
-  macOS x64, and checksum jobs; the release job was correctly skipped on the branch
-  run.
+  `release_version=0.1.0`, and pushed `v*` tags publish release assets to a GitHub
+  Release. Branch run `26535014716` passed JVM, Linux x64, Windows x64, macOS x64,
+  and checksum jobs; the release job was correctly skipped on the branch run.
+- Future release workflow iterations may use a multi-commit
+  `release/v<version>-...` branch, but `main` should receive only one detailed
+  squash-candidate commit. `/codegeist-release --source <release-branch> --rc <n>`
+  owns version inference, candidate creation, validation, fast-forward-only `main`
+  promotion, final tag publication, downloaded checksum verification, and the
+  `latest` GitHub Release mirror.
 - Codegeist `v0.1.0` is published on GitHub Releases:
   `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0`. Pre-tag
   validation run `26537663964`, tag run `26538176834`, and downloaded asset
@@ -50,11 +55,12 @@
 - `app/codegeist/cli/pom.xml` now uses CI-friendly `${revision}` with local default
   `0.1.0-SNAPSHOT`; release CI passes `-Drevision=0.1.0` so artifact smokes print
   `0.1.0`.
-- GitHub release assets are `codegeist-<version>-jvm-any.jar`,
-  `codegeist-<version>-linux-x64.tar.gz`,
-  `codegeist-<version>-windows-x64.zip`,
-  `codegeist-<version>-macos-x64.tar.gz`, and
-  `codegeist-<version>-SHA256SUMS.txt`.
+- Future GitHub release assets intentionally omit the version because the release
+  URL and immutable `v*` tag carry it. Current workflow asset names are
+  `codegeist-jvm.jar`,
+  `codegeist-linux-x64.tar.gz`, `codegeist-windows-x64.zip`,
+  `codegeist-macos-x64.tar.gz`, and `SHA256SUMS.txt`. The already-published
+  `v0.1.0` release used the older versioned asset names.
 - `scripts/tests/final-smoke-suite.sh` is the local final smoke entrypoint. It
   runs Linux direct smoke and automated Windows QEMU/SSH smoke. Default mode
   requires both platforms to pass; `--allow-skips` is developer-only. The suite
@@ -65,9 +71,9 @@
   the repo subset, and runs Windows smoke over SSH. It uses `-cpu host` with KVM
   and `-cpu max` without KVM unless `CODEGEIST_WINDOWS_CPU` overrides the model.
 - Native release artifacts should be platform archives, not true single executable
-  files: Linux uses `codegeist-<version>-linux-x64.tar.gz`, Windows uses
-  `codegeist-<version>-windows-x64.zip`, and each archive keeps the executable next
-  to GraalVM sidecar libraries. This preserves fast first startup by avoiding a
+  files: Linux uses `codegeist-linux-x64.tar.gz`, Windows uses
+  `codegeist-windows-x64.zip`, and each archive keeps the executable next to
+  GraalVM sidecar libraries. This preserves fast first startup by avoiding a
   self-extracting runtime wrapper. The local Linux and Windows native smokes now
   package these archives, unpack them into fresh temp directories, and test the
   packaged executable rather than raw `target/` binaries.
@@ -125,6 +131,16 @@
   adapter-ready boundaries when real behavior exists.
 - Build artifacts such as `target/`, `bin/`, `.class`, and `.jar` stay out of
   git.
+- Do not merge multi-commit release iteration branches directly into `main`.
+  Promote them through `/codegeist-release --source <release-branch> --rc <n>`;
+  the command infers SemVer from the diff between the latest reachable release tag
+  and the release branch commit, writes a detailed squash commit message, and
+  advances `main` by fast-forward only.
+- After a verified GitHub Release, `/codegeist-release` moves the lightweight
+  `latest` tag to the same commit as the immutable `v*` release tag and creates or
+  updates the `latest` GitHub Release with the same downloaded, checksum-verified
+  assets from the `v*` release. Do not move or publish `latest` before downloaded
+  checksum verification passes, and do not run another build for `latest`.
 - Durable repo-owned docs, rules, code comments, test names, and commit messages
   stay in English.
 
@@ -143,9 +159,10 @@
   for packaging, release, platform, or binary-smoke work.
 - For the active T005 release work, validate Linux and Windows locally before the
   release path where practical, use GitHub-hosted runners for Linux, Windows, and
-  macOS release builds, and use `/codegeist-release v0.1.0` or the equivalent `gh`
-  pre-tag validation before creating the final `v*` release tag. Tag runs publish
-  the GitHub Release automatically.
+  macOS release builds, and use `/codegeist-release --source <release-branch> --rc
+  <n>` for release publication. The command handles version inference, candidate
+  promotion, pre-tag validation, final `v*` tag creation, and automatic GitHub
+  Release publication.
 - Keep test and smoke helper scripts under `scripts/tests/`. Local Windows release
   validation uses a real Windows QEMU VM over SSH or a matching GitHub Windows
   runner; do not add local compatibility-layer smoke paths.
@@ -187,5 +204,5 @@
 - Revisit `docs/developer/specification/native-packaging-posture.md` and
   `build-release-and-binary-smoke-strategy.md` when release automation or binary
   smoke work starts.
-- For the next release, run `/codegeist-release v<version>` from a clean `main`
-  after the release workflow changes are merged and branch validation has passed.
+- For the next release, run `/codegeist-release --source <release-branch> --rc 1`;
+  do not enter the version manually unless checking an inferred-version conflict.

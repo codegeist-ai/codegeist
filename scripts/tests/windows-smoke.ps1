@@ -18,7 +18,7 @@
 # Side effects:
 # - Rebuilds app/codegeist/cli/target/codegeist.jar.
 # - May rebuild app/codegeist/cli/target/codegeist.exe and write
-#   app/codegeist/cli/target/dist/codegeist-<version>-windows-x64.zip.
+#   app/codegeist/cli/target/dist/codegeist-windows-x64.zip.
 # - Writes smoke logs under app/codegeist/cli/target/smoke-test.
 
 param(
@@ -175,12 +175,11 @@ function Invoke-VersionSmoke {
 
 function New-WindowsNativeArchive {
     param(
-        [string]$CliDir,
-        [string]$Version
+        [string]$CliDir
     )
 
     $distDir = Join-Path $CliDir "target/dist"
-    $packageName = "codegeist-$Version-windows-x64"
+    $packageName = "codegeist-windows-x64"
     $packageDir = Join-Path $distDir $packageName
     $archive = Join-Path $distDir "$packageName.zip"
     $nativeExe = Join-Path $CliDir "target/codegeist.exe"
@@ -302,8 +301,8 @@ if ($NativeMode -ne "skip") {
                 }
             }
 
-            $packageName = "codegeist-$expected-windows-x64"
-            $nativeArchive = New-WindowsNativeArchive $cliDir $expected
+            $packageName = "codegeist-windows-x64"
+            $nativeArchive = New-WindowsNativeArchive $cliDir
 
             Write-Host "Command: package target/dist/$packageName.zip and run extracted codegeist.exe --version"
             Invoke-PackagedNativeSmoke $nativeArchive $packageName $expected $NativeTimeoutSeconds

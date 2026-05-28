@@ -28,10 +28,11 @@ GitHub-hosted release workflow.
 | Spring Shell | `4.0.2` dependency baseline; `--version` command implemented |
 | Spring AI | BOM `2.0.0-M6`; no provider starters or model calls yet |
 | Spring AI Agent Utils | BOM and core dependency `0.7.0` |
-| JVM package | Spring Boot executable jar named `target/codegeist.jar`; release asset `codegeist-<version>-jvm-any.jar` |
+| JVM package | Spring Boot executable jar named `target/codegeist.jar`; release asset `codegeist-jvm.jar` |
 | Native package | GraalVM native Maven profile using `native-maven-plugin` `0.10.6` |
 | Local commands | `task test`, `task build`, `task native`, `task native-smoke`, `task local-linux-smoke`, `task qemu-windows-smoke`, `task final-smoke-suite`, `task run` |
-| GitHub release workflow | `.github/workflows/release.yml` for `release/v*` branch validation, `workflow_dispatch` pre-tag validation, and `v*` tag release publication |
+| GitHub release workflow | `.github/workflows/release.yml` for `release/v*` iteration and candidate branch validation, `workflow_dispatch` pre-tag validation, and `v*` tag release publication |
+| Main promotion | Multi-commit release iteration branches are squashed into `release/v<version>-codegeist-rc-<n>` candidate branches; `main` is advanced by fast-forward only after candidate validation passes |
 
 No artifact signing, notarization, installer generation, SBOM, SLSA provenance, or
 package-manager publishing exists yet.
@@ -68,10 +69,10 @@ split by CPU architecture because native binaries are architecture-specific.
 
 | Platform target | Initial runner posture | Native artifact target | First-wave expectation |
 | --- | --- | --- | --- |
-| Linux x64 | GitHub-hosted `ubuntu-latest` or pinned Ubuntu image | `codegeist-<version>-linux-x64.tar.gz` | Build and smoke as soon as release CI exists. |
-| Windows x64 | GitHub-hosted `windows-latest` or pinned Windows image | `codegeist-<version>-windows-x64.zip` | Build and smoke as soon as release CI exists. |
-| macOS x64 | GitHub-hosted Intel macOS image when available | `codegeist-<version>-macos-x64.tar.gz` | Build and smoke when runner capacity is available. |
-| macOS arm64 | GitHub-hosted Apple Silicon image when available | `codegeist-<version>-macos-aarch64.tar.gz` | Target support; may start as `skipped` with an explicit runner/toolchain reason. |
+| Linux x64 | GitHub-hosted `ubuntu-latest` or pinned Ubuntu image | `codegeist-linux-x64.tar.gz` | Build and smoke as soon as release CI exists. |
+| Windows x64 | GitHub-hosted `windows-latest` or pinned Windows image | `codegeist-windows-x64.zip` | Build and smoke as soon as release CI exists. |
+| macOS x64 | GitHub-hosted Intel macOS image when available | `codegeist-macos-x64.tar.gz` | Build and smoke when runner capacity is available. |
+| macOS arm64 | GitHub-hosted Apple Silicon image when available | `codegeist-macos-aarch64.tar.gz` | Target support; may start as `skipped` with an explicit runner/toolchain reason. |
 
 Platform support is not proven by compiling on one operating system and copying an
 artifact elsewhere. Native archive smoke checks must unpack and run on the same
@@ -83,18 +84,21 @@ The JVM jar and native distribution archives have separate responsibilities.
 
 | Artifact | Example name | Built from | Verification posture |
 | --- | --- | --- | --- |
-| JVM jar | `codegeist-<version>-jvm-any.jar` | Maven package on Ubuntu | Release-blocking for the current `--version` artifact contract. |
-| Linux native archive | `codegeist-<version>-linux-x64.tar.gz` | Native compile and package on Linux x64 | Release-blocking in the implemented workflow. |
-| Windows native archive | `codegeist-<version>-windows-x64.zip` | Native compile and package on Windows x64 | Release-blocking in the implemented workflow. |
-| macOS Intel native archive | `codegeist-<version>-macos-x64.tar.gz` | Native compile and package on macOS x64 | Release-blocking in the implemented workflow. |
-| macOS Apple Silicon native archive | `codegeist-<version>-macos-aarch64.tar.gz` | Native compile and package on macOS arm64 | Compatibility target; skip only with explicit runner/toolchain reason. |
-| Checksums | `codegeist-<version>-SHA256SUMS.txt` | Platform-neutral checksum step | Required for every uploaded artifact. |
+| JVM jar | `codegeist-jvm.jar` | Maven package on Ubuntu | Release-blocking for the current `--version` artifact contract. |
+| Linux native archive | `codegeist-linux-x64.tar.gz` | Native compile and package on Linux x64 | Release-blocking in the implemented workflow. |
+| Windows native archive | `codegeist-windows-x64.zip` | Native compile and package on Windows x64 | Release-blocking in the implemented workflow. |
+| macOS Intel native archive | `codegeist-macos-x64.tar.gz` | Native compile and package on macOS x64 | Release-blocking in the implemented workflow. |
+| macOS Apple Silicon native archive | `codegeist-macos-aarch64.tar.gz` | Native compile and package on macOS arm64 | Compatibility target; skip only with explicit runner/toolchain reason. |
+| Checksums | `SHA256SUMS.txt` | Platform-neutral checksum step | Required for every uploaded artifact. |
 
-Use names that include the project, version, platform, and architecture. The JVM
-jar uses `jvm-any` because it is not tied to one operating system or CPU. Do not
+Release asset filenames intentionally omit the version because the GitHub Release
+URL and immutable `v*` tag carry the version. Use names that include the project,
+artifact family, platform, and architecture where needed. The JVM jar uses
+`codegeist-jvm.jar`, not `codegeist-jvm-any.jar`, because `jvm` already
+distinguishes the portable JVM artifact from platform-native archives. Do not
 reuse `target/codegeist.jar`, `target/codegeist`, or `target/codegeist.exe` as
-final release asset names because they do not identify version or platform and do
-not package required sidecar libraries.
+final release asset names because they do not identify the artifact family or
+platform and do not package required sidecar libraries.
 
 Native release artifacts are archives, not true single executable files. The
 archive is the user download. The extracted directory is the runtime unit because
@@ -107,8 +111,10 @@ full packaging rationale.
 Release CI uses ordered gates so a failure explains which part of the release is
 unsafe.
 
-1. Source hygiene: checkout tag, verify clean workspace, run `git --no-pager diff
-   --check` for generated release changes when applicable.
+1. Source hygiene: checkout tag or release candidate, verify clean workspace, run
+   `git --no-pager diff --check` for generated release changes when applicable,
+   and verify that any multi-commit iteration branch was promoted through a single
+   detailed squash-candidate commit.
 2. Tests: run the normal Maven test lifecycle through `task test` from
    `app/codegeist/cli`.
 3. JVM package: run `task build` and stage the jar under a release name.
@@ -122,10 +128,16 @@ unsafe.
    run the packaged executable on its own platform with the same bounded startup
    policy.
 8. Artifact integrity: generate checksums and verify every checksum before upload.
-9. Release publication: on `v*` tag runs only, create or update a published GitHub
-   Release and attach all artifacts and checksums.
-10. Post-release verification: download the published assets and verify
-    `codegeist-<version>-SHA256SUMS.txt` before reporting the release complete.
+9. Main promotion: after candidate branch validation, advance `main` by
+   fast-forward only from the candidate commit.
+10. Release publication: on `v*` tag runs only, create or update a published GitHub
+    Release and attach all artifacts and checksums.
+11. Post-release verification: download the published assets and verify
+     `SHA256SUMS.txt` before reporting the release complete.
+12. Latest mirror: after downloaded checksum verification passes, move the
+    lightweight `latest` tag to the verified `v*` release commit and create or
+    update the `latest` GitHub Release with those same verified downloaded assets.
+    Do not run another build for `latest`.
 
 The JVM jar is a release-blocking artifact. Linux x64, Windows x64, and macOS x64
 native archives are release-blocking in the implemented GitHub workflow. Missing
@@ -156,19 +168,19 @@ Required smoke checks once the corresponding CLI behavior exists:
 Implemented CI smoke command shapes:
 
 ```bash
-java -jar codegeist-<version>-jvm-any.jar --version
-tar -xzf codegeist-<version>-linux-x64.tar.gz -C /tmp/codegeist-smoke
-cd /tmp/codegeist-smoke/codegeist-<version>-linux-x64
+java -jar codegeist-jvm.jar --version
+tar -xzf codegeist-linux-x64.tar.gz -C /tmp/codegeist-smoke
+cd /tmp/codegeist-smoke/codegeist-linux-x64
 ./codegeist --version
 
-tar -xzf codegeist-<version>-macos-x64.tar.gz -C /tmp/codegeist-smoke
-cd /tmp/codegeist-smoke/codegeist-<version>-macos-x64
+tar -xzf codegeist-macos-x64.tar.gz -C /tmp/codegeist-smoke
+cd /tmp/codegeist-smoke/codegeist-macos-x64
 ./codegeist --version
 ```
 
 ```powershell
-Expand-Archive -Force codegeist-<version>-windows-x64.zip $env:TEMP\codegeist-smoke
-Set-Location $env:TEMP\codegeist-smoke\codegeist-<version>-windows-x64
+Expand-Archive -Force codegeist-windows-x64.zip $env:TEMP\codegeist-smoke
+Set-Location $env:TEMP\codegeist-smoke\codegeist-windows-x64
 .\codegeist.exe --version
 ```
 
@@ -183,10 +195,10 @@ Actions release jobs.
 
 | Script | Current behavior |
 | --- | --- |
-| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds `target/codegeist.jar`, verifies jar `--version`, and when `native-image` is available builds, packages, unpacks, and verifies `target/dist/codegeist-<version>-linux-x64.tar.gz`. |
+| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds `target/codegeist.jar`, verifies jar `--version`, and when `native-image` is available builds, packages, unpacks, and verifies `target/dist/codegeist-linux-x64.tar.gz`. |
 | `scripts/tests/qemu-windows-vm.sh` | Downloads the official Windows Server Evaluation ISO when needed, creates or starts the local Windows QEMU VM, syncs the repo subset, and runs Windows smoke through SSH. Download, ISO, or VM failures fail by default. |
 | `scripts/tests/qemu-windows-smoke.sh` | Lower-level SSH wrapper that runs `scripts/tests/windows-smoke.ps1` inside an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Runs Windows-side Maven tests, jar package, jar `--version`, and when GraalVM and MSVC Build Tools are available builds, packages, unpacks, and verifies `target/dist/codegeist-<version>-windows-x64.zip`. |
+| `scripts/tests/windows-smoke.ps1` | Runs Windows-side Maven tests, jar package, jar `--version`, and when GraalVM and MSVC Build Tools are available builds, packages, unpacks, and verifies `target/dist/codegeist-windows-x64.zip`. |
 | `scripts/tests/final-smoke-suite.sh` | Runs Linux and Windows local smoke checks. Default mode requires both platforms to pass; `--allow-skips` is developer-only. |
 
 The local suite is intentionally not a release publisher. It does not upload
@@ -251,8 +263,8 @@ Example status shape:
 ```text
 Platform smoke status: skipped
 Platform: macOS arm64
-Artifact: codegeist-0.1.0-macos-aarch64.tar.gz
-Command: tar -xzf codegeist-0.1.0-macos-aarch64.tar.gz && ./codegeist-0.1.0-macos-aarch64/codegeist --version
+Artifact: codegeist-macos-aarch64.tar.gz
+Command: tar -xzf codegeist-macos-aarch64.tar.gz && ./codegeist-macos-aarch64/codegeist --version
 Reason: no Apple Silicon release runner configured yet
 Owner: future release automation task
 Release decision: non-blocking for this pre-matrix release; must be listed in release notes
@@ -286,6 +298,15 @@ summaries instead of raw logs.
 Before publishing or approving a release candidate, verify:
 
 - Release tag is selected and matches artifact version names.
+- Release tag was inferred with `.opencode/rules/semver.md` from the diff between
+  the latest reachable release tag and the release branch commit, or any manual
+  override was checked against that inferred tag.
+- If the release work was iterated on a multi-commit branch, a fresh
+  `release/v<version>-codegeist-rc-<n>` branch exists from current `main` and
+  contains exactly one detailed squash commit.
+- The candidate branch validation run passed before `main` was advanced.
+- `main` was advanced by fast-forward only; no merge commit, GitHub merge button,
+  GitHub squash button, or force-push was used.
 - Maven tests passed from `app/codegeist/cli` with the selected `-Drevision`.
 - JVM jar was built, renamed for release, checksumed, and smoke tested.
 - Each platform-native archive is either unpacked and smoke tested on its own
@@ -293,6 +314,9 @@ Before publishing or approving a release candidate, verify:
 - Checksum verification passed before artifact upload.
 - Release notes list supported platforms and skipped or failed platform checks.
 - Published GitHub Release contains the expected artifacts and checksum files.
+- The `latest` GitHub Release reuses the assets downloaded from and verified
+  against the current `v*` release; it does not use local build outputs or run a
+  second build.
 - Signing, notarization, SBOM, provenance, installer, or package-manager gaps are
   listed as non-blocking or blocking according to the current release task.
 - Startup and smoke durations are summarized for every executed smoke check.
