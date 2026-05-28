@@ -97,8 +97,9 @@
 - `docs/developer/implementation/` was removed. Do not recreate it as a broad
   handoff layer.
 - The previous T004 implementation epic was discarded and removed. Its replacement
-  tiny implementation task, `docs/tasks/T004_implement-codegeist-version-flag.md`,
-  is solved with the current Spring Shell `--version` behavior.
+  tiny implementation task,
+  `docs/tasks/T004_implement-codegeist-version-flag/task.md`, is solved with the
+  current Spring Shell `--version` behavior.
 - `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
   release-readiness task group. `T005_01` is solved with local Linux/Windows
   build-smoke entrypoints under `scripts/tests/`; `T005_02` is solved on
