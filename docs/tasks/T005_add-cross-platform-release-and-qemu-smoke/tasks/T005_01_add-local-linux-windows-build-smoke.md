@@ -1,6 +1,6 @@
 # T005_01 Add Local Linux Windows Build Smoke
 
-Status: solved
+Status: finalized
 
 Parent: `../task.md`
 
@@ -231,6 +231,19 @@ Results:
 - Added detailed Windows QEMU smoke documentation with lifecycle diagrams,
   configuration, artifact paths, status semantics, and troubleshooting notes.
 - Kept local compatibility-layer Windows checks out of the implementation.
+
+## Finalization Notes
+
+- Reviewed the parent `T005` task, sibling `T005_02`, release documentation,
+  architecture notes, README coverage, and project memory for stale local-smoke
+  claims.
+- The local Linux and Windows smoke documentation already records the implemented
+  strict final suite, artifact paths, status semantics, and Windows QEMU
+  troubleshooting guidance.
+- No extra child task is needed for local macOS virtualization; it remains outside
+  the task group's scope.
+- Parent impact: `T005` closes with both release-readiness children finalized.
+- Verification: `git --no-pager diff --check`.
 
 ## Planning Notes
 

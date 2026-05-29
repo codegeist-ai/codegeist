@@ -1,6 +1,6 @@
 # T005_02 Add GitHub Release Build
 
-Status: solved
+Status: finalized
 
 Parent: `../task.md`
 
@@ -200,6 +200,20 @@ java -jar target/codegeist.jar --version
 - Downloaded release assets verified with
   `sha256sum -c codegeist-0.1.0-SHA256SUMS.txt` under
   `app/codegeist/cli/target/release-verify-v0.1.0.0zZZH3`.
+
+## Finalization Notes
+
+- Reviewed the parent `T005` task, sibling `T005_01`, GitHub release docs,
+  architecture notes, README coverage, release workflow rules, and project memory
+  for stale release-build claims.
+- The GitHub release path is complete for this task group: the workflow is merged
+  to `main`, pre-tag validation passed, `v0.1.0` was published, and downloaded
+  release assets passed checksum verification.
+- The stable future release entrypoint is `/codegeist-release --source
+  <release-branch> --rc 1`; manual version entry should only be used to resolve an
+  inferred-version conflict.
+- Parent impact: `T005` closes with both release-readiness children finalized.
+- Verification: `git --no-pager diff --check`.
 
 ## Planning Notes
 

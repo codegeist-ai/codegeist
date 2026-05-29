@@ -109,11 +109,11 @@
   tiny implementation task,
   `docs/tasks/T004_implement-codegeist-version-flag/task.md`, is solved with the
   current Spring Shell `--version` behavior.
-- `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is the active
-  release-readiness task group. `T005_01` is solved with local Linux/Windows
-  build-smoke entrypoints under `scripts/tests/`; `T005_02` is solved on
-  `release/v0.1.0-github-release-build` with passing GitHub branch validation,
-  passing pre-tag validation on `main`, and published `v0.1.0` release assets.
+- `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/` is finalized.
+  `T005_01` delivered local Linux/Windows build-smoke entrypoints under
+  `scripts/tests/`; `T005_02` delivered the GitHub-hosted release workflow, passing
+  branch validation, passing pre-tag validation on `main`, and published `v0.1.0`
+  release assets with downloaded checksum verification.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -170,10 +170,10 @@
   timing.
 - Use `docs/developer/specification/build-release-and-binary-smoke-strategy.md`
   for packaging, release, platform, or binary-smoke work.
-- For the active T005 release work, validate Linux and Windows locally before the
-  release path where practical, use GitHub-hosted runners for Linux, Windows, and
-  macOS release builds, and use `/codegeist-release --source <release-branch> --rc
-  <n>` for release publication. The command handles version inference, candidate
+- For future release work, validate Linux and Windows locally before the release
+  path where practical, use GitHub-hosted runners for Linux, Windows, and macOS
+  release builds, and use `/codegeist-release --source <release-branch> --rc <n>`
+  for release publication. The command handles version inference, candidate
   promotion, pre-tag validation, final `v*` tag creation, and automatic GitHub
   Release publication.
 - Keep test and smoke helper scripts under `scripts/tests/`. Local Windows release
@@ -214,8 +214,8 @@
 
 - Keep `docs/developer/architecture/architecture.md` synchronized whenever
   implemented packages, classes, configuration, runtime flows, or tests change.
-- Revisit `docs/developer/specification/native-packaging-posture.md` and
-  `build-release-and-binary-smoke-strategy.md` when release automation or binary
-  smoke work starts.
 - For the next release, run `/codegeist-release --source <release-branch> --rc 1`;
   do not enter the version manually unless checking an inferred-version conflict.
+- Create the next small implementation task for the first tested Spring workflow;
+  `T003` already points future work toward an iterative Spring-first slice instead
+  of broad placeholder contracts.
