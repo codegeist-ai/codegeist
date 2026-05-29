@@ -38,6 +38,63 @@ tasks:
     cmds:
       - bash ../../../scripts/tests/final-smoke-suite.sh
 
+  ollama-start:
+    desc: Start a local Ollama server with NVIDIA GPU support
+    cmds:
+      - |
+        bash -lc '
+          set -euo pipefail
+
+          container_name="${OLLAMA_CONTAINER_NAME:-codegeist-ollama}"
+          image="${OLLAMA_IMAGE:-ollama/ollama:latest}"
+          models_dir="${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}"
+          bind_address="${OLLAMA_BIND_ADDRESS:-127.0.0.1}"
+          port="${OLLAMA_PORT:-11434}"
+          model="${OLLAMA_MODEL:-llama3.2:1b}"
+          enter_mode="${OLLAMA_ENTER:-auto}"
+          health_host="$bind_address"
+
+          if [ "$health_host" = "0.0.0.0" ]; then
+            health_host="127.0.0.1"
+          fi
+
+          mkdir -p "$models_dir"
+
+          if docker container inspect "$container_name" >/dev/null 2>&1; then
+            docker start "$container_name" >/dev/null
+          else
+            docker run \
+              --detach \
+              --name "$container_name" \
+              --gpus all \
+              --restart unless-stopped \
+              --publish "$bind_address:$port:11434" \
+              --env OLLAMA_HOST=0.0.0.0:11434 \
+              --env OLLAMA_MODELS=/ollama-models \
+              --env NVIDIA_VISIBLE_DEVICES=all \
+              --env NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+              --volume "$models_dir:/ollama-models" \
+              "$image" >/dev/null
+          fi
+
+          for _ in $(seq 1 30); do
+            if curl -fsS "http://$health_host:$port/api/version" >/dev/null; then
+              printf "Ollama is running at http://%s:%s\n" "$health_host" "$port"
+              if [ "$enter_mode" = "true" ] || { [ "$enter_mode" = "auto" ] && [ -t 0 ] && [ -t 1 ]; }; then
+                printf "Entering Ollama model %s\n" "$model"
+                exec docker exec -it "$container_name" ollama run "$model"
+              fi
+
+              printf "Run this to enter Ollama: docker exec -it %s ollama run %s\n" "$container_name" "$model"
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs --tail 40 "$container_name" >&2
+          exit 1
+        '
+
   run:
     desc: Build and run the Codegeist application
     deps:

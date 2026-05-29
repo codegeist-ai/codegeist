@@ -14,6 +14,11 @@
 - `.opencode` is a git submodule tracking the `release` branch of
   `codegeist-agent-kit`; `.devcontainer/` is a git submodule tracking the
   `release` branch of `codegeist-devcontainer-kit`.
+- Root `Dockerfile` is a project-local devcontainer extension fragment. It adds
+  NVIDIA user-space libraries and NVIDIA Container Toolkit for nested Docker GPU
+  workloads, using `NVIDIA_DRIVER_VERSION=595.71.05-1` by default to match the
+  validated host driver. Root `compose.local.yml` passes that build arg and sets
+  `gpus: all` for the workspace service.
 - `start.sh` has been removed. Start the devcontainer through VS Code Dev
   Containers or `devcontainer up --workspace-folder .`.
 - `app/codegeist/cli` is the only implemented Codegeist application module. It is
@@ -29,13 +34,17 @@
   `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
   output.
 - `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`,
-  `native-smoke`, `local-linux-smoke`, `qemu-windows-smoke`, and
-  `final-smoke-suite`. Local smoke scripts live under `scripts/tests/`.
-  `native-smoke` sources `scripts/tests/native-smoke.sh`; each native run
-  recreates `target/smoke-test`, packages
-  `target/dist/codegeist-linux-x64.tar.gz`, unpacks it into a fresh temp
-  directory, runs packaged `./codegeist --version`, and writes
-  `target/smoke-test/codegeist.log`.
+  `native-smoke`, `local-linux-smoke`, `qemu-windows-smoke`,
+  `final-smoke-suite`, and `ollama-start`. Local smoke scripts live under
+  `scripts/tests/`. `ollama-start` starts a persistent GPU-backed
+  `ollama/ollama` container named `codegeist-ollama` with models mounted from
+  `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}`. In an interactive terminal it
+  enters `docker exec -it codegeist-ollama ollama run llama3.2:1b` by default;
+  set `OLLAMA_ENTER=false` for non-interactive starts. `native-smoke` sources
+  `scripts/tests/native-smoke.sh`; each native run recreates
+  `target/smoke-test`, packages `target/dist/codegeist-linux-x64.tar.gz`,
+  unpacks it into a fresh temp directory, runs packaged `./codegeist --version`,
+  and writes `target/smoke-test/codegeist.log`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
@@ -132,6 +141,9 @@
   adapter-ready boundaries when real behavior exists.
 - Build artifacts such as `target/`, `bin/`, `.class`, and `.jar` stay out of
   git.
+- Consumer-specific NVIDIA/Ollama development support belongs in the repo root
+  `Dockerfile`, root `compose.local.yml`, and `task ollama-start`; keep the
+  shared `.devcontainer` submodule unchanged for that local GPU setup.
 - Do not merge multi-commit release iteration branches directly into `main`.
   Promote them through `/codegeist-release --source <release-branch> --rc <n>`;
   the command infers SemVer from the diff between the latest reachable release tag
