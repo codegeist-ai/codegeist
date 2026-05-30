@@ -117,10 +117,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   command-existence checks only when the result drives real `passed`, `skipped`,
   `failed`, or guest installation behavior.
 - For local GPU-backed Ollama development, keep NVIDIA runtime customizations in
-  the repo root `Dockerfile` and `compose.local.yml`; do not edit the shared
-  `.devcontainer` submodule for consumer-specific GPU setup. Keep Ollama models
-  under `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}` and use
-  `OLLAMA_ENTER=false task ollama-start` for non-interactive automation.
+  local `.codegeist/` devcontainer overrides such as `.codegeist/Dockerfile` and
+  `.codegeist/compose.local.yml`; do not edit the shared `.devcontainer` submodule
+  for consumer-specific GPU setup. Keep Ollama models under
+  `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}` and use `OLLAMA_ENTER=false task
+  ollama-start` for non-interactive automation.
 - For GraalVM resource inclusion, prefer metadata under
   `src/main/resources/META-INF/native-image/resource-config.json` for simple
   resource patterns such as `logback.xml` and `META-INF/build-info.properties`.

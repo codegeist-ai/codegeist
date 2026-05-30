@@ -14,11 +14,10 @@
 - `.opencode` is a git submodule tracking the `release` branch of
   `codegeist-agent-kit`; `.devcontainer/` is a git submodule tracking the
   `release` branch of `codegeist-devcontainer-kit`.
-- Root `Dockerfile` is a project-local devcontainer extension fragment. It adds
-  NVIDIA user-space libraries and NVIDIA Container Toolkit for nested Docker GPU
-  workloads, using `NVIDIA_DRIVER_VERSION=595.71.05-1` by default to match the
-  validated host driver. Root `compose.local.yml` passes that build arg and sets
-  `gpus: all` for the workspace service.
+- `.devcontainer` now uses `.codegeist/.local.env` and
+  `.codegeist/compose.local.yml` for local runtime overrides. The legacy root
+  `compose.local.yml` file is removed; `initialize.sh` can copy older local root
+  files into `.codegeist/` when needed.
 - `start.sh` has been removed. Start the devcontainer through VS Code Dev
   Containers or `devcontainer up --workspace-folder .`.
 - `app/codegeist/cli` is the only implemented Codegeist application module. It is
@@ -150,9 +149,9 @@
   adapter-ready boundaries when real behavior exists.
 - Build artifacts such as `target/`, `bin/`, `.class`, and `.jar` stay out of
   git.
-- Consumer-specific NVIDIA/Ollama development support belongs in the repo root
-  `Dockerfile`, root `compose.local.yml`, and `task ollama-start`; keep the
-  shared `.devcontainer` submodule unchanged for that local GPU setup.
+- Consumer-specific NVIDIA/Ollama development support belongs in local
+  `.codegeist/` devcontainer overrides and `task ollama-start`; keep the shared
+  `.devcontainer` submodule unchanged for that local GPU setup.
 - Do not merge multi-commit release iteration branches directly into `main`.
   Promote them through `/codegeist-release --source <release-branch> --rc <n>`;
   the command infers SemVer from the diff between the latest reachable release tag

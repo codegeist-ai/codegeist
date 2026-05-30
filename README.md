@@ -39,10 +39,10 @@ Key properties:
 - Node.js, Python, GitHub CLI, and supporting CLI tooling
 - an `.opencode/` submodule that tracks the agent kit `release` branch
 - a `.devcontainer/` submodule that tracks the devcontainer kit `release` branch
-- local runtime values in root `.local.env`, generated from the kit example when
-  missing and ignored by Git
-- root `compose.local.yml` for local compose overrides included by
-  `.devcontainer/devcontainer.json`
+- local runtime values in `.codegeist/.local.env`, generated from the kit example
+  when missing and ignored by Git
+- local Compose overrides in `.codegeist/compose.local.yml`, generated from the kit
+  example when missing and ignored by Git
 
 ## Repository Layout
 
@@ -162,8 +162,9 @@ See `docs/developer/release/github-release-build.md` for the full operator flow.
 1. Clone the repository with `git clone --recurse-submodules <repo-url>` so the nested `.opencode` and `.devcontainer` checkouts are available from the start.
 2. Open the repository root in VS Code and choose `Reopen in Container`, or run
    `devcontainer up --workspace-folder .` from the repository root.
-3. Let `.devcontainer/initialize.sh` create root `.local.env`,
-   `compose.local.yml`, and the generated compose overlay when they are missing.
+3. Let `.devcontainer/initialize.sh` create `.codegeist/.local.env`,
+   `.codegeist/compose.local.yml`, and the generated compose overlay when they are
+   missing.
 4. Verify that `java -version` and `native-image --version` work inside the workspace.
 5. Run `task -t app/codegeist/cli/Taskfile.yml run` from the repo root, or `task run` inside `app/codegeist/cli/`.
 6. Run `java -jar app/codegeist/cli/target/codegeist.jar --version` to verify the current command path.
