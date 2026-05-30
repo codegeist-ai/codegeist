@@ -114,6 +114,11 @@
   `scripts/tests/`; `T005_02` delivered the GitHub-hosted release workflow, passing
   branch validation, passing pre-tag validation on `main`, and published `v0.1.0`
   release assets with downloaded checksum verification.
+- `docs/tasks/T006_build-provider-configuration-feature/` is open as the provider
+  configuration feature epic. Start with `T006_01` to design the `codegeist.yml`
+  schema, then `T006_02` for the Spring AI provider matrix, `T006_03` for
+  credential/account strategy, `T006_04` for config loading, `T006_05` for local
+  Ollama verification, and `T006_06` for the provider connection smoke harness.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -121,6 +126,10 @@
 ## Durable Decisions
 
 - Future implementation should be iterative, Spring-first, and test-driven.
+- `codegeist.yml` provider configuration should use `kebab-case` field names such
+  as `small-model`, `enabled-providers`, `base-url`, and `api-key-env`, while
+  staying structurally close to OpenCode's provider/model config where that model
+  fits Codegeist.
 - Do not create placeholder classes, ids, ports, enums, records, package layers,
   validation hierarchies, or empty package directories before a focused test or
   workflow needs them.
@@ -216,6 +225,6 @@
   implemented packages, classes, configuration, runtime flows, or tests change.
 - For the next release, run `/codegeist-release --source <release-branch> --rc 1`;
   do not enter the version manually unless checking an inferred-version conflict.
-- Create the next small implementation task for the first tested Spring workflow;
-  `T003` already points future work toward an iterative Spring-first slice instead
-  of broad placeholder contracts.
+- Work the provider feature from `T006_01` first. Do not start provider account
+  setup or remote connection tests until the `codegeist.yml` schema, Spring AI
+  provider matrix, and credential/account strategy are defined.

@@ -159,3 +159,15 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   planned narrow test commands, report timing, and update
   `docs/developer/architecture/architecture.md` when implemented packages, classes,
   configuration, or tests change.
+- For `T006_build-provider-configuration-feature`, work provider support in order:
+  first design the `codegeist.yml` schema with `kebab-case` keys such as
+  `small-model`, `enabled-providers`, `base-url`, and `api-key-env`; then create
+  the Spring AI provider matrix; then define credential and account strategy;
+  only then implement config loading, local Ollama verification, and remote
+  connection smokes. Do not create provider accounts, use paid provider resources,
+  or run remote provider tests before the schema, matrix, and credential strategy
+  tasks are complete.
+- For Codegeist provider config, follow OpenCode's useful shape only as behavior
+  evidence: root `model` uses `provider-id/model-id`, providers live under the
+  `provider` map, provider and model options remain nested, and credentials are
+  referenced rather than stored in committed project config.

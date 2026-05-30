@@ -86,5 +86,6 @@ configuration, or tests change.
 - `T003_03` is finalized as the testing and development strategy.
 - `T003_04` is finalized as the packaging, release, platform, and binary-smoke
   strategy.
-- The next recommended step is to create a fresh, small implementation epic or
-  task for the first tested Spring workflow.
+- `T006_build-provider-configuration-feature` is now the fresh provider feature
+  epic. Start with its schema, matrix, and credential-strategy child tasks before
+  implementing provider calls.
