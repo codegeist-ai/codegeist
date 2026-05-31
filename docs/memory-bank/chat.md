@@ -165,13 +165,17 @@
 - `docs/tasks/T006_build-provider-configuration-feature/` is open as the provider
   configuration feature epic. `T006_01` is solved with the minimal provider config
   model and dual loading approach: Spring `@ConfigurationProperties` for
-  application config plus Jackson YAML for explicit `codegeist.yml` paths. `T006_04`
-  has a partial implementation with `CodegeistConfigService` and explicit path
-  loading under `ai.codegeist.app.config`, plus packaged native `--show-config`
-  smoke coverage for the current empty default output. Next are `T006_02` for the
-  Spring AI provider matrix, `T006_03` for credential/account strategy, remaining
-  `T006_04` merge/home-path work, `T006_05` for local Ollama verification, and
-  `T006_06` for the provider connection smoke harness.
+  application config plus Jackson YAML for explicit `codegeist.yml` paths.
+  `T006_02` is solved with a Spring AI `2.0.0-M6` provider matrix, source evidence,
+  candidate `codegeist.yml` and future `ProviderConfig` fields, Ollama as the first
+  local provider candidate, and a no-cost integration-test posture that keeps
+  hosted provider calls behind explicit `remote-free` selection plus local no-cost
+  confirmation. `T006_04` has a partial implementation with
+  `CodegeistConfigService` and explicit path loading under
+  `ai.codegeist.app.config`, plus packaged native `--show-config` smoke coverage
+  for the current empty default output. Next are `T006_03` for credential/account
+  strategy, remaining `T006_04` merge/home-path work, `T006_05` for local Ollama
+  verification, and `T006_06` for the provider connection smoke harness.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.

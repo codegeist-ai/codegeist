@@ -21,6 +21,9 @@ every developer to own every provider account.
 - Define how provider test status should be recorded in task files and smoke
   output.
 - Define how OAuth-style providers differ from simple API-key providers.
+- Define a no-cost integration-test posture: account credentials may be present,
+  but remote chat calls still need an explicit no-cost confirmation before they
+  run.
 
 ## Credential Reference Candidates
 
@@ -61,6 +64,9 @@ provider:
 - Do not design a full encrypted credential vault before a focused runtime task
   needs it.
 - Do not require remote credentials for the ordinary Maven test suite.
+- Do not treat an available API key as permission to spend credits or money.
+- Do not run a remote chat completion in default integration tests unless the test
+  mode and provider config both declare that the check is intended to be no-cost.
 
 ## Acceptance Criteria
 
@@ -75,6 +81,9 @@ provider:
 - The strategy identifies which provider accounts should be created first after the
   local Ollama path is working.
 - The strategy is compatible with `T006_06` connection smoke output.
+- The strategy defines how `config`, `local`, and `remote-free` integration-test
+  levels are selected and how potentially billable providers are reported as
+  `blocked` or `skipped` instead of being called accidentally.
 
 ## Verification
 
@@ -91,3 +100,7 @@ git --no-pager diff --check
   account-creation batch.
 - If a provider needs paid resources, require an explicit user decision before
   creating or using them.
+- Prefer a two-gate rule for remote provider tests: credentials must resolve, and
+  the developer must explicitly opt into a no-cost remote test mode for the
+  selected provider. Missing either gate should skip or block instead of calling
+  the provider.

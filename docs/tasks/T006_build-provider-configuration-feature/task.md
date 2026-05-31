@@ -114,6 +114,9 @@ Runner, Ollama, and supported OpenAI-compatible local endpoints.
   work starts.
 - Remote provider smokes are opt-in and report `skipped` with a concrete reason
   when required credentials or account setup are absent.
+- Integration tests should cover as many provider definitions as possible without
+  causing charges: default tests validate config and local providers only, while
+  hosted provider calls require an explicit no-cost remote test selection.
 - OpenCode provider/config behavior is used as source evidence but translated into
   Codegeist's Java/Spring design.
 - `docs/developer/architecture/architecture.md` is updated in the same task when

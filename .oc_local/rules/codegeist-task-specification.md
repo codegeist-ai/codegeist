@@ -168,6 +168,13 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   connection smokes. Do not create provider accounts, use paid provider resources,
   or run remote provider tests before the schema, matrix, and credential strategy
   tasks are complete.
+- For Codegeist provider integration tests, cover as many configured providers as
+  possible without causing charges: default tests may validate config, credential
+  references, and client wiring without hosted provider calls; local tests may run
+  real local providers such as Ollama; hosted provider calls require an explicit
+  `remote-free` selection plus local confirmation that the selected account, key,
+  and model path will not bill. API-key presence alone is never permission to call
+  a remote provider.
 - For Codegeist provider config, follow OpenCode's useful shape only as behavior
   evidence: root `model` uses `provider-id/model-id`, providers live under the
   `provider` map, provider and model options remain nested, and credentials are
