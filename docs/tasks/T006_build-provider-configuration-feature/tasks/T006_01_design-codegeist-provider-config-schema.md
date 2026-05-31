@@ -1,120 +1,167 @@
-# T006_01 Design Codegeist Provider Config Schema
+# T006_01 Specify Codegeist Provider Config Loading
 
-Status: open
+Status: solved
 
 Parent: `../task.md`
 
 ## Goal
 
-Design the initial `codegeist.yml` provider configuration schema for Codegeist.
+Specify the smallest useful Codegeist provider configuration model and loading
+direction.
 
-The schema must be structurally inspired by OpenCode's `opencode.json` provider
-model while using YAML-friendly `kebab-case` keys and Spring/Java implementation
-constraints.
+The config model should stay a plain Codegeist-owned POJO that can be used in two
+ways:
 
-## Scope
+- Spring can bind it from `application.yaml` with `@ConfigurationProperties`.
+- Jackson YAML can load the same model directly from a `codegeist.yml` file.
 
-- Define root-level model selection keys.
-- Define provider ids and provider entries under `provider`.
-- Define provider-specific `options` and model-specific `options`.
-- Define model metadata fields that Codegeist needs before a provider call.
-- Define credential reference fields without storing secret values.
-- Define `enabled-providers` and `disabled-providers` behavior.
-- Define local OpenAI-compatible provider examples.
-- Define Spring AI mapping rules where a Codegeist provider maps to one Spring AI
-  starter and property namespace.
-- Document which parts are schema-only and which are deferred runtime behavior.
+## Decisions
 
-## Required OpenCode Checks
+- Define `CodegeistApplication.APP_NAME = "codegeist"` as the shared application
+  name and configuration prefix constant.
+- Use `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)` on
+  the config model so Spring can bind the same POJO from application configuration.
+  `CodegeistConfig.CONFIGURATION_PREFIX` should be defined from
+  `CodegeistApplication.APP_NAME`.
+- Use Jackson annotations on the same POJO so direct YAML loading remains possible.
+- Use Jackson YAML via `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml`
+  for direct file loading.
+- Keep Lombok focused: `@Getter` and `@Setter` are acceptable for the config POJOs.
+- Keep the first config model intentionally tiny: top-level `provider` map only.
+- Keep each provider entry limited to `name` for now.
+- Do not add `model`, `small-model`, `enabled-providers`, `disabled-providers`,
+  `type`, `credentials`, `options`, `models`, capabilities, or limits yet.
 
-Use `/ask-project opencode "How does OpenCode model provider and model config in opencode.json, including credentials, custom OpenAI-compatible providers, and enabled or disabled providers?"` when the analyzed project artifacts are available.
+## Java Shape
 
-If `/ask-project` cannot run because Repomix or Graphify artifacts are missing or
-stale, inspect these source files directly and record that limitation in the task
-result:
+The initial model should be equivalent to this shape:
 
-- `docs/third-party/opencode/source/packages/opencode/src/config/config.ts`
-- `docs/third-party/opencode/source/packages/opencode/src/config/provider.ts`
-- `docs/third-party/opencode/source/packages/opencode/src/provider/provider.ts`
-- `docs/third-party/opencode/source/packages/opencode/src/auth/index.ts`
-- `docs/third-party/opencode/source/packages/web/src/content/docs/config.mdx`
-- `docs/third-party/opencode/source/packages/web/src/content/docs/providers.mdx`
-- `docs/third-party/opencode/source/packages/web/src/content/docs/models.mdx`
-
-## Proposed Shape To Refine
-
-```yaml
-model: ollama/llama3.2:1b
-small-model: ollama/llama3.2:1b
-
-enabled-providers:
-  - ollama
-
-provider:
-  ollama:
-    type: ollama
-    options:
-      base-url: http://localhost:11434
-    models:
-      llama3.2:1b:
-        name: Llama 3.2 1B
-        capabilities:
-          streaming: true
-          tool-calling: false
-          structured-output: false
-          local: true
-          network-required: false
-        options:
-          temperature: 0
+```java
+@Getter
+@Setter
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)
+public class CodegeistConfig {
+    private Map<String, ProviderConfig> provider = new LinkedHashMap<>();
+}
 ```
 
-Credential references should use explicit source fields instead of raw secrets:
+Use `CodegeistConfig` for the model name. The merged config is exposed as the
+primary `CodegeistConfig` bean, so normal unqualified injection receives the
+merged config.
 
-```yaml
-provider:
-  openai:
-    type: openai
-    credentials:
-      api-key-env: OPENAI_API_KEY
-    models:
-      gpt-4o-mini:
-        options:
-          temperature: 0
+```java
+@Getter
+@Setter
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ProviderConfig {
+    private String name;
+}
 ```
+
+`CodegeistConfigService` should own access to this config in
+`ai.codegeist.app.config`. It may receive the Spring-bound config properties from
+`application.yaml` and should expose a direct `loadConfig(String configPath)`
+method for loading a specific `codegeist.yml` path with Jackson YAML.
+
+## File Loading Direction
+
+- The default `codegeist.yml` location is the user's home config path:
+  `~/.config/codegeist/codegeist.yml`.
+- `codegeist.yml` is a dedicated file and should map directly to the config
+  properties POJO. It does not need a `codegeist` wrapper.
+- `application.yaml` may still configure the same POJO through the Spring prefix
+  from `CodegeistApplication.APP_NAME`.
+- Do not use Spring `EnvironmentPostProcessor`, `spring.factories`, or
+  `application.yaml` import tricks to load `codegeist.yml`.
+- Do not use Spring `Binder` to load `codegeist.yml`; direct file loading belongs
+  to Jackson YAML.
+
+## Merge Direction
+
+Merge remains intentionally small while the model contains only providers:
+
+- Scalars: later non-null values replace earlier values.
+- Provider map: merge by provider id.
+- Provider `name`: later non-null value replaces earlier value.
+
+Potential source order, from lowest to highest precedence:
+
+1. Spring-bound defaults from `application.yaml`.
+2. Home config file at `~/.config/codegeist/codegeist.yml`.
+3. An explicit startup config path when one is provided later.
+
+Do not implement broader inheritance or delete semantics in the first loader.
+
+## Validation Direction
+
+With the current minimal model, validation should stay annotation-first and small:
+
+- Add Bean Validation through `spring-boot-starter-validation`.
+- Put constraints on the config POJOs instead of starting with a broad custom
+  validation framework.
+- Validate provider map keys with `Map<@NotBlank String, @Valid ProviderConfig>`.
+- Keep provider `name` optional, but reject it with a Bean Validation annotation
+  when it is present and blank.
+- Run `jakarta.validation.Validator` after direct Jackson YAML loads because
+  Jackson does not evaluate Bean Validation annotations by itself.
+- Let Spring validate the Spring-bound `@ConfigurationProperties` model through
+  `@Validated`.
+- Do not validate model references because the model has no model fields yet.
+- Keep unknown YAML keys ignored for now; strict unknown-key handling is not part
+  of the annotation-first validation slice.
 
 ## Non-Goals
 
-- Do not implement Java config loading in this child task.
+- Do not implement provider calls.
 - Do not add Spring AI provider starters.
-- Do not create provider accounts or run remote calls.
-- Do not define final storage for encrypted or OAuth credentials.
-- Do not create placeholder Java types only to mirror the schema.
+- Do not add credential fields or account handling.
+- Do not add model selection fields.
+- Do not add provider options or typed provider configuration.
+- Do not implement inheritance or `extends`/`imports` behavior.
+- Do not introduce broad runtime provider abstractions.
 
 ## Acceptance Criteria
 
-- The task result documents the `codegeist.yml` schema in `kebab-case`.
-- The schema includes root model selection, provider entries, provider options,
-  model entries, model options, capabilities, and credential references.
-- The schema states how `provider-id/model-id` is parsed, including model ids that
-  may contain additional `/` characters.
-- The schema defines precedence and merge expectations only as far as needed for
-  the first implementation slice.
-- The schema distinguishes committed project config from local user secrets.
-- The schema identifies which OpenCode ideas were adopted, translated, or rejected.
-- A later implementer can write focused `codegeist.yml` binding tests from the
-  documented examples.
+- The config model has only a provider map and provider names.
+- `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)` is used
+  for Spring application configuration, with the prefix constant backed by
+  `CodegeistApplication.APP_NAME`.
+- Jackson YAML can map a direct `codegeist.yml` file into the same POJO.
+- `CodegeistConfigService` can receive the Spring-bound config and can load an
+  explicit YAML path through `loadConfig(String configPath)`.
+- Tests cover Spring-bound config service access and explicit YAML path loading.
+- No Spring environment post-processor or `spring.factories` loader is introduced.
 
 ## Verification
 
-Documentation-only verification:
+Specification-only verification for this task:
 
 ```bash
 git --no-pager diff --check
 ```
 
-## Planning Notes
+## Solve Result
 
-- Prefer a compact developer specification under `docs/developer/specification/`
-  only if the schema is too large to keep in the task file.
-- Keep the schema compatible with Spring Boot binding and clear Java property names.
-- Do not add broad schema validation hierarchies until `T006_04` needs them.
+- The provider configuration specification is complete for the current minimal
+  slice.
+- The accepted model is `ai.codegeist.app.config.CodegeistConfig` with a
+  top-level `provider` map whose `ProviderConfig` entries currently contain only
+  `name`.
+- The primary merged config bean is selected by unqualified `CodegeistConfig`
+  injection through Spring `@Primary`.
+- `CodegeistConfigService` owns access to the Spring-bound config properties and
+  direct explicit-path YAML loading.
+- The current model types expose non-mutating `merge(...)` methods that implement
+  the specified provider-id and non-null scalar precedence. Runtime source-order
+  orchestration is still deferred to `T006_04` follow-up work.
+- Runtime home-path loading, service-level source merge orchestration, provider
+  options, credentials, model selection, and provider calls remain in later T006
+  child tasks. Annotation-based validation belongs to `T006_04` with the loader
+  implementation.
+
+## Verification Result
+
+- `git --no-pager diff --check` passed.

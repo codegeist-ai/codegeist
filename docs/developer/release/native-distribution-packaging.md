@@ -85,7 +85,7 @@ flowchart TD
     Linux[codegeist-linux-x64.tar.gz]
     Windows[codegeist-windows-x64.zip]
     Smoke[Unpack into clean temp directory]
-    Run[Run packaged executable --version]
+    Run[Run packaged executable --version and --show-config]
     Release[Upload archive and checksum]
 
     Build --> Output
@@ -247,11 +247,13 @@ Linux smoke should unpack the tarball into a clean temporary directory and run:
 
 ```bash
 ./codegeist --version
+./codegeist --show-config
 ```
 
 The smoke must execute the packaged binary from the extracted directory or with a
 loader path that is equivalent to the extracted directory. The simpler and preferred
-contract is: run from inside the extracted package directory.
+contract is: run from inside the extracted package directory. With the current
+empty default config, `--show-config` must print exactly `provider: {}`.
 
 ## Windows Package Shape
 
@@ -271,10 +273,12 @@ Windows smoke should unzip the package into a clean temporary directory and run:
 
 ```powershell
 .\codegeist.exe --version
+.\codegeist.exe --show-config
 ```
 
 The executable and DLLs must remain in the same directory. Do not document or test
-copying only `codegeist.exe` as a supported runtime layout.
+copying only `codegeist.exe` as a supported runtime layout. With the current empty
+default config, `--show-config` must print exactly `provider: {}`.
 
 ## User-Facing Guidance
 
@@ -302,6 +306,8 @@ Required package smoke for each native platform:
 - Extract the archive into a fresh temporary directory.
 - Run the executable from the extracted package directory.
 - Assert exact `--version` output and exit code `0`.
+- Assert exact `--show-config` output and exit code `0` for the current default
+  direct YAML shape, `provider: {}`.
 - Assert a non-empty log file is written when `LOG_FILE` is set.
 - Verify the archive checksum before publication.
 

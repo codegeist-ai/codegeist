@@ -4,6 +4,7 @@
     ".oc_local/rules/architecture-doc.md",
     ".oc_local/rules/codegeist-release.md",
     ".oc_local/rules/codegeist-task-specification.md",
+    ".oc_local/rules/java-coding.md",
     ".oc_local/rules/third-party-analysis-workflow.md"
   ]
 }

@@ -56,7 +56,7 @@ files they changed.
 | JVM package | `task build` from `app/codegeist/cli` | Executable Spring Boot jar is created as `target/codegeist.jar`. | Release candidates and build-layout changes. |
 | JVM startup smoke | `java -jar target/codegeist.jar --version` from `app/codegeist/cli` | Packaged jar can execute the default noninteractive command path. | First release packaging task and later CLI command packaging work. |
 | Native compile | `task native` from `app/codegeist/cli` | GraalVM native-image can compile the current dependency graph. | Native posture tasks when the toolchain is available and time budget allows. |
-| Native archive startup smoke | Package the native executable under `target/dist/`, unpack the archive into a fresh temp directory, then run packaged `./codegeist --version`. | The release-shaped native package starts with the same noninteractive baseline. | Release candidates after a successful native compile. |
+| Native archive startup smoke | Package the native executable under `target/dist/`, unpack the archive into a fresh temp directory, then run packaged `./codegeist --version` and `./codegeist --show-config`. | The release-shaped native package starts with the same noninteractive baseline and keeps config output clean. | Release candidates after a successful native compile. |
 | Diff hygiene | `git --no-pager diff --check` from the repository root | Markdown and source diffs have no whitespace errors. | Every task. |
 
 The current documentation-only task only requires `git --no-pager diff --check`.

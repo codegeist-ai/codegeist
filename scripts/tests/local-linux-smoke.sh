@@ -4,8 +4,8 @@
 # Why this exists:
 # - Gives developers and release operators one local Linux command that runs the
 #   Maven tests, builds the executable jar, verifies `--version`, and optionally
-#   packages and verifies the GraalVM native archive when `native-image` is
-#   available.
+#   packages and verifies GraalVM native archive command output when
+#   `native-image` is available.
 # - Emits explicit passed/skipped/failed status lines so the final smoke suite can
 #   include Linux without hiding missing native prerequisites.
 #
@@ -105,8 +105,8 @@ if command -v native-image >/dev/null 2>&1; then
   mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile \
     || fail_smoke 'Native compile failed'
 
-  printf 'Command: package target/dist/codegeist-linux-x64.tar.gz and run extracted ./codegeist --version\n'
-  run-native-smoke-tests || fail_smoke 'Native archive version smoke failed'
+  printf 'Command: package target/dist/codegeist-linux-x64.tar.gz and run extracted ./codegeist --version plus --show-config\n'
+  run-native-smoke-tests || fail_smoke 'Native archive smoke failed'
   native_status='passed'
   native_reason='none'
 elif [ "$require_native" = '1' ]; then

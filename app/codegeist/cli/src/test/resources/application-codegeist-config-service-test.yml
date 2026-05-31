@@ -1,0 +1,4 @@
+codegeist:
+  provider:
+    ollama:
+      name: Ollama

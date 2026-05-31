@@ -5,8 +5,8 @@
 # - Keeps native archive smoke-test assertions reusable from Taskfile.yml, local
 #   Linux smoke runs, and the final local smoke suite.
 # - Packages the Linux native executable with its sidecar libraries, unpacks the
-#   archive into a fresh temp directory, and proves `./codegeist --version` from
-#   the package prints only the build version.
+#   archive into a fresh temp directory, and proves package command output stays
+#   clean for `./codegeist --version` and `./codegeist --show-config`.
 #
 # Inputs:
 # - `app/codegeist/cli/target/codegeist`, built by the native Maven profile, plus
@@ -19,7 +19,7 @@
 # Side effects:
 # - Writes `app/codegeist/cli/target/dist/codegeist-linux-x64.tar.gz`.
 # - Unpacks the archive into a temporary directory and executes the packaged
-#   `./codegeist --version`.
+#   `./codegeist --version` and `./codegeist --show-config`.
 #
 # Related files:
 # - app/codegeist/cli/Taskfile.yml
@@ -87,6 +87,7 @@ run-native-smoke-tests() {
   local temp_dir
   local package_dir
   local expected
+  local expected_config
   local actual
   local timeout_budget
 
@@ -98,6 +99,8 @@ run-native-smoke-tests() {
   cd "$cli_dir"
 
   expected="$(codegeist_read_build_version target/classes/META-INF/build-info.properties)"
+  # Keep aligned with CodegeistConfigService and docs/developer/architecture/provider-configuration.md.
+  expected_config='provider: {}'
   package_name="codegeist-linux-x64"
 
   rm -rf "$smoke_dir"
@@ -129,6 +132,18 @@ run-native-smoke-tests() {
   if [ "$actual" != "$expected" ]; then
     rm -rf "$temp_dir"
     printf 'Expected version %s, got %s\n' "$expected" "$actual" >&2
+    return 1
+  fi
+
+  if ! actual="$(cd "$package_dir" && LOG_FILE="$smoke_dir/codegeist.log" timeout "$timeout_budget" ./codegeist --show-config 2>&1)"; then
+    rm -rf "$temp_dir"
+    printf 'Native show-config smoke failed or timed out after %s: %s\n' "$timeout_budget" "$actual" >&2
+    return 1
+  fi
+
+  if [ "$actual" != "$expected_config" ]; then
+    rm -rf "$temp_dir"
+    printf 'Expected show-config output %s, got %s\n' "$expected_config" "$actual" >&2
     return 1
   fi
 

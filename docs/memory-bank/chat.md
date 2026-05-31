@@ -26,12 +26,46 @@
 - `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
   through `CommandContext.outputWriter()` and prints only the Spring Boot build
   version, currently `0.1.0-SNAPSHOT`.
+- `app/codegeist/cli` implements `--show-config` as a Spring Shell command in
+  `ai.codegeist.app.config.CodegeistConfigService`. The service resolves the
+  current primary merged `CodegeistConfig` and prints only direct `codegeist.yml`
+  YAML with no `codegeist:` wrapper and no YAML document marker. Until real source
+  merge is implemented, this is the Spring-bound config.
 - `application.yaml` sets `spring.shell.interactive.enabled=false` so Spring
   Shell's noninteractive runner handles `--version` by default without a custom
   runner class. Interactive shell behavior is deferred.
+- `CodegeistApplication.APP_NAME` is the shared application name and Spring config
+  prefix. Provider configuration code lives under `ai.codegeist.app.config`.
+  `CodegeistConfig` is the current minimal config model: a provider map
+  whose `ProviderConfig` values contain only `name`. It is both Spring-bound with
+  `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)`, where
+  `CONFIGURATION_PREFIX` is defined from `CodegeistApplication.APP_NAME`, and
+  annotated for Jackson YAML mapping. Config validation is annotation-first through
+  Bean Validation: provider ids must be non-blank, provider `name` is optional but
+  must be non-blank when present, and direct Jackson YAML loads call
+  `jakarta.validation.Validator` explicitly.
+- `CodegeistConfigService` receives the Spring-bound `CodegeistConfig` through
+  field `@Autowired` plus `@Qualifier(CodegeistConfig.SPRING_BOUND_CONFIG_BEAN)`,
+  exposes `mergedCodegeistConfig` as a primary `@Bean` that currently returns that
+  config, and can load an explicit YAML path with `loadConfig(String configPath)`
+  using Jackson YAML. Normal app code injects unqualified `CodegeistConfig` to get
+  the primary merged config. Invalid direct YAML loads throw
+  `CodegeistConfigValidationException`. `toYaml(...)` emits direct `codegeist.yml`
+  shape and keeps empty configs visible as `provider: {}`.
+  `CodegeistConfigServiceTest` owns the no-wrapper/no-document-marker YAML shape
+  assertions, while `CodegeistConfigCommandTest` focuses on command wiring,
+  parseable stdout, expected config content, and empty stderr.
+  `CodegeistConfig.merge(...)` and `ProviderConfig.merge(...)` implement
+  non-mutating model-level merge behavior for later source-order work: providers
+  merge by id and later non-null provider fields replace earlier values. Home-path
+  discovery, service-level merge orchestration beyond returning the Spring-bound
+  config, inheritance, provider options, credentials, and model selection are not
+  implemented yet.
 - `app/codegeist/cli/src/main/resources/logback.xml` routes logs only to
   `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
-  output.
+  output. Current Spring `@Service` and `@Component` classes use Lombok `@Slf4j`
+  and emit concise debug logs with `log.debug(...)`; enable them with
+  `logging.level.root=DEBUG` or `LOGGING_LEVEL_ROOT=DEBUG`.
 - `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`,
   `native-smoke`, `local-linux-smoke`, `qemu-windows-smoke`,
   `final-smoke-suite`, and `ollama-start`. Local smoke scripts live under
@@ -43,7 +77,8 @@
   `scripts/tests/native-smoke.sh`; each native run recreates
   `target/smoke-test`, packages `target/dist/codegeist-linux-x64.tar.gz`,
   unpacks it into a fresh temp directory, runs packaged `./codegeist --version`,
-  and writes `target/smoke-test/codegeist.log`.
+  asserts packaged `./codegeist --show-config` prints exactly `provider: {}`, and
+  writes `target/smoke-test/codegeist.log`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
@@ -56,6 +91,10 @@
   owns version inference, candidate creation, validation, fast-forward-only `main`
   promotion, final tag publication, downloaded checksum verification, and the
   `latest` GitHub Release mirror.
+- The release workflow's native matrix packages Linux, Windows, and macOS native
+  archives, unpacks each archive into a fresh temp directory, and smoke-tests both
+  `--version` and the default `--show-config` output before upload. The JVM jar
+  smoke remains `--version` only.
 - Codegeist `v0.1.0` is published on GitHub Releases:
   `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0`. Pre-tag
   validation run `26537663964`, tag run `26538176834`, and downloaded asset
@@ -94,6 +133,16 @@
 - `docs/developer/architecture/architecture.md` is the current-state architecture
   map. It must describe only implemented repository state and explicitly mark
   not-yet-implemented boundaries.
+- `docs/developer/architecture/source-code-documentation.md` is the source-code
+  documentation strategy. It asks future tasks to add focused current-state docs
+  for non-trivial Spring/framework interactions, solved problems, runtime flows,
+  validation behavior, tests, sharp edges, UML-style Mermaid diagrams, and
+  editable Excalidraw sketches.
+- `docs/developer/architecture/provider-configuration.md` is the focused current
+  source-code doc for the T006 config slice. It explains the Spring component
+  model, direct Jackson YAML loading, Bean Validation flow, tests, sharp edges,
+  and includes an editable Excalidraw overview under
+  `docs/developer/architecture/diagrams/provider-config-spring-flow.excalidraw.svg`.
 - `docs/developer/specification/` now contains only the surviving high-level
   specifications and guidance:
   - `codegeist-opencode-parity.md`
@@ -114,10 +163,15 @@
   branch validation, passing pre-tag validation on `main`, and published `v0.1.0`
   release assets with downloaded checksum verification.
 - `docs/tasks/T006_build-provider-configuration-feature/` is open as the provider
-  configuration feature epic. Start with `T006_01` to design the `codegeist.yml`
-  schema, then `T006_02` for the Spring AI provider matrix, `T006_03` for
-  credential/account strategy, `T006_04` for config loading, `T006_05` for local
-  Ollama verification, and `T006_06` for the provider connection smoke harness.
+  configuration feature epic. `T006_01` is solved with the minimal provider config
+  model and dual loading approach: Spring `@ConfigurationProperties` for
+  application config plus Jackson YAML for explicit `codegeist.yml` paths. `T006_04`
+  has a partial implementation with `CodegeistConfigService` and explicit path
+  loading under `ai.codegeist.app.config`, plus packaged native `--show-config`
+  smoke coverage for the current empty default output. Next are `T006_02` for the
+  Spring AI provider matrix, `T006_03` for credential/account strategy, remaining
+  `T006_04` merge/home-path work, `T006_05` for local Ollama verification, and
+  `T006_06` for the provider connection smoke harness.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -125,10 +179,30 @@
 ## Durable Decisions
 
 - Future implementation should be iterative, Spring-first, and test-driven.
-- `codegeist.yml` provider configuration should use `kebab-case` field names such
-  as `small-model`, `enabled-providers`, `base-url`, and `api-key-env`, while
-  staying structurally close to OpenCode's provider/model config where that model
-  fits Codegeist.
+- Source comments should stay sparse and useful for coding agents: explain why,
+  non-obvious framework behavior, cross-file contracts, or sharp edges, and include
+  related file/doc references when they help recover context quickly.
+- `.oc_local/rules/java-coding.md` records the Codegeist Java coding convention:
+  prefer annotation-based Spring wiring, use field `@Autowired` for Spring-managed
+  dependencies instead of constructor injection, use Lombok `@Slf4j` on Spring
+  `@Service` and `@Component` classes, and use focused Lombok annotations such as
+  `@Getter` and `@Setter` to reduce boilerplate. Prefer named
+  `static final String` constants for contract-bearing strings; shared app-wide
+  values belong in `CodegeistApplication`, for example `APP_NAME`. Tests should
+  reuse owning constants for class-owned error messages and prefixes, such as
+  `CodegeistConfigService.VALIDATION_ERROR_PREFIX`, instead of duplicating string
+  fragments.
+- Codegeist provider configuration currently starts with only `provider` entries
+  and provider `name`. The config properties POJO should keep
+  `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)` so
+  `application.yaml` can configure it, with the prefix constant backed by
+  `CodegeistApplication.APP_NAME`, while direct `codegeist.yml` loading uses
+  Jackson YAML against the same POJO.
+- Use Jackson YAML (`jackson-dataformat-yaml`) as the preferred direct
+  YAML-to-POJO mapping framework for `codegeist.yml`. Keep model fields,
+  enabled/disabled provider lists, provider options, credentials, capabilities,
+  inheritance, merge beyond provider names, and provider calls deferred to later
+  T006 child tasks.
 - Do not create placeholder classes, ids, ports, enums, records, package layers,
   validation hierarchies, or empty package directories before a focused test or
   workflow needs them.

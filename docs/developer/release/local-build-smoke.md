@@ -7,8 +7,9 @@ executable before GitHub release automation runs.
 
 This workflow covers the implemented Spring Boot CLI module under
 `app/codegeist/cli`. It proves the existing `--version` command on generated jar
-and native artifacts. It does not create release uploads, installers, signing,
-notarization, or GitHub Actions release jobs.
+artifacts and proves both `--version` and the default `--show-config` output on
+packaged native artifacts. It does not create release uploads, installers,
+signing, notarization, or GitHub Actions release jobs.
 
 All local test and smoke scripts live under `scripts/tests/`.
 
@@ -24,12 +25,12 @@ sidecar libraries next to the GraalVM executable.
 
 | Entrypoint | Purpose |
 | --- | --- |
-| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds the jar, verifies jar `--version`, then packages, unpacks, and smokes the Linux native archive when `native-image` is available. |
+| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds the jar, verifies jar `--version`, then packages, unpacks, and smokes Linux native archive `--version` and `--show-config` when `native-image` is available. |
 | `scripts/tests/qemu-windows-vm.sh` | Creates or starts the local Windows QEMU VM, syncs the repo subset, and runs the Windows smoke helper. |
 | `scripts/tests/qemu-windows-smoke.sh` | Lower-level SSH wrapper for an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Runs inside the Windows VM to build and smoke the jar, then optionally package, unpack, and smoke the Windows native zip. |
+| `scripts/tests/windows-smoke.ps1` | Runs inside the Windows VM to build and smoke the jar, then optionally package, unpack, and smoke Windows native zip `--version` and `--show-config`. |
 | `scripts/tests/final-smoke-suite.sh` | Runs Linux and Windows smoke entrypoints as the final local suite. |
-| `scripts/tests/native-smoke.sh` | Reusable Linux native archive smoke helper used by Taskfile and Linux smoke runs. |
+| `scripts/tests/native-smoke.sh` | Reusable Linux native archive `--version` and `--show-config` smoke helper used by Taskfile and Linux smoke runs. |
 
 The same checks are exposed through `app/codegeist/cli/Taskfile.yml`:
 
@@ -59,14 +60,15 @@ The Linux smoke command runs:
 - `mvn --batch-mode --no-transfer-progress -DskipTests clean package`
 - `java -jar target/codegeist.jar --version`
 - native compile, `target/dist/codegeist-linux-x64.tar.gz` packaging,
-  archive extraction into a fresh temp directory, and `./codegeist --version`
-  from the extracted package when `native-image` is on `PATH`
+  archive extraction into a fresh temp directory, `./codegeist --version`, and
+  `./codegeist --show-config` from the extracted package when `native-image` is
+  on `PATH`
 
 If `native-image` is missing, the native subcheck is reported as `skipped` unless
 `CODEGEIST_SMOKE_REQUIRE_NATIVE=1` is set.
 
-Linux version smokes are bounded by `CODEGEIST_JAR_SMOKE_TIMEOUT`, default `15s`,
-and `CODEGEIST_NATIVE_SMOKE_TIMEOUT`, default `5s`.
+Linux version and config smokes are bounded by `CODEGEIST_JAR_SMOKE_TIMEOUT`,
+default `15s`, and `CODEGEIST_NATIVE_SMOKE_TIMEOUT`, default `5s`.
 
 ## Windows QEMU Smoke
 

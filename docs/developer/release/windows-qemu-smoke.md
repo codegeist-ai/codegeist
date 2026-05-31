@@ -7,8 +7,9 @@ behavior on a real Windows operating system before GitHub release automation run
 
 This workflow covers the implemented Spring Boot CLI module under
 `app/codegeist/cli`. It proves the current `--version` command on Windows jar and
-GraalVM native executable artifacts. It does not publish releases, sign binaries,
-create installers, or replace GitHub-hosted Windows release builds.
+GraalVM native executable artifacts, and it proves the default native
+`--show-config` output. It does not publish releases, sign binaries, create
+installers, or replace GitHub-hosted Windows release builds.
 
 The workflow intentionally uses a real Windows VM over SSH. Local Wine or other
 compatibility-layer smoke checks are not part of the release-grade path.
@@ -54,6 +55,8 @@ The Windows smoke path validates these observable contracts inside Windows:
   with `codegeist.exe` and required DLLs.
 - The zip can be expanded into a fresh temp directory, and extracted
   `codegeist.exe --version` prints the build version only.
+- The extracted `codegeist.exe --show-config` prints only the current default
+  direct YAML shape, `provider: {}`.
 - Jar and native runs write non-empty smoke log files under `target/smoke-test/`.
 - The host receives an explicit `passed`, `skipped`, or `failed` platform status.
 
@@ -63,7 +66,7 @@ The Windows smoke path validates these observable contracts inside Windows:
 | --- | --- |
 | `scripts/tests/qemu-windows-vm.sh` | High-level VM lifecycle, ISO download, answer ISO generation, QEMU startup, repo sync, and smoke dispatch. |
 | `scripts/tests/qemu-windows-smoke.sh` | Lower-level SSH wrapper for an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Windows-side Maven, jar version, native build, native version, and status checks. |
+| `scripts/tests/windows-smoke.ps1` | Windows-side Maven, jar version, native build, native version, native config output, and status checks. |
 | `scripts/tests/windows-qemu/autounattend.xml` | Windows Setup answer-file template used during unattended installation. |
 | `scripts/tests/windows-qemu/setup.ps1` | First-logon guest provisioning for OpenSSH, authorized keys, GraalVM, Maven, MSVC, and readiness marker. |
 | `scripts/tests/final-smoke-suite.sh` | Final local Linux and Windows suite. Windows is required by default. |
@@ -155,6 +158,7 @@ sequenceDiagram
     PS->>Maven: activate MSVC and run native:compile
     PS->>PS: package target/dist zip
     PS->>PS: expand zip to temp and run codegeist.exe --version
+    PS->>PS: run extracted codegeist.exe --show-config
     PS-->>SSH: platform status
     SSH-->>VM: SSH exit and status
     VM-->>Host: passed, skipped, or failed
@@ -241,7 +245,7 @@ The answer file performs these installation steps:
 | `CODEGEIST_WINDOWS_NATIVE_MODE` | `required` through VM script, `auto` in low-level SSH wrapper | Controls native smoke behavior. |
 | `CODEGEIST_WINDOWS_MSVC_CMD` | autodetect | Optional MSVC environment activation command. |
 | `CODEGEIST_WINDOWS_JAR_TIMEOUT_SECONDS` | `15` | Timeout for jar `--version` execution. |
-| `CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS` | `5` | Timeout for native `--version` execution. |
+| `CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS` | `5` | Timeout for native `--version` and `--show-config` execution. |
 | `CODEGEIST_WINDOWS_ALLOW_SKIP` | `0` | Converts missing prerequisites to `skipped` only for developer runs. |
 | `CODEGEIST_SMOKE_STATUS_FILE` | unset | Optional key-value status output path. |
 
@@ -249,7 +253,7 @@ The answer file performs these installation steps:
 
 | Mode | Behavior |
 | --- | --- |
-| `required` | Fail when `native-image`, MSVC, native compile, or native `--version` is unavailable or fails. This is the default release-grade VM path. |
+| `required` | Fail when `native-image`, MSVC, native compile, native `--version`, or native `--show-config` is unavailable or fails. This is the default release-grade VM path. |
 | `auto` | Run native smoke when `native-image` and MSVC are available; otherwise report native as skipped after jar passes. |
 | `skip` | Skip native smoke and validate only Maven tests, jar build, and jar `--version`. |
 
@@ -274,7 +278,7 @@ The final local smoke suite sets `CODEGEIST_WINDOWS_NATIVE_MODE=required` unless
 | --- | --- |
 | `passed` | The requested platform smoke completed successfully. |
 | `skipped` | A prerequisite was absent and skip mode was explicitly enabled. This is not release-grade validation. |
-| `failed` | A required prerequisite, build step, version smoke, readiness gate, or status check failed. |
+| `failed` | A required prerequisite, build step, command smoke, readiness gate, or status check failed. |
 
 The final suite treats `skipped` as failure unless it is run with
 `--allow-skips`. Normal release-readiness validation must use the default strict
@@ -296,8 +300,10 @@ Important files include:
 - Native support DLLs in the same `target` directory, such as `awt.dll`, `java.dll`, and `jvm.dll`.
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-jar.log`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native.log`
+- `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native-show-config.log`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-jar.out`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native.out`
+- `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native-show-config.out`
 
 The Windows zip is the release-shaped native smoke artifact. If you need to copy
 it to the host for inspection, start the VM and use `scp`:
@@ -361,7 +367,7 @@ If Windows native smoke fails because MSVC is missing, confirm that
 checks standard Visual Studio 2022 Program Files paths and accepts an explicit
 `CODEGEIST_WINDOWS_MSVC_CMD` override.
 
-If jar or native version smoke times out, increase the focused timeout before
+If jar or native command smoke times out, increase the focused timeout before
 rerunning:
 
 ```bash

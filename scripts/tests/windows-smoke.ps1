@@ -13,7 +13,7 @@
 # - MsvcCommand: optional command that activates MSVC Build Tools before native
 #   Maven compile. If omitted, the script uses the active shell environment when
 #   cl.exe is already available, then tries common Visual Studio Build Tools paths.
-# - JarTimeoutSeconds and NativeTimeoutSeconds bound version smoke execution.
+# - JarTimeoutSeconds and NativeTimeoutSeconds bound command smoke execution.
 #
 # Side effects:
 # - Rebuilds app/codegeist/cli/target/codegeist.jar.
@@ -115,7 +115,7 @@ function Join-ProcessArguments {
     return ($escaped -join " ")
 }
 
-function Invoke-VersionSmoke {
+function Invoke-CommandSmoke {
     param(
         [string]$Label,
         [string]$FilePath,
@@ -129,7 +129,7 @@ function Invoke-VersionSmoke {
 
     $stdoutFile = Join-Path $smokeDir "$OutputPrefix.out"
     $stderrFile = Join-Path $smokeDir "$OutputPrefix.err"
-    Remove-Item -LiteralPath $stdoutFile, $stderrFile -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $stdoutFile, $stderrFile, $LogFile -ErrorAction SilentlyContinue
 
     $env:LOG_FILE = $LogFile
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -221,13 +221,23 @@ function Invoke-PackagedNativeSmoke {
             Fail-Smoke "Packaged native executable was not found after unzip: $packageExe"
         }
 
-        Invoke-VersionSmoke "Native archive version smoke" `
+        Invoke-CommandSmoke "Native archive version smoke" `
             $packageExe `
             @("--version") `
             $Expected `
             (Join-Path $smokeDir "codegeist-windows-native.log") `
             $TimeoutSeconds `
             "codegeist-windows-native" `
+            $packageDir
+
+        # Keep aligned with CodegeistConfigService and docs/developer/architecture/provider-configuration.md.
+        Invoke-CommandSmoke "Native archive show-config smoke" `
+            $packageExe `
+            @("--show-config") `
+            "provider: {}" `
+            (Join-Path $smokeDir "codegeist-windows-native-show-config.log") `
+            $TimeoutSeconds `
+            "codegeist-windows-native-show-config" `
             $packageDir
     }
     finally {
@@ -259,7 +269,7 @@ $smokeDir = Join-Path $cliDir "target/smoke-test"
 New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
 
 Write-Host "Command: java -jar target/codegeist.jar --version"
-Invoke-VersionSmoke "Jar version smoke" `
+Invoke-CommandSmoke "Jar version smoke" `
     "java" `
     @("-jar", "target/codegeist.jar", "--version") `
     $expected `
@@ -304,7 +314,7 @@ if ($NativeMode -ne "skip") {
             $packageName = "codegeist-windows-x64"
             $nativeArchive = New-WindowsNativeArchive $cliDir
 
-            Write-Host "Command: package target/dist/$packageName.zip and run extracted codegeist.exe --version"
+            Write-Host "Command: package target/dist/$packageName.zip and run extracted codegeist.exe --version plus --show-config"
             Invoke-PackagedNativeSmoke $nativeArchive $packageName $expected $NativeTimeoutSeconds
 
             $nativeStatus = "passed"

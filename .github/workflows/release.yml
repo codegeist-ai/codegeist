@@ -281,27 +281,31 @@ jobs:
           env = os.environ.copy()
           env["LOG_FILE"] = log_file
 
-          try:
-              completed = subprocess.run(
-                  ["./codegeist", "--version"],
-                  cwd=package_dir,
-                  env=env,
-                  text=True,
-                  capture_output=True,
-                  timeout=int(timeout_seconds),
-              )
-          except subprocess.TimeoutExpired:
-              print(f"Native version smoke timed out after {timeout_seconds}s", file=sys.stderr)
-              sys.exit(1)
+          def run_smoke(label, args, expected_output):
+              try:
+                  completed = subprocess.run(
+                      ["./codegeist", *args],
+                      cwd=package_dir,
+                      env=env,
+                      text=True,
+                      capture_output=True,
+                      timeout=int(timeout_seconds),
+                  )
+              except subprocess.TimeoutExpired:
+                  print(f"{label} timed out after {timeout_seconds}s", file=sys.stderr)
+                  sys.exit(1)
 
-          actual = (completed.stdout + completed.stderr).rstrip("\r\n")
-          if completed.returncode != 0:
-              print(f"Native version smoke failed with exit code {completed.returncode}: {actual}", file=sys.stderr)
-              sys.exit(completed.returncode)
+              actual = (completed.stdout + completed.stderr).rstrip("\r\n")
+              if completed.returncode != 0:
+                  print(f"{label} failed with exit code {completed.returncode}: {actual}", file=sys.stderr)
+                  sys.exit(completed.returncode)
 
-          if actual != expected:
-              print(f"Expected native version {expected}, got {actual}", file=sys.stderr)
-              sys.exit(1)
+              if actual != expected_output:
+                  print(f"Expected {label} output {expected_output}, got {actual}", file=sys.stderr)
+                  sys.exit(1)
+
+          run_smoke("Native version smoke", ["--version"], expected)
+          run_smoke("Native show-config smoke", ["--show-config"], "provider: {}")
 
           if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
               print(f"Expected non-empty native smoke log: {log_file}", file=sys.stderr)
@@ -350,34 +354,46 @@ jobs:
                   throw "Packaged native executable was not found after unzip: $packageExe"
               }
 
-              $stdoutFile = Join-Path $smokeDir "codegeist-windows-native.out"
-              $stderrFile = Join-Path $smokeDir "codegeist-windows-native.err"
-              $logFile = Join-Path $smokeDir "codegeist-windows-native.log"
-              Remove-Item -Force -LiteralPath $stdoutFile, $stderrFile, $logFile -ErrorAction SilentlyContinue
+              function Invoke-NativeCommandSmoke {
+                  param(
+                      [string]$Label,
+                      [string[]]$ArgumentList,
+                      [string]$Expected,
+                      [string]$OutputPrefix
+                  )
 
-              $env:LOG_FILE = $logFile
-              $process = Start-Process -FilePath $packageExe -ArgumentList "--version" -WorkingDirectory $runDir -NoNewWindow -PassThru -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
-              if (-not $process.WaitForExit([int]$env:NATIVE_SMOKE_TIMEOUT_SECONDS * 1000)) {
-                  $process.Kill()
-                  $process.WaitForExit()
-                  throw "Native version smoke timed out after $env:NATIVE_SMOKE_TIMEOUT_SECONDS seconds"
+                  $stdoutFile = Join-Path $smokeDir "$OutputPrefix.out"
+                  $stderrFile = Join-Path $smokeDir "$OutputPrefix.err"
+                  $logFile = Join-Path $smokeDir "$OutputPrefix.log"
+                  Remove-Item -Force -LiteralPath $stdoutFile, $stderrFile, $logFile -ErrorAction SilentlyContinue
+
+                  $env:LOG_FILE = $logFile
+                  $process = Start-Process -FilePath $packageExe -ArgumentList $ArgumentList -WorkingDirectory $runDir -NoNewWindow -PassThru -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
+                  if (-not $process.WaitForExit([int]$env:NATIVE_SMOKE_TIMEOUT_SECONDS * 1000)) {
+                      $process.Kill()
+                      $process.WaitForExit()
+                      throw "$Label timed out after $env:NATIVE_SMOKE_TIMEOUT_SECONDS seconds"
+                  }
+
+                  $stdout = if (Test-Path -LiteralPath $stdoutFile) { Get-Content -LiteralPath $stdoutFile -Raw } else { "" }
+                  $stderr = if (Test-Path -LiteralPath $stderrFile) { Get-Content -LiteralPath $stderrFile -Raw } else { "" }
+                  $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
+
+                  if ($process.ExitCode -ne 0) {
+                      throw "$Label failed with exit code $($process.ExitCode): $actual"
+                  }
+
+                  if ($actual -ne $Expected) {
+                      throw "Expected $Label output $Expected, got $actual"
+                  }
+
+                  if (-not (Test-Path -LiteralPath $logFile) -or (Get-Item -LiteralPath $logFile).Length -eq 0) {
+                      throw "Expected non-empty native smoke log: $logFile"
+                  }
               }
 
-              $stdout = if (Test-Path -LiteralPath $stdoutFile) { Get-Content -LiteralPath $stdoutFile -Raw } else { "" }
-              $stderr = if (Test-Path -LiteralPath $stderrFile) { Get-Content -LiteralPath $stderrFile -Raw } else { "" }
-              $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
-
-              if ($process.ExitCode -ne 0) {
-                  throw "Native version smoke failed with exit code $($process.ExitCode): $actual"
-              }
-
-              if ($actual -ne $env:RELEASE_VERSION) {
-                  throw "Expected native version $env:RELEASE_VERSION, got $actual"
-              }
-
-              if (-not (Test-Path -LiteralPath $logFile) -or (Get-Item -LiteralPath $logFile).Length -eq 0) {
-                  throw "Expected non-empty native smoke log: $logFile"
-              }
+              Invoke-NativeCommandSmoke "Native version smoke" @("--version") $env:RELEASE_VERSION "codegeist-windows-native"
+              Invoke-NativeCommandSmoke "Native show-config smoke" @("--show-config") "provider: {}" "codegeist-windows-native-show-config"
           }
           finally {
               Remove-Item -Recurse -Force -LiteralPath $tempRoot -ErrorAction SilentlyContinue
@@ -498,7 +514,7 @@ jobs:
 
           - Maven test suite passed before packaging.
           - JVM jar was packaged and smoke-tested with --version.
-          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version.
+          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version and --show-config.
           - The SHA-256 checksum file was generated and verified before upload.
 
           This release intentionally excludes installers, signing, notarization, SBOM, and SLSA provenance.

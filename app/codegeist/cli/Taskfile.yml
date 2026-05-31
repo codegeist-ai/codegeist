@@ -17,7 +17,7 @@ tasks:
       - mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile
 
   native-smoke:
-    desc: Build the native executable and smoke-test the version command
+    desc: Build the native executable and smoke-test native commands
     deps:
       - native
     cmds:

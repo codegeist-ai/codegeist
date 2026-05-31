@@ -172,21 +172,25 @@ java -jar codegeist-jvm.jar --version
 tar -xzf codegeist-linux-x64.tar.gz -C /tmp/codegeist-smoke
 cd /tmp/codegeist-smoke/codegeist-linux-x64
 ./codegeist --version
+./codegeist --show-config
 
 tar -xzf codegeist-macos-x64.tar.gz -C /tmp/codegeist-smoke
 cd /tmp/codegeist-smoke/codegeist-macos-x64
 ./codegeist --version
+./codegeist --show-config
 ```
 
 ```powershell
 Expand-Archive -Force codegeist-windows-x64.zip $env:TEMP\codegeist-smoke
 Set-Location $env:TEMP\codegeist-smoke\codegeist-windows-x64
 .\codegeist.exe --version
+.\codegeist.exe --show-config
 ```
 
-These examples reflect the implemented release workflow's `--version` smoke shape.
-Do not report broader commands such as `--help` as executed until the CLI owns that
-behavior and the corresponding release job really runs it.
+These examples reflect the implemented release workflow's `--version` and
+`--show-config` smoke shape. Do not report broader commands such as `--help` as
+executed until the CLI owns that behavior and the corresponding release job really
+runs it.
 
 ## Implemented Local Smoke Suite
 
@@ -195,10 +199,10 @@ Actions release jobs.
 
 | Script | Current behavior |
 | --- | --- |
-| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds `target/codegeist.jar`, verifies jar `--version`, and when `native-image` is available builds, packages, unpacks, and verifies `target/dist/codegeist-linux-x64.tar.gz`. |
+| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds `target/codegeist.jar`, verifies jar `--version`, and when `native-image` is available builds, packages, unpacks, and verifies native `--version` plus `--show-config` from `target/dist/codegeist-linux-x64.tar.gz`. |
 | `scripts/tests/qemu-windows-vm.sh` | Downloads the official Windows Server Evaluation ISO when needed, creates or starts the local Windows QEMU VM, syncs the repo subset, and runs Windows smoke through SSH. Download, ISO, or VM failures fail by default. |
 | `scripts/tests/qemu-windows-smoke.sh` | Lower-level SSH wrapper that runs `scripts/tests/windows-smoke.ps1` inside an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Runs Windows-side Maven tests, jar package, jar `--version`, and when GraalVM and MSVC Build Tools are available builds, packages, unpacks, and verifies `target/dist/codegeist-windows-x64.zip`. |
+| `scripts/tests/windows-smoke.ps1` | Runs Windows-side Maven tests, jar package, jar `--version`, and when GraalVM and MSVC Build Tools are available builds, packages, unpacks, and verifies native `--version` plus `--show-config` from `target/dist/codegeist-windows-x64.zip`. |
 | `scripts/tests/final-smoke-suite.sh` | Runs Linux and Windows local smoke checks. Default mode requires both platforms to pass; `--allow-skips` is developer-only. |
 
 The local suite is intentionally not a release publisher. It does not upload
