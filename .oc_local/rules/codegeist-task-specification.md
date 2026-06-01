@@ -164,11 +164,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   first design the `codegeist.yml` schema with `kebab-case` keys such as
   `enabled-providers`, `disabled-providers`, and `base-url`; then create
   the Spring AI provider matrix; then define the minimal Spring SpEL config
-  evaluation strategy;
+  evaluation strategy and provider availability analysis;
   only then implement config loading, local Ollama verification, and remote
   connection smokes. Do not create provider accounts, use paid provider resources,
-  or run remote provider tests before the schema, matrix, and SpEL strategy
-  tasks are complete.
+  or run remote provider tests before the schema, matrix, SpEL strategy, and
+  provider availability analysis are complete.
 - For Codegeist provider integration tests, cover as many configured providers as
   possible without causing charges: default tests may validate evaluated config
   and client wiring without hosted provider calls; local tests may run real local
@@ -180,3 +180,20 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   nested, and the first parser slice uses unrestricted Spring SpEL evaluation
   instead of a separate credential-reference schema. Defer model selection until a
   focused provider/model task needs it.
+- For `T006_04`, provider-specific Java config records/POJOs are allowed for every
+  supported provider type from the T006_03 availability matrix when binding and
+  validation tests need concrete config shapes. Treat these records as config data
+  contracts only; do not add Spring AI starters, runtime provider adapters,
+  factories, registries, client creation, model calls, or smoke behavior in that
+  task.
+- For hosted provider work, do not treat API-key presence or a consumer chat free
+  plan as permission to call an API. Before provider-specific remote smoke tasks,
+  use the T006_03 account/free-tier catalog to record official account setup,
+  billing/credit requirements, API free-tier status, no-cost confirmation needs,
+  and whether the pinned Spring AI baseline has a dedicated starter or should use
+  the OpenAI-compatible starter path.
+- For provider-specific implementation work, use the T006_03 availability matrix
+  before adding a starter or client code. Make one provider available at a time,
+  require the needed config fields and safety gate, and create only the selected
+  provider's Spring AI client on demand instead of instantiating all configured
+  providers at startup.

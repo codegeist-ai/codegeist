@@ -85,3 +85,10 @@ If Java source changes, also run the relevant Maven selector from
   provider no-cost.
 - Provider-specific follow-up tasks should add one remote provider at a time after
   this harness exists.
+- Hosted-provider smoke rows must consume the account/free-tier catalog in
+  `T006_03_define-provider-credential-and-account-strategy.md` before deciding
+  whether a provider is eligible for `remote-free`, `blocked`, or config-only
+  behavior.
+- Provider-specific smoke rows should also consume the T006_03 availability matrix
+  so the harness reports missing starter, missing required config, blocked safety
+  posture, local service setup, and provider API failures distinctly.

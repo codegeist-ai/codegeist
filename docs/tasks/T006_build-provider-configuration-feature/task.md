@@ -10,8 +10,8 @@ implementation task.
 The feature starts by designing a `codegeist.yml` provider schema that follows the
 useful shape of OpenCode's provider configuration while using YAML-friendly
 `kebab-case` field names. It then builds a Spring AI provider matrix, defines a
-minimal Spring SpEL config-evaluation strategy, and only then implements validated
-provider loading and connection smoke checks.
+minimal Spring SpEL config-evaluation strategy plus provider availability analysis,
+and only then implements validated provider loading and connection smoke checks.
 
 ## Feature Decision
 
@@ -73,9 +73,11 @@ Current Codegeist state:
   chat providers, starters, property prefixes, capabilities, credential needs,
   account requirements, and verification status.
 - `T006_03_define-provider-credential-and-account-strategy.md` - define the
-  minimal Spring SpEL config-evaluation strategy for provider config.
-- `T006_04_implement-codegeist-yml-loading.md` - implement focused loading and
-  validation of `codegeist.yml` without provider calls.
+  minimal Spring SpEL config-evaluation strategy for provider config and catalog
+  provider account/free-tier, starter, and on-demand availability requirements.
+- `T006_04_implement-codegeist-yml-loading.md` - implement focused loading,
+  SpEL evaluation, redacted rendering, and validation of `codegeist.yml`, including
+  typed config records/POJOs for supported providers, without provider calls.
 - `T006_05_verify-local-ollama-provider.md` - prove the first local provider path
   through Ollama with deterministic options and narrow assertions.
 - `T006_06_add-provider-connection-smoke-harness.md` - add a repeatable connection
@@ -94,8 +96,10 @@ Runner, Ollama, and supported OpenAI-compatible local endpoints.
 - Do not commit API keys, OAuth tokens, cloud credentials, service account files, or
   generated secret material.
 - Do not implement all provider SDK paths in one task.
-- Do not create placeholder provider packages, ports, ids, records, enums,
+- Do not create placeholder provider packages, ports, ids, enums, runtime adapters,
   validation hierarchies, or empty directories before a focused test needs them.
+  `T006_04` may add provider-specific config records/POJOs only because its binding
+  and validation tests need concrete config data shapes.
 - Do not copy OpenCode's TypeScript, AI SDK, plugin, or Models.dev architecture into
   Codegeist source.
 - Do not expose provider behavior through Vaadin, server APIs, PF4J, JBang, or SDKs
@@ -112,6 +116,15 @@ Runner, Ollama, and supported OpenAI-compatible local endpoints.
   work starts.
 - Remote provider smokes are opt-in and report `skipped` with a concrete reason
   when required evaluated config values or setup are absent.
+- Hosted provider account setup, billing or credit requirements, API free-tier
+  claims, and Spring AI starter routes are cataloged from official sources before
+  provider-specific remote smoke tasks use real accounts.
+- Provider availability is analyzed before implementation: tasks know the required
+  starter route, config fields, safety gate, runtime selection path, lazy Spring AI
+  client creation point, and blockers before making a provider callable.
+- `T006_04` maps the `T006_03` supported-provider decisions into typed Java config
+  records/POJOs for config binding and validation only; no provider starter or
+  provider client is added there.
 - Integration tests should cover as many provider definitions as possible without
   causing charges: default tests validate config and local providers only, while
   hosted provider calls require an explicit no-cost remote test selection.
@@ -146,3 +159,11 @@ Provider smokes must report timing and `passed`, `skipped`, or `failed` status.
   workflow before relying on broad source claims.
 - Keep the first runtime slice small: load config, validate it, then call one local
   provider path.
+- Use the `T006_03` account/free-tier catalog before adding hosted-provider-specific
+  smoke rows or treating any hosted provider as eligible for `remote-free` checks.
+- Use the `T006_03` availability matrix before provider-specific implementation;
+  add one provider at a time instead of adding all starters or a broad placeholder
+  registry up front.
+- Config record coverage is the exception to one-provider-at-a-time runtime work:
+  `T006_04` may cover all supported config shapes at once, but provider client
+  creation and starter additions remain one provider at a time.
