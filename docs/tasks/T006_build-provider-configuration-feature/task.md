@@ -10,25 +10,24 @@ implementation task.
 The feature starts by designing a `codegeist.yml` provider schema that follows the
 useful shape of OpenCode's provider configuration while using YAML-friendly
 `kebab-case` field names. It then builds a Spring AI provider matrix, defines a
-credential and account strategy, and only then implements validated provider
-loading and connection smoke checks.
+minimal Spring SpEL config-evaluation strategy, and only then implements validated
+provider loading and connection smoke checks.
 
 ## Feature Decision
 
 Use `kebab-case` for committed `codegeist.yml` keys, for example
-`small-model`, `enabled-providers`, `base-url`, and `api-key-env`.
+`enabled-providers`, `disabled-providers`, and `base-url`.
 
 Keep Codegeist structurally close to OpenCode where the model applies:
 
-- root-level `model` uses the `provider-id/model-id` shape;
-- `small-model` is available for lightweight internal tasks;
 - `provider.<provider-id>` contains provider configuration;
 - `provider.<provider-id>.options` contains provider-specific runtime options;
-- `provider.<provider-id>.models.<model-id>` contains model metadata and option
-  overrides;
-- credentials are referenced, not stored in project configuration;
 - provider enablement is controlled through `enabled-providers` and
-  `disabled-providers`.
+  `disabled-providers`;
+- provider config values may be computed with Spring SpEL in the minimal parser
+  slice;
+- model selection and credential-store design are deferred until focused later
+  tasks need them.
 
 ## OpenCode Source Evidence
 
@@ -68,14 +67,13 @@ Current Codegeist state:
 ## Child Tasks
 
 - `T006_01_design-codegeist-provider-config-schema.md` - design the
-  `codegeist.yml` provider and model schema with `kebab-case` field names and
-  OpenCode source evidence.
+  `codegeist.yml` provider schema with `kebab-case` field names and OpenCode
+  source evidence.
 - `T006_02_create-spring-ai-provider-matrix.md` - list the Spring AI `2.0.0-M6`
   chat providers, starters, property prefixes, capabilities, credential needs,
   account requirements, and verification status.
-- `T006_03_define-provider-credential-and-account-strategy.md` - define how
-  account setup, credential references, local secret storage, and remote test
-  gating work without committing secrets.
+- `T006_03_define-provider-credential-and-account-strategy.md` - define the
+  minimal Spring SpEL config-evaluation strategy for provider config.
 - `T006_04_implement-codegeist-yml-loading.md` - implement focused loading and
   validation of `codegeist.yml` without provider calls.
 - `T006_05_verify-local-ollama-provider.md` - prove the first local provider path
@@ -108,12 +106,12 @@ Runner, Ollama, and supported OpenAI-compatible local endpoints.
 - `codegeist.yml` provider schema is specified with `kebab-case` keys and examples.
 - Spring AI provider support is captured in a matrix tied to the pinned
   `2.0.0-M6` baseline.
-- Account and credential handling rules prevent secrets from entering repo-owned
-  files.
+- The provider config strategy defines Spring SpEL evaluation without introducing a
+  separate credential-reference schema.
 - The first implemented provider path is local and testable before remote account
   work starts.
 - Remote provider smokes are opt-in and report `skipped` with a concrete reason
-  when required credentials or account setup are absent.
+  when required evaluated config values or setup are absent.
 - Integration tests should cover as many provider definitions as possible without
   causing charges: default tests validate config and local providers only, while
   hosted provider calls require an explicit no-cost remote test selection.
@@ -147,4 +145,4 @@ Provider smokes must report timing and `passed`, `skipped`, or `failed` status.
   artifacts, inspect the checked-out OpenCode source directly or rerun the analysis
   workflow before relying on broad source claims.
 - Keep the first runtime slice small: load config, validate it, then call one local
-  model path.
+  provider path.

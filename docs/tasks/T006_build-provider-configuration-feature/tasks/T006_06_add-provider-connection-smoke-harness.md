@@ -15,7 +15,7 @@ status.
 ## Scope
 
 - Define a smoke entrypoint for checking configured providers.
-- Use `codegeist.yml` provider entries and credential references.
+- Use evaluated `codegeist.yml` provider entries.
 - Support an allowlist so one provider can be checked without touching every
   configured provider.
 - Report `passed`, `skipped`, or `failed` for each provider.
@@ -24,7 +24,7 @@ status.
   explicitly required.
 - Treat a provider that would require a potentially billable remote chat call as
   `blocked` unless the caller explicitly selected a no-cost remote test mode and
-  the provider config confirms that the selected account/model path is no-cost.
+  the selected account and route are confirmed as no-cost.
 - Treat an explicitly required provider as failed when prerequisites are absent.
 - Record enough timing to see slow startup, network calls, model pulls, or cloud
   latency.
@@ -47,13 +47,13 @@ status.
 ## Acceptance Criteria
 
 - The harness can check at least the already implemented local Ollama provider.
-- The harness can skip a remote provider with a precise reason when credentials are
-  missing.
-- The harness redacts credential sources and values from output.
-- The harness output is easy to scan and includes provider id, model id, status,
-  duration, and blocker when skipped or failed.
+- The harness can skip a remote provider with a precise reason when required
+  evaluated config values are missing.
+- The harness redacts sensitive config values from output.
+- The harness output is easy to scan and includes provider id, status, duration,
+  and blocker when skipped or failed.
 - The harness can run a default no-cost integration mode that checks all configured
-  provider definitions and credential references without calling hosted providers.
+  provider definitions without calling hosted providers.
 - The harness can run a local integration mode that performs real no-cost calls for
   local providers such as Ollama.
 - The harness requires an explicit `remote-free` selection before any hosted

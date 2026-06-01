@@ -162,20 +162,21 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   configuration, or tests change.
 - For `T006_build-provider-configuration-feature`, work provider support in order:
   first design the `codegeist.yml` schema with `kebab-case` keys such as
-  `small-model`, `enabled-providers`, `base-url`, and `api-key-env`; then create
-  the Spring AI provider matrix; then define credential and account strategy;
+  `enabled-providers`, `disabled-providers`, and `base-url`; then create
+  the Spring AI provider matrix; then define the minimal Spring SpEL config
+  evaluation strategy;
   only then implement config loading, local Ollama verification, and remote
   connection smokes. Do not create provider accounts, use paid provider resources,
-  or run remote provider tests before the schema, matrix, and credential strategy
+  or run remote provider tests before the schema, matrix, and SpEL strategy
   tasks are complete.
 - For Codegeist provider integration tests, cover as many configured providers as
-  possible without causing charges: default tests may validate config, credential
-  references, and client wiring without hosted provider calls; local tests may run
-  real local providers such as Ollama; hosted provider calls require an explicit
-  `remote-free` selection plus local confirmation that the selected account, key,
-  and model path will not bill. API-key presence alone is never permission to call
-  a remote provider.
+  possible without causing charges: default tests may validate evaluated config
+  and client wiring without hosted provider calls; local tests may run real local
+  providers such as Ollama; hosted provider calls require an explicit `remote-free`
+  selection plus local confirmation that the selected account and route will not
+  bill. API-key presence alone is never permission to call a remote provider.
 - For Codegeist provider config, follow OpenCode's useful shape only as behavior
-  evidence: root `model` uses `provider-id/model-id`, providers live under the
-  `provider` map, provider and model options remain nested, and credentials are
-  referenced rather than stored in committed project config.
+  evidence: providers live under the `provider` map, provider options remain
+  nested, and the first parser slice uses unrestricted Spring SpEL evaluation
+  instead of a separate credential-reference schema. Defer model selection until a
+  focused provider/model task needs it.

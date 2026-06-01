@@ -170,11 +170,19 @@
   candidate `codegeist.yml` and future `ProviderConfig` fields, Ollama as the first
   local provider candidate, and a no-cost integration-test posture that keeps
   hosted provider calls behind explicit `remote-free` selection plus local no-cost
-  confirmation. `T006_04` has a partial implementation with
+  confirmation. `T006_03` is narrowed to a documentation-only SpEL config
+  evaluation strategy: `codegeist.yml` is trusted local input, the first parser
+  slice uses unrestricted Spring SpEL in scalar values, there is no separate
+  credential-reference schema, and model selection is deferred. Its source-backed
+  question catalog now lives at
+  `docs/tasks/T006_build-provider-configuration-feature/hints/source-evidence-question-catalog.md`
+  with OpenCode and Spring AI Agent Utils answers for config merge, auth/runtime
+  boundaries, redaction, remote-call safety, `ChatClient` wiring, and testing
+  gaps. `T006_04` has a partial implementation with
   `CodegeistConfigService` and explicit path loading under
   `ai.codegeist.app.config`, plus packaged native `--show-config` smoke coverage
-  for the current empty default output. Next are `T006_03` for credential/account
-  strategy, remaining `T006_04` merge/home-path work, `T006_05` for local Ollama
+  for the current empty default output. Next are remaining `T006_04`
+  merge/home-path and SpEL evaluation work, `T006_05` for local Ollama
   verification, and `T006_06` for the provider connection smoke harness.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
@@ -202,11 +210,12 @@
   `application.yaml` can configure it, with the prefix constant backed by
   `CodegeistApplication.APP_NAME`, while direct `codegeist.yml` loading uses
   Jackson YAML against the same POJO.
-- Use Jackson YAML (`jackson-dataformat-yaml`) as the preferred direct
-  YAML-to-POJO mapping framework for `codegeist.yml`. Keep model fields,
-  enabled/disabled provider lists, provider options, credentials, capabilities,
-  inheritance, merge beyond provider names, and provider calls deferred to later
-  T006 child tasks.
+- Use Jackson YAML (`jackson-dataformat-yaml`) as the current direct YAML-to-POJO
+  mapping framework for `codegeist.yml`, but later provider config loading should
+  add a minimal Spring SpEL evaluation phase before mapping. Keep model selection,
+  enabled/disabled provider lists, provider options beyond current tested fields,
+  capabilities, inheritance, merge beyond provider names, and provider calls
+  deferred to later T006 child tasks.
 - Do not create placeholder classes, ids, ports, enums, records, package layers,
   validation hierarchies, or empty package directories before a focused test or
   workflow needs them.
@@ -304,4 +313,4 @@
   do not enter the version manually unless checking an inferred-version conflict.
 - Work the provider feature from `T006_01` first. Do not start provider account
   setup or remote connection tests until the `codegeist.yml` schema, Spring AI
-  provider matrix, and credential/account strategy are defined.
+  provider matrix, and SpEL config-evaluation strategy are defined.
