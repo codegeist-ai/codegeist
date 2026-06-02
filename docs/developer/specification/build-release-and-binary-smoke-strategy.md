@@ -303,11 +303,17 @@ Before publishing or approving a release candidate, verify:
 
 - Release tag is selected and matches artifact version names.
 - Release tag was inferred with `.opencode/rules/semver.md` from the diff between
-  the latest reachable release tag and the release branch commit, or any manual
-  override was checked against that inferred tag.
+  the latest reachable release tag and the source commit, or any manual override
+  was checked against that inferred tag.
+- If the source branch was not already a matching `release/v*` branch, a matching
+  `release/v<version>-github-release-build` validation branch was created from the
+  inferred tag and source commit, unless the release is intentionally running from
+  synchronized `main`.
 - If the release work was iterated on a multi-commit branch, a fresh
   `release/v<version>-codegeist-rc-<n>` branch exists from current `main` and
   contains exactly one detailed squash commit.
+- If the release is running directly from synchronized `main`, no validation-source
+  or candidate branch exists and no empty squash commit was created.
 - The candidate branch validation run passed before `main` was advanced.
 - `main` was advanced by fast-forward only; no merge commit, GitHub merge button,
   GitHub squash button, or force-push was used.

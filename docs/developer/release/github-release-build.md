@@ -21,11 +21,14 @@ publishing, or runtime behavior beyond the existing no-side-effect commands.
 | Push tag `v*` | Release-cycle automation after pre-tag validation passes. | Yes, as a published release |
 
 Branch validation derives the workflow artifact version from the branch name.
-Iteration branches may contain multiple commits while the release build is being
-fixed and validated. The release command later infers the final release version
-from the Git diff between the latest reachable release tag and the source branch
-commit, and stops if a versioned release branch prefix conflicts with that
-inferred tag. The first release automation iteration branch was:
+Release work may start on an unversioned branch while the release build is being
+fixed and validated. The release command infers the final release version from the
+Git diff between the latest reachable release tag and the source commit. If the
+source is not already a matching `release/v*` branch, the command creates the
+matching `release/v<version>-github-release-build` validation branch from the
+inferred tag before candidate promotion. It stops if an existing versioned release
+branch prefix conflicts with the inferred tag. The first release automation
+iteration branch was:
 
 ```text
 release/v0.1.0-github-release-build
@@ -119,16 +122,20 @@ the executable beside its sidecar libraries.
 
 ## Release Command Flow
 
-After an iteration branch has passed validation, use the repo-local OpenCode
-command as the normal release entrypoint:
+After a release work branch is ready, use the repo-local OpenCode command as the
+normal release entrypoint. The source branch can be unversioned; the command will
+derive the validation branch name from the inferred SemVer tag. When `main` is
+clean, synchronized with `origin/main`, and already contains the release-ready
+diff, run the command from `main` without `--source`; that direct-main mode skips
+the validation-source and candidate branches.
 
 ```text
-/codegeist-release --source release/v0.1.1-github-release-build --rc 1
+/codegeist-release --source <release-work-branch> --rc 1
+/codegeist-release
 ```
 
 The command uses `.opencode/rules/semver.md` to infer the next release version
-from the diff between the latest reachable release tag and the source branch
-commit:
+from the diff between the latest reachable release tag and the source commit:
 
 ```bash
 git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' <source-commit>
@@ -136,12 +143,15 @@ git log <last-release-tag>..<source-commit> --oneline
 git diff <last-release-tag>..<source-commit>
 ```
 
-The inferred version defines the release tag, Maven `release_version`, and the
-candidate branch name. Promote the source diff through a fresh candidate branch
-instead of merging the iteration branch directly to `main`.
+The inferred version defines the release tag, Maven `release_version`, the
+versioned validation source branch, and the candidate branch name. For a release
+work branch, promote the versioned validation source diff through a fresh candidate
+branch instead of merging the work branch directly to `main`.
 
 ```bash
 git fetch origin
+git switch -c release/v0.1.1-github-release-build <source-commit>
+git push -u origin release/v0.1.1-github-release-build
 git switch -c release/v0.1.1-codegeist-rc-1 origin/main
 git merge --squash origin/release/v0.1.1-github-release-build
 ```
@@ -153,9 +163,10 @@ message file:
 git commit -F <message-file>
 ```
 
-The squash commit message must describe the source branch, candidate branch, why
-the squash exists, included changes, validation evidence, publication state, and
-the rule that `main` may only be advanced by fast-forward.
+The squash commit message must describe the original source branch, the versioned
+validation source branch, candidate branch, why the squash exists, included
+changes, validation evidence, publication state, and the rule that `main` may only
+be advanced by fast-forward.
 
 Push and validate the candidate branch:
 
@@ -165,9 +176,10 @@ gh run list --workflow release.yml --branch release/v0.1.1-codegeist-rc-1
 gh run watch <run-id> --exit-status
 ```
 
-If validation fails, leave the candidate branch intact, fix the iteration branch,
-and create the next candidate, for example `release/v0.1.1-codegeist-rc-2`, from
-current `main`. Do not amend or force-push a failed candidate branch.
+If validation fails, leave the candidate branch intact, fix the source or
+validation branch, and create the next candidate, for example
+`release/v0.1.1-codegeist-rc-2`, from current `main`. Do not amend or force-push a
+failed candidate branch.
 
 When candidate validation passes, advance `main` by fast-forward only:
 
@@ -179,6 +191,10 @@ git push origin main
 
 Do not use a merge commit, GitHub merge button, GitHub squash button, or
 force-push for this promotion.
+
+For direct-main mode, no candidate branch is created because `main` already points
+at the release source commit. Verify `main` and `origin/main` are synchronized,
+then continue with pre-tag validation.
 
 ## Pre-Tag Validation Flow
 
@@ -212,16 +228,18 @@ checksum file.
 The same repo-local OpenCode command owns the full release sequence:
 
 ```text
-/codegeist-release --source release/v0.1.1-github-release-build --rc 1
+/codegeist-release --source <release-work-branch> --rc 1
+/codegeist-release
 ```
 
-It infers the version from Git history, creates and validates the candidate,
-fast-forwards `main`, runs pre-tag validation, creates and pushes the annotated
-tag after validation passes, waits for the tag-triggered workflow, verifies the
-published release assets and checksums, then moves the lightweight `latest` tag to
-the verified `v*` release commit. It also creates or updates the GitHub Release
-for `latest` using the same downloaded and checksum-verified assets from the `v*`
-release; no second build is run for `latest`.
+It infers the version from Git history, creates and validates a versioned source
+branch when needed, creates and validates the candidate when needed, fast-forwards
+`main` when a candidate exists, runs pre-tag validation, creates and pushes the
+annotated tag after validation passes, waits for the tag-triggered workflow,
+verifies the published release assets and checksums, then moves the lightweight
+`latest` tag to the verified `v*` release commit. It also creates or updates the
+GitHub Release for `latest` using the same downloaded and checksum-verified assets
+from the `v*` release; no second build is run for `latest`.
 
 For local post-release verification downloads, prefer a temporary directory outside
 the repo when it is writable. In this workspace, using an ignored generated path

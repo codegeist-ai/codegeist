@@ -89,15 +89,18 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   real Windows VM over SSH or a matching GitHub Windows runner; do not add local
   compatibility-layer smoke paths for Windows release validation.
 - For publishing a Codegeist GitHub Release, prefer
-  `/codegeist-release --source <release-branch> --rc <n>`. The command uses
+  `/codegeist-release --source <release-work-branch> --rc <n>`. The command uses
   `.opencode/rules/semver.md` to infer the release version from the diff between
-  the latest reachable release tag and the release branch commit, creates
-  `release/v<version>-codegeist-rc-<n>` from current `main`, squashes the
-  iteration diff into one detailed commit, validates that candidate branch,
-  advances `main` by fast-forward only, then owns pre-tag validation, annotated tag
-  creation, automatic tag-run publication, published asset checksum verification,
-  and the `latest` tag plus `latest` GitHub Release mirror using the already
-  verified `v*` assets.
+  the latest reachable release tag and the source commit. When the source is a
+  work branch, it creates a matching `release/v<version>-github-release-build`
+  validation branch when needed, creates `release/v<version>-codegeist-rc-<n>`
+  from current `main`, squashes the validated source diff into one detailed commit,
+  validates that candidate branch, and advances `main` by fast-forward only. When
+  the source is already synchronized `main`, it skips validation-source and
+  candidate branch creation to avoid an empty commit. It then owns pre-tag
+  validation, annotated tag creation, automatic tag-run publication, published
+  asset checksum verification, and the `latest` tag plus `latest` GitHub Release
+  mirror using the already verified `v*` assets.
 - For Spring Shell command-line arguments such as `--version`, keep the current
   default command path noninteractive with
   `spring.shell.interactive.enabled=false` until a task intentionally implements

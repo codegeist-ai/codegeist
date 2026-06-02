@@ -210,8 +210,8 @@ java -jar target/codegeist.jar --version
   to `main`, pre-tag validation passed, `v0.1.0` was published, and downloaded
   release assets passed checksum verification.
 - The stable future release entrypoint is `/codegeist-release --source
-  <release-branch> --rc 1`; manual version entry should only be used to resolve an
-  inferred-version conflict.
+  <release-work-branch> --rc 1`, or `/codegeist-release` from synchronized `main`;
+  manual version entry should only be used to resolve an inferred-version conflict.
 - Parent impact: `T005` closes with both release-readiness children finalized.
 - Verification: `git --no-pager diff --check`.
 
@@ -230,13 +230,17 @@ java -jar target/codegeist.jar --version
 - Prefer tag-push automation as the release-cycle source of truth. Use
   `workflow_dispatch` or `gh workflow run` as explicit operator controls, not as
   the only automated release path.
-- Release workflow iteration branches may contain multiple commits, but they must
-  be promoted through `/codegeist-release --source <release-branch> --rc <n>`. The
-  command infers SemVer from the diff between the latest reachable release tag and
-  the release branch commit, creates a fresh
-  `release/v<version>-codegeist-rc-<n>` branch from current `main`, writes one
-  detailed squash commit, validates the candidate branch, and advances `main` by
-  fast-forward only.
+- Release workflow work branches may contain multiple commits, but they must be
+  promoted through `/codegeist-release --source <release-work-branch> --rc <n>`.
+  The command infers SemVer from the diff between the latest reachable release tag
+  and the source commit, creates a matching
+  `release/v<version>-github-release-build` validation branch when needed, creates
+  a fresh `release/v<version>-codegeist-rc-<n>` branch from current `main`, writes
+  one detailed squash commit, validates the candidate branch, and advances `main`
+  by fast-forward only.
+- If synchronized `main` already contains the release-ready work, `/codegeist-release`
+  may release directly from `main`, infer SemVer from `last-tag..main`, skip
+  validation-source and candidate branches, and start at pre-tag validation.
 - Future releases should move the lightweight `latest` tag to the verified `v*`
   release commit after published asset checksum verification passes, then create
   or update the `latest` GitHub Release with the same verified downloaded assets.

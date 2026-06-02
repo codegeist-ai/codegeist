@@ -143,17 +143,20 @@ It validates release artifacts on GitHub-hosted runners:
 - `codegeist-macos-x64.tar.gz`
 - `SHA256SUMS.txt`
 
-Push a versioned iteration branch such as
-`release/v0.1.0-github-release-build` to test the workflow without publishing.
-When the iteration branch is ready, run
-`/codegeist-release --source <release-branch> --rc 1`. The command infers the
-next SemVer release from the diff between the latest reachable release tag and the
-release branch commit, creates one detailed squash-candidate commit, validates the
-candidate branch, advances `main` by fast-forward only, runs pre-tag validation,
-pushes the final `v*` tag that publishes the GitHub Release, verifies the
-downloaded checksums, moves `latest` to the verified release commit, and creates
-or updates the `latest` GitHub Release with the same verified assets without
-running another build.
+Release work may start on an unversioned work branch. When the work branch is
+ready, run `/codegeist-release --source <release-work-branch> --rc 1`. The command
+infers the next SemVer release from the diff between the latest reachable release
+tag and the source commit, creates the matching
+`release/v<version>-github-release-build` validation branch when needed, creates
+one detailed squash-candidate commit, validates the candidate branch, advances
+`main` by fast-forward only, runs pre-tag validation, pushes the final `v*` tag
+that publishes the GitHub Release, verifies the downloaded checksums, moves
+`latest` to the verified release commit, and creates or updates the `latest`
+GitHub Release with the same verified assets without running another build.
+When `main` already contains the release-ready work and is synchronized with
+`origin/main`, `/codegeist-release` can release directly from `main`; it skips the
+validation-source and squash-candidate branches to avoid an empty commit, then runs
+the same pre-tag, tag, publish, checksum, and `latest` verification path.
 
 See `docs/developer/release/github-release-build.md` for the full operator flow.
 

@@ -97,12 +97,17 @@
   `release_version=0.1.0`, and pushed `v*` tags publish release assets to a GitHub
   Release. Branch run `26535014716` passed JVM, Linux x64, Windows x64, macOS x64,
   and checksum jobs; the release job was correctly skipped on the branch run.
-- Future release workflow iterations may use a multi-commit
-  `release/v<version>-...` branch, but `main` should receive only one detailed
-  squash-candidate commit. `/codegeist-release --source <release-branch> --rc <n>`
-  owns version inference, candidate creation, validation, fast-forward-only `main`
-  promotion, final tag publication, downloaded checksum verification, and the
-  `latest` GitHub Release mirror.
+- Future release workflow iterations may start on an unversioned work branch, but
+  branch validation still runs on a versioned
+  `release/v<version>-github-release-build` branch created from the SemVer-inferred
+  tag when needed. `main` should receive only one detailed squash-candidate commit.
+  `/codegeist-release --source <release-work-branch> --rc <n>` owns version
+  inference, validation-source branch creation, candidate creation, validation,
+  fast-forward-only `main` promotion, final tag publication, downloaded checksum
+  verification, and the `latest` GitHub Release mirror. `/codegeist-release` may
+  also release directly from synchronized `main`; in that mode it infers SemVer
+  from `last-tag..main`, skips validation-source and candidate branch creation, and
+  starts at pre-tag validation.
 - The release workflow's native matrix packages Linux, Windows, and macOS native
   archives, unpacks each archive into a fresh temp directory, and smoke-tests both
   `--version` and the default `--show-config` output before upload. The JVM jar
@@ -273,11 +278,13 @@
 - Consumer-specific NVIDIA/Ollama development support belongs in local
   `.codegeist/` devcontainer overrides and `task ollama-start`; keep the shared
   `.devcontainer` submodule unchanged for that local GPU setup.
-- Do not merge multi-commit release iteration branches directly into `main`.
-  Promote them through `/codegeist-release --source <release-branch> --rc <n>`;
-  the command infers SemVer from the diff between the latest reachable release tag
-  and the release branch commit, writes a detailed squash commit message, and
-  advances `main` by fast-forward only.
+- Do not merge multi-commit release work branches directly into `main`. Promote
+  them through `/codegeist-release --source <release-work-branch> --rc <n>`; the
+  command infers SemVer from the diff between the latest reachable release tag and
+  the source commit, creates the matching versioned validation branch when needed,
+  writes a detailed squash commit message, and advances `main` by fast-forward
+  only. Direct releases from synchronized `main` are allowed and skip the squash
+  path because there is no candidate diff to commit.
 - After a verified GitHub Release, `/codegeist-release` moves the lightweight
   `latest` tag to the same commit as the immutable `v*` release tag and creates or
   updates the `latest` GitHub Release with the same downloaded, checksum-verified
@@ -301,10 +308,11 @@
   for packaging, release, platform, or binary-smoke work.
 - For future release work, validate Linux and Windows locally before the release
   path where practical, use GitHub-hosted runners for Linux, Windows, and macOS
-  release builds, and use `/codegeist-release --source <release-branch> --rc <n>`
-  for release publication. The command handles version inference, candidate
-  promotion, pre-tag validation, final `v*` tag creation, and automatic GitHub
-  Release publication.
+  release builds, and use `/codegeist-release --source <release-work-branch> --rc <n>`
+  or `/codegeist-release` from synchronized `main` for release publication. The
+  command handles version inference, optional versioned validation branch creation,
+  candidate promotion when needed, pre-tag validation, final `v*` tag creation, and
+  automatic GitHub Release publication.
 - Keep test and smoke helper scripts under `scripts/tests/`. Local Windows release
   validation uses a real Windows QEMU VM over SSH or a matching GitHub Windows
   runner; do not add local compatibility-layer smoke paths.
@@ -343,8 +351,10 @@
 
 - Keep `docs/developer/architecture/architecture.md` synchronized whenever
   implemented packages, classes, configuration, runtime flows, or tests change.
-- For the next release, run `/codegeist-release --source <release-branch> --rc 1`;
-  do not enter the version manually unless checking an inferred-version conflict.
+- For the next release, run `/codegeist-release --source <release-work-branch> --rc 1`
+  for a work branch, or `/codegeist-release` from synchronized `main` when the
+  release-ready work is already there. Do not enter the version manually unless
+  checking an inferred-version conflict.
 - Next provider work should continue with `T006_05` local Ollama verification and
   `T006_06` provider smoke harness work. Use the solved `T006_03` account/free-tier
   catalog before adding hosted provider-specific smoke rows or treating any hosted

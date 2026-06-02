@@ -3,9 +3,10 @@ description: Infer, promote, tag, publish, and verify a Codegeist GitHub release
 agent: build
 ---
 
-Release Codegeist from a release iteration branch through one validated
-squash-candidate commit on `main`, then tag, publish, and verify the GitHub
-Release.
+Release Codegeist from a release work branch through a SemVer-inferred,
+versioned validation branch and one validated squash-candidate commit on `main`,
+or release directly from a clean synchronized `main` when the release work is
+already there. Then tag, publish, and verify the GitHub Release.
 
 User request:
 
@@ -16,13 +17,18 @@ $ARGUMENTS
 Expected syntax:
 
 ```text
-/codegeist-release --source release/v0.1.1-github-release-build [--rc 1]
+/codegeist-release --source <branch-or-ref> [--rc 1]
+/codegeist-release [--rc 1]
 ```
 
 Options:
 
-- `--source <branch>` is the release iteration branch whose commit should be
-  compared against the latest reachable release tag.
+- `--source <branch-or-ref>` is the release work ref whose commit should be
+  compared against the latest reachable release tag. It may be an unversioned
+  local branch, remote branch, explicit ref, or `main`. If it is not `main` and is
+  not already a matching `release/v*` branch, the command creates
+  `release/<inferred-tag>-github-release-build` from the source commit and
+  validates that branch before candidate promotion.
 - `--rc <n>` selects the candidate branch suffix and defaults to `1`.
 - `--tag <vMAJOR.MINOR.PATCH>` is an optional compatibility override. Prefer not
   to pass it; if present, it must exactly match the inferred tag.
@@ -32,10 +38,12 @@ the repository commit and command-execution rules.
 
 ## Workflow
 
-1. Parse `$ARGUMENTS` for `--source <branch>`, optional `--rc <n>`, and optional
-   `--tag <vMAJOR.MINOR.PATCH>`.
-2. If `--source` is missing and the current branch name starts with `release/v`,
-   use the current branch as the source. Otherwise stop and ask for `--source`.
+1. Parse `$ARGUMENTS` for optional `--source <branch-or-ref>`, optional `--rc <n>`,
+   and optional `--tag <vMAJOR.MINOR.PATCH>`.
+2. If `--source` is missing, use the current branch as the source when HEAD is
+   attached. If the current branch is the local base branch, this is direct-main
+   release mode: the release version is still inferred from Git diff, but no
+   validation-source branch, squash candidate, or empty commit is created.
 3. Run `gh auth status`. If GitHub CLI is not authenticated, use the `gh-auth`
    skill and stop unless authentication succeeds.
 4. Read `.opencode/rules/semver.md`, `.oc_local/rules/codegeist-release.md`,
@@ -53,9 +61,10 @@ git fetch --tags origin
 7. Verify that local `main` and `origin/main` point to the same commit, or
    fast-forward local `main` to `origin/main` when it is safe and the worktree is
    clean. Do not create a merge commit.
-8. Resolve the release source commit from the source branch. Prefer
-   `origin/<source>` after fetch; otherwise use a local source ref only when it is
-   explicit and up to date enough for the release decision.
+8. Resolve the release source commit from the source ref. Prefer `origin/<source>`
+   after fetch when `<source>` names a branch with a remote tracking ref;
+   otherwise use the local source ref only when it is explicit and up to date enough
+   for the release decision.
 9. Determine the latest reachable SemVer release tag from the source commit:
 
 ```bash
@@ -78,56 +87,92 @@ git diff <last-release-tag>..<source-commit>
     example `v0.1.1` and `0.1.1`. If `--tag` was supplied, it must exactly match
     the inferred `release_tag`; otherwise stop and report the last tag, source
     commit, inferred bump, inferred tag, and supplied tag.
-13. If the source branch name contains a leading `release/v<version>` segment,
-    verify that segment matches `release_tag`. Stop on mismatch because source
-    branch validation would have used a different artifact version.
-14. Resolve the candidate branch as `release/<release-tag>-codegeist-rc-<rc>`, for
+13. Determine the release mode:
+    - If the source ref is the local base branch, normally `main`, or the matching
+      upstream ref such as `origin/main`, and the source commit matches the
+      synchronized `origin/main`, use direct-main release mode. Skip
+      validation-source and candidate creation because the release diff is already
+      on `main`; do not create an empty squash commit.
+    - Otherwise use candidate promotion mode and continue with the versioned
+      validation source branch flow below.
+14. Resolve the versioned validation source branch for candidate promotion mode:
+    - If the source branch name contains a leading `release/v<version>` segment,
+      verify that segment matches `release_tag`; use that branch as the validation
+      source. Stop on mismatch because branch validation would have used a
+      different artifact version.
+    - Otherwise derive `validation_source` as
+      `release/<release-tag>-github-release-build`, for example
+      `release/v0.1.1-github-release-build`. This branch name comes from the
+      inferred SemVer tag, not from user input.
+15. Resolve the candidate branch as `release/<release-tag>-codegeist-rc-<rc>`, for
     example `release/v0.1.1-codegeist-rc-1`.
-15. Verify the inferred tag and candidate branch do not already exist:
+16. Verify the inferred tag does not already exist. In candidate promotion mode,
+    also verify the candidate branch does not already exist. If the command needs
+    to create `validation_source`, verify that local and remote branches with that
+    name do not already exist either; use an explicit `--source <validation_source>`
+    only when intentionally reusing an existing validated branch.
     - `git --no-pager tag --list '<release-tag>'`
     - `git ls-remote --tags origin '<release-tag>'`
     - `gh release view '<release-tag>'`
+    Candidate promotion mode only:
+    - `git --no-pager branch --list '<validation_source>'`
+    - `git ls-remote --heads origin '<validation_source>'`
     - `git --no-pager branch --list '<candidate>'`
     - `git ls-remote --heads origin '<candidate>'`
     Stop if any tag, release, or candidate branch already exists. Use the next
-    `--rc` value instead of overwriting a candidate branch.
-16. Verify the source branch has a successful release workflow run for the inferred
-    version, or record why candidate promotion is being prepared without one:
+    `--rc` value instead of overwriting a candidate branch. Do not overwrite a
+    versioned validation source branch; when reuse is intentional, pass that branch
+    explicitly as `--source`.
+17. In direct-main release mode, verify `main` and `origin/main` still point to the
+    source commit, then continue directly to pre-tag validation at step 29.
+18. When `validation_source` must be created, create it from the resolved source
+    commit and push it:
 
 ```bash
-gh run list --workflow release.yml --branch <source> --json databaseId,status,conclusion,url,headSha
+git switch -c <validation_source> <source-commit>
+git push -u origin <validation_source>
 ```
 
-17. Create the candidate branch from current `origin/main`:
+19. Verify the versioned validation source branch has a successful release workflow
+    run for the inferred version. When the branch was just created, locate and
+    watch that run. Stop if branch validation fails; fix the original work branch
+    and rerun the command so a new inferred-version branch can be created safely.
+
+```bash
+gh run list --workflow release.yml --branch <validation_source> --json databaseId,status,conclusion,url,headSha
+gh run watch <run-id> --exit-status
+```
+
+20. Create the candidate branch from current `origin/main`:
 
 ```bash
 git switch -c <candidate> origin/main
 ```
 
-18. Apply the full source branch diff as a squash merge:
+21. Apply the full versioned validation source branch diff as a squash merge:
 
 ```bash
-git merge --squash origin/<source>
+git merge --squash origin/<validation_source>
 ```
 
-19. Inspect the staged diff. Stop if the squash introduces unrelated files,
+22. Inspect the staged diff. Stop if the squash introduces unrelated files,
     generated noise, secrets, or a version that does not match the inferred tag.
-20. Write a detailed commit message to a temporary file. Prefer `/tmp/opencode`
+23. Write a detailed commit message to a temporary file. Prefer `/tmp/opencode`
     when writable; otherwise use an ignored generated path under
     `app/codegeist/cli/target/`.
-21. Commit the squash with the message file:
+24. Commit the squash with the message file:
 
 ```bash
 git commit -F <message-file>
 ```
 
-22. Verify the candidate is exactly one commit ahead of `origin/main`:
+25. Verify the candidate is exactly one commit ahead of `origin/main`:
 
 ```bash
 git --no-pager rev-list --count origin/main..<candidate>
 ```
 
-23. Push the candidate branch and watch the branch-triggered release workflow:
+26. Push the candidate branch and watch the branch-triggered release workflow:
 
 ```bash
 git push -u origin <candidate>
@@ -135,10 +180,10 @@ gh run list --workflow release.yml --branch <candidate>
 gh run watch <run-id> --exit-status
 ```
 
-24. Stop if candidate validation does not conclude with `success`. Do not amend,
+27. Stop if candidate validation does not conclude with `success`. Do not amend,
     force-push, or repair the candidate branch. Fix the source branch and rerun
     this command with the next `--rc` value.
-25. Advance `main` by fast-forward only from the passing candidate:
+28. Advance `main` by fast-forward only from the passing candidate:
 
 ```bash
 git switch main
@@ -146,38 +191,40 @@ git merge --ff-only <candidate>
 git push origin main
 ```
 
-26. Verify `main` and `origin/main` now point to the candidate commit and the
-    working tree is clean.
-27. Start pre-tag validation on `main`:
+29. Verify `main` and `origin/main` now point to the release commit and the working
+    tree is clean. In candidate promotion mode, this must be the candidate commit.
+    In direct-main release mode, this must be the original synchronized `main`
+    source commit.
+30. Start pre-tag validation on `main`:
 
 ```bash
 gh workflow run release.yml --ref main -f release_version=<release-version>
 ```
 
-28. Locate the created run with `gh run list --workflow release.yml --branch main`
+31. Locate the created run with `gh run list --workflow release.yml --branch main`
     or the run id returned by GitHub CLI, then wait for it:
 
 ```bash
 gh run watch <run-id> --exit-status
 ```
 
-29. Stop if pre-tag validation does not conclude with `success`.
-30. Create and push an annotated release tag from the validated `main` commit:
+32. Stop if pre-tag validation does not conclude with `success`.
+33. Create and push an annotated release tag from the validated `main` commit:
 
 ```bash
 git tag -a <release-tag> -m "Codegeist <release-tag>"
 git push origin <release-tag>
 ```
 
-31. Locate and watch the tag-triggered release run. It must conclude with
+34. Locate and watch the tag-triggered release run. It must conclude with
     `success`.
-32. Verify the GitHub Release exists, is not a draft, and has the expected tag:
+35. Verify the GitHub Release exists, is not a draft, and has the expected tag:
 
 ```bash
 gh release view <release-tag> --json tagName,isDraft,isPrerelease,url,assets
 ```
 
-33. Verify the expected assets are present:
+36. Verify the expected assets are present:
 
 ```text
 codegeist-jvm.jar
@@ -187,7 +234,7 @@ codegeist-macos-x64.tar.gz
 SHA256SUMS.txt
 ```
 
-34. Download the release assets into a temporary directory and verify checksums.
+37. Download the release assets into a temporary directory and verify checksums.
     Prefer `/tmp/opencode` when it is writable; otherwise use an ignored generated
     path such as `app/codegeist/cli/target/release-verify-<release-tag>.*`.
 
@@ -196,7 +243,7 @@ gh release download <release-tag> --dir <tmp-dir>
 (cd <tmp-dir> && sha256sum -c SHA256SUMS.txt)
 ```
 
-35. After the published release assets and checksums verify, move the lightweight
+38. After the published release assets and checksums verify, move the lightweight
     `latest` tag to the same commit as the immutable `v*` release tag. The `latest`
     tag is the only intentionally moving tag in the normal release workflow, and
     it must not trigger a new build:
@@ -211,7 +258,7 @@ else
 fi
 ```
 
-36. Verify `latest` now points to the release commit:
+39. Verify `latest` now points to the release commit:
 
 ```bash
 remote_latest="$(git ls-remote --tags origin latest | awk '{print $1}')"
@@ -219,7 +266,7 @@ release_commit="$(git --no-pager rev-parse <release-tag>^{})"
 test "$remote_latest" = "$release_commit"
 ```
 
-37. Create or update the GitHub Release for `latest` from the already downloaded
+40. Create or update the GitHub Release for `latest` from the already downloaded
     and checksum-verified `v*` assets. Do not run a second build and do not upload
     any files that were not downloaded from the verified `v*` release:
 
@@ -247,18 +294,19 @@ else
 fi
 ```
 
-38. Verify the `latest` GitHub Release exists, is not a draft, has tag `latest`,
+41. Verify the `latest` GitHub Release exists, is not a draft, has tag `latest`,
     and contains the same expected assets as the `v*` release:
 
 ```bash
 gh release view latest --json tagName,isDraft,isPrerelease,url,assets
 ```
 
-39. Report the release URL, `latest` release URL, source branch, source commit,
-    last release tag,
-    inferred SemVer bump, candidate branch, candidate commit, fast-forwarded
-    `main` commit, validated workflow run ids, assets, checksum result, `latest`
-    tag update result, and any warnings such as GitHub Actions deprecation notices.
+42. Report the release URL, `latest` release URL, release mode, original source ref,
+    source commit, versioned validation source branch when one was used, last
+    release tag, inferred SemVer bump, candidate branch and candidate commit when
+    one was used, validated `main` commit, workflow run ids, assets, checksum
+    result, `latest` tag update result, and any warnings such as GitHub Actions
+    deprecation notices.
 
 ## Squash Commit Message Contract
 
@@ -271,11 +319,14 @@ Template:
 ```text
 ci(release): promote Codegeist <release-tag> release candidate
 
-Squash-promote the validated release implementation branch into a single
+Squash-promote the validated release source branch into a single
 release-candidate commit for main.
 
-Source branch:
+Original source ref:
 - <source>
+
+Versioned validation source branch:
+- <validation_source>
 
 Source commit:
 - <source-commit>
@@ -290,8 +341,10 @@ Candidate branch:
 - <candidate>
 
 Why this commit exists:
-- The source release branch may contain multiple implementation, validation, and
+- The source work branch may contain multiple implementation, validation, and
   fixup commits while the release workflow is iterated.
+- If the original source branch was not already versioned, the validation source
+  branch was created from the inferred SemVer tag before candidate promotion.
 - main should receive only one coherent release workflow commit for this release
   slice.
 - The candidate branch is rebuilt from current main and contains the squashed
@@ -302,7 +355,7 @@ Included changes:
 - <high-signal summary of release workflow, build, test, docs, and command changes>
 
 Validation evidence and gates:
-- Source branch validation run: <run-id or URL>
+- Versioned source branch validation run: <run-id or URL>
 - Candidate branch validation: required after this commit is pushed and before
   main is fast-forwarded.
 - Local checks before candidate push: <commands and results>
@@ -324,11 +377,13 @@ Main promotion rule:
 
 - Do not ask for a manual release version during normal release execution. Infer
   it from the diff between the latest reachable release tag and the release source
-  commit, using `.opencode/rules/semver.md`.
+  commit, using `.opencode/rules/semver.md`, then create the versioned validation
+  source branch and candidate branch from that inferred tag.
 - Do not split candidate promotion into a separate local command; this command owns
-  source-branch version inference, candidate creation, fast-forward promotion,
-  tagging, publication, and post-release verification.
-- Do not merge the multi-commit source branch directly into `main`.
+  source version inference, optional validation-source and candidate creation,
+  fast-forward promotion when needed, tagging, publication, and post-release
+  verification.
+- Do not merge a multi-commit release work branch directly into `main`.
 - Do not use GitHub's merge or squash button for release promotion.
 - Do not use a short `git commit -m` message for the candidate squash commit.
 - Do not create the tag before pre-tag validation passes.

@@ -87,6 +87,9 @@ git --no-pager diff --check
   project memory. Only task status and memory summary updates were needed in this
   finalization pass.
 - Future release work should start from a new focused task or release iteration
-  branch and use `/codegeist-release --source <release-branch> --rc 1` for
-  publication.
+  branch and use `/codegeist-release --source <release-work-branch> --rc 1` for
+  publication; the command now creates the matching versioned validation branch
+  from the inferred SemVer tag when needed. If synchronized `main` already contains
+  the release-ready work, `/codegeist-release` may publish directly from `main`
+  after pre-tag validation.
 - Verification: `git --no-pager diff --check`.

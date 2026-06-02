@@ -309,16 +309,20 @@ jar, native archives, and checksum file to a published GitHub Release only for
 matching `v*` tags.
 
 Release workflow changes are promoted through `/codegeist-release --source
-<release-branch> --rc <n>` instead of merging a multi-commit iteration branch
+<release-work-branch> --rc <n>` instead of merging a multi-commit work branch
 directly. The command infers SemVer from the diff between the latest reachable
-release tag and the release branch commit, creates
-`release/v<version>-codegeist-rc-<n>` from current `main`, writes one detailed
-squash commit, validates the candidate branch, and advances `main` by
-fast-forward only before tagging and publication. After the published release
-assets verify, the release command moves the lightweight `latest` tag to the same
-commit as the verified `v*` release tag and creates or updates the `latest` GitHub
-Release with the same downloaded assets. The `latest` release does not run another
-build.
+release tag and the source commit, creates a matching
+`release/v<version>-github-release-build` validation branch when the source is not
+already versioned, creates `release/v<version>-codegeist-rc-<n>` from current
+`main`, writes one detailed squash commit, validates the candidate branch, and
+advances `main` by fast-forward only before tagging and publication. After the
+published release assets verify, the release command moves the lightweight
+`latest` tag to the same commit as the verified `v*` release tag and creates or
+updates the `latest` GitHub Release with the same downloaded assets. The `latest`
+release does not run another build.
+When synchronized `main` already contains the release-ready diff, the same command
+may release directly from `main`, infer SemVer from `last-tag..main`, skip
+validation-source and candidate branches, and start at pre-tag validation.
 
 The implemented release artifact names are:
 
