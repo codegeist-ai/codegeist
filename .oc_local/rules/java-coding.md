@@ -15,10 +15,9 @@ Use this rule when adding or changing Java source in Codegeist.
 - Prefer Spring annotations such as `@Component`, `@ConfigurationProperties`,
   `@EnableConfigurationProperties`, `@Autowired`, and test annotations when they
   make ownership and runtime behavior explicit.
-- For the primary merged config bean, inject unqualified `CodegeistConfig` and let
-  Spring `@Primary` select the merged bean. Only `CodegeistConfigService` should
-  qualify `CodegeistConfig.SPRING_BOUND_CONFIG_BEAN` to access the unmerged
-  Spring-bound source.
+- For the primary config bean, inject unqualified `CodegeistConfig` and let
+  Spring `@Primary` select it. Only `CodegeistConfigService` should qualify
+  `CodegeistConfig.SPRING_BOUND_CONFIG_BEAN` to access the Spring-bound source.
 - Prefer Bean Validation annotations on configuration POJOs for config validation.
   When config is loaded directly with Jackson rather than Spring binding, call
   `jakarta.validation.Validator` explicitly after mapping.
@@ -33,11 +32,17 @@ Use this rule when adding or changing Java source in Codegeist.
   concise `log.debug(...)` messages around non-obvious lifecycle, command,
   loading, validation, or bean-creation behavior. Spring Boot's default logging
   stack routes SLF4J to Logback.
+- Do not add constructors or lifecycle methods only to log trivial object creation,
+  such as `log.debug("Creating ...")`; those logs add noise without explaining
+  behavior.
 - Avoid generating `toString`, `equals`, or `hashCode` for configuration objects
   that may later hold credential metadata or provider details unless a current test
   requires that behavior.
 - Do not use Lombok to introduce hidden architecture, builders, constructors, or
   inheritance patterns before a focused task needs them.
+- Use Lombok `@SneakyThrows` to remove checked-exception boilerplate when a catch
+  block only wraps or rethrows a checked exception. Keep explicit catches when they
+  add domain context, recovery, cleanup, or intentionally translate runtime errors.
 - When adding Lombok to the Maven build on Java 25 or newer, configure Lombok as an
   explicit annotation processor instead of relying on implicit processor discovery.
 

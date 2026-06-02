@@ -28,7 +28,8 @@ status.
 - Treat an explicitly required provider as failed when prerequisites are absent.
 - Record enough timing to see slow startup, network calls, model pulls, or cloud
   latency.
-- Keep secret values redacted from output and logs.
+- Avoid printing credential values in ordinary status output; do not mask values
+  when a command intentionally prints resolved config.
 - Support integration-test levels that can exercise many providers safely:
   `config` for no-network provider configuration checks, `local` for real local
   calls, and `remote-free` for explicitly confirmed no-cost remote calls.
@@ -49,7 +50,7 @@ status.
 - The harness can check at least the already implemented local Ollama provider.
 - The harness can skip a remote provider with a precise reason when required
   evaluated config values are missing.
-- The harness redacts sensitive config values from output.
+- The harness avoids printing credential values in ordinary status output.
 - The harness output is easy to scan and includes provider id, status, duration,
   and blocker when skipped or failed.
 - The harness can run a default no-cost integration mode that checks all configured

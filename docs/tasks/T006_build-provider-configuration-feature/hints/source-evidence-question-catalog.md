@@ -8,7 +8,7 @@ tasks.
 The catalog is intentionally broader than the current `T006_03` SpEL-only
 strategy. The current parser slice should stay simple, but later T006 work may
 still need OpenCode evidence for provider config behavior, auth separation,
-runtime provider selection, redaction, and remote-call safety. It may also need
+runtime provider selection, sensitive-output handling, and remote-call safety. It may also need
 Spring AI Agent Utils evidence for Java/Spring `ChatClient` wiring, structural
 tests, tool/event patterns, and future agent workflow boundaries.
 
@@ -58,18 +58,19 @@ config sources into the first `codegeist.yml` SpEL slice.
 sequence. Generic config uses `mergeDeep`, with a special `instructions` merge
 that concatenates and de-duplicates arrays. Provider fields are merged again in
 `provider.ts`: configured provider entries extend the Models.dev database,
-provider `options` deep-merge with database options, model overrides deep-merge
-with existing model options, headers deep-merge, and variants deep-merge while
-dropping variants marked `disabled`.
+provider `options` merge recursively with database options, model overrides merge
+recursively with existing model options, headers merge recursively, and variants
+merge recursively while dropping variants marked `disabled`.
 
 **Evidence:** `packages/opencode/src/config/config.ts`,
 `packages/opencode/src/provider/provider.ts`,
 `packages/web/src/content/docs/config.mdx`.
 
-**Codegeist implication:** Define provider merge behavior explicitly before there
-are multiple Codegeist config sources. A simple rule such as later source wins for
-scalars and map keys, with provider `options` merged as maps, is easier to test
-than inheriting OpenCode's model/database/provider/variant overlay behavior.
+**Codegeist implication:** Define provider combination behavior explicitly before
+there are multiple Codegeist config sources. A simple rule such as later source
+wins for scalars and map keys, with provider `options` combined as maps, is easier
+to test than inheriting OpenCode's model/database/provider/variant overlay
+behavior.
 
 ```text
 /ask-project opencode "How does OpenCode represent provider configuration in its schema, especially provider id, model id, options, baseURL, models, enabled providers, and disabled providers?"
@@ -150,10 +151,9 @@ local instance trust boundaries more than on systematic redaction.
 `packages/opencode/src/provider/provider.ts`,
 `packages/opencode/src/config/provider.ts`.
 
-**Codegeist implication:** Codegeist should intentionally differ here. After SpEL
-evaluation, any diagnostic or `--show-config` output must redact fields whose
-names or paths imply secrets, including `api-key`, `token`, `authorization`,
-`secret`, and provider-specific sensitive options.
+**Codegeist implication:** Codegeist follows the trusted-local-output boundary for
+the current config slice. `--show-config` prints configured values unchanged, so
+that output must be treated as sensitive when config contains credentials.
 
 ## OpenCode Credentials, Auth, And Provider Accounts
 
@@ -175,7 +175,7 @@ keys into runtime provider info.
 **Codegeist implication:** T006_03 intentionally does not implement this split.
 The only current mechanism is SpEL materializing config values. If Codegeist adds
 an auth store later, it should be a new task with explicit storage, active account
-selection, and redaction behavior.
+selection, and sensitive-output behavior.
 
 ```text
 /ask-project opencode "How does OpenCode's /connect flow store API-key credentials and OAuth credentials? Include source paths and sequence of calls."
@@ -291,10 +291,9 @@ or provider runtime objects include materialized `apiKey` or `key` fields.
 `packages/opencode/src/server/routes/instance/config.ts`,
 `packages/opencode/src/config/provider.ts`.
 
-**Codegeist implication:** Add redaction as a Codegeist-owned policy near output
-surfaces, not as an implicit property of provider config. T006_03 should document
-the risk, and implementation tasks should test that evaluated secrets are not
-printed.
+**Codegeist implication:** Do not add automatic masking as an implicit property of
+provider config. T006_03 should document the sensitive-output risk, and config
+commands that intentionally print resolved config should be tested as direct output.
 
 ## OpenCode Provider Runtime And Model Selection
 
@@ -348,9 +347,9 @@ filters Models.dev providers before merging connected providers.
 **Evidence:** `packages/opencode/src/provider/provider.ts`,
 `packages/opencode/src/server/routes/instance/provider.ts`.
 
-**Codegeist implication:** Keep the planned Codegeist `enabled-providers` and
-`disabled-providers` semantics simple and test disabled-wins behavior. A disabled
-provider must not become callable just because SpEL produced a key.
+**Codegeist implication:** Keep Codegeist provider selection simple until a
+focused runtime-selection task exists. A provider with `enabled: false` must not
+become callable just because SpEL produced a value.
 
 ```text
 /ask-project opencode "How does OpenCode support custom OpenAI-compatible providers with baseURL, model maps, and provider options?"
@@ -539,7 +538,7 @@ trusted local input for the first slice, and unrestricted SpEL should not be
 marketed as safe for untrusted config.
 
 ```text
-/ask-project opencode "Where can OpenCode resolved config output leak materialized secrets, and what redaction strategy should Codegeist apply after SpEL evaluation?"
+/ask-project opencode "Where can OpenCode resolved config output leak materialized secrets, and how should Codegeist document sensitive output after SpEL evaluation?"
 ```
 
 **Answer:** Resolved OpenCode config can expose provider options, and runtime
@@ -552,10 +551,9 @@ single redaction pass that all config outputs use.
 `packages/opencode/src/provider/provider.ts`,
 `packages/opencode/src/config/provider.ts`.
 
-**Codegeist implication:** Apply path-aware and key-name-aware redaction after
-SpEL evaluation and before any config display. Redaction should cover both known
-fields such as `api-key` and arbitrary provider option keys that match sensitive
-name patterns.
+**Codegeist implication:** Treat resolved config display as sensitive output.
+`--show-config` should print configured values unchanged and callers should avoid
+persisting that output when it contains credentials.
 
 ## Spring AI Agent Utils Provider Integration Examples
 
@@ -949,11 +947,11 @@ builder-map convenience, not a full config system.
 `spring-ai-agent-utils/docs/TaskTools.md`.
 
 **Codegeist implication:** Use Spring AI APIs directly or behind thin Codegeist
-wrappers. Keep Codegeist provider config, policy, smoke statuses, and redaction
-owned by Codegeist.
+wrappers. Keep Codegeist provider config, policy, smoke statuses, and
+sensitive-output policy owned by Codegeist.
 
 ```text
-/ask-project opencode "What should Codegeist ask from OpenCode before implementing unrestricted SpEL-backed codegeist.yml parsing, sensitive output redaction, and remote-free provider smoke gates?"
+/ask-project opencode "What should Codegeist ask from OpenCode before implementing unrestricted SpEL-backed codegeist.yml parsing, sensitive config output, and remote-free provider smoke gates?"
 ```
 
 **Answer:** Ask OpenCode for config source precedence, config variable
@@ -997,7 +995,7 @@ the source of Codegeist's config parser or smoke harness design.
 ## Recommended Question Order
 
 1. OpenCode config merge and provider map behavior.
-2. OpenCode config variable substitution and resolved-config redaction risks.
+2. OpenCode config variable substitution and resolved-config sensitive-output risks.
 3. OpenCode provider runtime and remote-call safety behavior.
 4. Spring AI Agent Utils `ChatClient` and `ChatModel` wiring.
 5. Spring AI Agent Utils Ollama and testing examples.

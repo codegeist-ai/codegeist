@@ -1,10 +1,8 @@
 package ai.codegeist.app.config;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.io.IOException;
@@ -13,6 +11,7 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,8 +27,6 @@ public class CodegeistConfigService {
 
     static final String SHOW_CONFIG_COMMAND = "--show-config";
 
-    static final String LOAD_ERROR_PREFIX = "Failed to load Codegeist config file: ";
-    static final String WRITE_ERROR_MESSAGE = "Failed to render Codegeist config as YAML";
     static final String VALIDATION_ERROR_PREFIX = "Invalid Codegeist config file: ";
 
     @Getter
@@ -40,49 +37,46 @@ public class CodegeistConfigService {
     @Autowired
     private Validator validator;
 
-    // Keep direct codegeist.yml wrapper-free; see
-    // docs/developer/architecture/provider-configuration.md and scripts/tests/native-smoke.sh.
-    private final ObjectMapper yamlMapper = new ObjectMapper(YAMLFactory.builder()
-            .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-            .build())
-            .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+    @Autowired
+    @Qualifier(CodegeistYamlConfiguration.CODEGEIST_YAML_OBJECT_MAPPER_BEAN)
+    private ObjectMapper yamlMapper;
+
+    @Autowired
+    private CodegeistYamlExpressionEvaluator expressionEvaluator;
 
     @Bean
     @Primary
-    public CodegeistConfig mergedCodegeistConfig() {
-        log.debug("Creating primary merged Codegeist config bean from Spring-bound config");
+    public CodegeistConfig primaryCodegeistConfig() {
+        log.debug("Creating primary Codegeist config bean from Spring-bound config");
         return springBoundConfig;
     }
 
+    @SneakyThrows(IOException.class)
     public CodegeistConfig loadConfig(String configPath) {
-        try {
-            log.debug("Loading Codegeist config file: {}", configPath);
-            CodegeistConfig loadedConfig = yamlMapper.readValue(Path.of(configPath).toFile(),
-                    CodegeistConfig.class);
-            validateConfig(loadedConfig, configPath);
-            log.debug("Loaded valid Codegeist config file: {}", configPath);
-            return loadedConfig;
-        } catch (IOException ex) {
-            throw new IllegalStateException(LOAD_ERROR_PREFIX + configPath, ex);
-        }
+        log.debug("Loading Codegeist config file: {}", configPath);
+        JsonNode rawTree = yamlMapper.readTree(Path.of(configPath).toFile());
+        JsonNode sourceTree = rawTree == null ? yamlMapper.createObjectNode() : rawTree;
+        JsonNode evaluatedTree = expressionEvaluator.evaluate(sourceTree, configPath);
+        CodegeistConfig loadedConfig = yamlMapper.readerFor(CodegeistConfig.class)
+                .readValue(evaluatedTree);
+        validateConfig(loadedConfig, configPath);
+        log.debug("Loaded valid Codegeist config file: {}", configPath);
+        return loadedConfig;
     }
 
+    @SneakyThrows(JsonProcessingException.class)
     public String toYaml(CodegeistConfig codegeistConfig) {
-        try {
-            log.debug("Rendering merged Codegeist config as YAML");
-            return yamlMapper.writeValueAsString(codegeistConfig);
-        } catch (JsonProcessingException ex) {
-            throw new IllegalStateException(WRITE_ERROR_MESSAGE, ex);
-        }
+        log.debug("Rendering Codegeist config as YAML");
+        return yamlMapper.writeValueAsString(codegeistConfig == null ? new CodegeistConfig() : codegeistConfig);
     }
 
-    @Command(name = SHOW_CONFIG_COMMAND, description = "Print the merged Codegeist config")
+    @Command(name = SHOW_CONFIG_COMMAND, description = "Print the current Codegeist config")
     public void showConfig(CommandContext context) {
-        log.debug("Printing merged Codegeist config");
+        log.debug("Printing current Codegeist config");
         // Native/release smokes assert stdout is YAML-only; keep labels and logs out
         // of this path.
-        // Route through the merged bean method so later source merging reaches the command.
-        context.outputWriter().print(toYaml(mergedCodegeistConfig()));
+        // Route through the primary config bean so later source-loading policy reaches the command.
+        context.outputWriter().print(toYaml(primaryCodegeistConfig()));
         context.outputWriter().flush();
     }
 

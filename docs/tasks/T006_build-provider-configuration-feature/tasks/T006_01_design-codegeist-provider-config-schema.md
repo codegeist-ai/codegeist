@@ -29,8 +29,8 @@ ways:
 - Keep Lombok focused: `@Getter` and `@Setter` are acceptable for the config POJOs.
 - Keep the first config model intentionally tiny: top-level `provider` map only.
 - Keep each provider entry limited to `name` for now.
-- Do not add `model`, `small-model`, `enabled-providers`, `disabled-providers`,
-  `type`, `credentials`, `options`, `models`, capabilities, or limits yet.
+- Do not add `model`, `small-model`, top-level provider filter lists, `type`,
+  `credentials`, `options`, `models`, capabilities, or limits yet.
 
 ## Java Shape
 
@@ -47,9 +47,9 @@ public class CodegeistConfig {
 }
 ```
 
-Use `CodegeistConfig` for the model name. The merged config is exposed as the
-primary `CodegeistConfig` bean, so normal unqualified injection receives the
-merged config.
+Use `CodegeistConfig` for the model name. The primary config is exposed as the
+primary `CodegeistConfig` bean, so normal unqualified injection receives that
+config.
 
 ```java
 @Getter
@@ -79,15 +79,19 @@ method for loading a specific `codegeist.yml` path with Jackson YAML.
 - Do not use Spring `Binder` to load `codegeist.yml`; direct file loading belongs
   to Jackson YAML.
 
-## Merge Direction
+## Primary Config Direction
 
-Merge remains intentionally small while the model contains only providers:
+This first task only defined the initial source order idea. The current
+implementation has no model-level merge or combination helper:
 
-- Scalars: later non-null values replace earlier values.
-- Provider map: merge by provider id.
-- Provider `name`: later non-null value replaces earlier value.
+- The primary config bean currently returns the Spring-bound config.
+- Explicit `codegeist.yml` paths are loaded as single files through
+  `CodegeistConfigService.loadConfig(String configPath)`.
+- Later home-path or startup-file work must define combination semantics before
+  adding additional sources.
 
-Potential source order, from lowest to highest precedence:
+Historical candidate source order, if future work defines combination semantics,
+from lowest to highest precedence:
 
 1. Spring-bound defaults from `application.yaml`.
 2. Home config file at `~/.config/codegeist/codegeist.yml`.
@@ -150,14 +154,11 @@ git --no-pager diff --check
 - The accepted model is `ai.codegeist.app.config.CodegeistConfig` with a
   top-level `provider` map whose `ProviderConfig` entries currently contain only
   `name`.
-- The primary merged config bean is selected by unqualified `CodegeistConfig`
-  injection through Spring `@Primary`.
+- The primary config bean is selected by unqualified `CodegeistConfig` injection
+  through Spring `@Primary`.
 - `CodegeistConfigService` owns access to the Spring-bound config properties and
   direct explicit-path YAML loading.
-- The current model types expose non-mutating `merge(...)` methods that implement
-  the specified provider-id and non-null scalar precedence. Runtime source-order
-  orchestration is still deferred to `T006_04` follow-up work.
-- Runtime home-path loading, service-level source merge orchestration, provider
+- Runtime home-path loading, service-level multi-source orchestration, provider
   options, credentials, model selection, and provider calls remain in later T006
   child tasks. Annotation-based validation belongs to `T006_04` with the loader
   implementation.

@@ -24,7 +24,7 @@ setup flows, OAuth, auth stores, or model selection rules.
   sandbox, whitelist, or expression restriction.
 - Define a minimal parser pipeline for evaluating scalar YAML values with SpEL.
 - Keep provider examples limited to essential provider connection/config values.
-- Call out output-redaction and secret-in-git risks that later commands must handle.
+- Call out sensitive-output and secret-in-git risks that later commands must handle.
 - Catalog each provider's account setup, API free-tier/no-cost posture, billing or
   credit requirements, safe smoke posture, and Spring AI starter route.
 - Distinguish API free tiers from consumer web-chat free plans.
@@ -46,7 +46,7 @@ credential-reference language such as `api-key-env`, `profile-env`, or
 After SpEL evaluation, values are ordinary config values. If a SpEL expression
 reads an environment variable, that secret value is materialized in memory as part
 of the normalized config. That is acceptable for this trusted-local-input slice,
-but later output commands and logs must not print those values accidentally.
+but commands that print resolved config must be treated as sensitive output.
 
 The first implementation should not restrict SpEL features. It may use standard
 Spring SpEL capabilities such as type references, method calls, property access,
@@ -305,12 +305,12 @@ Making a provider "available" in Codegeist is more than adding a provider id to
 | Layer | Required work | Why it matters |
 | --- | --- | --- |
 | Build availability | The needed Spring AI starter or compatible integration is on the application classpath and covered by native-image posture when native builds are in scope. | Spring Boot cannot create provider clients from config if the provider classes are not packaged. |
-| Config shape | `ProviderConfig` can bind the fields needed by that provider, at minimum `type`, provider id, model or deployment selector when required, endpoint fields, credential references, enablement, and provider options. | The current implemented model only has provider `name`; later tasks must add fields before real provider use. |
-| Source loading | `codegeist.yml` sources are discovered, SpEL-evaluated, mapped, validated, merged, and redacted before diagnostics. | Provider use must consume normalized config, not raw YAML with unevaluated expressions or leaked secrets. |
+| Config shape | `ProviderConfig` can bind the fields needed by that provider, at minimum `type`, provider id, model or deployment selector when required, endpoint fields, credential values or references, enablement, and provider options. | The current config-only implementation binds `ollama` and `openai`; later provider-use tasks must add provider-specific runtime requirements only when a call path needs them. |
+| Source loading | `codegeist.yml` sources are discovered, SpEL-evaluated, mapped, and validated before diagnostics. | Provider use must consume normalized config, not raw YAML with unevaluated expressions. |
 | Safety gate | Local, config-only, and hosted `remote-free` modes are decided before a provider call. API-key presence is never permission to call a hosted provider. | Prevents accidental paid remote calls and keeps provider smokes repeatable. |
 | Runtime selection | A command, session, smoke allowlist, or later model-selection policy chooses one provider id and model/deployment for the current request. | On-demand use means Codegeist should not initialize or call every configured provider at startup. |
 | Client creation | Codegeist maps the selected provider config to the matching Spring AI `ChatModel` or `ChatClient` path and creates it only when selected. | Keeps provider work lazy, testable, and isolated to the requested provider. |
-| Result handling | Calls return an observable response, status, duration, and redacted diagnostics. Failures identify missing config, missing dependency, blocked cost posture, provider setup gaps, or provider API failure. | Users need actionable feedback without seeing secret values. |
+| Result handling | Calls return an observable response, status, duration, and diagnostics. Failures identify missing config, missing dependency, blocked cost posture, provider setup gaps, or provider API failure. | Users need actionable feedback and must treat any config-bearing output as sensitive. |
 
 The first implementation should stay lazy. Loading config, running `--show-config`,
 or starting the CLI must not instantiate all provider clients, pull local models,
@@ -330,10 +330,10 @@ define and test this smallest contract:
    For most chat providers this means `type`, `model`, credentials or local
    endpoint information, and any required provider option such as Bedrock region or
    NVIDIA `options.max-tokens`.
-5. Config loading has evaluated SpEL values, run Bean Validation, merged sources,
-   and redacted any diagnostic output.
-6. The selected provider is enabled and not blocked by `enabled-providers`,
-   `disabled-providers`, provider `enabled: false`, or later policy.
+5. Config loading has evaluated SpEL values and run Bean Validation. If future
+   work adds multi-source combination, it must define that policy explicitly.
+6. The selected provider is enabled and not blocked by provider `enabled: false`
+   or later policy.
 7. The selected execution mode permits the call: `local` for local providers,
    `remote-free` only with explicit no-cost confirmation for eligible hosted
    providers, and `config` for no-call configuration checks.
@@ -341,7 +341,7 @@ define and test this smallest contract:
    properties/options or builder objects without mutating global Spring properties.
 9. Codegeist creates the selected `ChatModel` or `ChatClient` lazily for the current
    request or smoke, then reports `passed`, `skipped`, `blocked`, or `failed` with
-   a redacted reason and duration.
+   a reason and duration.
 
 This contract is intentionally per-provider. Do not introduce a broad provider
 registry, adapter hierarchy, dynamic plugin layer, or model-selection policy before
@@ -351,8 +351,9 @@ shape private until a second provider proves what should be shared.
 
 ## Configuration Fields Needed For On-Demand Use
 
-The current Java implementation only supports `provider.<id>.name`. Provider use
-requires later tasks to expand the config model in small tested steps.
+The current Java implementation supports config-only `ollama` and `openai`
+provider entries with typed fields. Provider use still requires later tasks to
+connect one selected provider config to Spring AI in small tested steps.
 
 Minimum candidate fields for on-demand provider use:
 
@@ -360,7 +361,6 @@ Minimum candidate fields for on-demand provider use:
 | --- | --- | --- |
 | `provider.<id>.type` | all real providers | Selects the provider integration, for example `ollama`, `anthropic`, or `openai`. |
 | `provider.<id>.enabled` | all providers | Allows a configured provider to stay in config without being callable. |
-| `enabled-providers` / `disabled-providers` | top-level future fields | Allows command-level filtering across provider ids; disabled should win when both lists mention the provider. |
 | `provider.<id>.model` | most chat providers | Selects the chat model or local model tag for the selected provider. |
 | `provider.<id>.base-url` | local and OpenAI-compatible providers, optional for many dedicated providers | Overrides local daemons, proxies, hosted endpoints, and compatibility APIs. |
 | `provider.<id>.completions-path` | OpenAI-compatible providers | Handles providers such as Perplexity or Azure-shaped endpoints that need a non-default path. |
@@ -383,7 +383,7 @@ usable path.
 | --- | --- | --- | --- | --- |
 | `ollama` | Add `spring-ai-starter-model-ollama`. | `type`, `model`, `base-url`, deterministic `options` as needed. | `local`; no hosted account. | Local daemon/Testcontainer lifecycle, model pull timing, stable assertion, and first private client-creation path. |
 | `docker-model-runner` | Add/reuse `spring-ai-starter-model-openai`. | `type`, `model`, `base-url`, optional dummy key, OpenAI-compatible options. | `local`; no hosted account. | Docker Model Runner availability, model pull/cache lifecycle, and OpenAI-compatible base URL behavior. |
-| `openai` | Add `spring-ai-starter-model-openai`. | `type`, `model`, `credentials.api-key-env`, optional `base-url`, org/project, token caps. | `blocked` unless explicit credits/no-cost confirmation exists. | Billing/credits, secret redaction, and no default remote call from API-key presence. |
+| `openai` | Add `spring-ai-starter-model-openai`. | `type`, `model`, `credentials.api-key-env`, optional `base-url`, org/project, token caps. | `blocked` unless explicit credits/no-cost confirmation exists. | Billing/credits, sensitive config output, and no default remote call from API-key presence. |
 | `anthropic` | Add `spring-ai-starter-model-anthropic`. | `type`, `model`, `credentials.api-key-env`, token cap/options. | `blocked` unless explicit no-cost account state exists. | API billing confirmation and provider-specific options such as max tokens, service tier, and geo. |
 | `bedrock-converse` | Add `spring-ai-starter-model-bedrock-converse`. | `type`, `model`, AWS credential source, `options.region`, timeout/token options. | `blocked` unless explicit AWS credit/sandbox decision exists. | AWS account, region, Bedrock model access, profile/credentials chain, and deployment permissions. |
 | `google-genai` | Add `spring-ai-starter-model-google-genai`. | `type`, `model`, API-key mode or Vertex project/location mode, provider options. | `remote-free` only for confirmed Gemini Developer API free-tier route; Vertex/cloud mode is blocked until confirmed. | Keeping Developer API and Vertex-style billing paths separate. |
@@ -411,7 +411,7 @@ command or smoke selects provider id
 -> map Codegeist config to provider-specific Spring AI options
 -> create ChatModel or ChatClient for the selected provider only
 -> execute one local or explicitly allowed remote request
--> report redacted status, duration, and blocker/failure reason
+-> report status, duration, and blocker/failure reason
 ```
 
 Do not bind all provider config into Spring Boot's global `spring.ai.*` properties
@@ -426,7 +426,7 @@ that constraint in the provider-specific task before adding the starter.
 
 Use this order so provider availability grows without a broad placeholder layer:
 
-1. `T006_04`: finish config source loading, SpEL evaluation, redaction, and merged
+1. `T006_04`: finish config source loading, SpEL evaluation, direct rendering, and
    config behavior. No provider client creation.
 2. `T006_05`: add the Ollama starter and one local on-demand provider call through
    a focused test. This is the first place to add the minimal private factory or
@@ -474,7 +474,7 @@ Use this order so provider availability grows without a broad placeholder layer:
 - The task examples avoid provider model selection.
 - The task keeps provider calls, remote smokes, runtime account setup flows, OAuth,
   and auth-store design out of scope.
-- The task records the output-redaction risk caused by materialized SpEL values.
+- The task records the sensitive-output risk caused by materialized SpEL values.
 - Every provider from `T006_02` has an account/free-tier row with official source
   references and a `last-checked` date.
 - Every provider row states its Spring AI route for the pinned `2.0.0-M6` baseline.
@@ -533,8 +533,8 @@ Use this order so provider availability grows without a broad placeholder layer:
   Spring AI route; a dedicated Codegeist `openrouter` type would be a thin profile
   for headers, routing options, and `:free` gating rather than a separate client.
 - Provider availability is defined as layered readiness: build dependency,
-  config shape, evaluated/validated/merged config, safety gate, runtime selection,
-  lazy client creation, and redacted result handling.
+  config shape, evaluated/validated config, safety gate, runtime selection,
+  lazy client creation, and result handling.
 - On-demand use should select one provider id, create only that provider's Spring
   AI client for the current request or smoke, and never instantiate or call every
   configured provider at startup.
@@ -558,7 +558,7 @@ git --no-pager diff --check
 ## Planning Notes
 
 - `T006_04` should implement the minimal SpEL evaluation pipeline before broader
-  source merge features are added.
+  source-combination features are added.
 - `T006_05` should still keep the first real provider call local through Ollama.
 - `T006_06` owns provider smoke status, local/remote gating, and remote-call safety.
 - `T006_06` hosted-provider smoke rows must consume this account/free-tier catalog

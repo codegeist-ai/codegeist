@@ -16,14 +16,13 @@ and only then implements validated provider loading and connection smoke checks.
 ## Feature Decision
 
 Use `kebab-case` for committed `codegeist.yml` keys, for example
-`enabled-providers`, `disabled-providers`, and `base-url`.
+`base-url`, `completions-path`, and `organization-id`.
 
 Keep Codegeist structurally close to OpenCode where the model applies:
 
 - `provider.<provider-id>` contains provider configuration;
 - `provider.<provider-id>.options` contains provider-specific runtime options;
-- provider enablement is controlled through `enabled-providers` and
-  `disabled-providers`;
+- provider enablement starts with the per-provider `enabled` field;
 - provider config values may be computed with Spring SpEL in the minimal parser
   slice;
 - model selection and credential-store design are deferred until focused later
@@ -52,7 +51,8 @@ OpenCode behavior to translate, not copy:
   auth, or plugins.
 - Custom OpenAI-compatible providers can be configured with a provider id,
   `baseURL`, and explicit model map.
-- Runtime provider filtering supports disabled and enabled provider lists.
+- Runtime provider filtering supports provider availability policies that
+  Codegeist should define only when a focused task needs them.
 
 ## Spring AI Baseline
 
@@ -76,7 +76,7 @@ Current Codegeist state:
   minimal Spring SpEL config-evaluation strategy for provider config and catalog
   provider account/free-tier, starter, and on-demand availability requirements.
 - `T006_04_implement-codegeist-yml-loading.md` - implement focused loading,
-  SpEL evaluation, redacted rendering, and validation of `codegeist.yml`, including
+  SpEL evaluation, direct rendering, and validation of `codegeist.yml`, including
   typed config records/POJOs for supported providers, without provider calls.
 - `T006_05_verify-local-ollama-provider.md` - prove the first local provider path
   through Ollama with deterministic options and narrow assertions.

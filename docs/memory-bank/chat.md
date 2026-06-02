@@ -28,39 +28,51 @@
   version, currently `0.1.0-SNAPSHOT`.
 - `app/codegeist/cli` implements `--show-config` as a Spring Shell command in
   `ai.codegeist.app.config.CodegeistConfigService`. The service resolves the
-  current primary merged `CodegeistConfig` and prints only direct `codegeist.yml`
-  YAML with no `codegeist:` wrapper and no YAML document marker. Until real source
-  merge is implemented, this is the Spring-bound config.
+  current primary `CodegeistConfig` and prints only direct `codegeist.yml` YAML
+  with no `codegeist:` wrapper and no YAML document marker. Until additional
+  source loading is implemented, this is the Spring-bound config.
 - `application.yaml` sets `spring.shell.interactive.enabled=false` so Spring
   Shell's noninteractive runner handles `--version` by default without a custom
   runner class. Interactive shell behavior is deferred.
 - `CodegeistApplication.APP_NAME` is the shared application name and Spring config
   prefix. Provider configuration code lives under `ai.codegeist.app.config`.
-  `CodegeistConfig` is the current minimal config model: a provider map
-  whose `ProviderConfig` values contain only `name`. It is both Spring-bound with
-  `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)`, where
-  `CONFIGURATION_PREFIX` is defined from `CodegeistApplication.APP_NAME`, and
-  annotated for Jackson YAML mapping. Config validation is annotation-first through
-  Bean Validation: provider ids must be non-blank, provider `name` is optional but
-  must be non-blank when present, and direct Jackson YAML loads call
-  `jakarta.validation.Validator` explicitly.
+  `CodegeistConfig` is the current typed config model: a `provider` map whose
+  values are abstract sealed `ProviderConfig` instances selected from the required
+  provider object `type` field through `@Provider` annotations. It is Spring-bound
+  with `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)`,
+  where `CONFIGURATION_PREFIX` is defined from `CodegeistApplication.APP_NAME`, and
+  uses Jackson YAML metadata for direct `codegeist.yml` mapping. It receives the
+  qualified YAML `ObjectMapper` so `setProvider(...)` can normalize raw provider
+  maps into typed provider config classes. Supported config-only provider classes
+  are currently only `ollama` and `openai`; the broader provider matrix and
+  OpenCode-only provider types remain unsupported in this slice.
+- `CodegeistYamlConfiguration` exposes the qualified `codegeistYamlObjectMapper`
+  bean used by the config service and config model for direct `codegeist.yml`
+  parsing, provider normalization, and rendering. The mapper carries Jackson
+  injectable values for direct `CodegeistConfig` loads.
+- `CodegeistYamlExpressionEvaluator` is a Spring service that receives the YAML
+  mapper bean and owns scalar SpEL preprocessing for direct YAML loads.
 - `CodegeistConfigService` receives the Spring-bound `CodegeistConfig` through
   field `@Autowired` plus `@Qualifier(CodegeistConfig.SPRING_BOUND_CONFIG_BEAN)`,
-  exposes `mergedCodegeistConfig` as a primary `@Bean` that currently returns that
+  exposes `primaryCodegeistConfig` as a primary `@Bean` that currently returns that
   config, and can load an explicit YAML path with `loadConfig(String configPath)`
-  using Jackson YAML. Normal app code injects unqualified `CodegeistConfig` to get
-  the primary merged config. Invalid direct YAML loads throw
-  `CodegeistConfigValidationException`. `toYaml(...)` emits direct `codegeist.yml`
-  shape and keeps empty configs visible as `provider: {}`.
-  `CodegeistConfigServiceTest` owns the no-wrapper/no-document-marker YAML shape
-  assertions, while `CodegeistConfigCommandTest` focuses on command wiring,
-  parseable stdout, expected config content, and empty stderr.
-  `CodegeistConfig.merge(...)` and `ProviderConfig.merge(...)` implement
-  non-mutating model-level merge behavior for later source-order work: providers
-  merge by id and later non-null provider fields replace earlier values. Home-path
-  discovery, service-level merge orchestration beyond returning the Spring-bound
-  config, inheritance, provider options, credentials, and model selection are not
-  implemented yet.
+  using a phased parser: read YAML into a Jackson tree, evaluate SpEL only in
+  string scalar values containing `#{`, map raw provider objects into concrete
+  provider config classes, then call `jakarta.validation.Validator`. Normal app
+  code injects unqualified `CodegeistConfig` to get the primary config.
+  Bean Validation and SpEL failures throw `CodegeistConfigValidationException`;
+  Jackson mapping and IO failures surface directly through Lombok `@SneakyThrows`.
+  `toYaml(...)` emits public direct `codegeist.yml` shape, leaves configured values
+  unchanged, and keeps empty configs visible as `provider: {}`. `--show-config` can
+  print API keys or other sensitive config values when they are present.
+  `CodegeistConfigServiceTest` owns Spring binding and direct-path loading,
+  `CodegeistProviderConfigTest` owns type dispatch and local validation,
+  `CodegeistConfigSpelEvaluationTest` owns scalar SpEL preprocessing, and
+  `CodegeistConfigCommandTest` owns command stdout and direct-value rendering.
+  There is no model-level multi-source combination helper now. Home-path
+  discovery, service-level combination beyond returning the Spring-bound config,
+  inheritance, provider runtime selection, provider clients, model calls, and
+  model catalogs are not implemented yet.
 - `app/codegeist/cli/src/main/resources/logback.xml` routes logs only to
   `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
   output. Current Spring `@Service` and `@Component` classes use Lombok `@Slf4j`
@@ -140,9 +152,8 @@
   editable Excalidraw sketches.
 - `docs/developer/architecture/provider-configuration.md` is the focused current
   source-code doc for the T006 config slice. It explains the Spring component
-  model, direct Jackson YAML loading, Bean Validation flow, tests, sharp edges,
-  and includes an editable Excalidraw overview under
-  `docs/developer/architecture/diagrams/provider-config-spring-flow.excalidraw.svg`.
+  model, direct Jackson YAML loading, SpEL preprocessing, provider type dispatch,
+  Bean Validation flow, command rendering, tests, and sharp edges.
 - `docs/developer/specification/` now contains only the surviving high-level
   specifications and guidance:
   - `codegeist-opencode-parity.md`
@@ -180,41 +191,31 @@
   question catalog now lives at
   `docs/tasks/T006_build-provider-configuration-feature/hints/source-evidence-question-catalog.md`
   with OpenCode and Spring AI Agent Utils answers for config merge, auth/runtime
-  boundaries, redaction, remote-call safety, `ChatClient` wiring, and testing
+  boundaries, sensitive-output handling, remote-call safety, `ChatClient` wiring, and testing
   gaps. `T006_03` also includes the provider account/free-tier catalog: each
   provider records account setup, official API free-tier/no-cost posture, billing
   or credit requirements, safe default smoke posture, and whether Spring AI
   `2.0.0-M6` uses a dedicated starter or the OpenAI-compatible starter path before
   hosted-provider remote smokes use real accounts. It now defines provider
   availability as layered readiness: Spring AI dependency route, config fields,
-  evaluated/validated/merged config, safety gate, runtime provider selection, lazy
-  `ChatModel`/`ChatClient` creation for the selected provider only, and redacted
+  evaluated/validated config, safety gate, runtime provider selection, lazy
+  `ChatModel`/`ChatClient` creation for the selected provider only, and
   result handling. It also contains an OpenCode-vs-Codegeist provider comparison:
   OpenCode already supports broad AI SDK/Models.dev/provider-directory coverage,
   while Codegeist's first wave stays limited to pinned Spring AI routes; OpenRouter
   is classified as an OpenAI-compatible candidate that needs no dedicated Spring AI
   starter unless Codegeist wants a thin profile for headers, routing, and `:free`
-  gating. `T006_04` has a partial implementation with `CodegeistConfigService`
-  and explicit path loading under `ai.codegeist.app.config`, plus packaged native
-  `--show-config` smoke coverage for the current empty default output. `T006_04`
-  is now expanded to use `T006_03` as input: implement trusted-local SpEL before
-  YAML mapping, redacted `--show-config`, and provider-specific Java config
-  records/POJOs for supported types (`ollama`, `docker-model-runner`, `openai`,
-  `azure-openai`, `anthropic`, `bedrock-converse`, `google-genai`, `deepseek`,
-  `minimax`, `mistral-ai`, `groq`, `nvidia`, `perplexity`, and `openrouter`). The
-  task now includes OpenCode/Spring AI implementation notes: OpenCode builds
-  provider state from Models.dev, config, env/auth storage, and plugins; filters
-  `enabled_providers`/`disabled_providers`; and creates SDK/language models lazily
-  for the selected model. Codegeist should translate only the useful contracts:
-  nested provider `options`, lazy one-provider runtime creation later, redaction,
-  OpenAI-compatible `base-url`/`completions-path`, and provider-specific sharp
-  edges such as Bedrock region/profile, Azure deployment/resource, Anthropic and
-  Mistral tool-message quirks, DeepSeek reasoning, NVIDIA `max-tokens`, and
-  OpenRouter headers/routing/`:free` gating. The config records are data contracts
-  only; no Spring AI starters, provider clients, smoke commands, local model pulls,
-  or remote calls belong in `T006_04`. Next are implementing that expanded
-  `T006_04`, `T006_05` for local Ollama verification, and `T006_06` for the
-  provider connection smoke harness.
+  gating. `T006_04` is now implemented as the config-only typed YAML loading
+  slice under `ai.codegeist.app.config`: trusted-local SpEL runs before direct YAML
+  mapping, provider object `type` selects concrete Java config classes for only
+  `ollama` and `openai`, provider fields validate locally, `--show-config` leaves
+  configured values unchanged, and empty configs render as `provider: {}`. The config
+  classes are data contracts only; all other provider types are deferred, and no
+  Spring AI starters, provider clients, smoke commands, local model pulls, or
+  remote calls were added. The implementation was verified with the full Maven
+  suite, Linux jar/native smokes, and Windows QEMU jar/native smokes. Next are
+  `T006_05` for local Ollama verification and `T006_06` for the provider
+  connection smoke harness.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -235,20 +236,20 @@
   reuse owning constants for class-owned error messages and prefixes, such as
   `CodegeistConfigService.VALIDATION_ERROR_PREFIX`, instead of duplicating string
   fragments.
-- Codegeist provider configuration currently starts in code with only `provider`
-  entries and provider `name`. The config properties POJO should keep
+- Codegeist provider configuration currently has config-only typed `ollama` and
+  `openai` provider entries. The config properties POJO should keep
   `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)` so
   `application.yaml` can configure it, with the prefix constant backed by
   `CodegeistApplication.APP_NAME`, while direct `codegeist.yml` loading uses
   Jackson YAML against the same POJO.
 - Use Jackson YAML (`jackson-dataformat-yaml`) as the current direct YAML-to-POJO
-  mapping framework for `codegeist.yml`, but later provider config loading should
-  add a minimal Spring SpEL evaluation phase before mapping. `T006_04` may add the
-  supported provider config records/POJOs and validate configured `model`,
-  `enabled`, `base-url`, `completions-path`, ordinary scalar credential fields, and
-  nested provider `options`; runtime model selection policy, provider capabilities,
-  inheritance, runtime source orchestration beyond the task scope, provider
-  starters, and provider calls stay deferred to later T006 child tasks.
+  mapping framework for `codegeist.yml`. Current direct YAML loading evaluates a
+  minimal Spring SpEL phase before mapping string scalar values containing `#{`.
+  `T006_04` validates configured `model`, `enabled`, `base-url`,
+  `completions-path`, ordinary scalar credential fields, and nested provider
+  `options`; runtime model selection policy, provider capabilities, inheritance,
+  runtime source orchestration beyond the task scope, provider starters, and
+  provider calls stay deferred to later T006 child tasks.
 - Do not create placeholder classes, ids, ports, enums, records, package layers,
   validation hierarchies, or empty package directories before a focused test or
   workflow needs them.
@@ -344,9 +345,8 @@
   implemented packages, classes, configuration, runtime flows, or tests change.
 - For the next release, run `/codegeist-release --source <release-branch> --rc 1`;
   do not enter the version manually unless checking an inferred-version conflict.
-- Next provider work should continue with the remaining `T006_04` config loading
-  and SpEL evaluation work before `T006_05` local Ollama verification and
-  `T006_06` provider smoke harness work. Use the solved `T006_03`
-  account/free-tier catalog before adding hosted provider-specific smoke rows or
-  treating any hosted provider as `remote-free`; use its availability matrix before
-  adding a provider starter or client code.
+- Next provider work should continue with `T006_05` local Ollama verification and
+  `T006_06` provider smoke harness work. Use the solved `T006_03` account/free-tier
+  catalog before adding hosted provider-specific smoke rows or treating any hosted
+  provider as `remote-free`; use its availability matrix before adding a provider
+  starter or client code.

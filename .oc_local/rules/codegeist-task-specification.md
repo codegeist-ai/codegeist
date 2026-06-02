@@ -162,13 +162,12 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   configuration, or tests change.
 - For `T006_build-provider-configuration-feature`, work provider support in order:
   first design the `codegeist.yml` schema with `kebab-case` keys such as
-  `enabled-providers`, `disabled-providers`, and `base-url`; then create
-  the Spring AI provider matrix; then define the minimal Spring SpEL config
-  evaluation strategy and provider availability analysis;
-  only then implement config loading, local Ollama verification, and remote
-  connection smokes. Do not create provider accounts, use paid provider resources,
-  or run remote provider tests before the schema, matrix, SpEL strategy, and
-  provider availability analysis are complete.
+  `base-url`, `completions-path`, and `organization-id`; then create the Spring AI
+  provider matrix; then define the minimal Spring SpEL config evaluation strategy
+  and provider availability analysis; only then implement config loading, local
+  Ollama verification, and remote connection smokes. Do not create provider
+  accounts, use paid provider resources, or run remote provider tests before the
+  schema, matrix, SpEL strategy, and provider availability analysis are complete.
 - For Codegeist provider integration tests, cover as many configured providers as
   possible without causing charges: default tests may validate evaluated config
   and client wiring without hosted provider calls; local tests may run real local
@@ -180,12 +179,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   nested, and the first parser slice uses unrestricted Spring SpEL evaluation
   instead of a separate credential-reference schema. Defer model selection until a
   focused provider/model task needs it.
-- For `T006_04`, provider-specific Java config records/POJOs are allowed for every
-  supported provider type from the T006_03 availability matrix when binding and
-  validation tests need concrete config shapes. Treat these records as config data
-  contracts only; do not add Spring AI starters, runtime provider adapters,
-  factories, registries, client creation, model calls, or smoke behavior in that
-  task.
+- For `T006_04`, keep provider-specific Java config classes limited to config-only
+  `ollama` and `openai` data contracts. All other provider types from the T006_03
+  availability matrix stay deferred until a focused provider-specific task needs
+  them. Do not add Spring AI starters, runtime provider adapters, factories,
+  registries, client creation, model calls, or smoke behavior in that task.
 - For hosted provider work, do not treat API-key presence or a consumer chat free
   plan as permission to call an API. Before provider-specific remote smoke tasks,
   use the T006_03 account/free-tier catalog to record official account setup,

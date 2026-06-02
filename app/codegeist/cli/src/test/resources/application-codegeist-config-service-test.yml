@@ -1,4 +1,18 @@
 codegeist:
   provider:
     ollama:
+      type: ollama
       name: Ollama
+      enabled: true
+      model: llama3.2:1b
+      base-url: http://localhost:11434
+      options:
+        temperature: 0
+        seed: 7
+    openai:
+      type: openai
+      name: OpenAI
+      enabled: false
+      model: gpt-4o-mini
+      api-key: test-openai-secret
+      organization-id: org-test

@@ -5,339 +5,307 @@ configuration slice under `app/codegeist/cli`.
 
 ## Scope
 
-This document describes the implemented minimal provider config access path. It
-does not describe the future provider matrix, credentials, model selection,
-provider calls, home-path discovery, or service-level multi-source merge
-orchestration.
+This document describes implemented config loading and rendering behavior only. It
+does not describe provider client creation, Spring AI `ChatModel` or `ChatClient`
+wiring, account checks, local daemon startup, model pulls, remote API calls,
+home-path discovery, or service-level multi-source loading orchestration.
 
-The current slice solves these near-term problems:
+The current slice solves these problems:
 
-- Provide one Codegeist-owned config model that Spring can bind from
-  `application.yaml` and Jackson can load from an explicit `codegeist.yml` path.
-- Provide a named primary merged config bean that callers can inject without
-  repeating raw `@Qualifier` strings.
-- Add annotation-first validation so invalid explicit YAML fails before later
-  provider work consumes it.
-- Provide non-mutating model-level merge methods for later source-order work.
-- Provide `--show-config` so users and tests can inspect the current merged config
-  as direct `codegeist.yml` YAML.
+- Bind Codegeist provider config from Spring application properties.
+- Load an explicit direct `codegeist.yml` path with Jackson YAML.
+- Evaluate trusted local Spring SpEL only in direct YAML string scalar values.
+- Dispatch `provider.<id>.type` to concrete Java provider config classes.
+- Validate config locally with Bean Validation after mapping.
+- Render `--show-config` YAML directly, including configured sensitive values.
 
 ## Source Map
 
 | File | Responsibility |
 | --- | --- |
-| `app/codegeist/cli/pom.xml` | Adds Jackson YAML, Lombok, and Spring Bean Validation dependencies for config loading and validation. |
+| `app/codegeist/cli/pom.xml` | Provides Jackson YAML, Lombok, and Bean Validation dependencies. It does not add Spring AI provider starters in this slice. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/CodegeistApplication.java` | Owns `APP_NAME = "codegeist"`, the shared Spring configuration prefix and application name. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfig.java` | Spring-bound and Jackson-loadable config model. Holds the provider map, Bean Validation constraints, and model-level merge behavior. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Minimal per-provider config value. Currently only optional `name`. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigService.java` | Spring service that receives Spring-bound properties, exposes the current primary merged bean, owns the `--show-config` Spring Shell command, loads explicit YAML, writes command output, runs validation after direct loads, and emits debug logs through Lombok `@Slf4j`. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigValidationException.java` | User-facing runtime exception for invalid direct YAML loads. |
-| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigServiceTest.java` | Spring integration test for binding, direct load, merged-bean injection, validation, and direct YAML rendering. |
-| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigMergeTest.java` | Unit test for non-mutating config model merge behavior. |
-| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigCommandTest.java` | Spring command test for `--show-config` stdout and direct YAML shape. |
-| `app/codegeist/cli/src/test/resources/application-codegeist-config-service-test.yml` | Profile-specific Spring YAML fixture for config binding tests. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfig.java` | Spring-bound and Jackson-loadable root config model. Holds `provider` entries and normalizes raw provider maps into typed provider classes with the injected YAML mapper. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract sealed base class for provider map values. Holds common provider data fields. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Data-only config class for local Ollama settings. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Data-only config class for OpenAI settings. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/Provider.java` | Runtime annotation whose value is the YAML provider `type`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfigJacksonConverter.java` | Shared annotation-backed type dispatch for raw provider maps and Jackson nodes. It scans sealed `ProviderConfig` permitted subclasses and filters by `@Provider`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlConfiguration.java` | Spring configuration that exposes the qualified `codegeistYamlObjectMapper` bean for direct `codegeist.yml` parsing, provider normalization, and rendering. The mapper carries Jackson injectable values for direct `CodegeistConfig` loads. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlExpressionEvaluator.java` | Spring service that receives the YAML mapper bean and evaluates SpEL in direct-YAML string scalar values only. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigService.java` | Spring service that receives Spring-bound config, the YAML mapper bean, and the SpEL evaluator service; exposes the current primary config bean, owns `--show-config`, loads explicit YAML, runs validation, and renders direct YAML. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigValidationException.java` | User-facing runtime exception for Bean Validation failures, provider dispatch failures before Jackson wraps them, and SpEL failures. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigServiceTest.java` | Spring integration test for binding, direct load, primary config injection, validation, and direct YAML rendering. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistProviderConfigTest.java` | Provider annotation dispatch and provider-specific validation tests. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigSpelEvaluationTest.java` | Direct YAML SpEL preprocessing tests. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigCommandTest.java` | Spring command test for `--show-config` stdout shape and unmasked value rendering. |
+| `app/codegeist/cli/src/test/resources/application-codegeist-config-service-test.yml` | Profile-specific Spring YAML fixture for config binding and command-output tests. |
 
-## Spring Component Model
+## Config Model
 
-`CodegeistConfig` is both a Spring component and a configuration
-properties target:
+`CodegeistConfig` is both a Spring component and a configuration-properties target:
 
 ```java
-@Slf4j
 @Component(CodegeistConfig.SPRING_BOUND_CONFIG_BEAN)
 @ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @Validated
 public class CodegeistConfig {
-    @Valid
-    private Map<@NotBlank String, @Valid ProviderConfig> provider = new LinkedHashMap<>();
+    private Map<@NotBlank String, @Valid ProviderConfig> provider;
 }
 ```
 
-Spring discovers it through component scanning below `ai.codegeist.app` because
-`CodegeistApplication` is annotated with `@SpringBootApplication`. During context
-startup, Spring Boot binds `codegeist.provider.*` values from application config
-into this bean and applies Bean Validation because the class is `@Validated`.
-`CodegeistConfig.CONFIGURATION_PREFIX` is the annotation-facing prefix constant;
-its value is `CodegeistApplication.APP_NAME` so the application name remains the
-single source of truth.
+Spring Boot binds `codegeist.*` application properties into this bean. Direct
+`codegeist.yml` files use the same root shape without a `codegeist:` wrapper.
+`CodegeistConfig.CONFIGURATION_PREFIX` is backed by
+`CodegeistApplication.APP_NAME`.
+
+Provider entries are selected by the required provider object field `type`; there
+is no fallback to the provider map key. For example:
+
+```yaml
+provider:
+  openai:
+    type: openai
+    model: gpt-4o-mini
+    api-key: "#{T(java.lang.System).getenv('OPENAI_API_KEY')}"
+```
+
+`ProviderConfig` is an abstract sealed base class with common fields:
+
+- `type`
+- `name`
+- `enabled`
+- `model`
+- `base-url`
+- `completions-path`
+- `options`
+
+Concrete provider classes add provider-specific data fields. `OpenAiProviderConfig`
+adds `api-key`, `organization-id`, and `project-id`; `OllamaProviderConfig` relies
+on the common fields plus `options`. These are config data contracts only.
+
+Implemented provider types are:
+
+```text
+ollama, openai
+```
+
+Other provider types are unsupported because no concrete class is annotated for
+them in this slice. This includes the broader provider matrix from `T006_02` and
+`T006_03`, such as `docker-model-runner`, `azure-openai`, `anthropic`,
+`bedrock-converse`, `google-genai`, `deepseek`, `minimax`, `mistral-ai`, `groq`,
+`nvidia`, `perplexity`, `openrouter`, `moonshot`, `qianfan`, `opencode-zen`, and
+`opencode-go`.
+
+## Spring Component Model
 
 `CodegeistConfigService` is a Spring `@Service`. It receives the Spring-bound
 properties bean by field injection and the explicit bean name:
 
 ```java
-@Slf4j
-@Service
-public class CodegeistConfigService {
-    @Autowired
-    @Qualifier(CodegeistConfig.SPRING_BOUND_CONFIG_BEAN)
-    private CodegeistConfig springBoundConfig;
-}
+@Autowired
+@Qualifier(CodegeistConfig.SPRING_BOUND_CONFIG_BEAN)
+private CodegeistConfig springBoundConfig;
 ```
 
-Current provider configuration Spring classes use Lombok `@Slf4j`. The service
-logs debug-level messages when the merged bean is created, when an explicit YAML
-file is loaded, and when validation passes or fails. These messages are
-diagnostic only and remain file-only through the current `logback.xml` setup.
-
-The service also exposes the current merged config bean:
+The service exposes the current primary config bean:
 
 ```java
 @Bean
 @Primary
-public CodegeistConfig mergedCodegeistConfig() {
+public CodegeistConfig primaryCodegeistConfig() {
     return springBoundConfig;
 }
 ```
 
-This is deliberately simple today: the merged bean is the Spring-bound config.
-Later source merge work can replace this method body without changing injection
-sites.
+This is deliberately simple today: the primary bean is the Spring-bound config.
+Later source-loading work can replace this method body without changing normal
+unqualified `CodegeistConfig` injection sites.
 
-`CodegeistConfig.merge(...)` is the current model-level source merge
-primitive. It returns a new config instance, keeps the `provider.<id>` map shape
-for Spring and direct YAML binding, adds providers by id, and delegates
-per-provider field precedence to `ProviderConfig.merge(...)`. It does not discover
-home config files or apply source order by itself; `CodegeistConfigService` still
-returns only the Spring-bound config as the primary merged bean.
-
-The service also serializes config through `toYaml(...)`. This uses the same
-Jackson YAML mapper family as direct file loading, omits null values, disables the
-YAML document marker, and emits the direct `codegeist.yml` shape rather than the
-Spring `codegeist:` wrapper.
-
-Callers that want the primary merged config bean inject `CodegeistConfig` by type
-without a qualifier:
-
-```java
-@Autowired
-private CodegeistConfig mergedConfig;
-```
-
-`@Primary` makes that unqualified injection resolve to the merged bean. Only
-`CodegeistConfigService` should use `SPRING_BOUND_CONFIG_BEAN` to access the
-unmerged Spring-bound source.
-
-## Class Diagram
-
-```mermaid
-classDiagram
-    class CodegeistApplication {
-      <<SpringBootApplication>>
-      String APP_NAME
-      main(String[] args)
-    }
-
-    class CodegeistConfig {
-      <<Component>>
-      <<ConfigurationProperties>>
-      <<Validated>>
-      <<Slf4j>>
-      String CONFIGURATION_PREFIX
-      String SPRING_BOUND_CONFIG_BEAN
-      Map~String, ProviderConfig~ provider
-      merge(CodegeistConfig override) CodegeistConfig
-    }
-
-    class ProviderConfig {
-      String name
-      merge(ProviderConfig override) ProviderConfig
-    }
-
-    class CodegeistConfigService {
-      <<Service>>
-      <<Slf4j>>
-      CodegeistConfig springBoundConfig
-      Validator validator
-      String SHOW_CONFIG_COMMAND
-      mergedCodegeistConfig() CodegeistConfig
-      loadConfig(String configPath) CodegeistConfig
-      toYaml(CodegeistConfig config) String
-      showConfig(CommandContext context)
-    }
-
-    class CodegeistConfigValidationException {
-      <<exception>>
-    }
-
-    CodegeistApplication ..> CodegeistConfig : prefix owner
-    CodegeistConfig "1" --> "*" ProviderConfig : provider map
-    CodegeistConfigService --> CodegeistConfig : injects and returns
-    CodegeistConfigService ..> CodegeistConfigValidationException : throws
-```
-
-## Spring Binding Flow
-
-```mermaid
-sequenceDiagram
-    participant Boot as SpringApplication.run
-    participant Scan as Component scan
-    participant Props as CodegeistConfig
-    participant Binder as ConfigurationProperties binder
-    participant Validator as Bean Validation
-    participant Service as CodegeistConfigService
-    participant Merged as mergedCodegeistConfig bean
-
-    Boot->>Scan: Start ai.codegeist.app context
-    Scan->>Props: Discover component bean
-    Binder->>Props: Bind codegeist.* application properties
-    Validator->>Props: Validate @Validated constraints
-    Scan->>Service: Discover @Service
-    Service->>Props: @Autowired + @Qualifier spring-bound bean
-    Boot->>Merged: Register @Primary @Bean named mergedCodegeistConfig
-    Merged-->>Boot: Current primary merged CodegeistConfig
-```
-
-Important Spring behavior:
-
-- `@ConfigurationProperties` binding is a Spring Boot context-startup concern.
-- `@Validated` applies to that Spring-bound properties bean during binding.
-- The `@Bean` method currently creates another bean reference to the same config
-  object, not a deep copy.
-- `@Primary` makes the merged bean the default `CodegeistConfig` choice
-  when a caller injects by type and does not qualify the Spring-bound bean.
+`CodegeistConfig#setProvider(Map<String,Object>)` normalizes raw Spring Binder or
+Jackson maps through `ProviderConfigJacksonConverter`. It uses the qualified YAML
+`ObjectMapper` injected by Spring for the configuration-properties bean and by
+Jackson injectable values for direct file loads. This avoids asking Spring Boot to
+instantiate the abstract `ProviderConfig` base class while still keeping the public
+getter typed as `Map<String, ProviderConfig>`.
 
 ## Direct YAML Loading Flow
 
-Direct `codegeist.yml` loading is intentionally not a Spring environment import.
-It is an explicit service operation for one path:
+`CodegeistYamlConfiguration` provides the qualified `codegeistYamlObjectMapper`
+bean. `CodegeistYamlExpressionEvaluator` receives that mapper as a Spring service,
+and `CodegeistConfigService.loadConfig(String configPath)` uses both beans in a
+phased parser for an explicit file path:
 
 ```mermaid
 flowchart TD
-    Caller[Caller provides configPath]
-    Service[CodegeistConfigService.loadConfig]
-    Jackson[Jackson ObjectMapper + YAMLFactory]
-    Config[CodegeistConfig]
-    Validator[jakarta.validation.Validator]
+    Start([Explicit codegeist.yml path])
+    ReadTree[Read YAML into Jackson tree]
+    Evaluate[Evaluate SpEL in string scalar values containing the SpEL marker]
+    MapConfig[Map raw provider maps into typed CodegeistConfig]
+    Validate[Run jakarta.validation.Validator]
     Valid{Violations?}
-    Return[Return loaded config]
-    Error[Throw CodegeistConfigValidationException]
+    Return([Return CodegeistConfig])
+    Error([Throw validation or load exception])
 
-    Caller --> Service
-    Service --> Jackson
-    Jackson --> Config
-    Config --> Validator
-    Validator --> Valid
+    Start --> ReadTree --> Evaluate --> MapConfig --> Validate --> Valid
     Valid -- no --> Return
     Valid -- yes --> Error
 ```
 
-Jackson maps the YAML to the same POJO shape that Spring uses, but Jackson does
-not evaluate Bean Validation annotations. `CodegeistConfigService` therefore calls
-`Validator.validate(loadedConfig)` after `readValue(...)` and formats any
-violations with the source path.
+SpEL behavior is intentionally narrow and trusted-local-input only:
+
+- Only string scalar values containing `#{` are evaluated.
+- YAML keys, provider ids, list indexes, comments, aliases, maps, and non-string
+  scalars are not evaluated.
+- Whole scalar expressions can return non-string values such as booleans,
+  numbers, or `null` before mapping.
+- Template strings with literal text plus expressions return strings.
+- Evaluation uses a plain `StandardEvaluationContext` with no Codegeist helper
+  variables, functions, sandbox, whitelist, denylist, custom type locator, or
+  Spring bean resolver.
+- Parse and evaluation failures include the source path and YAML value path, but
+  not the raw evaluated value.
+
+## Type Dispatch
+
+```mermaid
+sequenceDiagram
+    participant Binder as Spring Binder or Jackson
+    participant Config as CodegeistConfig#setProvider
+    participant Converter as ProviderConfigJacksonConverter
+    participant ProviderClass as Concrete ProviderConfig class
+    participant Validator as Bean Validation
+
+    Binder->>Config: raw provider map
+    Config->>Converter: convert provider object
+    Converter->>Converter: require non-blank type
+    Converter->>Converter: scan permitted subclasses and match @Provider value
+    Converter->>ProviderClass: map same object into concrete class
+    Config-->>Binder: typed provider map
+    Binder->>Validator: validate root and nested provider config
+```
+
+`ProviderConfigJacksonConverter` uses `ProviderConfig.class.getPermittedSubclasses()`
+for discovery and filters those classes by non-null `@Provider` annotation value.
+There is no separate provider registry in this config-only slice.
 
 ## Show Config Flow
 
-`--show-config` is the read-only command path for inspecting the current merged
-config. The output is meant to be copyable as `codegeist.yml`, so it does not add
-labels, prose, log output, a `codegeist:` wrapper, or a YAML document marker.
+`--show-config` prints public YAML for the current primary config:
 
 ```mermaid
 sequenceDiagram
     participant User as User
     participant Shell as Spring Shell
     participant Service as CodegeistConfigService
-    participant Out as CommandContext.outputWriter
+    participant Config as primary CodegeistConfig bean
+    participant Mapper as Jackson YAML ObjectMapper
+    participant Writer as CommandContext.outputWriter
 
     User->>Shell: ./codegeist --show-config
     Shell->>Service: showConfig(context)
-    Service->>Service: mergedCodegeistConfig()
-    Service->>Service: toYaml(mergedConfig)
-    Service->>Out: print YAML only
+    Service->>Service: primaryCodegeistConfig()
+    Service-->>Config: current config
+    Service->>Mapper: write direct codegeist.yml YAML
+    Mapper-->>Service: YAML without document marker
+    Service->>Writer: print YAML only
+    Service->>Writer: flush()
 ```
 
-Current example output:
+Rendering intentionally omits a Spring `codegeist:` wrapper and YAML document
+marker. Empty default config still renders as:
 
 ```yaml
-provider:
-  ollama:
-    name: "Ollama"
+provider: {}
 ```
 
-For an otherwise empty config object, the renderer keeps the top-level shape
-visible as `provider: {}`.
+`--show-config` does not mask configured values. If the active config contains
+`api-key`, `authorization`, `password`, `token`, `credentials`, or other sensitive
+fields, those values are printed as YAML. Treat command output as sensitive.
 
-## Editable Overview Sketch
+## Multi-Source Status
 
-The following Excalidraw SVG is an editable high-level sketch of the current
-binding, direct-load, validation, and merged-bean path. The `--show-config`
-command flow is captured in the Mermaid sequence above.
-
-![Provider config Spring flow](diagrams/provider-config-spring-flow.excalidraw.svg)
+The current slice has no model-level multi-source combination API. The primary
+config bean returns the Spring-bound config, and `loadConfig(String)` returns the
+single explicit YAML file it parses. Later home-path or startup-file work must
+define its own combination semantics before adding additional sources.
 
 ## Validation Strategy
 
-Validation is annotation-first and intentionally small:
+Validation is annotation-first:
 
-- Provider config may be absent or empty.
-- Provider ids are map keys and must be non-blank:
-  `Map<@NotBlank String, @Valid ProviderConfig>`.
-- `ProviderConfig.name` is optional.
-- If `ProviderConfig.name` is present, it must contain a non-blank character.
-- Unknown YAML keys are ignored for now through Jackson metadata on the POJOs.
-- Model references, credentials, provider options, capabilities, and limits are
-  not validated because the current model does not contain those fields.
+- Provider ids are map keys and must be non-blank.
+- Provider `type` is required and must resolve to a supported `@Provider` value.
+- Provider `name` remains optional, but when present it must contain a non-blank
+  character.
+- Common provider `model` is required for the supported provider config classes.
+- `ollama` requires `model` and `base-url`.
+- `openai` requires `model` and `api-key`; `base-url`, `organization-id`,
+  `project-id`, `completions-path`, and `options` remain optional config data.
+- Validation never checks network availability, model existence, account balance,
+  billing status, local daemon state, or remote credentials.
 
-The custom exception is intentionally small. It marks the failure as a Codegeist
-config validation problem and preserves the source path in the message. Later CLI
-commands can catch this exception and turn it into a structured command error.
+Direct Jackson YAML loading must keep the explicit `Validator` call. Jackson maps
+objects but does not run Bean Validation by itself.
 
 ## Tests
 
-`CodegeistConfigServiceTest` is a Spring integration test because it proves Spring
-binding, service wiring, and primary merged-config injection. It also drives the
-direct YAML load method with temporary files.
-
 | Test behavior | Proves |
 | --- | --- |
-| Spring profile fixture reaches `service.getSpringBoundConfig()` | `@ConfigurationProperties`, component scan, and service injection work together. |
-| Unqualified `CodegeistConfig` injection receives the current merged bean | `@Primary` targets normal app injection to the merged config. |
-| Explicit YAML path loads provider name | Jackson YAML maps to `CodegeistConfig`. |
-| Empty config renders as `provider: {}` without `---` or `codegeist:` | `toYaml(...)` emits direct `codegeist.yml` shape. |
-| Config model merge adds providers and overrides provider fields by id | The T006_01 merge direction is implemented as non-mutating model methods. |
-| Provider without `name` is accepted | The minimal model keeps provider name optional. |
-| Blank provider id is rejected | Map-key Bean Validation is active after direct YAML loading. |
-| Present-but-blank provider name is rejected | Nested provider Bean Validation is active after direct YAML loading. |
-| `--show-config` prints parseable direct YAML and no stderr | Spring Shell command wiring, merged config injection, and YAML rendering work together. |
-| Packaged native `--show-config` prints `provider: {}` | Native image resource metadata, Spring Shell command mode, file-only logging, and direct YAML rendering survive archive packaging. |
+| Spring profile fixture reaches `service.getSpringBoundConfig()` with typed provider objects | `@ConfigurationProperties`, component scan, raw-map normalization, and service injection work together. |
+| Unqualified `CodegeistConfig` injection receives the current primary bean | `@Primary` targets normal app injection to the primary config. |
+| Explicit YAML path loads provider-specific fields | Direct Jackson YAML loading maps into typed `CodegeistConfig`. |
+| SpEL string scalars evaluate before mapping | Trusted local expressions can produce strings, booleans, numbers, and nulls. |
+| YAML keys and non-string scalars stay literal | SpEL does not rewrite provider ids or existing scalar types. |
+| Every supported `type` maps to its concrete class | `@Provider` dispatch is complete for `ollama` and `openai`. |
+| Unsupported provider types fail | Broader provider-matrix and OpenCode-only types remain unsupported in this task. |
+| Provider-specific missing fields fail validation | Bean Validation and narrow grouped checks protect config completeness locally. |
+| `--show-config` prints parseable direct YAML with configured values unchanged | Spring Shell command wiring and YAML rendering work together. |
+| Packaged native `--show-config` prints `provider: {}` for empty default config | Native image command mode and default empty rendering stay aligned with smoke scripts. |
 
 Current verification commands:
 
 ```bash
 mvn --batch-mode --no-transfer-progress -Dtest=CodegeistConfigCommandTest,CodegeistConfigServiceTest test
-mvn --batch-mode --no-transfer-progress -Dtest=CodegeistConfigMergeTest test
+mvn --batch-mode --no-transfer-progress -Dtest=CodegeistProviderConfigTest test
+mvn --batch-mode --no-transfer-progress -Dtest=CodegeistConfigSpelEvaluationTest test
 mvn --batch-mode --no-transfer-progress test
-task native-smoke
 git --no-pager diff --check
 ```
 
 ## Sharp Edges
 
-- Direct Jackson YAML loading must keep the explicit `Validator` call; annotations
-  alone are not enough outside Spring binding.
-- Debug logging uses Lombok `@Slf4j`, which emits through SLF4J. Spring Boot's
-  default logging stack writes those records through Logback into the current
-  file-only output when debug logging is enabled.
-- The primary merged config bean is currently only the Spring-bound config. Do not
-  assume home config or explicit startup config is merged yet.
-- `--show-config` therefore prints only the current Spring-bound config until
-  home-path loading and service-level source merge orchestration are implemented.
-- Config model `merge(...)` methods are available for later source-order work, but
-  no runtime source discovery calls them yet.
-- Unknown YAML keys are ignored. If strict config files become required, that is a
-  separate behavior change because Jackson unknown-property handling is not the
-  same as Bean Validation.
-- Avoid adding provider account, credential, or model-reference validation before
-  `T006_02` and `T006_03` define the provider matrix and credential strategy.
+- `codegeist.yml` SpEL is trusted local input and can run arbitrary allowed SpEL in
+  the current JVM process. Do not treat it as safe for untrusted remote config.
+- `CodegeistConfig#setProvider(Map<String,Object>)` is part of the binding
+  contract. Removing it would make Spring Boot try to instantiate the abstract
+  `ProviderConfig` base class.
+- Spring and direct Jackson YAML loading currently reach typed providers through
+  `CodegeistConfig#setProvider(...)` normalization.
+- Jackson mapping and IO failures are not wrapped by `CodegeistConfigService`;
+  Lombok `@SneakyThrows` lets them surface directly.
+- Debug logging uses Lombok `@Slf4j` and remains file-only through current
+  `logback.xml`; command stdout must stay YAML-only.
+- `--show-config` prints configured values unchanged, including API keys or other
+  sensitive values when they are present in config.
+- The primary config bean is currently only the Spring-bound config. Home config
+  and explicit startup config are not discovered or combined yet.
+- Unknown provider object fields outside the modeled data shape are ignored by
+  Jackson metadata. Unknown `options` entries are preserved because `options` is a
+  map.
+- Do not add Spring AI provider starters, provider clients, runtime registries,
+  model pulls, or remote calls to this config slice.
 
 ## Future Task Impact
 
-- `T006_04` should add home-path discovery and service-level source merge
-  orchestration without changing the unqualified `CodegeistConfig` injection
-  contract.
-- Merge validation should run on the final merged config, not only on individual
-  loaded sources.
-- Later provider fields should prefer Bean Validation annotations first, then add
-  narrow custom validation only for cross-field or source-aware rules.
-- CLI-facing config commands should catch `CodegeistConfigValidationException` and
-  render concise path-aware errors.
+- Home-path discovery and explicit startup config orchestration should define
+  multi-source combination behavior after each source is evaluated, mapped, and
+  validated.
+- Runtime provider selection should use the provider map and per-provider
+  `enabled` fields until a later task defines additional selection policy.
+- Provider client creation should remain lazy and should create only the selected
+  provider's Spring AI model/client after config, safety gates, and account posture
+  are checked.
+- CLI-facing config commands should account for both `CodegeistConfigValidationException`
+  and direct Jackson or IO exceptions from the SneakyThrows-based load path.
