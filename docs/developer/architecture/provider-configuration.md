@@ -23,7 +23,7 @@ The current slice solves these problems:
 
 | File | Responsibility |
 | --- | --- |
-| `app/codegeist/cli/pom.xml` | Provides Jackson YAML, Lombok, and Bean Validation dependencies. It does not add Spring AI provider starters in this slice. |
+| `app/codegeist/cli/pom.xml` | Provides Jackson YAML, Lombok, Bean Validation, and the Spring AI dependency baseline. The provider chat slice adds `spring-ai-ollama`, but this config document covers only config loading and rendering behavior. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/CodegeistApplication.java` | Owns `APP_NAME = "codegeist"`, the shared Spring configuration prefix and application name. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfig.java` | Spring-bound and Jackson-loadable root config model. Holds `provider` entries and normalizes raw provider maps into typed provider classes with the injected YAML mapper. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract sealed base class for provider map values. Holds common provider data fields. |
@@ -267,10 +267,10 @@ objects but does not run Bean Validation by itself.
 Current verification commands:
 
 ```bash
-mvn --batch-mode --no-transfer-progress -Dtest=CodegeistConfigCommandTest,CodegeistConfigServiceTest test
-mvn --batch-mode --no-transfer-progress -Dtest=CodegeistProviderConfigTest test
-mvn --batch-mode --no-transfer-progress -Dtest=CodegeistConfigSpelEvaluationTest test
-mvn --batch-mode --no-transfer-progress test
+task test TEST=CodegeistConfigCommandTest,CodegeistConfigServiceTest
+task test TEST=CodegeistProviderConfigTest
+task test TEST=CodegeistConfigSpelEvaluationTest
+task test
 git --no-pager diff --check
 ```
 

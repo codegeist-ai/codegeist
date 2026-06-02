@@ -1,0 +1,58 @@
+# Codegeist Test Guidelines
+
+How Codegeist tests should be shaped and reported.
+
+## Test Shape
+
+- Start with the smallest focused test that proves the behavior.
+- Prefer Spring Boot tests when behavior depends on Spring wiring, configuration
+  binding, Spring Shell command dispatch, provider selection, or Spring AI model
+  invocation.
+- Use plain JVM tests for logic that does not need Spring context startup.
+- Keep tests deterministic and individually executable by class or method selector.
+- Do not introduce placeholder packages, interfaces, records, ids, enums, or
+  validation layers only to satisfy planned architecture.
+
+## Commands
+
+Run commands from `app/codegeist/cli` unless the task says otherwise:
+
+```bash
+task test TEST=CodegeistApplicationTests
+task test TEST=CodegeistApplicationTests#contextLoads
+task test
+```
+
+Use task-specific selectors in active task docs and final reports. Keep broad
+`task test` as the final JVM verification once focused tests pass.
+
+## Provider Tests
+
+- Keep live provider tests behind explicit selectors, for example
+  `task test TEST=LocalOllamaProviderIT`.
+- Do not make broad `task test` require a running provider, downloaded model,
+  network access, hosted API key, or billable account.
+- Local Ollama verification may use an externally managed local Ollama instance
+  after `OLLAMA_ENTER=false task ollama-start`.
+- Live local Ollama tests must not pull, download, create, or delete models.
+- Hosted provider calls require explicit no-cost confirmation and an opt-in task
+  or selector. API-key presence alone is not permission to call a hosted provider.
+
+## Assertions
+
+- Assert observable behavior: stdout, stderr, return values, exit codes, rendered
+  config, loaded config type, or provider response contract.
+- Prefer narrow assertions for LLM responses, such as checking for one expected
+  token or phrase, rather than asserting a whole natural-language answer.
+- Keep command stdout clean when tests prove CLI output. Logs should remain routed
+  to files through the current Logback setup.
+
+## Reporting
+
+Every task result should name:
+
+- The focused command that proved the changed behavior.
+- Any broader command that was run afterward.
+- Failed or skipped commands with the concrete blocker.
+- Timing for provider readiness, first live provider call, native builds, smoke
+  tests, and platform startup checks when those are in scope.

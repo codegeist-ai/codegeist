@@ -7,3 +7,4 @@ Project documentation is split by audience.
 - `docs/user/` - usage, setup, configuration, and workflow guides for users.
 - `docs/developer/` - architecture, implementation, build, test, and
   maintenance guides for contributors.
+- `docs/tests/` - test and smoke-test rules for contributors and coding agents.

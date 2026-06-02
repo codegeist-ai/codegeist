@@ -36,6 +36,22 @@ ssh_target="${CODEGEIST_WINDOWS_SSH_TARGET:-}"
 repo_dir="${CODEGEIST_WINDOWS_REPO_DIR:-}"
 native_mode="${CODEGEIST_WINDOWS_NATIVE_MODE:-auto}"
 allow_skip="${CODEGEIST_WINDOWS_ALLOW_SKIP:-0}"
+smoke_start=""
+
+codegeist_now_ms() {
+  date +%s%3N
+}
+
+codegeist_print_duration() {
+  local label="$1"
+  local start_ms="$2"
+  local end_ms
+  local elapsed_ms
+
+  end_ms="$(codegeist_now_ms)"
+  elapsed_ms=$((end_ms - start_ms))
+  printf 'Duration: %s: %d.%03ds\n' "$label" $((elapsed_ms / 1000)) $((elapsed_ms % 1000))
+}
 
 write_status() {
   local status="$1"
@@ -156,11 +172,13 @@ remote_command="$remote_command\""
 printf 'Platform: windows-x64\n'
 printf 'Transport: ssh\n'
 printf 'Command: powershell scripts/tests/windows-smoke.ps1\n'
+smoke_start="$(codegeist_now_ms)"
 
 if ssh "${ssh_args[@]}" "$ssh_target" "$remote_command"; then
   write_status passed 'none'
   printf 'Platform smoke status: passed\n'
   printf 'Platform: windows-x64\n'
+  codegeist_print_duration 'windows ssh smoke command' "$smoke_start"
 else
   fail_smoke 'Windows VM smoke command failed'
 fi

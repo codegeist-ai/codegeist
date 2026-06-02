@@ -67,6 +67,21 @@ allow_skip="${CODEGEIST_WINDOWS_ALLOW_SKIP:-0}"
 status_file="${CODEGEIST_SMOKE_STATUS_FILE:-}"
 ready_file='C:\codegeist-vm-ready.txt'
 
+codegeist_now_ms() {
+  date +%s%3N
+}
+
+codegeist_print_duration() {
+  local label="$1"
+  local start_ms="$2"
+  local end_ms
+  local elapsed_ms
+
+  end_ms="$(codegeist_now_ms)"
+  elapsed_ms=$((end_ms - start_ms))
+  printf 'Duration: %s: %d.%03ds\n' "$label" $((elapsed_ms / 1000)) $((elapsed_ms % 1000))
+}
+
 usage() {
   printf 'Usage: %s download|create|start|sync|smoke|stop|status\n' "$(basename -- "$0")"
 }
@@ -387,6 +402,9 @@ sync_repo() {
 }
 
 smoke_vm() {
+  local smoke_start
+
+  smoke_start="$(codegeist_now_ms)"
   sync_repo
 
   CODEGEIST_WINDOWS_SSH_TARGET="$ssh_user@127.0.0.1" \
@@ -397,6 +415,7 @@ smoke_vm() {
   CODEGEIST_WINDOWS_ALLOW_SKIP="$allow_skip" \
   CODEGEIST_SMOKE_STATUS_FILE="$status_file" \
     "$script_dir/qemu-windows-smoke.sh"
+  codegeist_print_duration 'windows qemu smoke total' "$smoke_start"
 }
 
 stop_vm() {

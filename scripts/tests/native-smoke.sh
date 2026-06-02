@@ -47,6 +47,27 @@ codegeist_read_build_version() {
   printf '%s' "$version"
 }
 
+codegeist_now_ms() {
+  date +%s%3N
+}
+
+codegeist_duration_seconds() {
+  local start_ms="$1"
+  local end_ms
+  local elapsed_ms
+
+  end_ms="$(codegeist_now_ms)"
+  elapsed_ms=$((end_ms - start_ms))
+  printf '%d.%03d' $((elapsed_ms / 1000)) $((elapsed_ms % 1000))
+}
+
+codegeist_print_duration() {
+  local label="$1"
+  local start_ms="$2"
+
+  printf 'Duration: %s: %ss\n' "$label" "$(codegeist_duration_seconds "$start_ms")"
+}
+
 package-linux-native-archive() {
   local cli_dir="$1"
   local package_name="codegeist-linux-x64"
@@ -90,6 +111,10 @@ run-native-smoke-tests() {
   local expected_config
   local actual
   local timeout_budget
+  local archive_package_start
+  local archive_smoke_start
+  local version_start
+  local show_config_start
 
   script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
   repo_root="$(cd -- "$script_dir/../.." && pwd)"
@@ -106,7 +131,10 @@ run-native-smoke-tests() {
   rm -rf "$smoke_dir"
   mkdir -p "$smoke_dir"
 
+  archive_smoke_start="$(codegeist_now_ms)"
+  archive_package_start="$(codegeist_now_ms)"
   archive="$(package-linux-native-archive "$cli_dir")"
+  codegeist_print_duration 'linux native archive package' "$archive_package_start"
   temp_dir="$(mktemp -d)"
   package_dir="$temp_dir/$package_name"
   timeout_budget="${CODEGEIST_NATIVE_SMOKE_TIMEOUT:-5s}"
@@ -123,11 +151,13 @@ run-native-smoke-tests() {
     return 1
   fi
 
+  version_start="$(codegeist_now_ms)"
   if ! actual="$(cd "$package_dir" && LOG_FILE="$smoke_dir/codegeist.log" timeout "$timeout_budget" ./codegeist --version 2>&1)"; then
     rm -rf "$temp_dir"
     printf 'Native version smoke failed or timed out after %s: %s\n' "$timeout_budget" "$actual" >&2
     return 1
   fi
+  codegeist_print_duration 'linux native version smoke' "$version_start"
 
   if [ "$actual" != "$expected" ]; then
     rm -rf "$temp_dir"
@@ -135,11 +165,13 @@ run-native-smoke-tests() {
     return 1
   fi
 
+  show_config_start="$(codegeist_now_ms)"
   if ! actual="$(cd "$package_dir" && LOG_FILE="$smoke_dir/codegeist.log" timeout "$timeout_budget" ./codegeist --show-config 2>&1)"; then
     rm -rf "$temp_dir"
     printf 'Native show-config smoke failed or timed out after %s: %s\n' "$timeout_budget" "$actual" >&2
     return 1
   fi
+  codegeist_print_duration 'linux native show-config smoke' "$show_config_start"
 
   if [ "$actual" != "$expected_config" ]; then
     rm -rf "$temp_dir"
@@ -154,6 +186,7 @@ run-native-smoke-tests() {
   fi
 
   rm -rf "$temp_dir"
+  codegeist_print_duration 'linux native archive smoke' "$archive_smoke_start"
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then

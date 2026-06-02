@@ -605,8 +605,9 @@ is no source-backed local Ollama Testcontainer pattern in this project.
 **Evidence:** Static search in `docs/third-party/spring-ai-agent-utils/source`,
 `examples/*/src/main/resources/application.properties`.
 
-**Codegeist implication:** For T006_05, use Spring AI's Ollama support and a
-Codegeist-owned pinned Testcontainer pattern. Keep calls deterministic with
+**Codegeist implication:** For T006_05, use Spring AI's Ollama support and an
+externally managed local Ollama instance with the selected model already
+downloaded before the focused test starts. Keep calls deterministic with
 temperature `0` and a fixed seed only when the selected Spring AI and Ollama
 versions support it.
 
@@ -824,8 +825,8 @@ terms under `docs/third-party/spring-ai-agent-utils/source`; tests under
 `spring-ai-agent-utils/src/test/java`.
 
 **Codegeist implication:** Codegeist's first Ollama workflow should explicitly
-pay the cost of one local integration path, probably pinned Testcontainers plus a
-small model, while keeping most config tests provider-free and fast.
+exercise one local integration path against an externally managed ready Ollama
+instance, while keeping most config tests provider-free and fast.
 
 ```text
 /ask-project spring-ai-agent-utils "Find examples of deterministic model calls or constrained assertions that avoid flaky AI tests."

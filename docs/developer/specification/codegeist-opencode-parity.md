@@ -37,18 +37,18 @@ The first provider-backed workflow should be local and testable:
 
 ```text
 Spring Boot test
-  -> Spring-managed prompt workflow
-  -> pinned Ollama Testcontainer with llama3
+  -> Spring-managed CodegeistChatService
+  -> ready local Ollama instance with downloaded llama3-family model
   -> observable response
 ```
 
-Use `temperature=0`, a fixed seed when supported, pinned image/model tags, and
-narrow assertions. Do not start with fake provider contracts or remote provider
-credentials.
+Use `temperature=0`, a fixed seed when supported, a configured local base URL and
+model name, and narrow assertions. Do not start with fake provider contracts,
+Testcontainers, local model pulls, or remote provider credentials.
 
 ## Behavior Areas To Grow Iteratively
 
-- Prompt workflow through Spring and Spring AI.
+- User-visible prompt workflow through Spring and Spring AI.
 - CLI command delegation through Spring Shell.
 - Context loading only when prompt behavior needs context.
 - Tool and permission behavior only when a model/tool workflow needs it.
@@ -62,7 +62,8 @@ credentials.
 
 - Which prompt workflow is the first user-visible slice after the Ollama-backed
   Spring test passes?
-- Which `llama3` tag and Ollama image tag should be pinned for the first test?
+- Which local `llama3`-family model tag should the ready Ollama instance provide
+  for the first test?
 - Which deterministic prompt/response assertion is stable enough across local
   machines?
 - When should Spring AI Agent Utils be used directly instead of plain Spring AI?

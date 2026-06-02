@@ -194,6 +194,19 @@ Jar status: passed
 Native status: passed
 ```
 
+Smoke scripts also report duration lines for meaningful subchecks:
+
+```text
+Duration: linux native compile: 64.799s
+Duration: linux native version smoke: 0.035s
+Duration: windows native compile: 164.255s
+Duration: windows platform smoke total: 197.473s
+```
+
+Duration labels are documented in `docs/tests/smoke-tests.md`. Keep startup
+checks, archive smokes, platform totals, and host/VM wrapper totals as separate
+lines so slow steps are visible without reading build-tool logs.
+
 Skipped checks must include the concrete reason, such as an unset Windows SSH
 target or missing native-image. Failed checks report the failing command or gate.
 

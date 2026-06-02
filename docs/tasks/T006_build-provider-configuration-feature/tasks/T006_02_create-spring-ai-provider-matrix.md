@@ -110,7 +110,7 @@ The matrix below adds two evidence-driven columns:
 | `google-genai` | Google GenAI | `spring-ai-starter-model-google-genai` | `spring.ai.google.genai`, `spring.ai.google.genai.chat` | `gemini-2.0-flash` | text, PDF, image, audio, video | `GOOGLE_API_KEY`, `GEMINI_API_KEY`, or Vertex AI credentials | yes, Google AI Studio key or Google Cloud project | no | yes | yes | yes | no | not-started | Supports Gemini Developer API and Vertex AI modes; choose one before smoke design. | [S1], [S2], [S7], [E3] |
 | `minimax` | MiniMax | `spring-ai-starter-model-minimax` | `spring.ai.minimax`, `spring.ai.minimax.chat` | docs: `abab6.5g-chat`; source default: `ABAB_5_5_Chat` | text | `MINIMAX_API_KEY` | yes, MiniMax account/API key | no | yes | yes | not in comparison; source exposes response format | yes | not-started | Keep the docs/source default mismatch visible until an implementation task picks a smoke model. | [S1], [S2], [S8] |
 | `mistral-ai` | Mistral AI | `spring-ai-starter-model-mistral-ai` | `spring.ai.mistralai`, `spring.ai.mistralai.chat` | source: `MISTRAL_SMALL`; docs list `mistral-small-latest` | text, image, audio | `MISTRALAI_API_KEY` | yes, Mistral account/API key | no | yes | yes | yes | yes | not-started | Mistral also offers an OpenAI-compatible endpoint, but Spring AI ships a dedicated starter. | [S1], [S2], [S9], [E4] |
-| `ollama` | Ollama | `spring-ai-starter-model-ollama` | `spring.ai.ollama`, `spring.ai.ollama.chat` | `mistral` | text, image | none for local daemon; optional base URL | no remote account; local model pull required | yes | yes | yes | yes | yes | not-started | First local Codegeist candidate; use daemon or Testcontainers and a pinned model for later implementation. | [S1], [S2], [S10], [E5] |
+| `ollama` | Ollama | `spring-ai-starter-model-ollama` | `spring.ai.ollama`, `spring.ai.ollama.chat` | `mistral` | text, image | none for local daemon; optional base URL | no remote account; local model must be present | yes | yes | yes | yes | yes | not-started | First local Codegeist candidate; use an externally managed local daemon with the selected model already downloaded for later implementation. | [S1], [S2], [S10], [E5] |
 | `openai` | OpenAI | `spring-ai-starter-model-openai` | `spring.ai.openai`, `spring.ai.openai.chat` | `gpt-5-mini` | input: text, image, audio; output: text, audio | `OPENAI_API_KEY` | yes, OpenAI account and likely billing | no, except compatible local endpoints | yes | yes | yes | yes | not-started | Remote smoke must be opt-in and skipped without credentials. | [S1], [S2], [S11], [E6] |
 
 ## OpenAI-Compatible Provider Matrix
@@ -136,8 +136,7 @@ Use `ollama` as the first local provider candidate for later implementation task
 It has a dedicated Spring AI starter, can run without remote provider credentials,
 supports local model deployment, supports streaming/tool/structured-output
 capabilities in the Spring AI comparison, and matches the existing Codegeist
-direction to use a pinned local Ollama/Testcontainers workflow before remote
-provider account work.
+direction to use a ready local Ollama daemon before remote provider account work.
 
 Docker Model Runner is a second local candidate, but it should follow Ollama
 because Spring AI reaches it through the generic OpenAI integration rather than a

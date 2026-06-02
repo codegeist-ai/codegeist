@@ -47,8 +47,9 @@ for implementation planning.
   backlog while preserving adapter-ready runtime boundaries when behavior exists.
 - Prefer Spring and Spring AI integration from the beginning instead of building
   fake provider abstractions first.
-- For the first provider-backed workflow, prefer a pinned local Ollama
-  Testcontainer with `llama3`, `temperature=0`, and a fixed seed when supported.
+- For the first provider-backed workflow, prefer an externally managed local
+  Ollama instance with a ready `llama3`-family model, `temperature=0`, and a fixed
+  seed when supported. Do not use Testcontainers or pull local models in the test.
 - Keep Spring AI Agent Utils as a private implementation aid or behind a thin
   Codegeist wrapper only when policy, workspace, permission, session/event,
   output, or result mapping requires it.

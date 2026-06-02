@@ -25,17 +25,19 @@ Create code only when a focused test requires it.
 
 ## First Provider Workflow
 
-For the first provider-backed workflow, use a pinned local Ollama Testcontainer
-with `llama3` instead of a fake provider.
+For the first provider-backed workflow, use an externally managed local Ollama
+instance with a `llama3`-family model already downloaded before the focused test
+starts instead of a fake provider.
 
 Implementation constraints:
 
-- Pin the Ollama container image and model tag in the test.
+- Do not use Testcontainers for the first Ollama workflow.
+- Do not pull, download, create, or delete local Ollama models in the test.
 - Use `temperature=0`.
 - Use a fixed seed when the active Spring AI and Ollama versions support it.
 - Keep prompts small and assertions narrow enough to be stable.
-- Report container startup and model-pull timing separately from ordinary Spring
-  test timing.
+- Report Ollama readiness/model-availability and first chat-call timing separately
+  from ordinary Spring test timing.
 - Do not use remote provider credentials for the first workflow.
 
 ## Type Introduction Rules

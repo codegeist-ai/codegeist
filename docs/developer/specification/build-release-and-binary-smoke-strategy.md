@@ -26,11 +26,11 @@ GitHub-hosted release workflow.
 | Java | Java `25` through Maven compiler release |
 | Spring Boot | `4.0.6` parent |
 | Spring Shell | `4.0.2` dependency baseline; `--version` command implemented |
-| Spring AI | BOM `2.0.0-M6`; no provider starters or model calls yet |
+| Spring AI | BOM `2.0.0-M6`; `spring-ai-ollama` is present for the focused local provider path, with no Spring AI provider starter auto-configuration |
 | Spring AI Agent Utils | BOM and core dependency `0.7.0` |
 | JVM package | Spring Boot executable jar named `target/codegeist.jar`; release asset `codegeist-jvm.jar` |
 | Native package | GraalVM native Maven profile using `native-maven-plugin` `0.10.6` |
-| Local commands | `task test`, `task build`, `task native`, `task native-smoke`, `task local-linux-smoke`, `task qemu-windows-smoke`, `task final-smoke-suite`, `task run` |
+| Local commands | `task test`, `task build`, `task native`, `task native-smoke`, `task local-linux-smoke`, `task qemu-windows-smoke`, `task final-smoke-suite`, `task ollama-start`, `task run` |
 | GitHub release workflow | `.github/workflows/release.yml` for `release/v*` iteration and candidate branch validation, `workflow_dispatch` pre-tag validation, and `v*` tag release publication |
 | Main promotion | Multi-commit release iteration branches are squashed into `release/v<version>-codegeist-rc-<n>` candidate branches; `main` is advanced by fast-forward only after candidate validation passes |
 

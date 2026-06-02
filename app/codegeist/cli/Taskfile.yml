@@ -4,7 +4,7 @@ tasks:
   test:
     desc: Run the Codegeist test suite
     cmds:
-      - mvn --batch-mode --no-transfer-progress test
+      - mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test
 
   build:
     desc: Build the executable Codegeist application jar
@@ -18,9 +18,15 @@ tasks:
 
   native-smoke:
     desc: Build the native executable and smoke-test native commands
-    deps:
-      - native
     cmds:
+      - |
+        bash -lc '
+          set -euo pipefail
+          source ../../../scripts/tests/native-smoke.sh
+          start="$(codegeist_now_ms)"
+          mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile
+          codegeist_print_duration "linux native compile" "$start"
+        '
       - bash -lc 'source ../../../scripts/tests/native-smoke.sh; run-native-smoke-tests'
 
   local-linux-smoke:
@@ -39,7 +45,7 @@ tasks:
       - bash ../../../scripts/tests/final-smoke-suite.sh
 
   ollama-start:
-    desc: Start a local Ollama server with NVIDIA GPU support
+    desc: Start a local Ollama server
     cmds:
       - |
         bash -lc '
@@ -52,11 +58,30 @@ tasks:
           port="${OLLAMA_PORT:-11434}"
           model="${OLLAMA_MODEL:-llama3.2:1b}"
           enter_mode="${OLLAMA_ENTER:-auto}"
+          gpu_mode="${OLLAMA_GPU:-auto}"
           health_host="$bind_address"
+          docker_gpu_args=()
 
           if [ "$health_host" = "0.0.0.0" ]; then
             health_host="127.0.0.1"
           fi
+
+          case "$gpu_mode" in
+            true)
+              docker_gpu_args=(--gpus all --env NVIDIA_VISIBLE_DEVICES=all --env NVIDIA_DRIVER_CAPABILITIES=compute,utility)
+              ;;
+            auto)
+              case "$(docker info 2>/dev/null || true)" in
+                *nvidia*) docker_gpu_args=(--gpus all --env NVIDIA_VISIBLE_DEVICES=all --env NVIDIA_DRIVER_CAPABILITIES=compute,utility) ;;
+              esac
+              ;;
+            false)
+              ;;
+            *)
+              printf "Unsupported OLLAMA_GPU value: %s\n" "$gpu_mode" >&2
+              exit 1
+              ;;
+          esac
 
           mkdir -p "$models_dir"
 
@@ -66,13 +91,11 @@ tasks:
             docker run \
               --detach \
               --name "$container_name" \
-              --gpus all \
+              "${docker_gpu_args[@]}" \
               --restart unless-stopped \
               --publish "$bind_address:$port:11434" \
               --env OLLAMA_HOST=0.0.0.0:11434 \
               --env OLLAMA_MODELS=/ollama-models \
-              --env NVIDIA_VISIBLE_DEVICES=all \
-              --env NVIDIA_DRIVER_CAPABILITIES=compute,utility \
               --volume "$models_dir:/ollama-models" \
               "$image" >/dev/null
           fi

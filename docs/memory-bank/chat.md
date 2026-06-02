@@ -46,6 +46,15 @@
   maps into typed provider config classes. Supported config-only provider classes
   are currently only `ollama` and `openai`; the broader provider matrix and
   OpenCode-only provider types remain unsupported in this slice.
+- Provider-neutral chat runtime code lives under `ai.codegeist.app.chat`.
+  `CodegeistChatService` accepts a caller-selected `ProviderConfig` and prompt,
+  `ChatModelFactory` lazily delegates to a matching generic
+  `ProviderChatModelFactory<T extends ProviderConfig>`, and
+  `OllamaChatModelFactory` is the first concrete provider factory. It maps
+  `OllamaProviderConfig` into Spring AI `OllamaApi`, `OllamaChatOptions`, and
+  `OllamaChatModel` programmatically. Ollama-specific Spring AI imports stay in
+  the concrete factory; the generic service and factory use provider-neutral
+  Spring AI chat APIs.
 - `CodegeistYamlConfiguration` exposes the qualified `codegeistYamlObjectMapper`
   bean used by the config service and config model for direct `codegeist.yml`
   parsing, provider normalization, and rendering. The mapper carries Jackson
@@ -71,8 +80,9 @@
   `CodegeistConfigCommandTest` owns command stdout and direct-value rendering.
   There is no model-level multi-source combination helper now. Home-path
   discovery, service-level combination beyond returning the Spring-bound config,
-  inheritance, provider runtime selection, provider clients, model calls, and
-  model catalogs are not implemented yet.
+  inheritance, provider runtime selection beyond a caller-supplied config,
+  provider clients beyond the selected local Ollama `ChatModel` factory, model
+  catalogs, and CLI-facing prompt workflows are not implemented yet.
 - `app/codegeist/cli/src/main/resources/logback.xml` routes logs only to
   `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
   output. Current Spring `@Service` and `@Component` classes use Lombok `@Slf4j`
@@ -81,16 +91,23 @@
 - `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`,
   `native-smoke`, `local-linux-smoke`, `qemu-windows-smoke`,
   `final-smoke-suite`, and `ollama-start`. Local smoke scripts live under
-  `scripts/tests/`. `ollama-start` starts a persistent GPU-backed
-  `ollama/ollama` container named `codegeist-ollama` with models mounted from
-  `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}`. In an interactive terminal it
-  enters `docker exec -it codegeist-ollama ollama run llama3.2:1b` by default;
-  set `OLLAMA_ENTER=false` for non-interactive starts. `native-smoke` sources
+  `scripts/tests/`. `task test` delegates to Maven and accepts a focused selector
+  as `task test TEST=<test-selector>`; new implementation tasks should document
+  `task test` instead of direct `mvn test` commands. `ollama-start` starts a
+  persistent `ollama/ollama` container named `codegeist-ollama` with models
+  mounted from `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}`. It uses NVIDIA GPU
+  Docker flags only when `OLLAMA_GPU=true` or `OLLAMA_GPU=auto` detects NVIDIA
+  support, so CPU-only Docker hosts can still start the local service. In an
+  interactive terminal it enters the default `llama3.2:1b` model session; set
+  `OLLAMA_ENTER=false` for non-interactive starts.
+  `native-smoke` sources
   `scripts/tests/native-smoke.sh`; each native run recreates
   `target/smoke-test`, packages `target/dist/codegeist-linux-x64.tar.gz`,
   unpacks it into a fresh temp directory, runs packaged `./codegeist --version`,
   asserts packaged `./codegeist --show-config` prints exactly `provider: {}`, and
-  writes `target/smoke-test/codegeist.log`.
+  writes `target/smoke-test/codegeist.log`. Smoke scripts now emit stable
+  `Duration: <label>: <seconds>s` lines for Maven, package, jar, native compile,
+  archive smoke, platform total, SSH, and QEMU wrapper timings.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
@@ -147,6 +164,9 @@
 - `docs/developer/release/windows-qemu-smoke.md` is the detailed operational guide
   for the Windows QEMU smoke lifecycle, configuration, artifacts, and
   troubleshooting.
+- `docs/tests/` is the coding-agent and contributor test guidance directory.
+  `docs/tests/README.md` is loaded through `.oc_local/opencode.json`, and links
+  to focused test rules plus the smoke-test duration-output contract.
 - `docs/developer/architecture/architecture.md` is the current-state architecture
   map. It must describe only implemented repository state and explicitly mark
   not-yet-implemented boundaries.
@@ -162,6 +182,7 @@
 - `docs/developer/specification/` now contains only the surviving high-level
   specifications and guidance:
   - `codegeist-opencode-parity.md`
+  - `llm-provider-implementation.md`
   - `java-generation-guidance.md`
   - `testing-strategy-and-agent-rules.md`
   - `build-release-and-binary-smoke-strategy.md`
@@ -218,9 +239,16 @@
   classes are data contracts only; all other provider types are deferred, and no
   Spring AI starters, provider clients, smoke commands, local model pulls, or
   remote calls were added. The implementation was verified with the full Maven
-  suite, Linux jar/native smokes, and Windows QEMU jar/native smokes. Next are
-  `T006_05` for local Ollama verification and `T006_06` for the provider
-  connection smoke harness.
+  suite, Linux jar/native smokes, and Windows QEMU jar/native smokes. `T006_05`
+  now adds the provider-neutral chat seam, `spring-ai-ollama`, the local Ollama
+  factory, and `LocalOllamaProviderIT`. Ordinary startup was rechecked with
+  `task test TEST=CodegeistApplicationTests`, and `OLLAMA_ENTER=false task
+  ollama-start` now works on the current CPU-only Docker host through GPU auto
+  fallback. The local `llama3.2:1b` model is downloaded in the Ollama model store,
+  `task test TEST=LocalOllamaProviderIT` passes, and the focused live run reported
+  Spring context startup `PT0.740494333S`, Ollama readiness/model availability
+  `PT0.326404818S`, and first chat call `PT1.687754898S`. Next is `T006_06` for
+  the provider connection smoke harness.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -260,10 +288,20 @@
   workflow needs them.
 - Keep the active task file small enough to revise during implementation instead
   of creating broad implementation handoff documents.
-- First provider-backed workflow should prefer a pinned local Ollama
-  Testcontainer with `llama3` over fake providers. Pin the Ollama image and model
-  tag, set `temperature=0`, use a fixed seed when the active Spring AI/Ollama
-  versions support it, and keep assertions constrained enough to be stable.
+- First provider-backed workflow should use an externally managed local Ollama
+  instance with the selected `llama3`-family model already downloaded before the
+  focused test starts. Do not use Testcontainers or pull local models in the test;
+  set `temperature=0`, use a fixed seed when supported, and keep assertions
+  constrained enough to be stable.
+- Provider chat runtime work should follow
+  `docs/developer/specification/llm-provider-implementation.md`: Codegeist chat
+  stays provider-neutral through `CodegeistChatService`, `ChatModelFactory`, and
+  generic `ProviderChatModelFactory<T extends ProviderConfig>`; provider-specific
+  Spring AI imports belong only in the concrete provider factory such as
+  `OllamaChatModelFactory`, which should receive `OllamaProviderConfig` directly.
+- For T006_05 local Ollama verification, run `OLLAMA_ENTER=false task ollama-start`
+  from `app/codegeist/cli` before `task test`; use `task test` or
+  `task test TEST=<test-selector>` rather than direct Maven test commands.
 - Spring AI Agent Utils may be used directly as a private implementation detail
   when useful, but Codegeist runtime, provider, tool, permission, workspace,
   event, session, storage, API, and UI contracts must remain Codegeist-owned.
@@ -355,8 +393,7 @@
   for a work branch, or `/codegeist-release` from synchronized `main` when the
   release-ready work is already there. Do not enter the version manually unless
   checking an inferred-version conflict.
-- Next provider work should continue with `T006_05` local Ollama verification and
-  `T006_06` provider smoke harness work. Use the solved `T006_03` account/free-tier
-  catalog before adding hosted provider-specific smoke rows or treating any hosted
-  provider as `remote-free`; use its availability matrix before adding a provider
-  starter or client code.
+- Next provider work should continue with `T006_06` provider smoke harness work.
+  Use the solved `T006_03` account/free-tier catalog before adding hosted
+  provider-specific smoke rows or treating any hosted provider as `remote-free`;
+  use its availability matrix before adding a provider starter or client code.

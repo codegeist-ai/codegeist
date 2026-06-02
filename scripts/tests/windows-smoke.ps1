@@ -37,6 +37,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$platformStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+function Write-SmokeDuration {
+    param(
+        [string]$Label,
+        [TimeSpan]$Duration
+    )
+
+    Write-Host ("Duration: {0}: {1:N3}s" -f $Label, $Duration.TotalSeconds)
+}
+
 function Fail-Smoke {
     param([string]$Reason)
 
@@ -49,11 +60,15 @@ function Fail-Smoke {
 function Invoke-Step {
     param(
         [string]$Label,
+        [string]$DurationLabel,
         [scriptblock]$Command
     )
 
     Write-Host "Command: $Label"
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     & $Command
+    $stopwatch.Stop()
+    Write-SmokeDuration $DurationLabel $stopwatch.Elapsed
     if ($LASTEXITCODE -ne 0) {
         Fail-Smoke "$Label failed with exit code $LASTEXITCODE"
     }
@@ -124,7 +139,8 @@ function Invoke-CommandSmoke {
         [string]$LogFile,
         [int]$TimeoutSeconds,
         [string]$OutputPrefix,
-        [string]$WorkingDirectory = (Get-Location).Path
+        [string]$WorkingDirectory = (Get-Location).Path,
+        [string]$DurationLabel = $Label
     )
 
     $stdoutFile = Join-Path $smokeDir "$OutputPrefix.out"
@@ -141,13 +157,16 @@ function Invoke-CommandSmoke {
     $startInfo.RedirectStandardError = $true
     $startInfo.EnvironmentVariables["LOG_FILE"] = $LogFile
 
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $process = [System.Diagnostics.Process]::Start($startInfo)
 
     if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+        $stopwatch.Stop()
         $process.Kill()
         $process.WaitForExit()
         Fail-Smoke "$Label timed out after $TimeoutSeconds seconds"
     }
+    $stopwatch.Stop()
 
     $stdout = $process.StandardOutput.ReadToEnd()
     $stderr = $process.StandardError.ReadToEnd()
@@ -171,6 +190,8 @@ function Invoke-CommandSmoke {
     if (-not (Test-Path -LiteralPath $LogFile) -or (Get-Item -LiteralPath $LogFile).Length -eq 0) {
         Fail-Smoke "$Label log was not written: $LogFile"
     }
+
+    Write-SmokeDuration $DurationLabel $stopwatch.Elapsed
 }
 
 function New-WindowsNativeArchive {
@@ -209,6 +230,7 @@ function Invoke-PackagedNativeSmoke {
         [int]$TimeoutSeconds
     )
 
+    $archiveStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("codegeist-smoke-" + [guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
 
@@ -228,7 +250,8 @@ function Invoke-PackagedNativeSmoke {
             (Join-Path $smokeDir "codegeist-windows-native.log") `
             $TimeoutSeconds `
             "codegeist-windows-native" `
-            $packageDir
+            $packageDir `
+            "windows native version smoke"
 
         # Keep aligned with CodegeistConfigService and docs/developer/architecture/provider-configuration.md.
         Invoke-CommandSmoke "Native archive show-config smoke" `
@@ -238,7 +261,11 @@ function Invoke-PackagedNativeSmoke {
             (Join-Path $smokeDir "codegeist-windows-native-show-config.log") `
             $TimeoutSeconds `
             "codegeist-windows-native-show-config" `
-            $packageDir
+            $packageDir `
+            "windows native show-config smoke"
+
+        $archiveStopwatch.Stop()
+        Write-SmokeDuration "windows native archive smoke" $archiveStopwatch.Elapsed
     }
     finally {
         Remove-Item -Recurse -Force -LiteralPath $tempRoot -ErrorAction SilentlyContinue
@@ -256,11 +283,11 @@ Set-Location -LiteralPath $cliDir
 Write-Host "Platform: windows-x64"
 Write-Host "Artifact: jar"
 
-Invoke-Step "mvn --batch-mode --no-transfer-progress test" {
+Invoke-Step "mvn --batch-mode --no-transfer-progress test" "windows maven tests" {
     & mvn --batch-mode --no-transfer-progress test
 }
 
-Invoke-Step "mvn --batch-mode --no-transfer-progress -DskipTests clean package" {
+Invoke-Step "mvn --batch-mode --no-transfer-progress -DskipTests clean package" "windows jar package" {
     & mvn --batch-mode --no-transfer-progress -DskipTests clean package
 }
 
@@ -275,7 +302,9 @@ Invoke-CommandSmoke "Jar version smoke" `
     $expected `
     (Join-Path $smokeDir "codegeist-windows-jar.log") `
     $JarTimeoutSeconds `
-    "codegeist-windows-jar"
+    "codegeist-windows-jar" `
+    (Get-Location).Path `
+    "windows jar version smoke"
 
 $nativeStatus = "skipped"
 $nativeReason = "NativeMode is skip"
@@ -300,13 +329,13 @@ if ($NativeMode -ne "skip") {
         else {
             Write-Host "Artifact: native"
             if ($clAvailable -and -not $msvc) {
-                Invoke-Step "mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile" {
+                Invoke-Step "mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile" "windows native compile" {
                     & mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile
                 }
             }
             else {
                 $nativeCommand = "$msvc && mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile"
-                Invoke-Step "MSVC environment plus Maven native compile" {
+                Invoke-Step "MSVC environment plus Maven native compile" "windows native compile" {
                     & cmd /d /s /c $nativeCommand
                 }
             }
@@ -328,3 +357,5 @@ Write-Host "Platform: windows-x64"
 Write-Host "Jar status: passed"
 Write-Host "Native status: $nativeStatus"
 Write-Host "Native reason: $nativeReason"
+$platformStopwatch.Stop()
+Write-SmokeDuration "windows platform smoke total" $platformStopwatch.Elapsed

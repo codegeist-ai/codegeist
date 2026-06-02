@@ -59,10 +59,14 @@ OpenCode behavior to translate, not copy:
 Current Codegeist state:
 
 - `app/codegeist/cli` imports the Spring AI BOM `2.0.0-M6`.
-- No Spring AI provider starters are present yet.
-- No `codegeist.yml` file is loaded yet.
-- No provider call, model selection, account flow, credential store, or connection
-  smoke harness is implemented yet.
+- `spring-ai-ollama` is present for programmatic selected-provider local Ollama
+  `ChatModel` creation. No Spring AI provider starter auto-configuration is
+  present.
+- Explicit `codegeist.yml` paths can be loaded, SpEL-preprocessed, mapped into
+  typed provider config, validated, and rendered.
+- The first provider call path is implemented for local Ollama through the
+  provider-neutral chat seam. Account flow, credential store, remote provider
+  calls, and a repeatable connection smoke harness are not implemented yet.
 
 ## Child Tasks
 
@@ -78,8 +82,8 @@ Current Codegeist state:
 - `T006_04_implement-codegeist-yml-loading.md` - implement focused loading,
   SpEL evaluation, direct rendering, and validation of `codegeist.yml`, including
   typed config records/POJOs for supported providers, without provider calls.
-- `T006_05_verify-local-ollama-provider.md` - prove the first local provider path
-  through Ollama with deterministic options and narrow assertions.
+- `T006_05_verify-local-ollama-provider.md` - solved with the first local provider
+  path through Ollama, deterministic options, and narrow assertions.
 - `T006_06_add-provider-connection-smoke-harness.md` - add a repeatable connection
   smoke harness that can report `passed`, `skipped`, or `failed` for local and
   remote providers.
@@ -141,8 +145,10 @@ Documentation-only child tasks should run:
 git --no-pager diff --check
 ```
 
-Implementation child tasks should run the narrow Maven or Taskfile selector named
-in that child task, then broaden to the relevant `app/codegeist/cli` verification.
+Implementation child tasks should run the narrow Taskfile selector named in that
+child task, for example `task test TEST=<test-class>`, then broaden to the
+relevant `app/codegeist/cli` `task test` verification. Do not document direct
+`mvn test` commands for new Codegeist implementation tasks.
 Provider smokes must report timing and `passed`, `skipped`, or `failed` status.
 
 ## Planning Notes
@@ -151,6 +157,10 @@ Provider smokes must report timing and `passed`, `skipped`, or `failed` status.
   source.
 - Use `docs/developer/specification/testing-strategy-and-agent-rules.md` before
   adding provider tests.
+- Use `docs/developer/specification/llm-provider-implementation.md` before adding
+  provider chat runtime code; it defines the provider-neutral Strategy plus Factory
+  pattern for mapping selected `ProviderConfig` entries into Spring AI `ChatModel`
+  instances.
 - Use `docs/developer/specification/codegeist-opencode-parity.md` for OpenCode
   behavior posture and provider boundary guidance.
 - Use `/ask-project opencode ...` for source-backed OpenCode questions when its

@@ -37,6 +37,7 @@ cli_dir="$repo_root/app/codegeist/cli"
 status_file="${CODEGEIST_SMOKE_STATUS_FILE:-}"
 require_native="${CODEGEIST_SMOKE_REQUIRE_NATIVE:-0}"
 jar_timeout="${CODEGEIST_JAR_SMOKE_TIMEOUT:-15s}"
+platform_start=""
 
 source "$script_dir/native-smoke.sh"
 
@@ -71,22 +72,29 @@ fail_smoke() {
 }
 
 cd "$cli_dir"
+platform_start="$(codegeist_now_ms)"
 
 printf 'Platform: linux\n'
 printf 'Artifact: jar\n'
 printf 'Command: mvn --batch-mode --no-transfer-progress test\n'
+maven_tests_start="$(codegeist_now_ms)"
 mvn --batch-mode --no-transfer-progress test || fail_smoke 'Maven tests failed'
+codegeist_print_duration 'linux maven tests' "$maven_tests_start"
 
 printf 'Command: mvn --batch-mode --no-transfer-progress -DskipTests clean package\n'
+jar_package_start="$(codegeist_now_ms)"
 mvn --batch-mode --no-transfer-progress -DskipTests clean package || fail_smoke 'Jar package failed'
+codegeist_print_duration 'linux jar package' "$jar_package_start"
 
 expected="$(codegeist_read_build_version target/classes/META-INF/build-info.properties)"
 smoke_dir="$cli_dir/target/smoke-test"
 mkdir -p "$smoke_dir"
 
 printf 'Command: java -jar target/codegeist.jar --version\n'
+jar_smoke_start="$(codegeist_now_ms)"
 actual="$(LOG_FILE="$smoke_dir/codegeist-linux-jar.log" timeout "$jar_timeout" java -jar target/codegeist.jar --version 2>&1)" \
   || fail_smoke "Jar version smoke failed or timed out after $jar_timeout"
+codegeist_print_duration 'linux jar version smoke' "$jar_smoke_start"
 
 if [ "$actual" != "$expected" ]; then
   fail_smoke "Jar version smoke expected $expected but got $actual"
@@ -102,8 +110,10 @@ native_reason='native-image is not available on PATH'
 if command -v native-image >/dev/null 2>&1; then
   printf 'Artifact: native\n'
   printf 'Command: mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile\n'
+  native_compile_start="$(codegeist_now_ms)"
   mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile \
     || fail_smoke 'Native compile failed'
+  codegeist_print_duration 'linux native compile' "$native_compile_start"
 
   printf 'Command: package target/dist/codegeist-linux-x64.tar.gz and run extracted ./codegeist --version plus --show-config\n'
   run-native-smoke-tests || fail_smoke 'Native archive smoke failed'
@@ -122,3 +132,4 @@ printf 'Platform: linux\n'
 printf 'Jar status: passed\n'
 printf 'Native status: %s\n' "$native_status"
 printf 'Native reason: %s\n' "$native_reason"
+codegeist_print_duration 'linux platform smoke total' "$platform_start"

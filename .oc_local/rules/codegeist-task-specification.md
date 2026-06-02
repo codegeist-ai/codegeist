@@ -125,6 +125,15 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   for consumer-specific GPU setup. Keep Ollama models under
   `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}` and use `OLLAMA_ENTER=false task
   ollama-start` for non-interactive automation.
+- For Codegeist implementation verification, prefer the Taskfile entrypoint from
+  `app/codegeist/cli`: run `task test`, and use `task test TEST=<test-selector>`
+  for focused test selectors. Do not document direct `mvn test` commands for new
+  implementation tasks. For local Ollama provider verification, run
+  `OLLAMA_ENTER=false task ollama-start` before `task test`.
+- For Codegeist test or smoke-script work, read `docs/tests/README.md` first.
+  Smoke scripts must keep scan-friendly status lines and emit stable
+  `Duration: <label>: <seconds>s` lines for meaningful Maven, package, jar,
+  native compile, archive smoke, platform total, SSH, and QEMU wrapper checks.
 - For GraalVM resource inclusion, prefer metadata under
   `src/main/resources/META-INF/native-image/resource-config.json` for simple
   resource patterns such as `logback.xml` and `META-INF/build-info.properties`.
@@ -143,11 +152,12 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   tasks, keep the active task file scoped to the next smallest tested Spring
   workflow and avoid placeholder classes, ids, ports, enums, package layers, or
   validation hierarchies.
-- For the first provider-backed workflow in the replacement epic, use a pinned
-  local Ollama Testcontainer with `llama3` instead of a fake provider. Pin the
-  Ollama image and model tag, set `temperature=0`, use a fixed seed when the active
-  Spring AI and Ollama versions support it, and keep assertions constrained enough
-  to be stable.
+- For the first provider-backed workflow in the replacement epic, use an externally
+  managed local Ollama instance with a `llama3`-family model already downloaded
+  before the focused test starts instead of a fake provider. Do not use
+  Testcontainers or pull local models in the test. Set `temperature=0`, use a
+  fixed seed when the active Spring AI and Ollama versions support it, and keep
+  assertions constrained enough to be stable.
 - During implementation specify, plan, and solve phases, use
   `docs/tasks/hints/spring-ai-agent-utils-phase-guidance.md`: first ask
   `/ask-project spring-ai-agent-utils ...` for Java/Spring-side equivalents. When
