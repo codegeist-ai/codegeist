@@ -348,8 +348,8 @@ filters Models.dev providers before merging connected providers.
 `packages/opencode/src/server/routes/instance/provider.ts`.
 
 **Codegeist implication:** Keep Codegeist provider selection simple until a
-focused runtime-selection task exists. A provider with `enabled: false` must not
-become callable just because SpEL produced a value.
+focused runtime-selection task exists. A provider blocked by a future selection
+policy must not become callable just because SpEL produced a value.
 
 ```text
 /ask-project opencode "How does OpenCode support custom OpenAI-compatible providers with baseURL, model maps, and provider options?"
@@ -416,7 +416,7 @@ OpenCode's dynamic TypeScript provider loading model.
 /ask-project opencode "Does OpenCode have any explicit safety gates before making remote provider calls, or does credential/model selection imply permission to call? Cite source behavior."
 ```
 
-**Answer:** The reviewed request path does not show a no-cost or remote-free gate
+**Answer:** The reviewed request path does not show a no-cost or remote_free gate
 before chat. Once a provider/model is selected and `Provider.getLanguage` can
 resolve a language model, `LLM.run` calls AI SDK `streamText`. OpenCode has
 provider availability logic, permission logic for tools, and some provider-specific
@@ -427,7 +427,7 @@ call may cost money.
 `packages/opencode/src/provider/provider.ts`.
 
 **Codegeist implication:** Codegeist should intentionally differ for T006_06.
-Remote smoke tests must require explicit remote-free selection and account/cost
+Remote smoke tests must require explicit remote_free selection and account/cost
 confirmation; API-key presence alone is not permission to call a hosted provider.
 
 ```text
@@ -467,7 +467,7 @@ error handling and propagate through the session stream path.
 should usually be `skipped` or `blocked`, not an accidental remote failure.
 
 ```text
-/ask-project opencode "How should Codegeist differ from OpenCode if it wants remote-free and no-cost gates before hosted provider smoke tests?"
+/ask-project opencode "How should Codegeist differ from OpenCode if it wants remote_free and no-cost gates before hosted provider smoke tests?"
 ```
 
 **Answer:** OpenCode optimizes for interactive provider use once configured.
@@ -952,7 +952,7 @@ wrappers. Keep Codegeist provider config, policy, smoke statuses, and
 sensitive-output policy owned by Codegeist.
 
 ```text
-/ask-project opencode "What should Codegeist ask from OpenCode before implementing unrestricted SpEL-backed codegeist.yml parsing, sensitive config output, and remote-free provider smoke gates?"
+/ask-project opencode "What should Codegeist ask from OpenCode before implementing unrestricted SpEL-backed codegeist.yml parsing, sensitive config output, and remote_free provider smoke gates?"
 ```
 
 **Answer:** Ask OpenCode for config source precedence, config variable
@@ -961,7 +961,7 @@ behavior, resolved config output surfaces, and whether remote provider calls hav
 pre-call cost gates. The source-backed answers above show the key findings:
 substitution before validation, strict top-level schema with open provider
 options, separate auth store, possible resolved-config secret exposure, and no
-general remote-free gate.
+general remote_free gate.
 
 **Evidence:** `packages/opencode/src/config/config.ts`,
 `packages/opencode/src/config/variable.ts`,

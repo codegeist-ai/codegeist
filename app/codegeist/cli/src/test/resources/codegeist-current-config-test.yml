@@ -1,0 +1,5 @@
+provider:
+  openai:
+    type: openai
+    name: OpenAI
+    api-key: injected-openai-key

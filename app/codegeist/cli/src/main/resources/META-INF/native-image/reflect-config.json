@@ -1,0 +1,19 @@
+[
+  {
+    "name": "ai.codegeist.app.config.ProviderConfig",
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.OllamaProviderConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.OpenAiProviderConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  }
+]

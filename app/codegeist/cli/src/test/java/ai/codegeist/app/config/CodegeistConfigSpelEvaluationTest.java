@@ -30,13 +30,8 @@ class CodegeistConfigSpelEvaluationTest {
             provider:
               "#{literal-provider-key}":
                 type: ollama
-                enabled: "#{true}"
-                model: "#{'llama' + '3.2:1b'}"
+                name: "local-#{'ollama'}"
                 base-url: "#{'http://localhost:' + (11000 + 434)}"
-                options:
-                  temperature: "#{0}"
-                  retries: 2
-                  label: "local-#{'ollama'}"
             """);
 
         CodegeistConfig config = service.loadConfig(configFile.toString());
@@ -44,12 +39,8 @@ class CodegeistConfigSpelEvaluationTest {
 
         assertThat(config.getProvider()).containsOnlyKeys(LITERAL_PROVIDER_ID);
         assertThat(provider).isInstanceOf(OllamaProviderConfig.class);
-        assertThat(provider.getEnabled()).isTrue();
-        assertThat(provider.getModel()).isEqualTo("llama3.2:1b");
+        assertThat(provider.getName()).isEqualTo("local-ollama");
         assertThat(provider.getBaseUrl()).isEqualTo("http://localhost:11434");
-        assertThat(provider.getOptions()).containsEntry("temperature", 0)
-                .containsEntry("retries", 2)
-                .containsEntry("label", "local-ollama");
     }
 
     @Test
@@ -59,7 +50,6 @@ class CodegeistConfigSpelEvaluationTest {
             provider:
               openai:
                 type: openai
-                model: gpt-4o-mini
                 api-key: "#{null}"
             """);
 
@@ -77,7 +67,6 @@ class CodegeistConfigSpelEvaluationTest {
             provider:
               openai:
                 type: openai
-                model: gpt-4o-mini
                 api-key: "#{'super-secret-material'.missingMethod(}"
             """);
 

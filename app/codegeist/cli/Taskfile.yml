@@ -102,6 +102,11 @@ tasks:
 
           for _ in $(seq 1 30); do
             if curl -fsS "http://$health_host:$port/api/version" >/dev/null; then
+              if ! docker exec "$container_name" ollama show "$model" >/dev/null 2>&1; then
+                printf "Pulling Ollama model %s\n" "$model"
+                docker exec "$container_name" ollama pull "$model"
+              fi
+
               printf "Ollama is running at http://%s:%s\n" "$health_host" "$port"
               if [ "$enter_mode" = "true" ] || { [ "$enter_mode" = "auto" ] && [ -t 0 ] && [ -t 1 ]; }; then
                 printf "Entering Ollama model %s\n" "$model"

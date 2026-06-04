@@ -205,7 +205,7 @@ describe the intended first-wave route or out-of-scope status.
 | Amazon Bedrock | Supported and documented as `amazon-bedrock` with AWS env/profile/token options. | First-wave planned. | Dedicated `spring-ai-starter-model-bedrock-converse`; requires region, model access, and AWS credential source. |
 | Azure OpenAI / Microsoft Foundry | Supported through the bundled `@ai-sdk/azure` provider and Azure resource/deployment config. | First-wave OpenAI-compatible planned. | Reuse `spring-ai-starter-model-openai` with Azure-shaped endpoint, deployment, and API-version options. |
 | Google Gemini / Google Vertex | Supported through bundled `@ai-sdk/google`, `@ai-sdk/google-vertex`, and Vertex Anthropic providers. | First-wave planned as `google-genai`. | Dedicated `spring-ai-starter-model-google-genai`; keep Gemini Developer API and Vertex/cloud billing paths separate. |
-| Mistral AI | Supported through the bundled `@ai-sdk/mistral` provider. | First-wave planned. | Dedicated `spring-ai-starter-model-mistral-ai`; `remote-free` only after Studio Free-mode confirmation. |
+| Mistral AI | Supported through the bundled `@ai-sdk/mistral` provider. | First-wave planned. | Dedicated `spring-ai-starter-model-mistral-ai`; `remote_free` only after Studio Free-mode confirmation. |
 | DeepSeek | Supported through OpenCode provider directory and Models.dev/OpenAI-compatible behavior. | First-wave planned. | Dedicated `spring-ai-starter-model-deepseek`; blocked unless granted balance/no-cost confirmation exists. |
 | MiniMax | Supported through OpenCode provider directory and OpenCode Zen/Go model families. | First-wave planned. | Dedicated `spring-ai-starter-model-minimax`; blocked by default because no durable free chat API tier was confirmed. |
 | Groq | Supported through the bundled `@ai-sdk/groq` provider. | First-wave OpenAI-compatible planned. | Reuse `spring-ai-starter-model-openai`; block until console confirms no-cost plan or credits. |
@@ -236,14 +236,14 @@ readable, the provider rows use official source references instead of repeating
 raw URL columns; the references resolve to official account, pricing, quota, or
 starter sources in `Official Source References`.
 
-| codegeist-type | spring-ai-route | account steps | credential source | free/no-cost-state | remote-free eligibility | safe-default-smoke | last-checked | sources and notes |
+| codegeist-type | spring-ai-route | account steps | credential source | free/no-cost-state | remote_free eligibility | safe-default-smoke | last-checked | sources and notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `anthropic` | Dedicated `spring-ai-starter-model-anthropic`. | Create an Anthropic Console account, create an API key, and confirm API billing or credits before a call. | `ANTHROPIC_API_KEY`. | `paid-only` for API use checked here; Anthropic's public `Free` plan evidence is the Claude chat product, not API permission. | No by default. Only allow if the console explicitly shows non-billable credits for the selected API/model. | `blocked` for remote calls; `config-only` before credentials. | 2026-06-01 | [SA1], [A1], [A2]. Keep Claude.ai free-plan evidence out of API free-tier decisions. |
 | `bedrock-converse` | Dedicated `spring-ai-starter-model-bedrock-converse`. | Create or use an AWS account, configure IAM/API-key credentials, select region, request/confirm Bedrock model access, and confirm billing posture. | AWS profile, temporary credentials, Bedrock API key, or environment-backed AWS credentials. | `paid-only` for model inference in checked pricing; AWS account/free-credit promotions are not a durable Bedrock API free tier. | No by default. Only allow if an explicit AWS account credit/sandbox decision exists for the selected region/model. | `blocked` for remote calls; `config-only` before AWS setup. | 2026-06-01 | [SA1], [B1], [B2]. Region and model access are prerequisites, not just credentials. |
 | `deepseek` | Dedicated `spring-ai-starter-model-deepseek`. | Create a DeepSeek platform account, create an API key, and confirm topped-up or granted balance. | `DEEPSEEK_API_KEY`. | `trial-credit-only`; docs describe charges deducted from topped-up or granted balance. | Only with explicit no-cost confirmation that granted balance covers the selected smoke request. | `blocked` for remote calls; `config-only` before balance confirmation. | 2026-06-01 | [SA1], [D1], [D2]. DeepSeek is OpenAI/Anthropic-format compatible but has a dedicated Spring AI starter in the pinned baseline. |
-| `google-genai` | Dedicated `spring-ai-starter-model-google-genai`. | Use Google AI Studio, accept terms, create or import a Google Cloud project, create an API key, and pick Developer API or Vertex-style project/location mode. | `GOOGLE_API_KEY`, `GEMINI_API_KEY`, or Vertex/Google Cloud credentials. | `official-free-api-tier` for Gemini Developer API routes only; Vertex-style cloud mode remains cloud/billing governed. | Yes, only for an explicitly selected Gemini API free-tier model/route with current quota confirmation. | `remote-free` only after explicit confirmation; otherwise `config-only` or `blocked` for Vertex/cloud mode. | 2026-06-01 | [SA1], [G1], [G2], [G3]. Keep Developer API and Vertex AI billing paths separate. |
+| `google-genai` | Dedicated `spring-ai-starter-model-google-genai`. | Use Google AI Studio, accept terms, create or import a Google Cloud project, create an API key, and pick Developer API or Vertex-style project/location mode. | `GOOGLE_API_KEY`, `GEMINI_API_KEY`, or Vertex/Google Cloud credentials. | `official-free-api-tier` for Gemini Developer API routes only; Vertex-style cloud mode remains cloud/billing governed. | Yes, only for an explicitly selected Gemini API free-tier model/route with current quota confirmation. | `remote_free` only after explicit confirmation; otherwise `config-only` or `blocked` for Vertex/cloud mode. | 2026-06-01 | [SA1], [G1], [G2], [G3]. Keep Developer API and Vertex AI billing paths separate. |
 | `minimax` | Dedicated `spring-ai-starter-model-minimax`. | Create a MiniMax platform account, generate an API key, and confirm recharge/package or account balance. | `MINIMAX_API_KEY`. | `paid-only` from checked price/package docs; no durable free chat API tier was confirmed. | No by default. | `blocked` for remote calls; `config-only` before account balance confirmation. | 2026-06-01 | [SA1], [MM1], [MM2]. Checked docs are official but some pricing/account pages are Chinese-language platform docs. |
-| `mistral-ai` | Dedicated `spring-ai-starter-model-mistral-ai`. | Activate Mistral Studio, generate an API key, and confirm whether the selected account remains in Free mode or needs billing. | `MISTRALAI_API_KEY`. | `official-free-api-tier` for Studio Free mode as documented by the quickstart entrypoint, subject to current console limits. | Yes, only after confirming the account is in Free mode and the selected model/route is no-cost. | `remote-free` after explicit confirmation; otherwise `config-only`. | 2026-06-01 | [SA1], [MI1], [MI2]. Keep Studio Free-mode evidence separate from enterprise or paid deployment modes. |
+| `mistral-ai` | Dedicated `spring-ai-starter-model-mistral-ai`. | Activate Mistral Studio, generate an API key, and confirm whether the selected account remains in Free mode or needs billing. | `MISTRALAI_API_KEY`. | `official-free-api-tier` for Studio Free mode as documented by the quickstart entrypoint, subject to current console limits. | Yes, only after confirming the account is in Free mode and the selected model/route is no-cost. | `remote_free` after explicit confirmation; otherwise `config-only`. | 2026-06-01 | [SA1], [MI1], [MI2]. Keep Studio Free-mode evidence separate from enterprise or paid deployment modes. |
 | `ollama` | Dedicated `spring-ai-starter-model-ollama`. | Install/start Ollama outside the test, download the selected local model before the test starts, and confirm local resource availability. | None for local daemon; optional base URL. | `local-free`; costs are local compute, disk, and download time. | Not a hosted remote provider. | `local`. | 2026-06-01 | [SA1], [O1]. First Codegeist real-provider candidate. |
 | `openai` | Dedicated `spring-ai-starter-model-openai`. | Create an OpenAI platform account, create an API key, and confirm billing or available free test/credits before a call. | `OPENAI_API_KEY`. | `trial-credit-only`; official quickstart mentions a free test API request, but durable API use should assume billing/credits. | Only with explicit confirmation that current account credits cover the selected smoke. | `blocked` for remote calls; `config-only` before billing/credit confirmation. | 2026-06-01 | [SA1], [OA1], [OA2]. ChatGPT free plans are not API free-tier permission. |
 | `azure-openai` | Reuse `spring-ai-starter-model-openai` for Azure OpenAI/Microsoft Foundry-shaped OpenAI-compatible calls in this baseline. | Create/use Azure subscription, create Foundry/OpenAI resource, deploy/select model, choose region/deployment type, create credentials, and confirm subscription billing or credits. | Azure/OpenAI API key, endpoint/deployment config, or future Azure credential path. | `trial-credit-only`; Azure has free-account entrypoints, but Azure OpenAI pricing is pay-as-you-go/provisioned/batch by deployment. | Only with explicit subscription credit/sandbox confirmation for selected deployment. | `blocked` for remote calls; `config-only` before Azure setup. | 2026-06-01 | [SA1], [AZ1], [AZ2]. Deployment name, endpoint, API version, and region are required. |
@@ -299,15 +299,23 @@ starter sources in `Official Source References`.
 
 ## Provider Availability And On-Demand Use Analysis
 
+Update from `T006_06` and the follow-up options removal: `ProviderConfig` no
+longer owns model selection or generic provider options. Models and generation
+options vary by coding agent, session, command, request, or provider feature test
+method, so provider config only stores access, endpoint, enablement, and
+credential data. Rows below that mention `model`, `enabled`, `completions-path`,
+or `options.*` now describe runtime/provider-feature requirements rather than
+fields that belong in `ProviderConfig`.
+
 Making a provider "available" in Codegeist is more than adding a provider id to
 `codegeist.yml`. A provider becomes usable only when these layers are satisfied:
 
 | Layer | Required work | Why it matters |
 | --- | --- | --- |
 | Build availability | The needed Spring AI starter or compatible integration is on the application classpath and covered by native-image posture when native builds are in scope. | Spring Boot cannot create provider clients from config if the provider classes are not packaged. |
-| Config shape | `ProviderConfig` can bind the fields needed by that provider, at minimum `type`, provider id, model or deployment selector when required, endpoint fields, credential values or references, enablement, and provider options. | The current config-only implementation binds `ollama` and `openai`; later provider-use tasks must add provider-specific runtime requirements only when a call path needs them. |
+| Config shape | `ProviderConfig` can bind access fields needed by that provider, such as endpoint fields and credential values or references. YAML `type` is a dispatch-only discriminator, provider id stays the map key, and runtime enablement, model, deployment, path, and generation-option selectors belong to the calling agent, command, request, or provider feature test method. | The current config-only implementation binds `ollama` and `openai`; later provider-use tasks must add provider-specific runtime requirements only when a call path needs them. |
 | Source loading | `codegeist.yml` sources are discovered, SpEL-evaluated, mapped, and validated before diagnostics. | Provider use must consume normalized config, not raw YAML with unevaluated expressions. |
-| Safety gate | Local, config-only, and hosted `remote-free` modes are decided before a provider call. API-key presence is never permission to call a hosted provider. | Prevents accidental paid remote calls and keeps provider smokes repeatable. |
+| Safety gate | Local, config-only, and hosted `remote_free` modes are decided before a provider call. API-key presence is never permission to call a hosted provider. | Prevents accidental paid remote calls and keeps provider smokes repeatable. |
 | Runtime selection | A command, session, smoke allowlist, or later model-selection policy chooses one provider id and model/deployment for the current request. | On-demand use means Codegeist should not initialize or call every configured provider at startup. |
 | Client creation | Codegeist maps the selected provider config to the matching Spring AI `ChatModel` or `ChatClient` path and creates it only when selected. | Keeps provider work lazy, testable, and isolated to the requested provider. |
 | Result handling | Calls return an observable response, status, duration, and diagnostics. Failures identify missing config, missing dependency, blocked cost posture, provider setup gaps, or provider API failure. | Users need actionable feedback and must treat any config-bearing output as sensitive. |
@@ -326,51 +334,43 @@ define and test this smallest contract:
 2. The provider entry has a supported `type` from the T006 matrix.
 3. The provider type is build-available through either a dedicated Spring AI
    starter or the OpenAI-compatible starter route.
-4. The provider entry contains the minimum provider-specific fields for a call.
-   For most chat providers this means `type`, `model`, credentials or local
-   endpoint information, and any required provider option such as Bedrock region or
-   NVIDIA `options.max-tokens`.
+4. The provider entry contains the minimum provider-specific access fields for a
+   call. Runtime model, deployment, region, token cap, and other generation options
+   must come from the caller, command, request, or provider feature test method.
 5. Config loading has evaluated SpEL values and run Bean Validation. If future
    work adds multi-source combination, it must define that policy explicitly.
-6. The selected provider is enabled and not blocked by provider `enabled: false`
-   or later policy.
-7. The selected execution mode permits the call: `local` for local providers,
-   `remote-free` only with explicit no-cost confirmation for eligible hosted
+6. The selected execution mode permits the call: `local` for local providers,
+   `remote_free` only with explicit no-cost confirmation for eligible hosted
    providers, and `config` for no-call configuration checks.
-8. Codegeist can map the normalized provider config into the matching Spring AI
+7. Codegeist can map the normalized provider config into the matching Spring AI
    properties/options or builder objects without mutating global Spring properties.
-9. Codegeist creates the selected `ChatModel` or `ChatClient` lazily for the current
+8. Codegeist creates the selected `ChatModel` or `ChatClient` lazily for the current
    request or smoke, then reports `passed`, `skipped`, `blocked`, or `failed` with
    a reason and duration.
 
 This contract is intentionally per-provider. Do not introduce a broad provider
-registry, adapter hierarchy, dynamic plugin layer, or model-selection policy before
-a focused provider task needs it. It is acceptable for the first provider task to
-create a small private service or factory if the Ollama test needs one; keep the
-shape private until a second provider proves what should be shared.
+registry, adapter hierarchy, dynamic plugin layer, factory layer, or
+model-selection policy before a focused provider task needs it. The first provider
+task should let the selected provider config create its concrete chat model from
+access config only, then pass the runtime model at prompt-call time.
 
-## Configuration Fields Needed For On-Demand Use
+## Provider Access Fields Needed For On-Demand Use
 
 The current Java implementation supports config-only `ollama` and `openai`
 provider entries with typed fields. Provider use still requires later tasks to
 connect one selected provider config to Spring AI in small tested steps.
 
-Minimum candidate fields for on-demand provider use:
+Minimum access fields for on-demand provider use:
 
 | Field | Applies to | Purpose |
 | --- | --- | --- |
-| `provider.<id>.type` | all real providers | Selects the provider integration, for example `ollama`, `anthropic`, or `openai`. |
-| `provider.<id>.enabled` | all providers | Allows a configured provider to stay in config without being callable. |
-| `provider.<id>.model` | most chat providers | Selects the chat model or local model tag for the selected provider. |
+| `provider.<id>.type` | all real providers | Dispatch-only discriminator that selects the provider integration, for example `ollama`, `anthropic`, or `openai`; it is not stored as mutable `ProviderConfig` state. |
 | `provider.<id>.base-url` | local and OpenAI-compatible providers, optional for many dedicated providers | Overrides local daemons, proxies, hosted endpoints, and compatibility APIs. |
-| `provider.<id>.completions-path` | OpenAI-compatible providers | Handles providers such as Perplexity or Azure-shaped endpoints that need a non-default path. |
 | `provider.<id>.credentials.*` | hosted providers and cloud providers | References env vars, profiles, or files without storing raw secret values in YAML. T006_03 still rejects a separate credential-reference language for the first SpEL slice. |
-| `provider.<id>.options.*` | provider-specific knobs | Holds timeouts, token caps, region, deployment, seed, temperature, pull strategy, response format, and provider-specific settings until a later task promotes a field. |
 
-Keep the first model deliberately minimal. Add fields only when a focused test
-needs them. `T006_05` can start with the Ollama subset: `type`, `model`,
-`base-url`, and deterministic `options.temperature` or `options.seed` when Spring
-AI and Ollama support them.
+Keep the first model deliberately minimal. Add provider config fields only when a
+focused test needs persistent access data. Model names and generation options stay
+outside `ProviderConfig`.
 
 ## Provider Availability Matrix
 
@@ -379,21 +379,21 @@ and used on demand in Codegeist. It is not an implementation checklist for one
 single task; provider-specific tasks should pick one row and prove the smallest
 usable path.
 
-| codegeist-type | Build availability | Minimum config for on-demand use | Safety gate | Main blockers before use |
+| codegeist-type | Build availability | Access config and runtime inputs for on-demand use | Safety gate | Main blockers before use |
 | --- | --- | --- | --- | --- |
-| `ollama` | Add `spring-ai-starter-model-ollama`. | `type`, `model`, `base-url`, deterministic `options` as needed. | `local`; no hosted account. | Ready local daemon, already downloaded model, readiness timing, stable assertion, and first private client-creation path. |
-| `docker-model-runner` | Add/reuse `spring-ai-starter-model-openai`. | `type`, `model`, `base-url`, optional dummy key, OpenAI-compatible options. | `local`; no hosted account. | Docker Model Runner availability, model pull/cache lifecycle, and OpenAI-compatible base URL behavior. |
-| `openai` | Add `spring-ai-starter-model-openai`. | `type`, `model`, `credentials.api-key-env`, optional `base-url`, org/project, token caps. | `blocked` unless explicit credits/no-cost confirmation exists. | Billing/credits, sensitive config output, and no default remote call from API-key presence. |
-| `anthropic` | Add `spring-ai-starter-model-anthropic`. | `type`, `model`, `credentials.api-key-env`, token cap/options. | `blocked` unless explicit no-cost account state exists. | API billing confirmation and provider-specific options such as max tokens, service tier, and geo. |
-| `bedrock-converse` | Add `spring-ai-starter-model-bedrock-converse`. | `type`, `model`, AWS credential source, `options.region`, timeout/token options. | `blocked` unless explicit AWS credit/sandbox decision exists. | AWS account, region, Bedrock model access, profile/credentials chain, and deployment permissions. |
-| `google-genai` | Add `spring-ai-starter-model-google-genai`. | `type`, `model`, API-key mode or Vertex project/location mode, provider options. | `remote-free` only for confirmed Gemini Developer API free-tier route; Vertex/cloud mode is blocked until confirmed. | Keeping Developer API and Vertex-style billing paths separate. |
-| `deepseek` | Add `spring-ai-starter-model-deepseek`. | `type`, `model`, `credentials.api-key-env`, endpoint/path options. | `blocked` unless granted balance/no-cost confirmation exists. | Balance state, model deprecations, and reasoning-mode differences. |
-| `minimax` | Add `spring-ai-starter-model-minimax`. | `type`, explicit `model`, `credentials.api-key-env`, response format/seed options. | `blocked` by default. | Paid-package/account-balance posture and docs/source default-model mismatch. |
-| `mistral-ai` | Add `spring-ai-starter-model-mistral-ai`. | `type`, `model`, `credentials.api-key-env`, optional response format/random seed. | `remote-free` only after Studio Free-mode confirmation. | Current console mode, model access, and provider-specific safe-prompt/random-seed options. |
-| `azure-openai` | Reuse `spring-ai-starter-model-openai`. | `type`, deployment/model selector, `base-url`, credentials, `options.deployment-name`, API version/path. | `blocked` unless subscription credits/sandbox are confirmed. | Azure subscription, resource deployment, endpoint/API-version shape, region, and deployment name mapping. |
-| `groq` | Reuse `spring-ai-starter-model-openai`. | `type`, `model`, `base-url`, `credentials.api-key-env`, conservative supported options. | `blocked` until console confirms no-cost plan/credits. | Account billing plan is not public through fetched docs; unsupported OpenAI request fields must be gated. |
-| `nvidia` | Reuse `spring-ai-starter-model-openai`. | `type`, `model`, `base-url`, `credentials.api-key-env`, required `options.max-tokens`. | `blocked` unless hosted credits or self-hosted no-cost posture is confirmed. | Hosted NIM account state, self-hosted entitlement/runtime, and provider-required token cap. |
-| `perplexity` | Reuse `spring-ai-starter-model-openai`. | `type`, `model`, `base-url`, `completions-path`, `credentials.api-key-env`, token/search options. | `blocked` by default. | Paid token/request/tool pricing and limited OpenAI compatibility for tools/multimodal messages. |
+| `ollama` | Add `spring-ai-starter-model-ollama`. | Discriminator: `type`; access config: `base-url`; runtime input: selected model and deterministic options as needed. | `local`; no hosted account. | Ready local daemon, already downloaded model, readiness timing, stable assertion, and first private client-creation path. |
+| `docker-model-runner` | Add/reuse `spring-ai-starter-model-openai`. | Discriminator: `type`; access config: `base-url`, optional dummy key; runtime input: selected model and OpenAI-compatible options. | `local`; no hosted account. | Docker Model Runner availability, model pull/cache lifecycle, and OpenAI-compatible base URL behavior. |
+| `openai` | Add `spring-ai-starter-model-openai`. | Discriminator: `type`; access config: API key, optional `base-url`, org/project; runtime input: selected model and token caps. | `blocked` unless explicit credits/no-cost confirmation exists. | Billing/credits, sensitive config output, and no default remote call from API-key presence. |
+| `anthropic` | Add `spring-ai-starter-model-anthropic`. | Discriminator: `type`; access config: API key; runtime input: selected model and provider options. | `blocked` unless explicit no-cost account state exists. | API billing confirmation and provider-specific options such as max tokens, service tier, and geo. |
+| `bedrock-converse` | Add `spring-ai-starter-model-bedrock-converse`. | Discriminator: `type`; access config: AWS credential source; runtime input: model id, region, timeout, and token options. | `blocked` unless explicit AWS credit/sandbox decision exists. | AWS account, region, Bedrock model access, profile/credentials chain, and deployment permissions. |
+| `google-genai` | Add `spring-ai-starter-model-google-genai`. | Discriminator: `type`; access config: API-key or Vertex access fields; runtime input: selected model and provider options. | `remote_free` only for confirmed Gemini Developer API free-tier route; Vertex/cloud mode is blocked until confirmed. | Keeping Developer API and Vertex-style billing paths separate. |
+| `deepseek` | Add `spring-ai-starter-model-deepseek`. | Discriminator: `type`; access config: API key and endpoint fields; runtime input: selected model and request options. | `blocked` unless granted balance/no-cost confirmation exists. | Balance state, model deprecations, and reasoning-mode differences. |
+| `minimax` | Add `spring-ai-starter-model-minimax`. | Discriminator: `type`; access config: API key; runtime input: selected model, response format, and seed options. | `blocked` by default. | Paid-package/account-balance posture and docs/source default-model mismatch. |
+| `mistral-ai` | Add `spring-ai-starter-model-mistral-ai`. | Discriminator: `type`; access config: API key; runtime input: selected model, response format, and random seed. | `remote_free` only after Studio Free-mode confirmation. | Current console mode, model access, and provider-specific safe-prompt/random-seed options. |
+| `azure-openai` | Reuse `spring-ai-starter-model-openai`. | Discriminator: `type`; access config: `base-url`, credentials, API version/path as needed; runtime input: deployment/model selector. | `blocked` unless subscription credits/sandbox are confirmed. | Azure subscription, resource deployment, endpoint/API-version shape, region, and deployment name mapping. |
+| `groq` | Reuse `spring-ai-starter-model-openai`. | Discriminator: `type`; access config: `base-url`, API key; runtime input: selected model and conservative supported options. | `blocked` until console confirms no-cost plan/credits. | Account billing plan is not public through fetched docs; unsupported OpenAI request fields must be gated. |
+| `nvidia` | Reuse `spring-ai-starter-model-openai`. | Discriminator: `type`; access config: `base-url`, API key; runtime input: selected model and required max-token option. | `blocked` unless hosted credits or self-hosted no-cost posture is confirmed. | Hosted NIM account state, self-hosted entitlement/runtime, and provider-required token cap. |
+| `perplexity` | Reuse `spring-ai-starter-model-openai`. | Discriminator: `type`; access config: `base-url`, API key, completions path when required; runtime input: selected model and token/search options. | `blocked` by default. | Paid token/request/tool pricing and limited OpenAI compatibility for tools/multimodal messages. |
 | `moonshot` | Not core-shipped in Spring AI `2.0.0-M6`. | None for first-wave Codegeist; future task may choose community or OpenAI-compatible path. | `out-of-scope`. | Requires Spring AI upgrade/community adoption and pricing/account review before use. |
 | `qianfan` | Not core-shipped in Spring AI `2.0.0-M6`. | None for first-wave Codegeist; future task may choose community starter. | `out-of-scope`. | Requires community/provider adoption, China-region account setup, real-name/billing posture, and credential shape. |
 
@@ -407,7 +407,7 @@ command or smoke selects provider id
 -> resolve provider entry and type
 -> check build availability for that type
 -> validate provider-specific required fields
--> apply enabled/disabled and safety gate
+-> apply safety gate and runtime provider selection
 -> map Codegeist config to provider-specific Spring AI options
 -> create ChatModel or ChatClient for the selected provider only
 -> execute one local or explicitly allowed remote request
@@ -429,13 +429,13 @@ Use this order so provider availability grows without a broad placeholder layer:
 1. `T006_04`: finish config source loading, SpEL evaluation, direct rendering, and
    config behavior. No provider client creation.
 2. `T006_05`: add the Ollama starter and one local on-demand provider call through
-   a focused test. This is the first place to add the minimal private factory or
-   service needed by real provider use.
+   a focused test. The selected provider config creates the concrete chat model
+   from access config only; the runtime model is passed at prompt-call time.
 3. `T006_06`: add the generic smoke harness and status vocabulary around the first
    local provider path.
 4. Later provider-specific tasks: add one hosted or OpenAI-compatible provider at a
    time, using this task's account/free-tier catalog and availability matrix before
-   allowing `remote-free`.
+   allowing `remote_free`.
 
 ## Non-Goals
 
@@ -494,7 +494,7 @@ Use this order so provider availability grows without a broad placeholder layer:
 - The task defines the minimal runtime contract for selecting one configured
   provider and creating only that provider's Spring AI client lazily.
 - The task identifies provider-specific blockers before on-demand use.
-- The task keeps provider registry, client factory, starter additions, provider
+- The task keeps provider registry, client-creation abstraction, starter additions, provider
   calls, and smoke command implementation out of this documentation-only child
   task.
 
@@ -524,7 +524,7 @@ Use this order so provider availability grows without a broad placeholder layer:
   providers that should reuse `spring-ai-starter-model-openai` in the pinned
   baseline.
 - Hosted provider calls remain blocked unless the row explicitly allows
-  `remote-free` and the developer confirms the selected account/model/route is
+  `remote_free` and the developer confirms the selected account/model/route is
   no-cost at execution time.
 - The OpenCode/Codegeist comparison is documented: OpenCode already has broad
   AI-SDK/Models.dev/provider-directory support, while Codegeist's first wave is
@@ -562,7 +562,7 @@ git --no-pager diff --check
 - `T006_05` should still keep the first real provider call local through Ollama.
 - `T006_06` owns provider smoke status, local/remote gating, and remote-call safety.
 - `T006_06` hosted-provider smoke rows must consume this account/free-tier catalog
-  before deciding whether a provider is eligible for `remote-free`, `blocked`, or
+  before deciding whether a provider is eligible for `remote_free`, `blocked`, or
   config-only behavior.
 - Provider-specific implementation tasks should consume the availability matrix in
   this task and add one provider at a time instead of adding broad placeholder

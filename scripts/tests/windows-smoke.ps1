@@ -14,6 +14,9 @@
 #   Maven compile. If omitted, the script uses the active shell environment when
 #   cl.exe is already available, then tries common Visual Studio Build Tools paths.
 # - JarTimeoutSeconds and NativeTimeoutSeconds bound command smoke execution.
+# - AskTimeoutSeconds bounds the real Ollama-backed `ask` smoke.
+# - OllamaBaseUrl points to the host Ollama service. With QEMU user networking,
+#   the Windows guest reaches the Linux host through `http://10.0.2.2:11434`.
 #
 # Side effects:
 # - Rebuilds app/codegeist/cli/target/codegeist.jar.
@@ -32,10 +35,20 @@ param(
 
     [int]$JarTimeoutSeconds = 15,
 
-    [int]$NativeTimeoutSeconds = 5
+    [int]$NativeTimeoutSeconds = 5,
+
+    [int]$AskTimeoutSeconds = 60,
+
+    [string]$OllamaBaseUrl = $env:CODEGEIST_WINDOWS_OLLAMA_BASE_URL
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $OllamaBaseUrl) {
+    $OllamaBaseUrl = "http://10.0.2.2:11434"
+}
+
+$askPrompt = "codegeist"
 
 $platformStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
@@ -194,6 +207,102 @@ function Invoke-CommandSmoke {
     Write-SmokeDuration $DurationLabel $stopwatch.Elapsed
 }
 
+function Invoke-CommandContainsSmoke {
+    param(
+        [string]$Label,
+        [string]$FilePath,
+        [string[]]$ArgumentList,
+        [string]$ExpectedSubstring,
+        [string]$LogFile,
+        [int]$TimeoutSeconds,
+        [string]$OutputPrefix,
+        [string]$WorkingDirectory = (Get-Location).Path,
+        [string]$DurationLabel = $Label
+    )
+
+    $stdoutFile = Join-Path $smokeDir "$OutputPrefix.out"
+    $stderrFile = Join-Path $smokeDir "$OutputPrefix.err"
+    Remove-Item -LiteralPath $stdoutFile, $stderrFile, $LogFile -ErrorAction SilentlyContinue
+
+    $env:LOG_FILE = $LogFile
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $FilePath
+    $startInfo.Arguments = Join-ProcessArguments $ArgumentList
+    $startInfo.WorkingDirectory = $WorkingDirectory
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.EnvironmentVariables["LOG_FILE"] = $LogFile
+
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+
+    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+        $stopwatch.Stop()
+        $process.Kill()
+        $process.WaitForExit()
+        Fail-Smoke "$Label timed out after $TimeoutSeconds seconds"
+    }
+    $stopwatch.Stop()
+
+    $stdout = $process.StandardOutput.ReadToEnd()
+    $stderr = $process.StandardError.ReadToEnd()
+    $exitCode = $process.ExitCode
+    Set-Content -LiteralPath $stdoutFile -Value $stdout -NoNewline
+    Set-Content -LiteralPath $stderrFile -Value $stderr -NoNewline
+
+    if ($null -eq $exitCode) {
+        Fail-Smoke "$Label did not report an exit code"
+    }
+
+    if ($exitCode -ne 0) {
+        Fail-Smoke "$Label failed with exit code $exitCode"
+    }
+
+    $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
+    if (-not $actual.ToLowerInvariant().Contains($ExpectedSubstring.ToLowerInvariant())) {
+        Fail-Smoke "$Label expected output to contain $ExpectedSubstring but got $actual"
+    }
+
+    if (-not (Test-Path -LiteralPath $LogFile) -or (Get-Item -LiteralPath $LogFile).Length -eq 0) {
+        Fail-Smoke "$Label log was not written: $LogFile"
+    }
+
+    Write-SmokeDuration $DurationLabel $stopwatch.Elapsed
+}
+
+function Assert-OllamaReady {
+    param([string]$BaseUrl)
+
+    $versionUrl = $BaseUrl.TrimEnd("/") + "/api/version"
+    Write-Host "Command: Invoke-WebRequest $versionUrl"
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        Invoke-WebRequest -Uri $versionUrl -UseBasicParsing -TimeoutSec 30 | Out-Null
+    }
+    catch {
+        Fail-Smoke "Host Ollama is not reachable from Windows guest at ${BaseUrl}: $($_.Exception.Message)"
+    }
+    finally {
+        $stopwatch.Stop()
+    }
+    Write-SmokeDuration "windows ollama reachability" $stopwatch.Elapsed
+}
+
+function Write-AskConfig {
+    param(
+        [string]$ConfigFile,
+        [string]$BaseUrl
+    )
+
+    Set-Content -LiteralPath $ConfigFile -Encoding ASCII -Value @"
+provider:
+  ollama:
+    type: ollama
+    base-url: $BaseUrl
+"@
+}
+
 function New-WindowsNativeArchive {
     param(
         [string]$CliDir
@@ -227,7 +336,10 @@ function Invoke-PackagedNativeSmoke {
         [string]$Archive,
         [string]$PackageName,
         [string]$Expected,
-        [int]$TimeoutSeconds
+        [int]$TimeoutSeconds,
+        [string]$AskConfig,
+        [string]$AskPrompt,
+        [int]$AskTimeoutSeconds
     )
 
     $archiveStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -264,6 +376,16 @@ function Invoke-PackagedNativeSmoke {
             $packageDir `
             "windows native show-config smoke"
 
+        Invoke-CommandContainsSmoke "Native archive ask smoke" `
+            $packageExe `
+            @("-Dcodegeist.config=$AskConfig", "ask", $AskPrompt) `
+            "codegeist" `
+            (Join-Path $smokeDir "codegeist-windows-native-ask.log") `
+            $AskTimeoutSeconds `
+            "codegeist-windows-native-ask" `
+            $packageDir `
+            "windows native ask smoke"
+
         $archiveStopwatch.Stop()
         Write-SmokeDuration "windows native archive smoke" $archiveStopwatch.Elapsed
     }
@@ -294,6 +416,10 @@ Invoke-Step "mvn --batch-mode --no-transfer-progress -DskipTests clean package" 
 $expected = Get-BuildVersion "target/classes/META-INF/build-info.properties"
 $smokeDir = Join-Path $cliDir "target/smoke-test"
 New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
+$askConfig = Join-Path $smokeDir "codegeist-ask.yml"
+
+Assert-OllamaReady $OllamaBaseUrl
+Write-AskConfig $askConfig $OllamaBaseUrl
 
 Write-Host "Command: java -jar target/codegeist.jar --version"
 Invoke-CommandSmoke "Jar version smoke" `
@@ -305,6 +431,17 @@ Invoke-CommandSmoke "Jar version smoke" `
     "codegeist-windows-jar" `
     (Get-Location).Path `
     "windows jar version smoke"
+
+Write-Host "Command: java -Dcodegeist.config=$askConfig -jar target/codegeist.jar ask <prompt>"
+Invoke-CommandContainsSmoke "Jar ask smoke" `
+    "java" `
+    @("-Dcodegeist.config=$askConfig", "-jar", "target/codegeist.jar", "ask", $askPrompt) `
+    "codegeist" `
+    (Join-Path $smokeDir "codegeist-windows-jar-ask.log") `
+    $AskTimeoutSeconds `
+    "codegeist-windows-jar-ask" `
+    (Get-Location).Path `
+    "windows jar ask smoke"
 
 $nativeStatus = "skipped"
 $nativeReason = "NativeMode is skip"
@@ -342,9 +479,11 @@ if ($NativeMode -ne "skip") {
 
             $packageName = "codegeist-windows-x64"
             $nativeArchive = New-WindowsNativeArchive $cliDir
+            New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
+            Write-AskConfig $askConfig $OllamaBaseUrl
 
-            Write-Host "Command: package target/dist/$packageName.zip and run extracted codegeist.exe --version plus --show-config"
-            Invoke-PackagedNativeSmoke $nativeArchive $packageName $expected $NativeTimeoutSeconds
+            Write-Host "Command: package target/dist/$packageName.zip and run extracted codegeist.exe --version, --show-config, and ask"
+            Invoke-PackagedNativeSmoke $nativeArchive $packageName $expected $NativeTimeoutSeconds $askConfig $askPrompt $AskTimeoutSeconds
 
             $nativeStatus = "passed"
             $nativeReason = "none"

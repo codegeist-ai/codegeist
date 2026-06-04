@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,19 +27,13 @@ class CodegeistProviderConfigTest {
     @ParameterizedTest
     @MethodSource("supportedProviders")
     void dispatchesSupportedProviderTypesThroughProviderAnnotation(String type,
-            Class<? extends ProviderConfig> providerClass, String yamlBody) {
+            Class<? extends ProviderConfig> providerClass, String yamlBody, String expectedDefaultModel) {
         ProviderConfig provider = loadSingleProvider(yamlBody);
 
         assertThat(provider).isInstanceOf(providerClass);
         assertThat(provider.getType()).isEqualTo(type);
         assertThat(provider.getClass().getAnnotation(Provider.class).value()).isEqualTo(type);
-    }
-
-    @Test
-    void permittedProviderAnnotationsIncludeOnlyOllamaAndOpenAiProviderTypes() {
-        assertThat(Arrays.stream(ProviderConfig.class.getPermittedSubclasses())
-                .map(providerClass -> providerClass.getAnnotation(Provider.class).value()))
-                .containsExactly("ollama", "openai");
+        assertThat(provider.defaultModel()).isEqualTo(expectedDefaultModel);
     }
 
     @Test
@@ -48,7 +41,6 @@ class CodegeistProviderConfigTest {
         assertThatThrownBy(() -> loadAndValidate("""
             provider:
               openai:
-                model: gpt-4o-mini
                 api-key: test-key
             """))
                 .isInstanceOf(JsonProcessingException.class)
@@ -66,12 +58,35 @@ class CodegeistProviderConfigTest {
             provider:
               unsupported:
                 type: %s
-                model: model-id
                 api-key: test-key
             """.formatted(unsupportedType)))
                 .isInstanceOf(JsonProcessingException.class)
                 .hasMessageContaining("Unsupported provider type")
                 .hasMessageContaining(unsupportedType);
+    }
+
+    @Test
+    void defaultProviderReturnsFirstNonNullConfiguredProvider() {
+        CodegeistConfig config = loadAndValidate("""
+            provider:
+              missing: null
+              ollama:
+                type: ollama
+                base-url: http://localhost:11434
+            """);
+
+        assertThat(config.defaultProvider()).isInstanceOf(OllamaProviderConfig.class);
+    }
+
+    @Test
+    void defaultProviderFailsWhenNoProviderIsConfigured() {
+        CodegeistConfig config = loadAndValidate("""
+            provider: {}
+            """);
+
+        assertThatThrownBy(config::defaultProvider)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage(CodegeistConfig.NO_PROVIDER_MESSAGE);
     }
 
     @ParameterizedTest
@@ -86,33 +101,23 @@ class CodegeistProviderConfigTest {
         return Stream.of(
                 Arguments.of("ollama", OllamaProviderConfig.class, """
                     type: ollama
-                    model: llama3.2:1b
                     base-url: http://localhost:11434
-                    options:
-                      temperature: 0
-                    """),
+                    """, OllamaProviderConfig.DEFAULT_MODEL),
                 Arguments.of("openai", OpenAiProviderConfig.class, """
                     type: openai
-                    model: gpt-4o-mini
                     api-key: test-key
                     organization-id: org-test
                     project-id: proj-test
-                    """));
+                    """, OpenAiProviderConfig.DEFAULT_MODEL));
     }
 
     private static Stream<Arguments> invalidProviderConfigs() {
         return Stream.of(
                 Arguments.of("""
                     type: openai
-                    api-key: test-key
-                    """, "model"),
-                Arguments.of("""
-                    type: openai
-                    model: gpt-4o-mini
                     """, "apiKey"),
                 Arguments.of("""
                     type: ollama
-                    model: llama3.2:1b
                     """, "base-url"));
     }
 

@@ -16,13 +16,13 @@ and only then implements validated provider loading and connection smoke checks.
 ## Feature Decision
 
 Use `kebab-case` for committed `codegeist.yml` keys, for example
-`base-url`, `completions-path`, and `organization-id`.
+`base-url` and `organization-id`.
 
 Keep Codegeist structurally close to OpenCode where the model applies:
 
 - `provider.<provider-id>` contains provider configuration;
 - `provider.<provider-id>.options` contains provider-specific runtime options;
-- provider enablement starts with the per-provider `enabled` field;
+- provider enablement is deferred until a focused runtime-selection task needs it;
 - provider config values may be computed with Spring SpEL in the minimal parser
   slice;
 - model selection and credential-store design are deferred until focused later
@@ -84,9 +84,9 @@ Current Codegeist state:
   typed config records/POJOs for supported providers, without provider calls.
 - `T006_05_verify-local-ollama-provider.md` - solved with the first local provider
   path through Ollama, deterministic options, and narrow assertions.
-- `T006_06_add-provider-connection-smoke-harness.md` - add a repeatable connection
-  smoke harness that can report `passed`, `skipped`, or `failed` for local and
-  remote providers.
+- `T006_06_add-provider-connection-smoke-harness.md` - add configurable
+  provider-specific feature tests with method-level cost and safety policy, plus
+  the one-shot `ask` command and real Ollama-backed jar/native smoke coverage.
 
 Later provider-specific child tasks should be created from the matrix only after
 `T006_06` defines the shared smoke contract. Candidate providers include OpenAI,
@@ -149,7 +149,8 @@ Implementation child tasks should run the narrow Taskfile selector named in that
 child task, for example `task test TEST=<test-class>`, then broaden to the
 relevant `app/codegeist/cli` `task test` verification. Do not document direct
 `mvn test` commands for new Codegeist implementation tasks.
-Provider smokes must report timing and `passed`, `skipped`, or `failed` status.
+Provider feature tests must be category-controlled so local, remote_free, and
+remote_paid checks cannot run accidentally.
 
 ## Planning Notes
 
@@ -158,9 +159,10 @@ Provider smokes must report timing and `passed`, `skipped`, or `failed` status.
 - Use `docs/developer/specification/testing-strategy-and-agent-rules.md` before
   adding provider tests.
 - Use `docs/developer/specification/llm-provider-implementation.md` before adding
-  provider chat runtime code; it defines the provider-neutral Strategy plus Factory
-  pattern for mapping selected `ProviderConfig` entries into Spring AI `ChatModel`
-  instances.
+  provider chat runtime code; it defines the provider-neutral
+  `CodegeistChatModel<T extends ProviderConfig>` pattern for mapping selected
+  `ProviderConfig` entries plus request-time model selection into Spring AI
+  `ChatModel` instances.
 - Use `docs/developer/specification/codegeist-opencode-parity.md` for OpenCode
   behavior posture and provider boundary guidance.
 - Use `/ask-project opencode ...` for source-backed OpenCode questions when its
@@ -170,7 +172,8 @@ Provider smokes must report timing and `passed`, `skipped`, or `failed` status.
 - Keep the first runtime slice small: load config, validate it, then call one local
   provider path.
 - Use the `T006_03` account/free-tier catalog before adding hosted-provider-specific
-  smoke rows or treating any hosted provider as eligible for `remote-free` checks.
+  feature methods or treating any hosted provider feature as eligible for
+  `remote_free` checks.
 - Use the `T006_03` availability matrix before provider-specific implementation;
   add one provider at a time instead of adding all starters or a broad placeholder
   registry up front.

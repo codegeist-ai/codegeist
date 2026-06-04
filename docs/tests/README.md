@@ -8,6 +8,8 @@ Test guidance for Codegeist contributors and coding agents.
 - Read before reporting task results that include test, smoke, or startup timing.
 - Read before changing `app/codegeist/cli/Taskfile.yml` test entrypoints or files
   under `scripts/tests/`.
+- Read before adding provider feature tests, especially any method that can call a
+  local service or remote provider API.
 
 ## Core Rules
 
@@ -17,8 +19,12 @@ Test guidance for Codegeist contributors and coding agents.
 - Do not document new direct `mvn test` commands for Codegeist implementation
   tasks unless a task explicitly needs Maven behavior that the Taskfile cannot
   express.
-- Keep ordinary `task test` free from live provider prerequisites. Live provider
-  tests must stay behind explicit selectors.
+- Provider feature tests run through `task test` and method- or class-level
+  provider categories. `CODEGEIST_TEST_PROVIDER_CATEGORY` defaults to `none`, so
+  broad verification does not require a local provider. Set it to `local` when the
+  fixed local Ollama service and model should run.
+- Hosted provider calls require explicit `remote_free` or `remote_paid` category
+  selection. API-key presence alone never enables hosted provider calls.
 - Report command duration when a check is slow, platform-specific, or part of a
   smoke-test workflow.
 - Keep smoke scripts non-interactive and make their status plus duration easy to
@@ -26,6 +32,8 @@ Test guidance for Codegeist contributors and coding agents.
 
 ## Documents
 
+- `provider-feature-tests.md` - provider feature, category, safety, and command
+  guidance for config-only, local, `remote_free`, and paid-capable provider checks.
 - `codegeist-test-guidelines.md` - Java, Spring, provider, and task-verification
   test conventions.
 - `smoke-tests.md` - Linux and Windows smoke-test status and duration-output

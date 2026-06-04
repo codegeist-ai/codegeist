@@ -1,6 +1,6 @@
 package ai.codegeist.app.chat;
 
-import ai.codegeist.app.config.ProviderConfig;
+import lombok.NonNull;
 
-public record CodegeistChatRequest(ProviderConfig providerConfig, String prompt) {
+public record CodegeistChatRequest(@NonNull String model, @NonNull String prompt) {
 }

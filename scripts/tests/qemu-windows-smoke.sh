@@ -17,6 +17,9 @@
 #   before Maven native compile, for example a quoted `VsDevCmd.bat` command.
 # - Optional `CODEGEIST_WINDOWS_JAR_TIMEOUT_SECONDS` and
 #   `CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS` bound version smoke execution.
+# - Optional `CODEGEIST_WINDOWS_ASK_TIMEOUT_SECONDS` bounds the real Ollama ask
+#   smoke. Optional `CODEGEIST_WINDOWS_OLLAMA_BASE_URL` overrides the QEMU guest
+#   route to the host Ollama service.
 # - Optional `CODEGEIST_WINDOWS_ALLOW_SKIP=1` converts missing host prerequisites
 #   into skipped status for developer-only runs.
 # - Optional `CODEGEIST_SMOKE_STATUS_FILE` writes a key-value status summary.
@@ -127,6 +130,14 @@ case "${CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS:-}" in
     ;;
 esac
 
+case "${CODEGEIST_WINDOWS_ASK_TIMEOUT_SECONDS:-}" in
+  ''|*[!0-9]*)
+    if [ -n "${CODEGEIST_WINDOWS_ASK_TIMEOUT_SECONDS:-}" ]; then
+      fail_smoke 'CODEGEIST_WINDOWS_ASK_TIMEOUT_SECONDS must be an integer'
+    fi
+    ;;
+esac
+
 if [ -z "$ssh_target" ]; then
   missing_prerequisite 'CODEGEIST_WINDOWS_SSH_TARGET is not set'
 fi
@@ -165,6 +176,15 @@ fi
 
 if [ -n "${CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS:-}" ]; then
   remote_command="$remote_command -NativeTimeoutSeconds $CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS"
+fi
+
+if [ -n "${CODEGEIST_WINDOWS_ASK_TIMEOUT_SECONDS:-}" ]; then
+  remote_command="$remote_command -AskTimeoutSeconds $CODEGEIST_WINDOWS_ASK_TIMEOUT_SECONDS"
+fi
+
+if [ -n "${CODEGEIST_WINDOWS_OLLAMA_BASE_URL:-}" ]; then
+  ollama_base_url_arg="$(ps_quote "$CODEGEIST_WINDOWS_OLLAMA_BASE_URL")"
+  remote_command="$remote_command -OllamaBaseUrl $ollama_base_url_arg"
 fi
 
 remote_command="$remote_command\""

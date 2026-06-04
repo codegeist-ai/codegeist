@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -26,10 +27,12 @@ import org.springframework.validation.annotation.Validated;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Validated
+@Slf4j
 public class CodegeistConfig {
 
     public static final String CONFIGURATION_PREFIX = CodegeistApplication.APP_NAME;
     public static final String SPRING_BOUND_CONFIG_BEAN = "springBoundCodegeistConfig";
+    public static final String NO_PROVIDER_MESSAGE = "No provider configured in Codegeist config";
 
     @Valid
     private Map<@NotBlank String, @Valid ProviderConfig> provider = new LinkedHashMap<>();
@@ -43,6 +46,17 @@ public class CodegeistConfig {
     public void setProvider(Map<String, Object> provider) {
         this.provider = convertProviderMap(provider, Objects.requireNonNull(providerConverterMapper,
                 "Codegeist YAML ObjectMapper must be injected before provider binding"));
+    }
+
+    public ProviderConfig defaultProvider() {
+        for (Map.Entry<String, ProviderConfig> configuredProvider : provider.entrySet()) {
+            if (configuredProvider.getValue() != null) {
+                log.debug("Selected first configured provider id {}", configuredProvider.getKey());
+                return configuredProvider.getValue();
+            }
+        }
+
+        throw new IllegalStateException(NO_PROVIDER_MESSAGE);
     }
 
     private Map<String, ProviderConfig> convertProviderMap(Map<String, ?> source, ObjectMapper objectMapper) {

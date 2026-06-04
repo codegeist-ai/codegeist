@@ -129,11 +129,26 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `app/codegeist/cli`: run `task test`, and use `task test TEST=<test-selector>`
   for focused test selectors. Do not document direct `mvn test` commands for new
   implementation tasks. For local Ollama provider verification, run
-  `OLLAMA_ENTER=false task ollama-start` before `task test`.
+  `OLLAMA_ENTER=false task ollama-start` before `task test`; the Taskfile owns
+  starting the shared host Ollama container and ensuring the selected model exists.
 - For Codegeist test or smoke-script work, read `docs/tests/README.md` first.
   Smoke scripts must keep scan-friendly status lines and emit stable
   `Duration: <label>: <seconds>s` lines for meaningful Maven, package, jar,
   native compile, archive smoke, platform total, SSH, and QEMU wrapper checks.
+- In Codegeist tests, assert only meaningful behavior and contracts. Do not add or
+  keep negative assertions for absent fields, options, helpers, or implementation
+  details unless their absence is a deliberate user-visible contract or protects a
+  real regression risk.
+- Do not add separate provider preflight helpers that duplicate the real behavior
+  under test, such as listing Ollama models immediately before a chat call. Let the
+  selected provider call prove availability, and use assumptions only for explicit
+  external gates such as missing fixtures or intentionally required environment
+  variables.
+- Keep local provider test values fixed when they are part of the test contract.
+  For local Ollama tests, use the fixed base URL `http://localhost:11434` and fixed
+  model `llama3.2:1b`; do not add environment-variable overrides for those test
+  parameters. Use environment variables only when the test genuinely needs external
+  credentials, fixture paths, or an explicit remote-provider safety gate.
 - For GraalVM resource inclusion, prefer metadata under
   `src/main/resources/META-INF/native-image/resource-config.json` for simple
   resource patterns such as `logback.xml` and `META-INF/build-info.properties`.
@@ -145,6 +160,12 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   handoff documents before writing code. Keep the active task small, write or
   update the focused test first when practical, and let real Spring behavior drive
   any new Java type or package boundary.
+- For every Codegeist implementation task, implement only what is strictly
+  necessary for the current acceptance criteria, failing test, or explicit user
+  request. Do not add extra abstractions, helpers, registries, extension points,
+  options, compatibility paths, docs, or tests just because they might be useful
+  later. If a tempting improvement is not required for the current behavior, leave
+  it out or record it as future work instead of implementing it speculatively.
 - The previous T004 implementation epic was discarded. When a replacement
   implementation epic is created, keep it iterative and Spring-first. Do not create
   broad implementation handoff documents under `docs/developer/implementation/`;
@@ -153,9 +174,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   workflow and avoid placeholder classes, ids, ports, enums, package layers, or
   validation hierarchies.
 - For the first provider-backed workflow in the replacement epic, use an externally
-  managed local Ollama instance with a `llama3`-family model already downloaded
-  before the focused test starts instead of a fake provider. Do not use
-  Testcontainers or pull local models in the test. Set `temperature=0`, use a
+  managed local Ollama instance started through `task ollama-start` instead of a
+  fake provider. Do not use Testcontainers or pull local models from Java tests;
+  the Taskfile owns host container startup and selected-model availability. Set
+  `temperature=0`, use a
   fixed seed when the active Spring AI and Ollama versions support it, and keep
   assertions constrained enough to be stable.
 - During implementation specify, plan, and solve phases, use
@@ -174,24 +196,26 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `docs/developer/architecture/architecture.md` when implemented packages, classes,
   configuration, or tests change.
 - For `T006_build-provider-configuration-feature`, work provider support in order:
-  first design the `codegeist.yml` schema with `kebab-case` keys such as
-  `base-url`, `completions-path`, and `organization-id`; then create the Spring AI
+  first design the `codegeist.yml` schema with `kebab-case` access keys such as
+  `base-url` and `organization-id`; then create the Spring AI
   provider matrix; then define the minimal Spring SpEL config evaluation strategy
   and provider availability analysis; only then implement config loading, local
   Ollama verification, and remote connection smokes. Do not create provider
   accounts, use paid provider resources, or run remote provider tests before the
   schema, matrix, SpEL strategy, and provider availability analysis are complete.
 - For Codegeist provider integration tests, cover as many configured providers as
-  possible without causing charges: default tests may validate evaluated config
-  and client wiring without hosted provider calls; local tests may run real local
-  providers such as Ollama; hosted provider calls require an explicit `remote-free`
-  selection plus local confirmation that the selected account and route will not
-  bill. API-key presence alone is never permission to call a remote provider.
+  possible without causing charges: default provider feature tests use the `none`
+  category and do not call providers; local runs can set
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local` for real local providers such as Ollama;
+  hosted provider calls require an explicit `remote_free` selection plus local
+  confirmation that the selected account and route will not bill. API-key presence
+  alone is never permission to call a remote provider.
 - For Codegeist provider config, follow OpenCode's useful shape only as behavior
-  evidence: providers live under the `provider` map, provider options remain
-  nested, and the first parser slice uses unrestricted Spring SpEL evaluation
-  instead of a separate credential-reference schema. Defer model selection until a
-  focused provider/model task needs it.
+  evidence: providers live under the `provider` map, but Codegeist `ProviderConfig`
+  stays access-only for now. The first parser slice uses unrestricted Spring SpEL
+  evaluation instead of a separate credential-reference schema. Defer model and
+  generation-option selection until a focused runtime or provider-feature task
+  needs it.
 - For `T006_04`, keep provider-specific Java config classes limited to config-only
   `ollama` and `openai` data contracts. All other provider types from the T006_03
   availability matrix stay deferred until a focused provider-specific task needs
@@ -208,3 +232,31 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   require the needed config fields and safety gate, and create only the selected
   provider's Spring AI client on demand instead of instantiating all configured
   providers at startup.
+- For Codegeist chat model implementation, do not introduce factory or strategy
+  layers. Use `CodegeistChatModel<T extends ProviderConfig>` as the abstract base,
+  let each concrete provider model such as `OllamaChatModel` extend it with the
+  matching config type, and make every concrete `ProviderConfig` implement
+  `defaultModel()` and `createChatModel()`. The provider config owns its runtime
+  default model and creates the matching chat model from provider access data only;
+  explicit runtime model selection stays in `CodegeistChatRequest` and is mapped to
+  provider-specific prompt options at call time. Do not put the selected provider
+  into `CodegeistChatRequest`; pass the validated `ProviderConfig` separately to the
+  chat service.
+- Keep `ProviderConfig` free of stored YAML model fields, options, enablement, and
+  completions-path routing. Provider config stores access, endpoint, and
+  credentials; enablement, routing, explicit model selection, and generation-option
+  selection belong to the coding agent, session, command, request, or provider
+  feature test method. Commands should use `ProviderConfig.defaultModel()` when they
+  intentionally do not expose a model selector.
+- Keep provider discriminator fields such as YAML `type` dispatch-only, not stored
+  as mutable `ProviderConfig` state. Validate the incoming YAML discriminator in
+  the converter, derive runtime/output provider type from `@Provider` through
+  `getType()`, and add persistent fields only when runtime behavior needs them.
+- For provider feature tests, use one provider-specific test class per provider and
+  guard each non-config feature method with an explicit category: `local`,
+  `remote_free`, or `remote_paid`. Do not let API-key presence or Maven's default
+  test lifecycle trigger remote provider calls.
+- Run provider feature tests through `task test`; `CODEGEIST_TEST_PROVIDER_CATEGORY`
+  is the only provider category gate and defaults to `none`. Config-only checks stay
+  unannotated; use `local` for local provider calls, and treat `remote_paid` as the
+  explicit cost and rate-limit opt-in.

@@ -132,6 +132,8 @@ release as complete.
 ## Safety Rules
 
 - Run `gh auth status` before using `gh workflow`, `gh run`, or `gh release`.
+- Start release execution only from a clean worktree. If uncommitted changes are
+  present, stop before fetch, branch creation, tagging, or workflow dispatch.
 - Confirm the tag does not already exist locally, remotely, or as a GitHub Release
   before creating it.
 - Keep the worktree clean before tagging.

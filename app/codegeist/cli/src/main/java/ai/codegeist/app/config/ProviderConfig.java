@@ -1,11 +1,14 @@
 package ai.codegeist.app.config;
 
+import ai.codegeist.app.chat.CodegeistChatModel;
+
+import java.util.Optional;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,25 +18,26 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public abstract sealed class ProviderConfig permits OllamaProviderConfig, OpenAiProviderConfig {
+public abstract class ProviderConfig {
 
     static final String NON_BLANK_WHEN_SET_PATTERN = "(?s).*\\S.*";
     static final String NON_BLANK_WHEN_SET_MESSAGE = "must not be blank when set";
 
-    @NotBlank
-    private String type;
-
     @Pattern(regexp = NON_BLANK_WHEN_SET_PATTERN, message = NON_BLANK_WHEN_SET_MESSAGE)
     private String name;
 
-    private Boolean enabled;
-
-    @NotBlank
-    private String model;
-
     private String baseUrl;
 
-    private String completionsPath;
+    @JsonProperty(value = "type", access = JsonProperty.Access.READ_ONLY)
+    public String getType() {
+        Provider provider = getClass().getAnnotation(Provider.class);
+        if (provider == null) {
+            throw new IllegalStateException("Missing @Provider on " + getClass().getName());
+        }
+        return provider.value();
+    }
 
-    private Map<String, Object> options;
+    public abstract String defaultModel();
+
+    public abstract CodegeistChatModel<?> createChatModel();
 }

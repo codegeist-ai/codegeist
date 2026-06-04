@@ -5,11 +5,15 @@ import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 import lombok.SneakyThrows;
+import org.springframework.util.StringUtils;
 
 final class ProviderConfigJacksonConverter {
+
+    private static final List<Class<? extends ProviderConfig>> PROVIDER_CLASSES = List.of(
+            OllamaProviderConfig.class,
+            OpenAiProviderConfig.class);
 
     private ProviderConfigJacksonConverter() {
     }
@@ -17,7 +21,7 @@ final class ProviderConfigJacksonConverter {
     @SneakyThrows(JsonProcessingException.class)
     static ProviderConfig convert(ObjectNode node, ObjectCodec codec) {
         JsonNode typeNode = node.get("type");
-        if (typeNode == null || !typeNode.isTextual() || typeNode.asText().isBlank()) {
+        if (typeNode == null || !typeNode.isTextual() || !StringUtils.hasText(typeNode.asText())) {
             throw new CodegeistConfigValidationException("Provider config type is required");
         }
 
@@ -44,19 +48,13 @@ final class ProviderConfigJacksonConverter {
     }
 
     private static Class<? extends ProviderConfig> findProviderClass(String type) {
-        return Arrays.stream(ProviderConfig.class.getPermittedSubclasses())
-                .filter(ProviderConfig.class::isAssignableFrom)
-                .map(ProviderConfigJacksonConverter::asProviderConfigClass)
+        return PROVIDER_CLASSES
+                .stream()
                 .filter(providerClass -> {
                     Provider provider = providerClass.getAnnotation(Provider.class);
-                    return provider != null && Objects.equals(type, provider.value());
+                    return provider != null && type.equals(provider.value());
                 })
                 .findFirst()
                 .orElseThrow(() -> new CodegeistConfigValidationException("Unsupported provider type: " + type));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends ProviderConfig> asProviderConfigClass(Class<?> providerClass) {
-        return (Class<? extends ProviderConfig>) providerClass;
     }
 }

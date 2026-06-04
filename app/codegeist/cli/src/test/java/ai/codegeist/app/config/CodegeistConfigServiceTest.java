@@ -12,7 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.NONE,
+    properties = CodegeistConfigService.CONFIG_PROPERTY + "=src/test/resources/codegeist-current-config-test.yml"
+)
 @ActiveProfiles("codegeist-config-service-test")
 class CodegeistConfigServiceTest {
 
@@ -20,7 +23,6 @@ class CodegeistConfigServiceTest {
     private static final String OLLAMA_PROVIDER_ID = "ollama";
     private static final String OPENAI_PROVIDER_ID = "openai";
     private static final String PROVIDER_NAME = "Ollama";
-    private static final String OLLAMA_MODEL = "llama3.2:1b";
 
     @Autowired
     private CodegeistConfigService service;
@@ -42,9 +44,7 @@ class CodegeistConfigServiceTest {
         assertThat(ollama).isInstanceOf(OllamaProviderConfig.class);
         assertThat(ollama.getType()).isEqualTo(OLLAMA_PROVIDER_ID);
         assertThat(ollama.getName()).isEqualTo(PROVIDER_NAME);
-        assertThat(ollama.getModel()).isEqualTo(OLLAMA_MODEL);
         assertThat(ollama.getBaseUrl()).isEqualTo("http://localhost:11434");
-        assertThat(ollama.getOptions()).containsEntry("temperature", 0).containsEntry("seed", 7);
 
         ProviderConfig openai = config.getProvider().get(OPENAI_PROVIDER_ID);
         assertThat(openai).isInstanceOf(OpenAiProviderConfig.class);
@@ -57,6 +57,15 @@ class CodegeistConfigServiceTest {
     }
 
     @Test
+    void usesInjectedConfigPathAsCurrentConfig() {
+        CodegeistConfig config = service.getCurrentConfig();
+
+        assertThat(config.getProvider()).containsOnlyKeys(OPENAI_PROVIDER_ID);
+        OpenAiProviderConfig openai = (OpenAiProviderConfig) config.getProvider().get(OPENAI_PROVIDER_ID);
+        assertThat(openai.getApiKey()).isEqualTo("injected-openai-key");
+    }
+
+    @Test
     void loadsCodegeistConfigFromYamlPath() throws IOException {
         Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
         Files.writeString(configFile, """
@@ -64,8 +73,6 @@ class CodegeistConfigServiceTest {
               openai:
                 type: openai
                 name: OpenAI
-                enabled: true
-                model: gpt-4o-mini
                 api-key: local-openai-key
                 organization-id: org-local
                 project-id: project-local
@@ -99,7 +106,6 @@ class CodegeistConfigServiceTest {
             provider:
               ollama:
                 type: ollama
-                model: llama3.2:1b
                 base-url: http://localhost:11434
             """);
 
@@ -117,7 +123,6 @@ class CodegeistConfigServiceTest {
               "":
                 type: ollama
                 name: Ollama
-                model: llama3.2:1b
                 base-url: http://localhost:11434
             """);
 
@@ -135,7 +140,6 @@ class CodegeistConfigServiceTest {
               ollama:
                 type: ollama
                 name: "   "
-                model: llama3.2:1b
                 base-url: http://localhost:11434
             """);
 

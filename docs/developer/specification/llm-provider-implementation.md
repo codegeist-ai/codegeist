@@ -6,8 +6,8 @@ Specification for implementing chat-capable LLM providers in Codegeist.
 
 Codegeist should chat with any supported LLM provider through one internal chat
 contract. Provider-specific code must stay isolated in small provider factories
-that translate evaluated Codegeist provider config into Spring AI `ChatModel`
-instances.
+that translate evaluated Codegeist provider config plus a runtime-selected model
+name into Spring AI `ChatModel` instances.
 
 This document is implementation guidance for provider-backed runtime slices. The
 first local Ollama slice now implements the core seam in `ai.codegeist.app.chat`;
@@ -26,18 +26,16 @@ sequenceDiagram
     participant Config as Evaluated CodegeistConfig
     participant Request as CodegeistChatRequest
     participant Service as CodegeistChatService
-    participant Factory as ChatModelFactory
-    participant Strategy as ProviderChatModelFactory
-    participant Model as Spring AI ChatModel
+    participant Model as CodegeistChatModel
     participant Provider as Selected LLM Provider
 
     Caller->>Config: Select one validated ProviderConfig
-    Caller->>Request: Build request with ProviderConfig and prompt
-    Caller->>Service: chat(request)
-    Service->>Factory: create(request.providerConfig())
-    Factory->>Strategy: Match by provider type
-    Strategy->>Model: Build provider-specific ChatModel lazily
-    Service->>Model: call(new Prompt(request.prompt()))
+    Caller->>Request: Build request with model and prompt
+    Caller->>Service: chat(providerConfig, request)
+    Service->>Config: providerConfig.createChatModel()
+    Config->>Model: Instantiate concrete CodegeistChatModel
+    Service->>Model: call(request)
+    Model->>Model: Build provider Prompt options from runtime model
     Model->>Provider: Execute one selected-provider request
     Provider-->>Model: Provider response
     Model-->>Service: ChatResponse
@@ -52,13 +50,12 @@ classDiagram
 
     class CodegeistChatService {
       <<SpringService>>
-      ChatModelFactory chatModelFactory
-      +chat(CodegeistChatRequest request) CodegeistChatResponse
+      +chat(ProviderConfig providerConfig, CodegeistChatRequest request) CodegeistChatResponse
     }
 
     class CodegeistChatRequest {
       <<record>>
-      ProviderConfig providerConfig
+      String model
       String prompt
     }
 
@@ -67,35 +64,22 @@ classDiagram
       String content
     }
 
-    class ChatModelFactory {
-      <<SpringService>>
-      List~ProviderChatModelFactory~ providerFactories
-      +create(ProviderConfig providerConfig) ChatModel
+    class CodegeistChatModel {
+      <<abstract>>
+      T providerConfig
+      +call(CodegeistChatRequest request) ChatResponse
     }
 
-    class ProviderChatModelFactory {
-      <<interface>>
-      <<SpringBeanContract>>
-      <<GenericProviderConfigFactory>>
-      +configType() Class~T~
-      +providerType() String
-      +create(T providerConfig) ChatModel
-      +createFrom(ProviderConfig providerConfig) ChatModel
+    class OllamaChatModel {
+      <<concrete>>
+      +OllamaChatModel(OllamaProviderConfig providerConfig)
+      +call(CodegeistChatRequest request) ChatResponse
     }
 
-    class OllamaChatModelFactory {
-      <<SpringComponent>>
-      +configType() Class~OllamaProviderConfig~
-      +providerType() String
-      +create(OllamaProviderConfig providerConfig) ChatModel
-    }
-
-    class FutureProviderFactory {
+    class FutureProviderChatModel {
       <<example>>
-      <<SpringComponent>>
-      +configType() Class~FutureProviderConfig~
-      +providerType() String
-      +create(FutureProviderConfig providerConfig) ChatModel
+      +FutureProviderChatModel(FutureProviderConfig providerConfig)
+      +call(CodegeistChatRequest request) ChatResponse
     }
 
     class CodegeistConfig {
@@ -105,12 +89,12 @@ classDiagram
     }
 
     class ProviderConfig {
-      <<AbstractSealed>>
+      <<AbstractBase>>
       <<JacksonValidationPojo>>
       String type
-      String model
       String baseUrl
-      Map options
+      +defaultModel() String
+      +createChatModel() CodegeistChatModel
     }
 
     class OllamaProviderConfig {
@@ -123,43 +107,28 @@ classDiagram
       <<JacksonValidationPojo>>
     }
 
-    class ChatModel {
-      <<SpringAI>>
-      <<LazyCreated>>
-      +call(Prompt prompt) ChatResponse
-    }
-
     CodegeistConfig --> ProviderConfig : owns validated provider map
-    CodegeistChatRequest --> ProviderConfig : carries selected config
-    CodegeistChatService --> ChatModelFactory : Spring injects
+    CodegeistChatService --> ProviderConfig : createChatModel()
     CodegeistChatService --> CodegeistChatRequest
     CodegeistChatService --> CodegeistChatResponse
-    ChatModelFactory --> ProviderChatModelFactory : Spring injects List
-    ProviderChatModelFactory <|.. OllamaChatModelFactory : implementation bean
-    ProviderChatModelFactory <|.. FutureProviderFactory : implementation bean
-    ProviderChatModelFactory --> ProviderConfig
+    CodegeistChatModel <|-- OllamaChatModel
+    CodegeistChatModel <|-- FutureProviderChatModel
     ProviderConfig <|-- OllamaProviderConfig
     ProviderConfig <|-- FutureProviderConfig
-    OllamaChatModelFactory --> OllamaProviderConfig : typed config
-    FutureProviderFactory --> FutureProviderConfig : typed config
-    ProviderChatModelFactory --> ChatModel
+    OllamaChatModel --> OllamaProviderConfig : typed config
+    FutureProviderChatModel --> FutureProviderConfig : typed config
 ```
 
 Diagram labels:
 
 - `SpringService` means the class should be implemented as a Spring `@Service`.
-- `SpringComponent` means the class should be a Spring-managed implementation
-  bean, usually `@Component` unless a later task chooses `@Service` for clarity.
-- `SpringBeanContract` means Spring injects all implementation beans through
-  `List<ProviderChatModelFactory<? extends ProviderConfig>>`.
-- `GenericProviderConfigFactory` means each provider implementation chooses its
-  concrete config type, for example `ProviderChatModelFactory<OllamaProviderConfig>`.
 - `ConfigurationProperties` means Spring Boot binds application configuration into
   the class.
 - `JacksonValidationPojo` means the type is mapped by Jackson and validated with
   Bean Validation, but is not itself a Spring service.
-- `SpringAI` and `LazyCreated` mean the type comes from Spring AI and is created
-  only for the selected provider call, not as a global provider registry.
+- Concrete Codegeist chat models may wrap Spring AI provider-specific `ChatModel`
+  implementations, but the Codegeist abstract model itself owns only the
+  `CodegeistChatRequest` call contract.
 
 Provider addition checklist flow:
 
@@ -167,11 +136,11 @@ Provider addition checklist flow:
 flowchart TD
     Start([Provider-specific task])
     Matrix[Check T006 provider matrix]
-    Cost[Classify cost posture<br/>local / config / remote-free / blocked]
+    Cost[Classify cost posture<br/>none / local / remote_free / blocked]
     Dependency[Add smallest Spring AI dependency]
     Config[Add or extend typed ProviderConfig only if needed]
     Validation[Add binding and validation tests]
-    Factory[Implement one ProviderChatModelFactory]
+    Model[Implement one CodegeistChatModel]
     Mapping[Map Codegeist fields to Spring AI options]
     Test[Add focused chat or config-to-model test]
     Remote{Hosted provider call?}
@@ -180,7 +149,7 @@ flowchart TD
     Done([Provider implemented for the tested path])
 
     Start --> Matrix --> Cost --> Dependency --> Config --> Validation
-    Validation --> Factory --> Mapping --> Test --> Remote
+    Validation --> Model --> Mapping --> Test --> Remote
     Remote -- no --> Docs
     Remote -- yes --> Gate --> Docs
     Docs --> Done
@@ -190,23 +159,22 @@ flowchart TD
 
 ## Design Pattern
 
-Use a small Strategy plus Factory pattern:
+Do not use a factory or strategy layer for chat model creation. Use a typed
+Codegeist chat model hierarchy:
 
 ```text
 CodegeistChatService
--> ChatModelFactory
--> ProviderChatModelFactory
--> Spring AI ChatModel
+-> CodegeistChatModel<T extends ProviderConfig>
+-> provider-specific Spring AI ChatModel delegate
 ```
 
-The application chats through `CodegeistChatService`. The service does not know
-whether the selected provider is Ollama, OpenAI, Anthropic, Bedrock, Google GenAI,
-or another later provider. It asks `ChatModelFactory` for a Spring AI `ChatModel`
-for the already selected and validated provider config.
-
-Provider-specific code lives behind `ProviderChatModelFactory`. Each concrete
-factory knows how to map exactly one `ProviderConfig` type into the matching Spring
-AI API, options, and dependency route.
+The application chats through `CodegeistChatService`. The caller passes the already
+selected and validated `ProviderConfig` separately from `CodegeistChatRequest`. The
+service asks that provider config to create a `CodegeistChatModel`, then passes the
+request to the selected model. Each concrete provider config passes itself into the
+matching concrete chat model, and that chat model maps one provider config type
+plus the request model into the matching Spring AI API, options, and dependency
+route.
 
 ## Provider Versus Model
 
@@ -216,16 +184,18 @@ or `bedrock-converse`. A model is the provider-specific model selector, for exam
 
 Rules:
 
-- Keep model names as strings from evaluated `codegeist.yml` unless a provider SDK
-  requires a stronger type for a tested path.
+- Keep model names as runtime strings selected by the caller, agent, session,
+  command, or provider feature test method unless a provider SDK requires a
+  stronger type for a tested path.
 - Do not create Java enums, catalogs, or fallback policies for model names before a
   focused workflow needs them.
-- Each provider factory must pass the selected config's `model` value into the
-  provider-specific Spring AI options or builder.
-- Provider factories may validate provider-specific model/deployment constraints
+- Each concrete `CodegeistChatModel` must pass the runtime-selected model value
+  into the provider-specific Spring AI options or builder.
+- Concrete chat models may validate provider-specific model/deployment constraints
   only when a task has source-backed evidence and focused tests for that provider.
-- Model-specific generation knobs stay under `provider.<id>.options` until a tested
-  workflow proves they should become first-class config fields.
+- Model-specific generation knobs belong to the caller, agent, session, command,
+  request, or provider feature test method until a tested workflow proves a stable
+  runtime contract for them.
 
 ## Minimal Package
 
@@ -242,14 +212,12 @@ Minimal classes for the first provider-backed workflow:
 CodegeistChatService
 CodegeistChatRequest
 CodegeistChatResponse
-ChatModelFactory
-ProviderChatModelFactory
-OllamaChatModelFactory
+CodegeistChatModel
+OllamaChatModel
 ```
 
 Do not add ports, adapter hierarchies, plugin APIs, model catalogs, or provider
-registries beyond the Spring-managed strategy list until a focused test needs
-them.
+registries until a focused test needs them.
 
 ## Core Contracts
 
@@ -262,6 +230,7 @@ Planned shape:
 ```java
 public record CodegeistChatRequest(
         ProviderConfig providerConfig,
+        String model,
         String prompt
 ) {
 }
@@ -271,6 +240,8 @@ Rules:
 
 - `providerConfig` must already come from evaluated, mapped, and validated
   Codegeist config.
+- `model` must come from runtime selection, such as an agent, session, command, or
+  provider feature test method. It is not part of `ProviderConfig`.
 - The request should carry only fields needed by the current one-turn workflow.
 - Do not add session, tool, permission, context, streaming, or model fallback data
   until a focused workflow needs it.
@@ -306,13 +277,10 @@ Planned shape:
 @Service
 public class CodegeistChatService {
 
-    @Autowired
-    private ChatModelFactory chatModelFactory;
+    public CodegeistChatResponse chat(ProviderConfig providerConfig, CodegeistChatRequest request) {
+        CodegeistChatModel<?> chatModel = providerConfig.createChatModel();
 
-    public CodegeistChatResponse chat(CodegeistChatRequest request) {
-        ChatModel chatModel = chatModelFactory.create(request.providerConfig());
-
-        String content = chatModel.call(new Prompt(request.prompt()))
+        String content = chatModel.call(request)
                 .getResult()
                 .getOutput()
                 .getText();
@@ -324,75 +292,63 @@ public class CodegeistChatService {
 
 Rules:
 
-- It may depend on Spring AI's provider-neutral `ChatModel` and `Prompt` APIs.
+- It may depend on Codegeist's provider-neutral `CodegeistChatModel` contract.
 - It must not import provider-specific Spring AI classes such as Ollama or OpenAI
   types.
 - It must not load config files, choose providers from raw YAML, manage local
   provider lifecycle, pull models, or check remote billing posture by itself.
 
-### `ProviderChatModelFactory`
+### `CodegeistChatModel`
 
-`ProviderChatModelFactory` is the internal provider Strategy seam. It is generic
-so each provider implementation receives its concrete `ProviderConfig` type.
+`CodegeistChatModel<T extends ProviderConfig>` is the abstract provider model seam.
+It is generic so each provider implementation receives its concrete
+`ProviderConfig` type.
 
 Planned shape:
 
 ```java
-public interface ProviderChatModelFactory<T extends ProviderConfig> {
+public abstract class CodegeistChatModel<T extends ProviderConfig> {
 
-    Class<T> configType();
-
-    String providerType();
-
-    ChatModel create(T providerConfig);
-
-    default ChatModel createFrom(ProviderConfig providerConfig) {
-        if (!configType().isInstance(providerConfig)) {
-            throw new IllegalArgumentException("Provider config type mismatch for " + providerType());
-        }
-        return create(configType().cast(providerConfig));
+    protected CodegeistChatModel(T providerConfig) {
+        // Store validated providerConfig only.
     }
+
+    public abstract ChatResponse call(CodegeistChatRequest request);
 }
 ```
 
 Rules:
 
-- `providerType()` must match the provider config `type` field and the `@Provider`
-  annotation value used by config loading.
-- `configType()` must return the concrete config class that the provider factory
-  accepts, for example `OllamaProviderConfig.class`.
-- `create(T providerConfig)` must create a Spring AI `ChatModel` for one selected
-  provider only.
-- `createFrom(ProviderConfig)` owns the common runtime cast and type mismatch
-  failure. Concrete provider factories should not manually cast from raw
-  `ProviderConfig`.
-- Provider factories own provider-specific option mapping and dependency-specific
-  builder calls.
-- Provider factories must not call every configured provider, mutate global
+- Each concrete `ProviderConfig` creates its matching `CodegeistChatModel` in
+  `createChatModel()`, for example `OllamaProviderConfig` creates an
+  `OllamaChatModel` without storing a runtime model.
+- Each concrete `ProviderConfig` owns a `defaultModel()` runtime fallback for
+  commands that intentionally do not expose a model selector.
+- Provider ids are resolved by `ProviderConfig.getType()` from the concrete
+  config class `@Provider` annotation, so concrete chat models do not duplicate
+  provider id strings.
+- Each concrete chat model receives only its typed provider config from its
+  provider config.
+- Runtime model selection stays in `CodegeistChatRequest` and is passed at call
+  time through `CodegeistChatModel.call(CodegeistChatRequest request)`.
+- Concrete chat models own provider-specific option mapping and
+  dependency-specific builder calls.
+- Concrete chat models must not call every configured provider, mutate global
   `spring.ai.*` properties as the primary runtime mechanism, or own CLI command
   behavior.
 
-### `ChatModelFactory`
+### `ProviderConfig` Model Creation
 
-`ChatModelFactory` selects the provider factory for one selected provider config.
+Each concrete `ProviderConfig` selects the concrete chat model for itself. Runtime
+model selection is not part of chat model construction.
 
 Planned shape:
 
 ```java
-@Service
-public class ChatModelFactory {
+public abstract class ProviderConfig {
+    public abstract String defaultModel();
 
-    @Autowired
-    private List<ProviderChatModelFactory<? extends ProviderConfig>> providerFactories;
-
-    public ChatModel create(ProviderConfig providerConfig) {
-        return providerFactories.stream()
-                .filter(factory -> factory.providerType().equals(providerConfig.getType()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unsupported provider type: " + providerConfig.getType()))
-                .createFrom(providerConfig);
-    }
+    public abstract CodegeistChatModel<?> createChatModel();
 }
 ```
 
@@ -400,8 +356,10 @@ Rules:
 
 - It must be lazy: creating a model for one provider must not instantiate models for
   other configured providers.
-- It may reject `enabled: false` providers if the active task makes that behavior
-  observable. Otherwise, keep enablement policy at the provider-selection layer.
+- Keep provider-selection and enablement policy outside `ProviderConfig` until a
+  focused task makes that behavior observable.
+- Keep stored YAML model fields out of provider config; `defaultModel()` is a
+  provider-owned runtime fallback, not persisted config state.
 - It should stay simple until there is a tested need for richer diagnostics or
   status objects.
 
@@ -413,78 +371,108 @@ For each provider-specific task:
 
 - Start from the T006 provider matrix and account/free-tier analysis.
 - Add only the Spring AI dependency required by the provider being implemented.
-- Add or extend a typed `ProviderConfig` class only for fields required by the
-  tested call path.
+- Add or extend a typed `ProviderConfig` class only for provider access, endpoint,
+  or credential fields required by the tested call path. Do not add model
+  selection, enablement, completion-path routing, or generation options to
+  `ProviderConfig`.
+- Implement `defaultModel()` as the provider-owned runtime fallback when a command
+  intentionally does not expose a model selector.
 - Keep `codegeist.yml` loading, SpEL evaluation, provider dispatch, and Bean
   Validation separate from provider calls.
 - Create the provider's Spring AI `ChatModel` lazily from one selected, normalized
-  provider config.
-- Keep provider-specific options inside `provider.<id>.options` until a focused
-  task proves that a field deserves first-class status.
+  provider config through `ProviderConfig.createChatModel()`.
+- Map the runtime model to provider-specific prompt options at call time, not in
+  the chat model constructor.
+- Keep provider-specific generation options outside `ProviderConfig` as request,
+  command, session, or provider-feature test inputs until a focused task proves a
+  stable runtime contract.
 - Do not use API-key presence as permission to call a hosted provider.
 - Do not implement model fallback, provider ranking, multi-provider fan-out,
-  streaming, tool calling, permission flow, sessions, storage, CLI commands,
-  Vaadin, PF4J, JBang, or server APIs unless the active task specifically requires
-  that behavior.
+  streaming, tool calling, permission flow, sessions, storage, additional CLI
+  command behavior, Vaadin, PF4J, JBang, or server APIs unless the active task
+  specifically requires that behavior.
 
 ## First Provider: Ollama
 
-`T006_05` should implement the first concrete provider factory as
-`OllamaChatModelFactory`.
+`T006_05` should implement the first concrete provider model as `OllamaChatModel`.
 
 Implementation constraints:
 
 - Use `org.springframework.ai:spring-ai-ollama` for programmatic Spring AI Ollama
   model construction.
-- Implement `ProviderChatModelFactory<OllamaProviderConfig>` so the Ollama factory
-  receives `OllamaProviderConfig` directly.
+- Implement `CodegeistChatModel<OllamaProviderConfig>` so the Ollama model receives
+  `OllamaProviderConfig` directly.
 - Prefer direct builder mapping over global Spring Boot `spring.ai.ollama.*`
   properties for the runtime path.
 - Build `OllamaApi` from `OllamaProviderConfig.getBaseUrl()`.
-- Build `OllamaChatOptions` from `model`, `options.temperature`, and
-  `options.seed`.
-- Build `OllamaChatModel` with `OllamaChatModel.builder().ollamaApi(...)
-  .defaultOptions(...).build()`.
+- Build `OllamaChatOptions` from the runtime model inside the selected call path.
+- Build `OllamaChatModel` with `OllamaChatModel.builder().ollamaApi(...).build()`;
+  do not store the runtime model as default chat-model state.
 - The focused live test should connect to an externally managed local Ollama
-  instance. Use `CODEGEIST_TEST_OLLAMA_BASE_URL`, defaulting to
-  `http://localhost:11434`, and `CODEGEIST_TEST_OLLAMA_MODEL`, defaulting to
+  instance at the fixed base URL `http://localhost:11434` and use the fixed model
   `llama3.2:1b`.
-- The selected model must already be downloaded before the focused test starts.
-  Codegeist tests should not pull, download, create, or delete local Ollama models.
 - Start or verify the local Ollama service through the repo Taskfile before tests:
   run `OLLAMA_ENTER=false task ollama-start` from `app/codegeist/cli` before
-  `task test`.
+  `task test`. The Taskfile owns ensuring the selected model is present; Java tests
+  should not pull, download, create, or delete local Ollama models themselves.
 
-The Ollama factory should be the only class that imports Ollama-specific Spring AI
+## One-Shot CLI Prompt Command
+
+`ask` is the first CLI-facing prompt workflow. It intentionally stays small:
+
+- It accepts one positional prompt parameter.
+- It uses `CodegeistConfigService.getCurrentConfig()`, so
+  `-Dcodegeist.config=<path>` is global command configuration rather than an
+  `ask` option.
+- It selects the first provider configured in the ordered `provider` map.
+- It uses `ProviderConfig.defaultModel()` from the selected provider config. The
+  current Ollama provider default is `llama3.2:1b`.
+- It writes only the provider response text to stdout.
+
+Do not add provider flags, model flags, streaming, sessions, tool calls, or fallback
+selection until a focused task makes those behaviors observable.
+
+The Ollama chat model should be the only class that imports Ollama-specific Spring AI
 types in the first runtime slice.
 
 ## How To Add Another Provider
 
 1. Confirm the provider row exists in the T006 matrix.
-2. Confirm the provider's cost posture: `local`, `config`, `remote-free`,
+2. Confirm the provider's cost posture: `none`, `local`, `remote_free`,
    `blocked`, or `out-of-scope`.
 3. Add the smallest required Spring AI dependency.
 4. Add a concrete `ProviderConfig` only when config binding or runtime mapping
    needs typed fields.
-5. Add the provider class to the sealed `ProviderConfig` permits list and annotate
-   it with `@Provider("<type>")`.
-6. Add config binding and validation tests for the provider fields.
-7. Implement one `ProviderChatModelFactory` for the provider type.
-8. Map Codegeist fields to provider-specific Spring AI options or builders.
-9. Add a focused chat or config-to-model test.
-10. For hosted providers, keep live calls behind explicit no-cost confirmation and
+5. Add the provider config class in the config package and annotate it with
+   `@Provider("<type>")` so the explicit provider registry can match it.
+6. Implement `defaultModel()` on the provider config without adding a stored YAML
+   model field.
+7. Implement `createChatModel()` on the provider config.
+8. Add config binding, default-model, and validation tests for the provider fields.
+9. Implement one concrete `CodegeistChatModel<T>` for the provider type.
+10. Map Codegeist runtime request fields to provider-specific Spring AI prompt
+   options or builders at call time.
+11. Add a focused chat or config-to-model test.
+12. For hosted providers, keep live calls behind explicit no-cost confirmation and
     never trigger them from default tests.
-11. Update current-state architecture after the provider is implemented.
+13. Update current-state architecture after the provider is implemented.
 
 ## Testing Strategy
 
-Use three test levels:
+Provider feature tests use method-level policy categories:
 
-| Level | Provider call | Default? | Purpose |
+| Category | Provider call | Default? | Purpose |
 | --- | --- | --- | --- |
-| `config` | no | yes | Proves `codegeist.yml` maps and validates provider data. |
-| `local` | local only | opt-in until the smoke harness exists | Proves one local provider call without remote credentials. |
-| `remote-free` | hosted remote | no | Proves a hosted provider only after explicit no-cost confirmation. |
+| `none` | no | yes | Runs unannotated config-only provider checks and no annotated provider feature calls. |
+| `local` | local only | explicit env selection | Proves one local provider call without remote credentials. |
+| `remote_free` | hosted remote feature call | explicit env selection | Proves a hosted provider feature only after no-cost eligibility is selected. |
+| `remote_paid` | hosted paid-capable feature call | explicit env selection plus paid confirmation | Proves paid or potentially billable features such as image generation or speech-to-text. |
+
+Provider feature tests run through `task test`; method-level `@ProviderCategory`
+checks are the only provider category gate. `CODEGEIST_TEST_PROVIDER_CATEGORY`
+defaults to `none`, and `local` can be selected for local-provider runs. Each
+provider feature method should use the category
+annotation before any network or local provider work.
 
 For the first local provider test:
 
@@ -492,18 +480,20 @@ For the first local provider test:
   `task test TEST=LocalOllamaProviderIT`.
 - Use `task test` for Codegeist verification. Do not document direct `mvn test`
   commands for new implementation tasks.
-- Run `OLLAMA_ENTER=false task ollama-start` before `task test` when the active
-  task includes the local Ollama provider workflow.
-- Report Spring context startup, Ollama readiness/model-availability check, and
-  first chat-call timings separately.
+- Run `OLLAMA_ENTER=false task ollama-start` before `task test` when using
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local`.
+- Report Spring context startup and first chat-call timings separately. Do not add
+  a separate model-list preflight before the chat call.
 - Use a narrow prompt and robust assertion.
 
 ## Safety And Cost Policy
 
-- Local provider calls may run when the test or command explicitly selects local
-  execution and prerequisites are available.
-- Hosted provider calls are blocked unless the user explicitly confirms that the
-  selected account, key, endpoint, and model route are no-cost for that run.
+- Local provider calls run only when `CODEGEIST_TEST_PROVIDER_CATEGORY=local` or a
+  higher provider category is selected and prerequisites are available.
+- Hosted `remote_free` calls are blocked unless the user explicitly selects a
+  no-cost category for the selected account, key, endpoint, and model route.
+- Hosted paid-capable calls are additionally blocked unless
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid` is set.
 - API-key or credential presence alone is never permission to call a hosted
   provider.
 - Config rendering may print sensitive values. Treat `--show-config` output as
@@ -524,6 +514,6 @@ When a provider becomes implemented source state, update:
 - No public plugin API for providers yet.
 - No cross-provider model registry yet.
 - No model fallback or provider ranking policy yet.
-- No broad adapter hierarchy beyond the internal provider factory strategy list.
+- No broad adapter hierarchy beyond concrete chat model classes.
 - No fake provider for the first live provider workflow.
 - No hosted provider calls in default tests.

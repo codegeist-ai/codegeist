@@ -28,10 +28,16 @@ Use task-specific selectors in active task docs and final reports. Keep broad
 
 ## Provider Tests
 
-- Keep live provider tests behind explicit selectors, for example
-  `task test TEST=LocalOllamaProviderIT`.
-- Do not make broad `task test` require a running provider, downloaded model,
-  network access, hosted API key, or billable account.
+- Use `provider-feature-tests.md` as the detailed provider feature test reference.
+- Keep live provider tests individually executable with `task test TEST=<selector>`
+  so local or hosted prerequisites remain easy to isolate.
+- Broad `task test` uses the provider category default, which is `none`, and does
+  not require a running local provider.
+- Provider feature tests that can call providers must use method-level categories:
+  `local`, `remote_free`, or `remote_paid`. Config-only checks stay unannotated.
+- `CODEGEIST_TEST_PROVIDER_CATEGORY` selects the highest provider category to
+  run. The default is `none`; `remote_paid` is the explicit cost and rate-limit
+  opt-in and runs all provider categories.
 - Local Ollama verification may use an externally managed local Ollama instance
   after `OLLAMA_ENTER=false task ollama-start`.
 - Live local Ollama tests must not pull, download, create, or delete models.

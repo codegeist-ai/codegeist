@@ -45,10 +45,11 @@ class CodegeistConfigCommandTest {
         assertThat(provider.get(OPENAI_PROVIDER_ID)).isInstanceOf(Map.class);
 
         Map<?, ?> ollama = (Map<?, ?>) provider.get(PROVIDER_ID);
+        assertThat(ollama.get("type")).isEqualTo(PROVIDER_ID);
         assertThat(ollama.get("name")).isEqualTo(PROVIDER_NAME);
 
         Map<?, ?> openai = (Map<?, ?>) provider.get(OPENAI_PROVIDER_ID);
+        assertThat(openai.get("type")).isEqualTo(OPENAI_PROVIDER_ID);
         assertThat(openai.get("api-key")).isEqualTo(RAW_SECRET);
-        assertThat(openai.get("model")).isEqualTo("gpt-4o-mini");
     }
 }

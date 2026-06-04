@@ -27,54 +27,46 @@ small before remote provider account work begins.
 - Do not add Testcontainers for this task. The focused live local test should use
   an externally managed local Ollama instance that is already running when the test
   starts.
-- Use `CODEGEIST_TEST_OLLAMA_BASE_URL` to point the focused test at the ready
-  Ollama instance, defaulting to `http://localhost:11434` when the variable is not
-  set.
-- Use `CODEGEIST_TEST_OLLAMA_MODEL` to name the already downloaded local model,
-  defaulting to `llama3.2:1b`. The model must be present before the focused test
+- Use the fixed local Ollama base URL `http://localhost:11434` and fixed model
+  `llama3.2:1b` in the focused test. The model must be present before the test
   starts; the test should not pull, download, or create it.
 - Before running `task test` for this task, run `OLLAMA_ENTER=false task
   ollama-start` from `app/codegeist/cli` so the externally managed local Ollama
   service is ready in non-interactive automation.
-- Configure deterministic options from `codegeist.yml`: `temperature: 0` and fixed
-  `seed: 7` or another explicit integer. Spring AI `2.0.0-M6`
-  `OllamaChatOptions` supports both `temperature(...)` and `seed(...)`.
+- Do not read generation options from `codegeist.yml`; later runtime request or
+  provider feature test work should own temperature, seed, and similar knobs.
 - Use a narrow prompt and stable assertion.
-- Report external Ollama readiness/model-availability timing and first chat-call
-  timing separately from ordinary Spring test timing.
+- Report Spring context startup and first chat-call timing separately from ordinary
+  Spring test timing. Do not add a separate model-list preflight before the chat
+  call.
 - Update current-state architecture for implemented provider behavior and tests.
 
 ## Implementation Notes
 
 - Implement the minimal provider-neutral chat seam from
   `llm-provider-implementation.md`: `CodegeistChatService`, `CodegeistChatRequest`,
-  `CodegeistChatResponse`, `ChatModelFactory`, `ProviderChatModelFactory`, and
-  `OllamaChatModelFactory` when the focused test needs those classes.
-- Make `ProviderChatModelFactory` generic as
-  `ProviderChatModelFactory<T extends ProviderConfig>`. `ChatModelFactory` should
-  receive the selected raw `ProviderConfig`, find the matching provider factory,
-  and delegate through a common `createFrom(ProviderConfig)` method. Concrete
-  factories such as `OllamaChatModelFactory` should implement
-  `ProviderChatModelFactory<OllamaProviderConfig>` and receive
-  `OllamaProviderConfig` directly in `create(...)`.
-- Keep provider-specific imports isolated in `OllamaChatModelFactory`. The generic
-  chat service and model factory should depend only on `ProviderConfig` and Spring
-  AI's provider-neutral `ChatModel`/`Prompt` APIs.
-- `ChatModelFactory` should accept an already normalized `ProviderConfig` and create
-  the selected provider's `ChatModel` lazily inside the call path. Loading config,
-  running `--show-config`, or starting the Spring context must not pull models,
-  create every configured provider client, or call providers.
+  `CodegeistChatResponse`, `CodegeistChatModel<T extends ProviderConfig>`, and
+  `OllamaChatModel` when the focused test needs those classes.
+- `CodegeistChatService` should receive the selected raw `ProviderConfig` separately
+  from `CodegeistChatRequest`; the request carries only runtime model and prompt.
+  The service asks that provider config to create the matching `CodegeistChatModel`.
+- Keep provider-specific imports isolated in `OllamaChatModel`. The generic chat
+  service should depend only on `ProviderConfig` and `CodegeistChatModel`.
+- `CodegeistChatService` should create the selected provider's Codegeist chat model lazily
+  inside the call path. Loading config, running `--show-config`, or starting the
+  Spring context must not pull models, create every configured provider client, or
+  call providers.
 - Do not introduce a public provider plugin API, model catalog, provider ranking,
   fallback policy, smoke command, CLI command, or cross-provider status model in
   this task.
 - Programmatic Spring AI `2.0.0-M6` construction should use the documented
   `OllamaApi.builder().baseUrl(...).build()` and
-  `OllamaChatModel.builder().ollamaApi(...).defaultOptions(...).build()` path.
-  Build default options with `OllamaChatOptions.builder().model(...)
-  .temperature(...).seed(...).build()`.
-- The focused test may perform a cheap readiness check against the configured
-  Ollama base URL and may verify the selected model is listed locally. It must not
-  pull, prepare, download, or delete models.
+  `OllamaChatModel.builder().ollamaApi(...).build()` path. Build request options
+  with `OllamaChatOptions.builder().model(...).build()` when the selected prompt is
+  called.
+- The focused test should let the selected chat call prove local Ollama and model
+  availability. It must not run a separate model-list preflight and must not pull,
+  prepare, download, or delete models.
 - The focused test should load provider config from a temp `codegeist.yml` through
   `CodegeistConfigService.loadConfig(String)` so the real T006 loader, SpEL phase,
   provider dispatch, and Bean Validation are exercised before the provider call.
@@ -84,10 +76,9 @@ small before remote provider account work begins.
 - Use `task test` for verification, never a direct `mvn test` command in this
   task. When a focused selector is needed, use the Taskfile selector form such as
   `task test TEST=LocalOllamaProviderIT`.
-- The focused test should print or otherwise report three timings in its Maven
-  output: Spring context startup, Ollama readiness/model-availability check, and
-  the first chat call. Approximate durations are sufficient; do not hide live
-  provider latency inside an ordinary-looking unit test.
+- The focused test should print or otherwise report Spring context startup and the
+  first chat call timing in its Maven output. Approximate durations are sufficient;
+  do not hide live provider latency inside an ordinary-looking unit test.
 
 ## Non-Goals
 
@@ -104,8 +95,7 @@ small before remote provider account work begins.
 
 - A focused test proves Codegeist can call a local Ollama model through Spring AI.
 - The test command is individually runnable.
-- The task reports Spring context startup timing, Ollama readiness/model-availability
-  timing, and first chat-call timing.
+- The task reports Spring context startup timing and first chat-call timing.
 - Provider configuration comes from `codegeist.yml` or a test fixture matching the
   schema.
 - The implementation does not introduce public provider architecture beyond what
@@ -124,19 +114,21 @@ small before remote provider account work begins.
 
 - Implemented source now exists under `ai.codegeist.app.chat` with
   `CodegeistChatService`, `CodegeistChatRequest`, `CodegeistChatResponse`,
-  `ChatModelFactory`, generic `ProviderChatModelFactory<T extends ProviderConfig>`,
-  and `OllamaChatModelFactory`.
+  `CodegeistChatModel<T extends ProviderConfig>`, and `OllamaChatModel`.
 - `app/codegeist/cli/pom.xml` includes `org.springframework.ai:spring-ai-ollama`
   and does not include `spring-ai-starter-model-ollama`.
 - `LocalOllamaProviderIT` loads a temporary `codegeist.yml` through
-  `CodegeistConfigService.loadConfig(String)`, verifies the selected model is
-  already listed by local Ollama, and calls the provider-neutral chat service.
+  `CodegeistConfigService.loadConfig(String)` and calls the provider-neutral chat
+  service with the selected provider config plus a request carrying the runtime
+  model.
+- `T006_06` later removed model selection from `ProviderConfig`; the temporary
+  `codegeist.yml` now contains only provider access data while the test passes the
+  model through `CodegeistChatRequest`.
 - `OLLAMA_ENTER=false task ollama-start` starts the local service in this
-  environment, `llama3.2:1b` is listed locally, and
-  `task test TEST=LocalOllamaProviderIT` passes.
-- Focused live verification reported Spring context startup `PT0.740494333S`,
-  Ollama readiness/model availability `PT0.326404818S`, and first chat call
-  `PT1.687754898S`.
+  environment, and `task test TEST=LocalOllamaProviderIT` passes with the fixed
+  runtime model `llama3.2:1b`.
+- Focused live verification should report Spring context startup and first chat-call
+  timing only; separate model-list preflight timing is no longer part of the test.
 
 ## Verification
 
@@ -163,7 +155,8 @@ actual selector before marking the task solved.
 - Follow `docs/developer/specification/testing-strategy-and-agent-rules.md` for
   first provider workflow constraints.
 - Follow `docs/developer/specification/llm-provider-implementation.md` for the
-  Strategy plus Factory pattern and the provider implementation checklist.
+  `CodegeistChatModel<T extends ProviderConfig>` pattern and the provider
+  implementation checklist.
 - Use an externally managed local Ollama instance for the focused live test. The
   instance and selected model are prerequisites supplied before the test starts.
 - Keep assertions narrow enough to survive model variance.

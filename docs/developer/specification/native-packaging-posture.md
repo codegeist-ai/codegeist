@@ -107,7 +107,7 @@ keeps native work from becoming an unbounded rewrite.
 | --- | --- | --- |
 | CLI bootstrap | Implemented Spring Boot application startup. | Native-aware; validate with current profile when packaging work changes. |
 | Runtime/session/event contracts | Documented blueprint only. | No runtime native claim until Java contracts exist. |
-| Provider adapters | First local Ollama `ChatModel` factory exists in JVM source; no Spring AI provider starter auto-configuration. | No provider-native claim. Validate provider adapters one at a time when native behavior is in scope. |
+| Provider adapters | First local Ollama `CodegeistChatModel` exists in JVM source; no Spring AI provider starter auto-configuration. | No provider-native claim. Validate provider adapters one at a time when native behavior is in scope. |
 | Tool, permission, workspace | Documented blueprint only. | No tool-native claim. Native status must not bypass permission or workspace checks. |
 | Patch/edit and shell | Documented blueprint only. | No process/native claim until controlled execution exists. |
 | Storage | In-memory-first documented posture only. | No storage-native claim until ports/adapters exist. |

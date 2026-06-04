@@ -14,7 +14,8 @@ The implemented application is currently small:
   typed provider config loading, trusted-local SpEL preprocessing, and the
   provider-neutral chat seam for a selected local Ollama provider.
 - Current focused tests include Spring context startup, command stdout behavior,
-  provider config binding and validation, SpEL preprocessing, and
+  provider config binding and validation, SpEL preprocessing,
+  provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and
   `LocalOllamaProviderIT` behind the explicit selector
   `task test TEST=LocalOllamaProviderIT`.
 
@@ -37,20 +38,43 @@ The implemented application is currently small:
 - Do not hide provider startup, model pulls, CLI startup, shell execution, native
   builds, or filesystem-heavy checks inside tests that look like fast unit tests.
 
+## Provider Feature Tests
+
+Provider feature tests run through `task test` and provider category checks may be
+applied at method or class level. `CODEGEIST_TEST_PROVIDER_CATEGORY` defaults to
+`none`, so ordinary broad verification does not require local provider calls. Set
+`CODEGEIST_TEST_PROVIDER_CATEGORY=local` when the fixed local Ollama service and
+model should run.
+
+Provider categories:
+
+| Category | Meaning |
+| --- | --- |
+| `none` | No annotated provider feature calls; config-only provider checks still run. |
+| `local` | Local provider calls, such as Ollama chat. |
+| `remote_free` | Remote feature calls that are explicitly selected as no-cost. |
+| `remote_paid` | Paid or paid-capable remote feature calls. |
+
+`CODEGEIST_TEST_PROVIDER_CATEGORY` selects the highest provider category to
+run. `remote_paid` is the explicit cost and rate-limit opt-in and runs all
+provider categories. API-key presence alone never enables a remote provider
+method.
+
 ## First Provider Workflow
 
 The first provider-backed workflow should use an externally managed local Ollama
-instance with the selected `llama3`-family model already downloaded before the
-focused test starts.
+instance started through `task ollama-start`.
 
 - Do not use Testcontainers for the first Ollama workflow.
-- Do not pull, download, create, or delete local Ollama models in the test.
+- Do not pull, download, create, or delete local Ollama models in Java tests; the
+  Taskfile owns host container startup and selected-model availability.
 - Run `OLLAMA_ENTER=false task ollama-start` from `app/codegeist/cli` before
-  `task test` when verifying the local Ollama provider workflow.
-- Configure deterministic options: `temperature=0` and fixed seed when supported.
+  `task test` when using the default local provider category.
+- Keep deterministic model options such as temperature or seed in the runtime
+  request or provider feature test method, not in provider config.
 - Use a narrow prompt and stable assertion.
-- Report Spring startup, Ollama readiness/model-availability, and first chat-call
-  timings separately.
+- Report Spring startup and first chat-call timings separately; do not add separate
+  provider preflight helpers that duplicate the selected call.
 - Do not use remote provider credentials for this workflow.
 
 ## Current Commands
@@ -73,7 +97,7 @@ tasks.
   test-first work was not practical.
 - The test can run by class or method selector.
 - The implementation avoids placeholder types and packages.
-- Spring startup, provider readiness, model availability, and other slow setup are
+- Spring startup, first provider call latency, and other meaningful slow setup are
   reported explicitly.
 - `docs/developer/architecture/architecture.md` is updated when source,
   configuration, tests, or runtime behavior changes.

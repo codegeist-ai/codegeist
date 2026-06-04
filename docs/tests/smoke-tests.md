@@ -9,13 +9,15 @@ not a replacement for focused unit or Spring tests.
 
 Current smoke entrypoints:
 
-- `task native-smoke` - build Linux native executable, package it, and smoke the
-  extracted native archive.
-- `task local-linux-smoke` - run JVM tests, build the jar, smoke the jar, and run
-  native checks when required or available.
+- `task native-smoke` - build Linux native executable, package it, start host
+  Ollama through `task ollama-start`, and smoke the extracted native archive.
+- `task local-linux-smoke` - run JVM tests, build the jar, smoke the jar including
+  real Ollama-backed `ask`, and run native checks when required or available.
 - `task qemu-windows-smoke` - sync the repo into the Windows QEMU VM, run Windows
-  JVM tests, build the jar, smoke the jar, build Windows native, package it, and
-  smoke the extracted native archive.
+  JVM tests, build the jar, smoke the jar including real Ollama-backed `ask`, build
+  Windows native, package it, and smoke the extracted native archive. The host
+  wrapper starts Ollama through `task ollama-start`; the guest reaches it at
+  `http://10.0.2.2:11434` by default.
 - `task final-smoke-suite` - run Linux and Windows platform smokes and require
   both to pass by default.
 
@@ -43,18 +45,25 @@ Labels should be stable and specific, for example:
 - `linux maven tests`
 - `linux jar package`
 - `linux jar version smoke`
+- `linux ollama start`
+- `linux jar ask smoke`
 - `linux native compile`
 - `linux native archive smoke`
 - `linux native version smoke`
 - `linux native show-config smoke`
+- `linux native ask smoke`
 - `linux platform smoke total`
 - `windows maven tests`
 - `windows jar package`
+- `windows ollama reachability`
 - `windows jar version smoke`
+- `windows jar ask smoke`
 - `windows native compile`
 - `windows native archive smoke`
 - `windows native version smoke`
 - `windows native show-config smoke`
+- `windows native ask smoke`
+- `windows host ollama start`
 - `windows platform smoke total`
 
 ## Timing Rules
@@ -71,9 +80,9 @@ Labels should be stable and specific, for example:
 ## Artifacts And Logs
 
 - Linux native smoke packages `target/dist/codegeist-linux-x64.tar.gz` and tests
-  the extracted `./codegeist` binary.
+  the extracted `./codegeist` binary, including `ask` with a generated smoke config.
 - Windows native smoke packages `target/dist/codegeist-windows-x64.zip` and tests
-  the extracted `codegeist.exe` binary.
+  the extracted `codegeist.exe` binary, including `ask` with a generated smoke config.
 - Smoke logs stay under `app/codegeist/cli/target/smoke-test`.
 - Generated smoke artifacts remain ignored build output unless a task explicitly
   asks for a handoff snapshot.

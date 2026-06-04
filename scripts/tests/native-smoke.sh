@@ -14,6 +14,7 @@
 # - `app/codegeist/cli/target/classes/META-INF/build-info.properties`, generated
 #   by Maven build-info.
 # - Optional `CODEGEIST_NATIVE_SMOKE_TIMEOUT`, default `5s`.
+# - Optional `CODEGEIST_ASK_SMOKE_TIMEOUT`, default `60s`.
 # - The `timeout` command must be available on `PATH`.
 #
 # Side effects:
@@ -111,10 +112,15 @@ run-native-smoke-tests() {
   local expected_config
   local actual
   local timeout_budget
+  local ask_timeout
+  local ask_prompt
+  local ask_config
   local archive_package_start
   local archive_smoke_start
+  local ollama_start
   local version_start
   local show_config_start
+  local ask_start
 
   script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
   repo_root="$(cd -- "$script_dir/../.." && pwd)"
@@ -130,6 +136,24 @@ run-native-smoke-tests() {
 
   rm -rf "$smoke_dir"
   mkdir -p "$smoke_dir"
+  ask_config="$smoke_dir/codegeist-native-ask.yml"
+  ask_timeout="${CODEGEIST_ASK_SMOKE_TIMEOUT:-60s}"
+  ask_prompt='codegeist'
+
+  printf 'Command: OLLAMA_ENTER=false task ollama-start\n'
+  ollama_start="$(codegeist_now_ms)"
+  if ! OLLAMA_ENTER=false task ollama-start; then
+    printf 'Ollama start failed\n' >&2
+    return 1
+  fi
+  codegeist_print_duration 'linux ollama start' "$ollama_start"
+
+  cat > "$ask_config" <<EOF
+provider:
+  ollama:
+    type: ollama
+    base-url: http://localhost:11434
+EOF
 
   archive_smoke_start="$(codegeist_now_ms)"
   archive_package_start="$(codegeist_now_ms)"
@@ -178,6 +202,24 @@ run-native-smoke-tests() {
     printf 'Expected show-config output %s, got %s\n' "$expected_config" "$actual" >&2
     return 1
   fi
+
+  ask_start="$(codegeist_now_ms)"
+  if ! actual="$(cd "$package_dir" && LOG_FILE="$smoke_dir/codegeist.log" timeout "$ask_timeout" \
+      ./codegeist -Dcodegeist.config="$ask_config" ask "$ask_prompt" 2>&1)"; then
+    rm -rf "$temp_dir"
+    printf 'Native ask smoke failed or timed out after %s: %s\n' "$ask_timeout" "$actual" >&2
+    return 1
+  fi
+  codegeist_print_duration 'linux native ask smoke' "$ask_start"
+
+  case "${actual,,}" in
+    *codegeist*) ;;
+    *)
+      rm -rf "$temp_dir"
+      printf 'Expected native ask response to contain codegeist, got %s\n' "$actual" >&2
+      return 1
+      ;;
+  esac
 
   if [ ! -s "$smoke_dir/codegeist.log" ]; then
     rm -rf "$temp_dir"

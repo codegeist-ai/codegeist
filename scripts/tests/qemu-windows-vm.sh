@@ -30,6 +30,8 @@
 # - Generates a local password and SSH key under the VM directory.
 # - Starts QEMU with host port forwarding from localhost to Windows SSH.
 # - Copies the current working tree subset needed by smoke checks into Windows.
+# - Starts the host Ollama service through `app/codegeist/cli/Taskfile.yml` so the
+#   Windows guest can reach it through QEMU user networking at `10.0.2.2:11434`.
 #
 # Related files:
 # - scripts/tests/windows-qemu/autounattend.xml
@@ -387,6 +389,18 @@ wait_ssh() {
   skip_or_fail "Windows VM SSH/provisioning did not become ready within ${timeout_seconds}s"
 }
 
+start_host_ollama() {
+  local start
+
+  require_cmd task
+  printf 'Command: OLLAMA_ENTER=false task ollama-start\n'
+  start="$(codegeist_now_ms)"
+  if ! (cd "$repo_root/app/codegeist/cli" && OLLAMA_ENTER=false task ollama-start); then
+    skip_or_fail 'Host Ollama start failed'
+  fi
+  codegeist_print_duration 'windows host ollama start' "$start"
+}
+
 sync_repo() {
   require_cmd tar
   start_vm
@@ -405,6 +419,7 @@ smoke_vm() {
   local smoke_start
 
   smoke_start="$(codegeist_now_ms)"
+  start_host_ollama
   sync_repo
 
   CODEGEIST_WINDOWS_SSH_TARGET="$ssh_user@127.0.0.1" \

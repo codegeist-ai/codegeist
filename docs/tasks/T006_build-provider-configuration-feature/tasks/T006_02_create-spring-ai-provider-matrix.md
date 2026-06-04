@@ -155,9 +155,9 @@ Use three test levels for later implementation tasks:
 | --- | --- | --- | --- |
 | `config` | no | yes | Load `codegeist.yml`, validate provider fields, resolve credential references, and build provider-specific Spring configuration without contacting hosted providers. |
 | `local` | local only | yes when local service is available | Run real calls against local providers such as Ollama and, later, Docker Model Runner. |
-| `remote-free` | yes, only with explicit no-cost confirmation | no | Run the smallest possible remote request only when a developer explicitly confirms that the account/key/model path will not create charges. |
+| `remote_free` | yes, only with explicit no-cost confirmation | no | Run the smallest possible remote request only when a developer explicitly confirms that the account/key/model path will not create charges. |
 
-Do not add a `remote-paid` mode to the ordinary integration test workflow. If a
+Do not add a `remote_paid` mode to the ordinary integration test workflow. If a
 future provider-specific task needs a paid smoke, require an explicit user
 decision and keep it outside the default Maven lifecycle.
 
@@ -170,7 +170,7 @@ The later smoke harness should therefore distinguish these outcomes:
 | `blocked` | A provider can only be tested by a potentially billable request and no explicit paid-test decision exists. |
 | `failed` | A required provider was selected and a non-cost prerequisite was present, but the check failed. |
 
-For remote providers, `remote-free` should use a tiny deterministic prompt,
+For remote providers, `remote_free` should use a tiny deterministic prompt,
 `options.max-tokens` or provider equivalent set to the smallest useful value, and
 one request per selected provider. This minimizes usage but does not by itself
 prove that a provider will not bill. The no-cost guarantee must come from the
@@ -185,26 +185,29 @@ tasks, not fields that exist in `CodegeistConfig` today. Credentials remain
 references to environment variables, profiles, or local files; secret values must
 not be stored in `codegeist.yml`.
 
-### Candidate Generic Provider Fields
+Update from `T006_06` and follow-up field removals: model selection, generic
+provider options, enablement, completion-path routing, and the YAML `type`
+discriminator are no longer `ProviderConfig` fields. Any `model`, `options.*`,
+`enabled`, or `completions-path` examples in this solved matrix should be read as
+runtime, selection-policy, or provider-feature test inputs, not provider config
+fields. Provider config now stores provider access, endpoint, and credentials only;
+`type` remains dispatch-only YAML input and read-only derived output.
 
-These fields appear across enough providers that the eventual `ProviderConfig`
-model should consider first-class fields instead of burying them all in an
-untyped map:
+### Candidate Generic Provider Access Fields
+
+These fields appear across enough providers to shape the public YAML contract. Only
+access fields belong as stored `ProviderConfig` fields:
 
 | codegeist.yml field | Purpose |
 | --- | --- |
-| `type` | Selects the provider adapter, matching the `codegeist-type` values above. |
-| `model` | Selects the default chat model for connection checks and normal chat use. |
+| `type` | Dispatch-only discriminator that selects the provider adapter, matching the `codegeist-type` values above. |
 | `base-url` | Overrides the provider endpoint for local runtimes, proxies, and OpenAI-compatible APIs. |
-| `completions-path` | Overrides the chat completions path for OpenAI-compatible APIs such as Perplexity or Azure-shaped endpoints. |
 | `credentials.api-key-env` | References an API key environment variable for the common remote-provider case. |
-| `enabled` | Allows a configured provider to be skipped without deleting its config. |
-| `options.timeout` | Sets provider HTTP timeout when Spring AI exposes one and the smoke harness needs it. |
-| `options.max-tokens` | Caps response size for cheap connection checks and providers that require a token cap. |
 
-Provider-specific credential shapes, cloud metadata, and low-level generation
-knobs should start under `credentials.*` or `options.*` until a later task proves
-they deserve first-class fields.
+Provider-specific credential shapes and cloud metadata should start as focused
+access fields only when a later task proves they are needed. Runtime model,
+generation knobs, enablement, and route/path selection belong outside
+`ProviderConfig`.
 
 ### Provider-Specific Field Matrix
 
@@ -260,6 +263,7 @@ provider:
     type: perplexity
     model: llama-3.1-sonar-small-128k-online
     base-url: https://api.perplexity.ai
+    # Runtime route/path selection; not a ProviderConfig field.
     completions-path: /chat/completions
     credentials:
       api-key-env: PERPLEXITY_API_KEY
@@ -366,7 +370,7 @@ git --no-pager diff --check
   provider discovery.
 - The no-cost integration-test posture is documented: default tests should cover
   config and local providers, while hosted provider calls require explicit
-  `remote-free` selection and local no-cost confirmation.
+  `remote_free` selection and local no-cost confirmation.
 
 ## Verification Result
 

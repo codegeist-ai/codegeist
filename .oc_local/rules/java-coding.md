@@ -28,6 +28,12 @@ Use this rule when adding or changing Java source in Codegeist.
   read.
 - Prefer focused Lombok annotations such as `@Getter` and `@Setter` over broad
   annotations such as `@Data`.
+- For trivial enum or value-object constructor and accessor boilerplate, prefer
+  focused Lombok annotations such as `@RequiredArgsConstructor` and `@Getter` with
+  the narrowest useful access level over hand-written boilerplate.
+- Use Lombok `@NonNull` for simple required constructor or method parameters instead
+  of hand-written `Assert.notNull(...)` checks. Keep explicit assertions when they
+  validate richer contracts such as non-blank text or add domain-specific messages.
 - Use Lombok `@Slf4j` on Spring `@Service` and `@Component` classes, and prefer
   concise `log.debug(...)` messages around non-obvious lifecycle, command,
   loading, validation, or bean-creation behavior. Spring Boot's default logging
@@ -57,6 +63,24 @@ Use this rule when adding or changing Java source in Codegeist.
 - Use maps for provider ids, model ids, and open-ended options until a focused
   provider task needs stronger typed properties.
 
+## Provider Config And Chat Models
+
+- Keep `ProviderConfig` access-only. Do not add stored YAML model fields,
+  generation options, enablement flags, or completions-path routing to provider
+  config unless a focused runtime task explicitly changes that contract.
+- Let each concrete `ProviderConfig` implement `defaultModel()` for the
+  provider-owned runtime fallback, but do not add stored YAML model fields or
+  command-owned hardcoded model defaults.
+- Put default first-provider selection in `CodegeistConfig.defaultProvider()`. Do
+  not duplicate provider-map iteration in command classes.
+- Keep selected provider config separate from runtime request data. Pass the
+  validated `ProviderConfig` to `CodegeistChatService`, and keep
+  `CodegeistChatRequest` focused on runtime model and prompt.
+- Let each concrete `ProviderConfig` implement `createChatModel()` and return the
+  matching `CodegeistChatModel<T extends ProviderConfig>`. Do not reintroduce
+  factory or strategy layers unless a focused task intentionally replaces this
+  contract.
+
 ## String Constants
 
 - Prefer named `static final String` constants over inline string literals in Java
@@ -73,6 +97,54 @@ Use this rule when adding or changing Java source in Codegeist.
   of duplicating message fragments such as `Invalid Codegeist config file`.
 - Do not duplicate the same string literal across classes or tests when it
   represents one shared contract.
+
+## Framework Utilities
+
+- Prefer existing utility methods from frameworks already present in the project
+  over hand-written helper logic. For example, use Spring `StringUtils.hasText(...)`
+  for null-or-blank text checks instead of `value == null || value.isBlank()`.
+- Use the smallest fitting existing utility, such as Spring `CollectionUtils`,
+  `ObjectUtils`, or `StringUtils`, before adding custom helper methods or local
+  normalization loops.
+- Do not add a new utility dependency only to replace a trivial check; this rule
+  applies to utilities already available through the current framework stack.
+
+## Runtime Environment Boundaries
+
+- Do not branch application, configuration, provider, domain, or command logic on
+  whether Codegeist is running on the JVM or as a GraalVM native image.
+- Do not use runtime checks such as
+  `System.getProperty("org.graalvm.nativeimage.imagecode")` in Codegeist app code
+  to select different behavior.
+- Solve native-image compatibility with uniform Java contracts, Spring/GraalVM
+  metadata under `META-INF/native-image/`, build configuration, tests, or a
+  dedicated adapter boundary when a real platform-specific concern exists.
+- Keep platform-specific decisions in packaging, smoke scripts, release workflows,
+  or clearly named adapter layers, not inside provider dispatch or config parsing.
+
+## GraalVM Reflection And Discovery
+
+- Prefer explicit discovery mechanisms that GraalVM can see at build time, such as
+  Java registries, Spring configuration, or generated registries, over runtime
+  classpath scanning.
+- For Codegeist provider config dispatch, use the explicit registry in
+  `ProviderConfigJacksonConverter` unless a future task intentionally replaces it
+  with a generated registry. Do not add ServiceLoader back for this path.
+- When adding reflective config or domain types that Jackson or another framework
+  must instantiate in native images, register the type in
+  `src/main/resources/META-INF/native-image/reflect-config.json` or a centralized
+  generated equivalent, then prove it with `task native-smoke`.
+- Avoid broad `.class` resource includes only to make runtime scanners work. Add
+  resource patterns only when the resource itself is part of the runtime contract,
+  such as `logback.xml` or `META-INF/build-info.properties`.
+
+## Helper Methods
+
+- Do not add one-line pass-through helper methods that only call another helper with
+  a constant or parameter, such as `apiKey()` returning `requireEnv(API_KEY_ENV)`.
+  Prefer the direct call at the use site when it stays readable.
+- Add a helper only when it centralizes non-trivial behavior, improves repeated
+  call sites, or names a real domain operation that would otherwise be unclear.
 
 ## Comments For Coding Agents
 

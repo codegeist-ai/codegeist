@@ -15,17 +15,21 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.shell.core.command.CommandContext;
 import org.springframework.shell.core.command.annotation.Command;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
 public class CodegeistConfigService {
 
     static final String SHOW_CONFIG_COMMAND = "--show-config";
+
+    public static final String CONFIG_PROPERTY = CodegeistConfig.CONFIGURATION_PREFIX + ".config";
 
     static final String VALIDATION_ERROR_PREFIX = "Invalid Codegeist config file: ";
 
@@ -44,11 +48,24 @@ public class CodegeistConfigService {
     @Autowired
     private CodegeistYamlExpressionEvaluator expressionEvaluator;
 
+    @Value("${" + CONFIG_PROPERTY + ":}")
+    private String configPath;
+
     @Bean
     @Primary
     public CodegeistConfig primaryCodegeistConfig() {
         log.debug("Creating primary Codegeist config bean from Spring-bound config");
         return springBoundConfig;
+    }
+
+    public CodegeistConfig getCurrentConfig() {
+        if (StringUtils.hasText(configPath)) {
+            log.debug("Using Codegeist config from system property {}", CONFIG_PROPERTY);
+            return loadConfig(configPath);
+        }
+
+        log.debug("Using Spring-bound Codegeist config");
+        return primaryCodegeistConfig();
     }
 
     @SneakyThrows(IOException.class)
@@ -75,8 +92,9 @@ public class CodegeistConfigService {
         log.debug("Printing current Codegeist config");
         // Native/release smokes assert stdout is YAML-only; keep labels and logs out
         // of this path.
-        // Route through the primary config bean so later source-loading policy reaches the command.
-        context.outputWriter().print(toYaml(primaryCodegeistConfig()));
+        // Route through the global config policy so `-Dcodegeist.config=...` is
+        // shared by CLI commands instead of being command-specific.
+        context.outputWriter().print(toYaml(getCurrentConfig()));
         context.outputWriter().flush();
     }
 

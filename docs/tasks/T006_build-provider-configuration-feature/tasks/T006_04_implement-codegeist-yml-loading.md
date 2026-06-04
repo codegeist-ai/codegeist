@@ -28,7 +28,7 @@ commands, or remote provider calls.
   `google-genai`, `deepseek`, `minimax`, `mistral-ai`, `groq`, `nvidia`,
   `perplexity`, `openrouter`, `moonshot`, `qianfan`, OpenCode Zen, and
   OpenCode Go.
-- Keep `ProviderConfig` as an abstract sealed config-data base class, not a runtime
+- Keep `ProviderConfig` as an abstract config-data base class, not a runtime
   provider adapter.
 - Keep provider credentials as ordinary scalar values that may be populated by
   SpEL. Do not add a credential-reference schema such as `api-key-env`.
@@ -37,8 +37,8 @@ commands, or remote provider calls.
 
 | Config class | `@Provider` value | Minimum fields to bind and validate now |
 | --- | --- | --- |
-| `OllamaProviderConfig` | `ollama` | `name`, `type`, `enabled`, `model`, `base-url`, and nested deterministic `options` such as `temperature` or `seed` when present. |
-| `OpenAiProviderConfig` | `openai` | `name`, `type`, `enabled`, `model`, `api-key`, optional `base-url`, `organization-id`, `project-id`, and nested request `options`. |
+| `OllamaProviderConfig` | `ollama` | Stored fields: `name` and `base-url`; YAML `type` is dispatch-only and read back from `@Provider`. |
+| `OpenAiProviderConfig` | `openai` | Stored fields: `name`, `api-key`, optional `base-url`, `organization-id`, and `project-id`; YAML `type` is dispatch-only and read back from `@Provider`. |
 
 ## Implemented Behavior
 
@@ -46,7 +46,7 @@ commands, or remote provider calls.
   config prefix source.
 - `CodegeistConfig` binds a typed provider map under `ai.codegeist.app.config` and
   receives the qualified YAML `ObjectMapper` for raw provider map normalization.
-- `ProviderConfig` is an abstract sealed base class for provider map values and
+- `ProviderConfig` is an abstract base class for provider map values and
   currently permits only `OllamaProviderConfig` and `OpenAiProviderConfig`.
 - Provider map values are selected from the required YAML `type` field through
   `@Provider` annotation values. There is no fallback to the provider map key.
@@ -95,8 +95,12 @@ commands, or remote provider calls.
   Spring SpEL before mapping, while YAML keys and non-string scalars stay literal.
 - Focused tests prove SpEL parse/evaluation failures include source and YAML path
   context without printing evaluated secret values.
-- The config model supports provider `type`, `enabled`, `model`, `base-url`,
-  `completions-path`, ordinary scalar OpenAI credentials, and nested `options`.
+- The config model supports provider `type` as a dispatch-only discriminator,
+  `base-url`, and ordinary scalar OpenAI credentials. `T006_06` later removed model
+  selection from `ProviderConfig`, and follow-up removals kept `enabled`,
+  `completions-path`, and generation options out of provider config too; those
+  choices now belong to runtime agent, session, command, request, or provider
+  feature test selection.
 - Missing provider `type` is rejected.
 - Unsupported provider `type` values are rejected, including the broader provider
   matrix types that are intentionally deferred from this task.
