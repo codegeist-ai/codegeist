@@ -76,7 +76,6 @@ use fixed test values instead: base URL `http://localhost:11434` and model
 | `CODEGEIST_TEST_OPENAI_IMAGE_SIZE` | Image size for the paid-capable OpenAI image check. |
 | `CODEGEIST_TEST_OPENAI_SPEECH_MODEL` | Text-to-speech model for the paid-capable OpenAI check; defaults to `tts-1`. |
 | `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_MODEL` | Speech-to-text model for the paid-capable OpenAI check; defaults to `gpt-4o-mini-transcribe`. |
-| `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO` | Audio fixture path for the paid-capable OpenAI speech-to-text check. |
 | `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED` | Expected text fragment in the OpenAI speech-to-text response. |
 
 ## ProviderConfig Decision
@@ -140,17 +139,12 @@ CODEGEIST_TEST_PROVIDER_CATEGORY=none task test TEST=OpenAiProviderTest,OllamaPr
 For local Ollama provider execution:
 
 ```bash
-OLLAMA_ENTER=false task ollama-start
 CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest
 ```
 
 For local release runs that intentionally allow paid OpenAI feature checks:
 
 ```bash
-espeak-ng -v en-us -s 135 -w target/codegeist-speech-en.wav "Hello world test."
-
-CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO=target/codegeist-speech-en.wav \
-CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED=test \
 CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid \
 task test TEST=OpenAiProviderTest
 ```
@@ -158,7 +152,6 @@ task test TEST=OpenAiProviderTest
 For end-to-end `ask` smoke coverage:
 
 ```bash
-OLLAMA_ENTER=false task ollama-start
 CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=AskCommandsTest,OllamaProviderTest
 task native-smoke
 task qemu-windows-smoke
@@ -176,11 +169,11 @@ git --no-pager diff --check
 - `task test TEST=CodegeistProviderConfigTest,CodegeistConfigServiceTest,CodegeistConfigSpelEvaluationTest` passed.
 - `CODEGEIST_TEST_PROVIDER_CATEGORY=none task test TEST=OpenAiProviderTest,OllamaProviderTest`
   passed with only unannotated config checks running after the Env-only gate cleanup.
-- `OLLAMA_ENTER=false task ollama-start` started the local Ollama service.
 - `task test TEST=LocalOllamaProviderIT` passed after removing provider options.
   The live test no longer runs a separate model-list preflight.
 - `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest` passed
-  with the local chat method running after the Env-only gate cleanup.
+  with `task test` starting Ollama first and the local chat method running after the
+  Env-only gate cleanup.
 - `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=AskCommandsTest,OllamaProviderTest`
   passed with the real local Ollama command test and provider test running.
 - `task test` passed with provider feature tests included and the default `none`
@@ -191,19 +184,19 @@ git --no-pager diff --check
 - `task qemu-windows-smoke` passed after the same provider registry fix. The run
   included `Duration: windows jar ask smoke: 9.049s` and
   `Duration: windows native ask smoke: 1.850s`.
-- The full OpenAI `remote_paid` run passed with all six provider feature tests
-  running:
+- The full OpenAI `remote_paid` run is explicit opt-in and runs all six provider
+  feature tests when selected:
 
   ```bash
-  CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO=target/codegeist-speech-en.wav \
-  CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED=test \
-  CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid \
-  task test TEST=OpenAiProviderTest
+CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid \
+task test TEST=OpenAiProviderTest
   ```
 
-  The successful run used low-cost defaults: `gpt-image-1-mini`, `tts-1`, and
-  `gpt-4o-mini-transcribe`. The audio fixture was generated with
-  `espeak-ng -v en-us -s 135 -w target/codegeist-speech-en.wav "Hello world test."`.
+  The latest run used low-cost defaults: `gpt-image-1-mini`, `tts-1`, and
+  `gpt-4o-mini-transcribe`. It is currently blocked by the configured API key
+  returning `401 invalid_api_key`; rerun after `CODEGEIST_TEST_OPENAI_APIKEY` is
+  valid for the account being tested. The speech-to-text test generates its default
+  audio fixture with `espeak-ng` under `target/provider-tests/` when needed.
 
 ## Planning Notes
 

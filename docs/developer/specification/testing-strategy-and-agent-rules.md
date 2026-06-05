@@ -42,9 +42,10 @@ The implemented application is currently small:
 
 Provider feature tests run through `task test` and provider category checks may be
 applied at method or class level. `CODEGEIST_TEST_PROVIDER_CATEGORY` defaults to
-`none`, so ordinary broad verification does not require local provider calls. Set
-`CODEGEIST_TEST_PROVIDER_CATEGORY=local` when the fixed local Ollama service and
-model should run.
+`none`, so ordinary broad verification skips annotated provider calls. `task test`
+always starts the fixed local Ollama service first with `OLLAMA_ENTER=false`; set
+`CODEGEIST_TEST_PROVIDER_CATEGORY=local` when local provider-call methods should
+run.
 
 Provider categories:
 
@@ -68,8 +69,9 @@ instance started through `task ollama-start`.
 - Do not use Testcontainers for the first Ollama workflow.
 - Do not pull, download, create, or delete local Ollama models in Java tests; the
   Taskfile owns host container startup and selected-model availability.
-- Run `OLLAMA_ENTER=false task ollama-start` from `app/codegeist/cli` before
-  `task test` when using the default local provider category.
+- Run provider checks with one command. `task test` invokes `ollama-start` before
+  Maven, and `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest`
+  additionally enables local provider-call methods.
 - Keep deterministic model options such as temperature or seed in the runtime
   request or provider feature test method, not in provider config.
 - Use a narrow prompt and stable assertion.

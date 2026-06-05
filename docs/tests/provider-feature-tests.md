@@ -92,7 +92,7 @@ Provider tests are split by risk because provider work has different failure mod
 | Risk | Test policy |
 | --- | --- |
 | Config mapping can break ordinary startup or `--show-config`. | Config-only checks run by default under `none`. |
-| Local Ollama may be unavailable, slow, or missing `llama3.2:1b`. | Local calls require `CODEGEIST_TEST_PROVIDER_CATEGORY=local` or higher. |
+| Local Ollama may be unavailable, slow, or missing `llama3.2:1b`. | `task test` starts Ollama before Maven; local provider-call methods still require `CODEGEIST_TEST_PROVIDER_CATEGORY=local` or higher. |
 | Hosted APIs can consume quota, require account setup, or bill. | Hosted calls require `remote_free` or `remote_paid`; API-key presence alone is never enough. |
 | Paid-capable endpoints can create direct cost. | Paid-capable calls require `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid`. |
 
@@ -135,11 +135,11 @@ Use this when the task changes `OllamaProviderConfig`, `OllamaChatModel`,
 `CodegeistChatService`, `CodegeistChatRequest`, or local Ollama provider behavior:
 
 ```bash
-OLLAMA_ENTER=false task ollama-start
 CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest
 ```
 
-Why: `ollama-start` starts or reuses the local `codegeist-ollama` container and
+Why: `task test` automatically runs `ollama-start` with `OLLAMA_ENTER=false` before
+Maven. `ollama-start` starts or reuses the local `codegeist-ollama` container and
 ensures the selected model is present, while the focused test proves config loading
 plus the provider feature chat method. The Java test uses fixed values and does not
 pull models itself:
@@ -153,7 +153,6 @@ Use this broader local check only when local provider behavior should be include
 in the whole JVM suite:
 
 ```bash
-OLLAMA_ENTER=false task ollama-start
 CODEGEIST_TEST_PROVIDER_CATEGORY=local task test
 ```
 
@@ -166,14 +165,15 @@ Use this when the task specifically changes the provider-neutral chat seam or Sp
 application context path used by local provider calls:
 
 ```bash
-OLLAMA_ENTER=false task ollama-start
-task test TEST=LocalOllamaProviderIT
+CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=LocalOllamaProviderIT
 ```
 
-Why: `LocalOllamaProviderIT` starts `CodegeistApplication` through a manual Spring
-application builder, loads a temporary `codegeist.yml`, and calls
-`CodegeistChatService` with a selected `ProviderConfig` plus runtime model and
-prompt. It is intentionally selector-only and not part of broad `task test`.
+Why: `task test` starts Ollama first, and the `local` category documents that this
+selector intentionally exercises the local provider path. `LocalOllamaProviderIT`
+starts `CodegeistApplication` through a manual Spring application builder, loads a
+temporary `codegeist.yml`, and calls `CodegeistChatService` with a selected
+`ProviderConfig` plus runtime model and prompt. It is intentionally selector-only
+and not part of broad `task test`.
 
 ### Hosted Remote-Free Provider Checks
 
@@ -184,10 +184,10 @@ model, and route are no-cost for the current run:
 CODEGEIST_TEST_PROVIDER_CATEGORY=remote_free task test TEST=OpenAiProviderTest#testListModels
 ```
 
-Why: `remote_free` is for explicitly selected no-cost hosted calls. It may still
-require `CODEGEIST_TEST_OPENAI_APIKEY`, and missing credentials cause the selected
-method to be skipped through JUnit assumptions. Do not treat an API key as
-permission to run this category; the no-cost decision must be explicit.
+Why: `remote_free` is for explicitly selected no-cost hosted calls. It still
+requires `CODEGEIST_TEST_OPENAI_APIKEY`; when the category is selected, missing
+credentials are a test failure, not a skip. Do not treat an API key as permission
+to run this category; the no-cost decision must be explicit.
 
 ### Hosted Paid-Capable Provider Checks
 
@@ -202,7 +202,9 @@ CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=OpenAiProviderTest#t
 
 Why: `remote_paid` allows paid-capable calls. Prefer method selectors so the run is
 limited to the feature being verified. Running the whole class with `remote_paid`
-can call all OpenAI provider feature methods whose assumptions are satisfied.
+can call all OpenAI provider feature methods; missing required credentials or
+speech-to-text fixture generation failures fail the selected test instead of
+skipping it.
 
 ### Full OpenAI Remote-Paid Verification
 
@@ -210,36 +212,36 @@ Use this when the current account is intentionally allowed to spend quota on eve
 implemented OpenAI provider feature test:
 
 ```bash
-espeak-ng -v en-us -s 135 -w target/codegeist-speech-en.wav "Hello world test."
-
-CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO=target/codegeist-speech-en.wav \
-CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED=test \
+CODEGEIST_TEST_OPENAI_APIKEY=... \
 CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid \
 task test TEST=OpenAiProviderTest
 ```
 
 Why: this runs all six `OpenAiProviderTest` methods: two unannotated config checks,
 one `remote_free` model-list check, and three `remote_paid` feature checks. The
-speech-to-text test needs a local audio fixture; the generated English `espeak-ng`
-fixture is short, cheap to transcribe, and has a stable expected word.
+speech-to-text test generates a short English `espeak-ng` fixture when the selected
+audio path is missing; the fixture is cheap to transcribe and has a stable expected
+word.
 
 This command is intentionally not the default verification path. It can spend
-hosted-provider quota and may fail when the account has no available quota, a hard
-billing limit is reached, organization verification is missing for image models, or
-the audio fixture is absent.
+hosted-provider quota and may fail when credentials are missing, the account has no
+available quota, a hard billing limit is reached, organization verification is
+missing for image models, or `espeak-ng` cannot create the missing audio fixture.
 
-The last successful full run used the built-in low-cost defaults and this fixture:
+The latest explicit full run used the built-in low-cost defaults and an API key from
+the environment:
 
 ```text
+CODEGEIST_TEST_OPENAI_APIKEY=<set in the environment>
 CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid
-CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO=target/codegeist-speech-en.wav
-CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED=test
 ```
 
-Result:
+Current blocker:
 
 ```text
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 6, Failures: 4, Errors: 0, Skipped: 0
+OpenAI returned 401 invalid_api_key for list models, image generation,
+text-to-speech, and speech-to-text.
 ```
 
 ## Hosted OpenAI Test Inputs
@@ -256,8 +258,7 @@ overrides for base URL or model.
 | `CODEGEIST_TEST_OPENAI_IMAGE_SIZE` | `remote_paid` | Image size; defaults to `1024x1024`. |
 | `CODEGEIST_TEST_OPENAI_SPEECH_MODEL` | `remote_paid` | Text-to-speech model; defaults to `tts-1`. |
 | `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_MODEL` | `remote_paid` | Speech-to-text model; defaults to `gpt-4o-mini-transcribe`. |
-| `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO` | `remote_paid` | Local audio fixture path for speech-to-text. |
-| `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED` | `remote_paid` | Expected text fragment; defaults to `codegeist`. |
+| `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED` | `remote_paid` | Expected text fragment; defaults to `test`. |
 
 The default OpenAI feature models are deliberately low-cost working defaults for
 the current test suite:
@@ -275,15 +276,18 @@ verification.
 ## Speech-To-Text Audio Fixture
 
 The speech-to-text feature test requires a local audio file because the repository
-does not commit generated prompt, completion, image, or audio artifacts.
+does not commit generated prompt, completion, image, or audio artifacts. The test
+uses `target/provider-tests/codegeist-speech-en.wav`. If the file is missing, the
+test creates it with `espeak-ng` before calling OpenAI.
 
-Use `espeak-ng` to create a deterministic, cheap fixture:
+The generated fixture command is equivalent to:
 
 ```bash
-espeak-ng -v en-us -s 135 -w target/codegeist-speech-en.wav "Hello world test."
+espeak-ng -v en-us -s 135 -w target/provider-tests/codegeist-speech-en.wav "Hello world test."
 ```
 
-Install `espeak-ng` when the tool is missing:
+Install `espeak-ng` when the tool is missing and the test should auto-generate the
+fixture:
 
 ```bash
 sudo apt-get update
@@ -293,12 +297,12 @@ sudo apt-get install -y espeak-ng
 Expected fixture shape:
 
 ```text
-target/codegeist-speech-en.wav: RIFF WAVE audio, Microsoft PCM, 16 bit, mono 22050 Hz
+target/provider-tests/codegeist-speech-en.wav: RIFF WAVE audio, Microsoft PCM, 16 bit, mono 22050 Hz
 ```
 
-Use `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED=test` with this fixture. A
-German fixture such as `Dies ist ein Codegeist Test Satz.` can be misrecognized by
-the transcription model and is less stable for the current assertion.
+The default expected fragment is `test`, which matches this fixture. A German
+fixture such as `Dies ist ein Codegeist Test Satz.` can be misrecognized by the
+transcription model and is less stable for the current assertion.
 
 ## Expected Skip Behavior
 
@@ -306,15 +310,16 @@ Provider tests intentionally produce skipped methods in safe runs:
 
 | Command | Expected provider-call behavior |
 | --- | --- |
-| `task test` | Annotated provider-call methods are skipped because the category is `none`. |
+| `task test` | Starts Ollama before Maven, then skips annotated provider-call methods because the category is `none`. |
 | `CODEGEIST_TEST_PROVIDER_CATEGORY=none task test TEST=OpenAiProviderTest,OllamaProviderTest` | Same as broad default, but limited to provider feature classes. |
 | `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest` | Ollama config checks and local chat run; no methods should be skipped in this class when Ollama is ready. |
-| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_free task test TEST=OpenAiProviderTest#testListModels` | The selected method runs only when required hosted inputs are present; otherwise it is skipped by assumptions. |
-| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=OpenAiProviderTest#testSpeechToText` | The selected paid-capable method runs only when credentials and fixture inputs are present; otherwise it is skipped by assumptions. |
+| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_free task test TEST=OpenAiProviderTest#testListModels` | The selected method runs; missing required hosted inputs fail the test. |
+| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=OpenAiProviderTest#testSpeechToText` | The selected paid-capable method runs; missing credentials fail the test, and the audio fixture is generated if missing. |
 
 Skipped provider-call methods under `none` are not failures. They are the safety
-contract that keeps ordinary verification free from local-provider prerequisites and
-hosted-provider costs.
+contract that keeps ordinary verification free from local-provider calls and
+hosted-provider costs. Once a remote category is explicitly selected, missing
+required inputs should fail the selected method instead of becoming another skip.
 
 ## Remote Failure Modes
 
@@ -327,7 +332,7 @@ points at a request-shape regression.
 | `billing_hard_limit_reached` | The account or project hit a configured billing hard limit. | Add budget or lower the limit before re-running `remote_paid`. |
 | `insufficient_quota` | The account has no usable quota for the selected endpoint or model. | Add credits, wait for quota refresh, or select an allowed model. |
 | `Missing provider test environment variable: CODEGEIST_TEST_OPENAI_APIKEY` | Hosted method selected without an API key. | Set the test-specific API-key env var only when the remote call is intended. |
-| `Missing provider test environment variable: CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO` | Speech-to-text selected without a local fixture. | Generate the `espeak-ng` fixture or point to another local audio file. |
+| `Failed to start espeak-ng for OpenAI speech-to-text fixture generation` | Speech-to-text selected without an existing fixture and `espeak-ng` is not installed or not on `PATH`. | Install `espeak-ng` or pre-create `target/provider-tests/codegeist-speech-en.wav`. |
 | Assertion text mismatch in `testSpeechToText` | The model transcribed the fixture differently than expected. | Use the documented English fixture or adjust `CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED` for the selected audio. |
 
 ## Adding A Provider Feature Test

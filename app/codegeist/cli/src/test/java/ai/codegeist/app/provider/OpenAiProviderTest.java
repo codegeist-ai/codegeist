@@ -2,7 +2,6 @@ package ai.codegeist.app.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import ai.codegeist.app.config.CodegeistConfig;
 import ai.codegeist.app.config.CodegeistConfigService;
@@ -39,13 +38,18 @@ class OpenAiProviderTest {
     private static final String IMAGE_SIZE_ENV = "CODEGEIST_TEST_OPENAI_IMAGE_SIZE";
     private static final String SPEECH_MODEL_ENV = "CODEGEIST_TEST_OPENAI_SPEECH_MODEL";
     private static final String SPEECH_TO_TEXT_MODEL_ENV = "CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_MODEL";
-    private static final String SPEECH_TO_TEXT_AUDIO_ENV = "CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_AUDIO";
     private static final String SPEECH_TO_TEXT_EXPECTED_ENV = "CODEGEIST_TEST_OPENAI_SPEECH_TO_TEXT_EXPECTED";
     private static final String DEFAULT_IMAGE_MODEL = "gpt-image-1-mini";
     private static final String DEFAULT_IMAGE_SIZE = "1024x1024";
     private static final String DEFAULT_SPEECH_MODEL = "tts-1";
     private static final String DEFAULT_SPEECH_TO_TEXT_MODEL = "gpt-4o-mini-transcribe";
-    private static final String DEFAULT_SPEECH_TO_TEXT_EXPECTED = "codegeist";
+    private static final String DEFAULT_SPEECH_TO_TEXT_EXPECTED = "test";
+    private static final String SPEECH_TO_TEXT_FIXTURE_TEXT = "Hello world test.";
+    private static final String SPEECH_TO_TEXT_FIXTURE_VOICE = "en-us";
+    private static final String SPEECH_TO_TEXT_FIXTURE_SPEED = "135";
+    private static final String ESPEAK_NG_COMMAND = "espeak-ng";
+    private static final Path DEFAULT_SPEECH_TO_TEXT_AUDIO_PATH = Path.of(
+            "target", "provider-tests", "codegeist-speech-en.wav");
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper jsonMapper = new ObjectMapper();
@@ -133,8 +137,7 @@ class OpenAiProviderTest {
     @Test
     @ProviderCategory(ProviderTestCategory.remote_paid)
     void testSpeechToText() throws Exception {
-        Path audioPath = Path.of(requireEnv(SPEECH_TO_TEXT_AUDIO_ENV));
-        assumeTrue(Files.isRegularFile(audioPath), () -> "Missing audio fixture: " + audioPath);
+        Path audioPath = speechToTextAudioPath();
         String expectedText = envOrDefault(SPEECH_TO_TEXT_EXPECTED_ENV, DEFAULT_SPEECH_TO_TEXT_EXPECTED);
         MultipartBody multipartBody = multipartBody(Map.of(
                 "model", envOrDefault(SPEECH_TO_TEXT_MODEL_ENV, DEFAULT_SPEECH_TO_TEXT_MODEL),
@@ -181,8 +184,48 @@ class OpenAiProviderTest {
 
     private String requireEnv(String envName) {
         String value = System.getenv(envName);
-        assumeTrue(StringUtils.hasText(value), () -> "Missing provider test environment variable: " + envName);
+        assertThat(value)
+                .as("Missing provider test environment variable: %s", envName)
+                .isNotBlank();
         return value;
+    }
+
+    private Path speechToTextAudioPath() throws Exception {
+        Path audioPath = DEFAULT_SPEECH_TO_TEXT_AUDIO_PATH;
+        if (!Files.isRegularFile(audioPath)) {
+            generateSpeechToTextAudioFixture(audioPath);
+        }
+        assertThat(audioPath)
+                .as("OpenAI speech-to-text audio fixture must exist")
+                .isRegularFile();
+        return audioPath;
+    }
+
+    private void generateSpeechToTextAudioFixture(Path audioPath) throws Exception {
+        Path parent = audioPath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+
+        Process process;
+        try {
+            process = new ProcessBuilder(
+                    ESPEAK_NG_COMMAND,
+                    "-v", SPEECH_TO_TEXT_FIXTURE_VOICE,
+                    "-s", SPEECH_TO_TEXT_FIXTURE_SPEED,
+                    "-w", audioPath.toString(),
+                    SPEECH_TO_TEXT_FIXTURE_TEXT)
+                            .redirectErrorStream(true)
+                            .start();
+        } catch (Exception exception) {
+            throw new AssertionError("Failed to start espeak-ng for OpenAI speech-to-text fixture generation", exception);
+        }
+
+        String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        int exitCode = process.waitFor();
+        assertThat(exitCode)
+                .as("espeak-ng output: %s", output)
+                .isZero();
     }
 
     private String envOrDefault(String envName, String defaultValue) {

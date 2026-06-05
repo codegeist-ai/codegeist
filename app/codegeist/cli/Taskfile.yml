@@ -2,8 +2,11 @@ version: '3'
 
 tasks:
   test:
+    env:
+      OLLAMA_ENTER: 'false'
     desc: Run the Codegeist test suite
     cmds:
+      - task: ollama-start
       - mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test
 
   build:

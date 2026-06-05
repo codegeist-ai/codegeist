@@ -263,7 +263,8 @@ that run through `task test`. Provider methods use `ProviderCategory` and
 category to run. Categories are `none`, `local`, `remote_free`, and
 `remote_paid`; `none` is the default and runs no annotated provider feature
 methods. `remote_paid` is the explicit cost and rate-limit opt-in. Set
-`CODEGEIST_TEST_PROVIDER_CATEGORY=local` for local Ollama provider calls.
+`CODEGEIST_TEST_PROVIDER_CATEGORY=local` for local Ollama provider calls. `task
+test` starts Ollama before Maven for every test run.
 
 `AskCommandsTest` is a real local Ollama command test gated at class level by
 `CODEGEIST_TEST_PROVIDER_CATEGORY=local`. It uses `@SpringBootTest` with `ask`
@@ -353,7 +354,7 @@ download or VM prerequisites.
 
 | Task | Command | Proves |
 | --- | --- | --- |
-| `task test` | `mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test` | Maven test lifecycle, Spring context-load test, version output test, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and optional focused selector such as `task test TEST=CodegeistApplicationTests` |
+| `task test` | Runs `ollama-start` with `OLLAMA_ENTER=false`, then `mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test` | Taskfile-managed Ollama startup, Maven test lifecycle, Spring context-load test, version output test, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and optional focused selector such as `task test TEST=CodegeistApplicationTests` |
 | `task build` | `mvn --batch-mode --no-transfer-progress -DskipTests clean package` | Executable jar packaging |
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
 | `task native-smoke` | Builds native, then sources `scripts/tests/native-smoke.sh` and calls `run-native-smoke-tests` | Linux native archive unpacks in a temp directory, packaged `--version` output equals generated build version, packaged `--show-config` output equals `provider: {}`, packaged `ask` reaches host Ollama, and native smoke log file works |

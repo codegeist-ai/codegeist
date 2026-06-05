@@ -21,8 +21,9 @@ Test guidance for Codegeist contributors and coding agents.
   express.
 - Provider feature tests run through `task test` and method- or class-level
   provider categories. `CODEGEIST_TEST_PROVIDER_CATEGORY` defaults to `none`, so
-  broad verification does not require a local provider. Set it to `local` when the
-  fixed local Ollama service and model should run.
+  broad verification skips annotated provider calls. `task test` always starts the
+  fixed local Ollama service first with `OLLAMA_ENTER=false`; set the category to
+  `local` when local provider-call methods should run.
 - Hosted provider calls require explicit `remote_free` or `remote_paid` category
   selection. API-key presence alone never enables hosted provider calls.
 - Report command duration when a check is slow, platform-specific, or part of a

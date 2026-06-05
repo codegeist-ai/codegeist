@@ -100,9 +100,10 @@ small before remote provider account work begins.
   schema.
 - The implementation does not introduce public provider architecture beyond what
   the tested workflow needs.
-- Verification uses `task test` rather than direct Maven. The workflow starts local
-  Ollama first with `OLLAMA_ENTER=false task ollama-start`; it does not pull or
-  download models and does not use Testcontainers.
+- Verification uses `task test` rather than direct Maven. The `test` task starts
+  local Ollama first through `ollama-start`; selecting the local provider category
+  enables the live local provider method. Java tests do not pull or download models
+  and do not use Testcontainers.
 - The focused local-provider test uses no remote provider credentials and performs
   no hosted provider calls.
 - The Ollama call path is lazy and selected-provider only; normal config loading
@@ -124,9 +125,9 @@ small before remote provider account work begins.
 - `T006_06` later removed model selection from `ProviderConfig`; the temporary
   `codegeist.yml` now contains only provider access data while the test passes the
   model through `CodegeistChatRequest`.
-- `OLLAMA_ENTER=false task ollama-start` starts the local service in this
-  environment, and `task test TEST=LocalOllamaProviderIT` passes with the fixed
-  runtime model `llama3.2:1b`.
+- `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=LocalOllamaProviderIT`
+  starts the local service through the `test` task in this environment and passes
+  with the fixed runtime model `llama3.2:1b`.
 - Focused live verification should report Spring context startup and first chat-call
   timing only; separate model-list preflight timing is no longer part of the test.
 
@@ -135,15 +136,13 @@ small before remote provider account work begins.
 Expected focused commands from `app/codegeist/cli`:
 
 ```bash
-OLLAMA_ENTER=false task ollama-start
-task test TEST=LocalOllamaProviderIT
+CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=LocalOllamaProviderIT
 ```
 
 Then run the relevant broader command after the focused test passes:
 
 ```bash
-OLLAMA_ENTER=false task ollama-start
-task test
+CODEGEIST_TEST_PROVIDER_CATEGORY=local task test
 git --no-pager diff --check
 ```
 

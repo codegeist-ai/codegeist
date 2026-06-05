@@ -128,9 +128,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - For Codegeist implementation verification, prefer the Taskfile entrypoint from
   `app/codegeist/cli`: run `task test`, and use `task test TEST=<test-selector>`
   for focused test selectors. Do not document direct `mvn test` commands for new
-  implementation tasks. For local Ollama provider verification, run
-  `OLLAMA_ENTER=false task ollama-start` before `task test`; the Taskfile owns
-  starting the shared host Ollama container and ensuring the selected model exists.
+  implementation tasks. `task test` starts the shared host Ollama container with
+  `OLLAMA_ENTER=false` and ensures the selected model exists before Maven. For local
+  Ollama provider verification, run one command such as
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=<selector>` to enable the
+  local provider-call methods.
 - For Codegeist test or smoke-script work, read `docs/tests/README.md` first.
   Smoke scripts must keep scan-friendly status lines and emit stable
   `Duration: <label>: <seconds>s` lines for meaningful Maven, package, jar,

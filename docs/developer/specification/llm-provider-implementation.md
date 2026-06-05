@@ -411,10 +411,11 @@ Implementation constraints:
 - The focused live test should connect to an externally managed local Ollama
   instance at the fixed base URL `http://localhost:11434` and use the fixed model
   `llama3.2:1b`.
-- Start or verify the local Ollama service through the repo Taskfile before tests:
-  run `OLLAMA_ENTER=false task ollama-start` from `app/codegeist/cli` before
-  `task test`. The Taskfile owns ensuring the selected model is present; Java tests
-  should not pull, download, create, or delete local Ollama models themselves.
+- Start or verify the local Ollama service through the repo Taskfile: run local
+  provider tests with `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test ...`. The
+  `test` task invokes `ollama-start` before Maven for every test run. The Taskfile
+  owns ensuring the selected model is present; Java tests should not pull, download,
+  create, or delete local Ollama models themselves.
 
 ## One-Shot CLI Prompt Command
 
@@ -480,8 +481,9 @@ For the first local provider test:
   `task test TEST=LocalOllamaProviderIT`.
 - Use `task test` for Codegeist verification. Do not document direct `mvn test`
   commands for new implementation tasks.
-- Run `OLLAMA_ENTER=false task ollama-start` before `task test` when using
-  `CODEGEIST_TEST_PROVIDER_CATEGORY=local`.
+- Use one Taskfile command for local provider checks, for example
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest`; the
+  `test` task starts Ollama first for every Maven test run.
 - Report Spring context startup and first chat-call timings separately. Do not add
   a separate model-list preflight before the chat call.
 - Use a narrow prompt and robust assertion.

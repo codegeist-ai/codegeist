@@ -391,7 +391,6 @@ task test TEST=CodegeistConfigCommandTest,CodegeistConfigServiceTest
 task test TEST=CodegeistProviderConfigTest
 task test TEST=CodegeistConfigSpelEvaluationTest
 CODEGEIST_TEST_PROVIDER_CATEGORY=none task test TEST=OpenAiProviderTest,OllamaProviderTest
-OLLAMA_ENTER=false task ollama-start
 CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=AskCommandsTest,OllamaProviderTest
 task test
 git --no-pager diff --check

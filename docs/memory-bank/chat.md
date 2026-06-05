@@ -113,7 +113,8 @@
   `final-smoke-suite`, and `ollama-start`. Local smoke scripts live under
   `scripts/tests/`. `task test` delegates to Maven and accepts a focused selector
   as `task test TEST=<test-selector>`; new implementation tasks should document
-  `task test` instead of direct `mvn test` commands. `ollama-start` starts a
+  `task test` instead of direct `mvn test` commands. `task test` always runs
+  `ollama-start` with `OLLAMA_ENTER=false` before Maven. `ollama-start` starts a
   persistent `ollama/ollama` container named `codegeist-ollama` with models
   mounted from `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}`. It uses NVIDIA GPU
   Docker flags only when `OLLAMA_GPU=true` or `OLLAMA_GPU=auto` detects NVIDIA
@@ -286,23 +287,24 @@
   `CodegeistChatRequest`, and provider
   feature tests run through `task test` with method- or class-level
   `CODEGEIST_TEST_PROVIDER_CATEGORY` gating. The category default is `none`, so
-  broad `task test` does not require a local provider; set
-  `CODEGEIST_TEST_PROVIDER_CATEGORY=local` for the fixed local Ollama service and
-  `llama3.2:1b` model.
+  broad `task test` skips annotated provider calls; set
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local` to run methods that call the fixed local
+  Ollama service and `llama3.2:1b` model.
   Implemented provider test classes are `OpenAiProviderTest`, `OllamaProviderTest`,
   and class-gated `AskCommandsTest`; hosted methods require explicit `remote_free`
   or `remote_paid` category selection, and API-key presence alone never triggers
   remote calls. Verification passed for config-only provider tests, default
   non-provider `task test`, and local Ollama chat through both
-  `LocalOllamaProviderIT` and `OllamaProviderTest`. The full OpenAI `remote_paid`
-  run passed after the account had usable quota. `ask` uses the first configured
-  provider and its provider-owned default model; Linux native smoke, Windows QEMU
-  jar smoke, and Windows QEMU native smoke now pass against real host Ollama. The
-  final smoke suite passed after the provider-owned default-model change. The test
-  defaults now use low-cost OpenAI models `gpt-image-1-mini`, `tts-1`, and
-  `gpt-4o-mini-transcribe`; the successful speech-to-text fixture was generated
-  with `espeak-ng` as `target/codegeist-speech-en.wav` containing the phrase
-  `Hello world test.`.
+  `LocalOllamaProviderIT` and `OllamaProviderTest`. The explicit OpenAI
+  `remote_paid` run is currently blocked by the configured API key returning
+  `401 invalid_api_key`; rerun it only after `CODEGEIST_TEST_OPENAI_APIKEY` is
+  valid for the account being tested. `ask` uses the first configured provider and
+  its provider-owned default model; Linux native smoke, Windows QEMU jar smoke, and
+  Windows QEMU native smoke now pass against real host Ollama. The final smoke suite
+  passed after the provider-owned default-model change. The test defaults now use
+  low-cost OpenAI models `gpt-image-1-mini`, `tts-1`, and
+  `gpt-4o-mini-transcribe`; the speech-to-text test generates its default English
+  `espeak-ng` fixture under `target/provider-tests/` when needed.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -365,9 +367,9 @@
   imports belong only in the concrete provider model such as `OllamaChatModel`,
   which should receive `OllamaProviderConfig` directly and map the runtime model at
   call time.
-- For T006_05 local Ollama verification, run `OLLAMA_ENTER=false task ollama-start`
-  from `app/codegeist/cli` before `task test`; use `task test` or
-  `task test TEST=<test-selector>` rather than direct Maven test commands.
+- For local Ollama verification, use one Taskfile command such as
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=<test-selector>`; the
+  `test` task starts Ollama before Maven for every test run.
 - Spring AI Agent Utils may be used directly as a private implementation detail
   when useful, but Codegeist runtime, provider, tool, permission, workspace,
   event, session, storage, API, and UI contracts must remain Codegeist-owned.
