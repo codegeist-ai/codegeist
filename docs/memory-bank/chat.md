@@ -305,6 +305,20 @@
   low-cost OpenAI models `gpt-image-1-mini`, `tts-1`, and
   `gpt-4o-mini-transcribe`; the speech-to-text test generates its default English
   `espeak-ng` fixture under `target/provider-tests/` when needed.
+- `docs/tasks/T007_build-codegeist-runtime-harness/` is open as the replacement
+  implementation epic for the foundational OpenCode-style runtime harness. It
+  intentionally depends on the existing T006 provider/chat base instead of becoming
+  another provider child. The parent captures the current OpenCode source map for
+  CLI/TUI, session/prompt loop, tools, permissions, storage/events, providers,
+  MCP, and plugins, plus the Spring AI and Spring AI Agent Utils tool-calling
+  evidence gathered for Codegeist. Child order is: `T007_01` source-backed
+  OpenCode/Agent Utils harness analysis, `T007_02` runtime/session/event spine,
+  `T007_03` terminal TUI client harness, `T007_04` read-only workspace tool
+  registry, `T007_05` permission and side-effect gates, `T007_06` Spring AI
+  tool-calling through Codegeist policy, `T007_07` patch/edit and shell tools, and
+  `T007_08` session storage/resume. T007 keeps PF4J, JBang, Vaadin, server, API,
+  SDK/OpenAPI, plugin marketplace, and MCP server management deferred until the
+  built-in harness is stable.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -436,6 +450,10 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
+- Start the new runtime-harness implementation from `T007_01` or `T007_02`, not
+  from TUI or side-effecting tools. TUI must stay a runtime client, tools must pass
+  through Codegeist-owned mode, permission, workspace, event, and session policy,
+  and raw Spring AI Agent Utils tools must not be exposed directly to providers.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`
