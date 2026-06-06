@@ -175,6 +175,12 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   tasks, keep the active task file scoped to the next smallest tested Spring
   workflow and avoid placeholder classes, ids, ports, enums, package layers, or
   validation hierarchies.
+- For `T007_build-codegeist-runtime-harness` implementation tasks, use
+  `docs/developer/specification/runtime-harness-implementation.md` as the planned
+  implementation map. Start from `T007_02` unless the active task says otherwise,
+  and treat the package/class diagrams as phased direction, not permission to add
+  placeholder packages, records, enums, services, adapters, or storage before a
+  focused test needs them.
 - For the first provider-backed workflow in the replacement epic, use an externally
   managed local Ollama instance started through `task ollama-start` instead of a
   fake provider. Do not use Testcontainers or pull local models from Java tests;

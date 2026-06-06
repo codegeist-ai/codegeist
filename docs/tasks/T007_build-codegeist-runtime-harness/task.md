@@ -22,6 +22,12 @@ and smoke that path in JVM/native artifacts. It does not yet have the central
 runtime harness that OpenCode provides around prompts, sessions, tools, approval,
 workspace policy, and TUI rendering.
 
+The planned implementation shape is captured in
+`docs/developer/specification/runtime-harness-implementation.md`. Use that document
+for package direction, class diagrams, runtime flows, tool-calling boundaries,
+permission sequencing, storage deferral, and verification expectations before
+starting implementation children.
+
 This task creates the replacement implementation epic. It intentionally follows the
 post-cleanup project rule: add Java source only when a focused test requires real
 behavior. Do not recreate the removed broad implementation handoff documents or

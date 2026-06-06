@@ -14,6 +14,8 @@ For future direction, use only the compact, current specification set under
 - `java-generation-guidance.md` - iterative Java/Spring implementation rules.
 - `llm-provider-implementation.md` - provider-neutral `CodegeistChatModel<T>`
   pattern for mapping selected provider config into Spring AI chat models.
+- `runtime-harness-implementation.md` - planned T007 runtime harness package,
+  class, event, tool, permission, tool-callback, and storage implementation shape.
 - `testing-strategy-and-agent-rules.md` - test-first workflow and timing rules.
 - `runtime-vocabulary.md` - vocabulary only, not package or class requirements.
 - `build-release-and-binary-smoke-strategy.md` and `native-packaging-posture.md` -

@@ -14,6 +14,8 @@
 - `.opencode` is a git submodule tracking the `release` branch of
   `codegeist-agent-kit`; `.devcontainer/` is a git submodule tracking the
   `release` branch of `codegeist-devcontainer-kit`.
+- `docs/memory-bank/chat.md` is the canonical lightweight project memory. The
+  legacy root-level `chat.md` pointer has been removed.
 - `.devcontainer` now uses `.codegeist/.local.env` and
   `.codegeist/compose.local.yml` for local runtime overrides. The legacy root
   `compose.local.yml` file is removed; `initialize.sh` can copy older local root
@@ -220,6 +222,7 @@
   - `build-release-and-binary-smoke-strategy.md`
   - `native-packaging-posture.md`
   - `runtime-vocabulary.md`
+  - `runtime-harness-implementation.md`
 - `docs/developer/implementation/` was removed. Do not recreate it as a broad
   handoff layer.
 - The previous T004 implementation epic was discarded and removed. Its replacement
@@ -308,12 +311,19 @@
 - `docs/tasks/T007_build-codegeist-runtime-harness/` is open as the replacement
   implementation epic for the foundational OpenCode-style runtime harness. It
   intentionally depends on the existing T006 provider/chat base instead of becoming
-  another provider child. The parent captures the current OpenCode source map for
-  CLI/TUI, session/prompt loop, tools, permissions, storage/events, providers,
-  MCP, and plugins, plus the Spring AI and Spring AI Agent Utils tool-calling
-  evidence gathered for Codegeist. Child order is: `T007_01` source-backed
-  OpenCode/Agent Utils harness analysis, `T007_02` runtime/session/event spine,
-  `T007_03` terminal TUI client harness, `T007_04` read-only workspace tool
+  another provider child. `T007_01` is solved as a documentation-only,
+  source-backed OpenCode/Spring AI/Agent Utils harness analysis in
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_01_analyze-opencode-runtime-and-agent-utils-harness.md`.
+  It sets the implementation sequence as runtime/session/event spine, terminal
+  client, read-only tools, permissions, Spring AI tool-calling through Codegeist
+  policy, patch/edit/shell tools, then storage. The TUI remains a runtime client
+  over events, not a second runtime. Spring AI tool calls must use Codegeist-owned
+  `ToolCallback` wrappers; raw `@Tool` objects or raw Agent Utils tools must not be
+  exposed directly to providers. Agent Utils read/list/glob/grep are candidate
+  private implementation details after Codegeist workspace, permission, redaction,
+  and output policy; shell, write/edit, skills, memory, and subagents remain
+  deferred. Remaining child order starts at `T007_02` runtime/session/event spine,
+  then `T007_03` terminal TUI client harness, `T007_04` read-only workspace tool
   registry, `T007_05` permission and side-effect gates, `T007_06` Spring AI
   tool-calling through Codegeist policy, `T007_07` patch/edit and shell tools, and
   `T007_08` session storage/resume. T007 keeps PF4J, JBang, Vaadin, server, API,
@@ -450,10 +460,13 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- Start the new runtime-harness implementation from `T007_01` or `T007_02`, not
-  from TUI or side-effecting tools. TUI must stay a runtime client, tools must pass
-  through Codegeist-owned mode, permission, workspace, event, and session policy,
-  and raw Spring AI Agent Utils tools must not be exposed directly to providers.
+- Start the next runtime-harness implementation from `T007_02`, not from TUI or
+  side-effecting tools. Use
+  `docs/developer/specification/runtime-harness-implementation.md` for the planned
+  package, class, flow, event, tool, permission, callback, storage, and verification
+  shape. TUI must stay a runtime client, tools must pass through Codegeist-owned
+  mode, permission, workspace, event, and session policy, and raw Spring AI Agent
+  Utils tools must not be exposed directly to providers.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`
