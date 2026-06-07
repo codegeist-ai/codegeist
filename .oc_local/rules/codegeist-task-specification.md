@@ -176,11 +176,18 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   workflow and avoid placeholder classes, ids, ports, enums, package layers, or
   validation hierarchies.
 - For `T007_build-codegeist-runtime-harness` implementation tasks, use
-  `docs/developer/specification/runtime-harness-implementation.md` as the planned
-  implementation map. Start from `T007_02` unless the active task says otherwise,
-  and treat the package/class diagrams as phased direction, not permission to add
-  placeholder packages, records, enums, services, adapters, or storage before a
-  focused test needs them.
+  `docs/developer/specification/runtime-harness-implementation.md` as the chat-file
+  tool harness implementation map. T007 now means `ask --chat <chat.json>`,
+  resumable file-based chat state, Codegeist-owned `codegeist.yml` `mcp:` client
+  config, MCP/read/write tools, patch/edit, shell, and a minimum usable terminal
+  coding-agent TUI over the same chat file. Keep `chat.json` limited to chat
+  history and tool activity; do not store provider config, selected provider/model,
+  MCP client definitions, enabled tool definitions, or status there. Do not add a
+  database, server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills,
+  memory, or subagents inside T007 unless the task is explicitly rescoped again.
+- For `T007_05`, use
+  `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md` as
+  the source-backed OpenCode TUI element inventory and JLine implementation mapping.
 - For the first provider-backed workflow in the replacement epic, use an externally
   managed local Ollama instance started through `task ollama-start` instead of a
   fake provider. Do not use Testcontainers or pull local models from Java tests;

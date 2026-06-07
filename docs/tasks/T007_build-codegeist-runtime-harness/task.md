@@ -1,37 +1,17 @@
-# T007 Build Codegeist Runtime Harness
+# T007 Build Chat File Tool Harness
 
 Status: open
 
 ## Goal
 
-Implement the first Codegeist-owned runtime harness that can grow into a practical
-replacement for OpenCode in local coding-agent workflows.
+Implement a resumable Codegeist chat harness centered on a portable `chat.json`
+file. The existing `ask` command gains an optional `--chat <chat.json>` parameter,
+and the same chat file becomes the source of truth for chat history, tool activity,
+TUI rendering, and subsequent saves.
 
-This parent task turns the already completed architecture and provider groundwork
-into small implementation slices. The target is not a one-shot clone of OpenCode;
-it is a Java-first harness that preserves Codegeist boundaries while delivering the
-core behavior users need from OpenCode: terminal interaction, sessions, streaming
-events, agent modes, tools, permissions, workspace safety, provider calls, and
-eventual continuation.
-
-## Why This Exists
-
-Current Codegeist can start as a Spring Boot/Spring Shell application, load and
-render provider config, call local Ollama through the provider-neutral chat seam,
-and smoke that path in JVM/native artifacts. It does not yet have the central
-runtime harness that OpenCode provides around prompts, sessions, tools, approval,
-workspace policy, and TUI rendering.
-
-The planned implementation shape is captured in
-`docs/developer/specification/runtime-harness-implementation.md`. Use that document
-for package direction, class diagrams, runtime flows, tool-calling boundaries,
-permission sequencing, storage deferral, and verification expectations before
-starting implementation children.
-
-This task creates the replacement implementation epic. It intentionally follows the
-post-cleanup project rule: add Java source only when a focused test requires real
-behavior. Do not recreate the removed broad implementation handoff documents or
-placeholder Java contracts.
+T007 now targets a practical local coding-agent loop: one chat file, optional MCP,
+Codegeist tools, patch/edit, shell, TUI, and file-based storage. Do not add a
+database or server runtime for this task.
 
 ## Current Codegeist Baseline
 
@@ -50,162 +30,133 @@ placeholder Java contracts.
   and starts the fixed local Ollama container with `OLLAMA_ENTER=false` before
   Maven.
 - `docs/developer/architecture/architecture.md` describes current state and must be
-  updated whenever this task adds implemented packages, classes, config, runtime
+  updated whenever implementation changes packages, classes, configuration, runtime
   flows, or tests.
 
-## Existing Tasks This Must Respect
+## Completion Feature Set
 
-- `T001_define-codegeist-opencode-feature-architecture` completed the
-  documentation-only OpenCode feature architecture. Runtime owns orchestration;
-  CLI/TUI/server clients render and collect input only.
-- `T002_define-codegeist-mvp-foundation-blueprints` keeps the useful foundation
-  baseline and explicitly says future runtime, session, event, context, provider,
-  tool, permission, workspace, patch/edit, shell, storage, extension, and client
-  work must be recreated as small tested implementation tasks.
-- `T003_define-codegeist-opencode-core-source-contracts` is now implementation
-  readiness guidance. Removed `T003_05` through `T003_12` must not be resurrected.
-- `T006_build-provider-configuration-feature` provides provider config, local
-  Ollama, provider feature-test categories, and the one-shot `ask` command. T007
-  depends on this provider base instead of becoming another provider child.
+T007 is complete only when these features are implemented and tested:
 
-## OpenCode Evidence Already Gathered
+- `ask` accepts an optional `--chat <chat.json>` parameter.
+- If `--chat` points to an existing file, `ask` loads that chat, appends the new
+  prompt and response/tool activity, and saves the same file.
+- If `--chat` points to a missing file, `ask` creates a new resumable chat file at
+  that path.
+- Without `--chat`, `ask` keeps the existing one-shot behavior and stdout contract.
+- `chat.json` stores only chat-relevant information needed to resume and save the
+  chat: schema version, chat id, timestamps, working directory, messages, assistant
+  responses, tool calls/results, patch/edit/shell summaries, and TUI-renderable
+  state.
+- `chat.json` does not store provider config, selected provider, selected model, MCP
+  client definitions, enabled tool definitions, or chat status.
+- MCP clients are configured through a Codegeist-owned top-level `mcp:` map in
+  direct `codegeist.yml`; Spring AI's `spring.ai.mcp.client.*` tree is not the
+  public Codegeist config contract.
+- Spring AI MCP client support is installed through `spring-ai-starter-mcp-client`
+  and mapped from the Codegeist MCP config where needed.
+- Codegeist-owned tools are available to chats. The first useful set includes
+  read/write working-directory file tools and MCP tools.
+- Patch/edit tools can mutate files under the chat working directory through the chat tool path and record
+  bounded results in `chat.json`.
+- Shell tools can run bounded local commands through the chat tool path and record
+  bounded results in `chat.json`.
+- A terminal TUI can open or create a `chat.json`, render the chat, tool activity,
+  file changes, shell output, runtime status, and errors needed for daily local
+  coding-agent use, submit prompts, and save back to the same file.
+- Existing `--version`, `--show-config`, and no-`--chat` `ask` behavior keeps
+  working.
 
-Use OpenCode as a behavior reference, not a Java package blueprint. The first
-read-only exploration identified these high-value source paths:
+## Chat File Contract
 
-| Area | Source paths |
-| --- | --- |
-| CLI bootstrap and headless run | `docs/third-party/opencode/source/packages/opencode/src/index.ts`, `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/run.ts`, `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/serve.ts`, `docs/third-party/opencode/source/packages/opencode/src/server/server.ts` |
-| TUI client state and rendering | `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/context/sdk.tsx`, `context/event.ts`, `context/sync.tsx`, `component/prompt/index.tsx`, `routes/session/index.tsx` |
-| Session and prompt loop | `docs/third-party/opencode/source/packages/opencode/src/session/prompt.ts`, `session/processor.ts`, `session/llm.ts`, `session/message-v2.ts`, `session/run-state.ts` |
-| Agents and modes | `docs/third-party/opencode/source/packages/opencode/src/agent/agent.ts`, `docs/third-party/opencode/source/packages/opencode/src/config/agent.ts` |
-| Tool registry and execution | `docs/third-party/opencode/source/packages/opencode/src/tool/tool.ts`, `docs/third-party/opencode/source/packages/opencode/src/tool/registry.ts` |
-| Permissions | `docs/third-party/opencode/source/packages/opencode/src/permission/index.ts`, `docs/third-party/opencode/source/packages/opencode/src/permission/evaluate.ts` |
-| Storage and events | `docs/third-party/opencode/source/packages/opencode/src/storage/db.ts`, `docs/third-party/opencode/source/packages/opencode/src/session/session.sql.ts`, `docs/third-party/opencode/source/packages/opencode/src/sync/index.ts`, `docs/third-party/opencode/source/packages/opencode/src/bus/index.ts` |
-| Server event streams | `docs/third-party/opencode/source/packages/opencode/src/server/routes/instance/event.ts`, `docs/third-party/opencode/source/packages/opencode/src/server/routes/instance/httpapi/event.ts` |
-| Provider/auth/model resolution | `docs/third-party/opencode/source/packages/opencode/src/provider/provider.ts`, `docs/third-party/opencode/source/packages/opencode/src/auth/index.ts` |
-| MCP and plugins | `docs/third-party/opencode/source/packages/opencode/src/mcp/index.ts`, `docs/third-party/opencode/source/packages/opencode/src/plugin/index.ts`, `docs/third-party/opencode/source/packages/plugin/src/index.ts` |
+The first `chat.json` shape should be small, versioned, and inspectable. The exact
+Java records should be added only when implementation tests need them, but the file
+must support this information class:
 
-Important OpenCode observations to carry forward:
-
-- OpenCode's core runtime is session oriented: input arrives from CLI/TUI/web/SDK,
-  session processing builds prompts, provider/model selection happens before the LLM
-  stream, tool requests become message parts/events, and permission decisions gate
-  side effects.
-- The TUI is a client over the same core runtime and projected event/session state,
-  not a separate implementation of agent behavior.
-- Tool execution is broad and includes built-ins, plugin-provided tools, MCP tools,
-  file operations, shell, patch/edit, web, LSP, task/subagent, and permission
-  mediation.
-- Permission persistence includes concepts such as ask/reply and longer-lived
-  approvals, but exact wildcard and `always` behavior still needs deeper source or
-  runtime verification before Codegeist copies any policy.
-- OpenCode has both legacy Hono and Effect HttpApi route surfaces. Codegeist should
-  not copy this shape; server parity remains deferred until the runtime harness is
-  stable.
-
-## Spring AI And Agent Utils Evidence Already Gathered
-
-Spring AI `ToolCallback` exposes tool definition, metadata, and `call(...)` methods.
-`ChatClient` can receive runtime `toolCallbacks(...)` or `@Tool` objects, and model
-providers can execute tool calling internally unless the application controls that
-boundary carefully.
-
-Spring AI Agent Utils `0.7.0` is already on the Codegeist classpath. It provides
-Claude Code-inspired tools and helpers that are useful implementation references or
-private dependencies, but Codegeist must own public runtime, provider, tool,
-permission, workspace, event, session, storage, and client contracts.
-
-High-value Agent Utils source paths:
-
-| Capability | Source paths | Early recommendation |
-| --- | --- | --- |
-| Grep and glob | `docs/third-party/spring-ai-agent-utils/source/spring-ai-agent-utils/src/main/java/org/springaicommunity/agent/tools/GrepTool.java`, `GlobTool.java` | Adopt or wrap as private implementation after Codegeist validates workspace and bounds output. |
-| Directory and file reads | `ListDirectoryTool.java`, `FileSystemTools.java` | Use read/list concepts behind Codegeist path, size, ignore, and redaction policy. |
-| Shell execution | `ShellTools.java`, `AgentEnvironment.java` | Defer until Codegeist shell permission, cwd, timeout, destructive-command, and output policy exist. |
-| User questions | `AskUserQuestionTool.java`, `CommandLineQuestionHandler.java` | Wrap through Codegeist UI/permission events; do not let a console handler own TUI approval UX. |
-| Todo/session progress | `TodoWriteTool.java` | Use concepts for session progress and event shape; avoid raw durable model reuse. |
-| Skills and memory | `SkillsTool.java`, `AutoMemoryTools.java`, `AutoMemoryToolsAdvisor.java` | Defer or wrap; Codegeist must own trust, storage, redaction, retention, and context-size policy. |
-| Task/subagents | `tools/task/TaskTool.java`, A2A module docs | Defer until child sessions, cancellation, storage, auth, and trust decisions exist. |
-
-Provider exposure rule:
-
-```text
-Spring AI provider
-  -> Codegeist-owned tool callback/service
-  -> Codegeist mode, permission, workspace, event, session policy
-  -> optional Agent Utils implementation detail
+```json
+{
+  "schemaVersion": 1,
+  "id": "2026-06-06T120000Z-abc123",
+  "createdAt": "2026-06-06T12:00:00Z",
+  "updatedAt": "2026-06-06T12:01:00Z",
+  "workingDir": "/home/test/Projects/codegeist-ai/codegeist",
+  "messages": [],
+  "toolResults": []
+}
 ```
 
-Avoid exposing raw broad Agent Utils tools directly to model providers because that
-would bypass Codegeist policy.
+Rules:
+
+- Keep one chat per file.
+- Treat `chat.json` as the resumable state source, not as an export format derived
+  from another database.
+- Store enough tool result data to render and continue the chat, but keep large
+  command output and large file content bounded.
+- Do not store API keys, OAuth tokens, cloud credentials, or evaluated secret values.
+- Do not store provider selection, model selection, MCP client definitions, enabled
+  tool definitions, or status in `chat.json`; resolve those from current config and
+  runtime behavior.
+- Add fields only when the active child task and tests need them.
+
+## MCP Configuration Contract
+
+Use Codegeist's direct `codegeist.yml` shape for MCP clients:
+
+```yaml
+mcp:
+  filesystem:
+    type: stdio
+    command: npx
+    args:
+      - -y
+      - "@modelcontextprotocol/server-filesystem"
+      - .
+```
+
+The first implementation should support only `stdio` clients unless a focused test
+requires another transport. Keep client ids as map keys. Add fields such as
+environment, timeout, or enablement only when implementation tests need them.
 
 ## Child Tasks
 
-- `T007_01_analyze-opencode-runtime-and-agent-utils-harness.md` - complete the
-  source-backed harness analysis before implementation decisions.
-- `T007_02_implement-runtime-session-event-spine.md` - add the first runtime,
-  session/turn, and typed event path around the existing provider chat service.
-- `T007_03_add-terminal-tui-client-harness.md` - add the first terminal TUI client
-  over runtime events without creating a second runtime.
-- `T007_04_add-tool-registry-and-read-only-workspace-tools.md` - add tool
-  descriptors, registry, and read-only workspace tools for list/read/glob/grep.
-- `T007_05_add-permission-and-side-effect-gates.md` - add mode, permission,
-  approval, and workspace gates before side-effecting tools.
-- `T007_06_wire-spring-ai-tool-calling-through-codegeist-policy.md` - expose
-  Codegeist-owned tool callbacks to Spring AI and route model tool calls through
-  policy.
-- `T007_07_add-patch-edit-and-shell-tools.md` - add controlled patch/edit and shell
-  tools after approval and workspace behavior are proven.
-- `T007_08_add-session-storage-and-resume.md` - persist enough session, event,
-  permission, and tool-result state for continuation and replay.
+- `T007_01_define-chat-file-tool-harness-scope.md` - record this expanded feature
+  scope and close the earlier minimal-MCP-only plan.
+- `T007_02_add-chat-file-and-ask-chat-option.md` - add `ask --chat <chat.json>` and
+  the versioned chat file model/save-load behavior.
+- `T007_03_add-mcp-and-read-write-tools.md` - add Codegeist MCP config plus the first
+  read/list/glob/grep/write tool path.
+- `T007_04_add-patch-edit-and-shell-tools.md` - add bounded patch/edit and shell
+  tools that persist tool activity into `chat.json`.
+- `T007_05_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,
+  renders, updates, and saves the same chat file.
+- `T007_06_verify-chat-file-tool-harness.md` - run focused and broad verification,
+  update architecture docs, and ensure the parent acceptance criteria hold.
 
 ## Parent Acceptance Criteria
 
-- The runtime harness accepts client input from CLI and TUI-oriented adapters
-  without duplicating orchestration in the clients.
-- A prompt run can create or continue a session/turn, emit typed runtime events,
-  call the selected provider through existing provider-neutral services, and return
-  renderable output.
-- Tools are described by Codegeist-owned descriptors and executed only through
-  Codegeist-owned services.
-- Tool results can become runtime events and session parts without storing
-  unbounded raw output as the durable model.
-- Plan/build mode, permission policy, approval events, and workspace validation sit
-  between model/tool requests and side effects.
-- Read-only tools land before write, patch, shell, network, plugin, or subagent
-  tools.
-- Spring AI and Spring AI Agent Utils are private implementation dependencies unless
-  a focused task explicitly promotes a Codegeist-owned boundary.
-- Existing `--version`, `--show-config`, and `ask` command behavior keeps working.
-- `docs/developer/architecture/architecture.md` is updated in each implementation
-  child when packages, classes, configuration, runtime flows, or tests change.
+- `ask --chat <chat.json> <prompt>` can create a new chat file and can resume an
+  existing chat file.
+- The no-`--chat` `ask` path still works without requiring chat file state.
+- `CodegeistConfig` can load the minimal `mcp:` client map from direct
+  `codegeist.yml`.
+- Configured MCP callbacks can be made available to chat calls.
+- Codegeist-owned tools include read/list/glob/grep/write plus patch/edit and shell.
+- Tool calls and results are persisted in the active `chat.json` with bounded output.
+- A terminal TUI uses `chat.json` as its state source and does not create a second
+  persistence model.
+- `docs/developer/architecture/architecture.md` documents the implemented chat file,
+  MCP, tools, patch/edit, shell, and TUI behavior.
 
 ## Non-Goals
 
-- Do not implement PF4J, JBang, Vaadin, headless server, API, SDK/OpenAPI, plugin
-  marketplace behavior, or MCP server management in the first harness slices.
+- Do not implement a database, server-side session service, remote sync, API/SDK,
+  Vaadin, desktop UI, PF4J, plugin marketplace, JBang, LSP, skills, memory, or
+  subagents in this T007 slice.
 - Do not copy OpenCode's Bun, TypeScript, Effect, Hono, OpenTUI/Solid, storage
-  schemas, generated SDK, or package layout.
-- Do not expose raw Agent Utils tools directly to Spring AI providers.
-- Do not add placeholder packages, ids, ports, enums, records, interfaces, adapters,
-  validation hierarchies, or empty directories before a focused test needs them.
-- Do not broaden provider coverage or trigger hosted provider calls as part of the
-  harness.
+  schemas, generated SDK, package layout, MCP runtime, or plugin surface.
+- Do not broaden provider coverage or trigger hosted provider calls as part of this
+  task.
+- Do not store secrets in `chat.json`.
 - Do not break the current noninteractive Spring Shell command path.
-
-## Default Research Questions
-
-Use `/ask-project opencode ...` and `/ask-project spring-ai-agent-utils ...` when
-the task needs source-backed behavior details. High-value questions:
-
-```text
-/ask-project opencode "How does a user prompt flow from the CLI or TUI through session processing, provider streaming, tool execution, permissions, and event rendering? Cite source files."
-/ask-project opencode "How are tools registered and executed, including MCP tools? Cite source files and identify policy boundaries."
-/ask-project opencode "How does permission approval flow from tool request to user decision to execution? Cite source files."
-/ask-project spring-ai-agent-utils "Which classes already implement grep, glob, list-directory, file read, shell, and question behavior, and what validation or output bounding do they apply? Cite source files and tests."
-/ask-project spring-ai-agent-utils "How are ToolCallback and @Tool-based utilities built and registered, and where would a Codegeist wrapper need to map descriptors, permissions, and results? Cite source files."
-```
 
 ## Verification
 

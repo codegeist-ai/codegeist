@@ -308,27 +308,27 @@
   low-cost OpenAI models `gpt-image-1-mini`, `tts-1`, and
   `gpt-4o-mini-transcribe`; the speech-to-text test generates its default English
   `espeak-ng` fixture under `target/provider-tests/` when needed.
-- `docs/tasks/T007_build-codegeist-runtime-harness/` is open as the replacement
-  implementation epic for the foundational OpenCode-style runtime harness. It
-  intentionally depends on the existing T006 provider/chat base instead of becoming
-  another provider child. `T007_01` is solved as a documentation-only,
-  source-backed OpenCode/Spring AI/Agent Utils harness analysis in
-  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_01_analyze-opencode-runtime-and-agent-utils-harness.md`.
-  It sets the implementation sequence as runtime/session/event spine, terminal
-  client, read-only tools, permissions, Spring AI tool-calling through Codegeist
-  policy, patch/edit/shell tools, then storage. The TUI remains a runtime client
-  over events, not a second runtime. Spring AI tool calls must use Codegeist-owned
-  `ToolCallback` wrappers; raw `@Tool` objects or raw Agent Utils tools must not be
-  exposed directly to providers. Agent Utils read/list/glob/grep are candidate
-  private implementation details after Codegeist workspace, permission, redaction,
-  and output policy; shell, write/edit, skills, memory, and subagents remain
-  deferred. Remaining child order starts at `T007_02` runtime/session/event spine,
-  then `T007_03` terminal TUI client harness, `T007_04` read-only workspace tool
-  registry, `T007_05` permission and side-effect gates, `T007_06` Spring AI
-  tool-calling through Codegeist policy, `T007_07` patch/edit and shell tools, and
-  `T007_08` session storage/resume. T007 keeps PF4J, JBang, Vaadin, server, API,
-  SDK/OpenAPI, plugin marketplace, and MCP server management deferred until the
-  built-in harness is stable.
+- `docs/tasks/T007_build-codegeist-runtime-harness/` is open as the chat-file tool
+  harness epic. T007 now means `ask --chat <chat.json>`, resumable file-based chat
+  state, Codegeist-owned `codegeist.yml` `mcp:` client config, MCP/read/write tools
+  where `write` is focused create/overwrite behavior, patch/edit, shell, and a
+  minimum usable terminal coding-agent TUI over the same chat file. `chat.json` is the
+  source of truth for saving and resuming chat history and tool activity only; it
+  must not store provider config, selected provider/model, MCP client definitions,
+  enabled tool definitions, or status. `T007_01` is open as the scope-definition child at
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_01_define-chat-file-tool-harness-scope.md`.
+  Third-party research prompts and synthesized answers live in
+  `docs/tasks/T007_build-codegeist-runtime-harness/third-party-question-catalog.md`
+  and `docs/tasks/T007_build-codegeist-runtime-harness/third-party-question-answers.md`.
+  The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
+  `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
+  Remaining children are `T007_02_add-chat-file-and-ask-chat-option.md`,
+  `T007_03_add-mcp-and-read-write-tools.md`,
+  `T007_04_add-patch-edit-and-shell-tools.md`,
+  `T007_05_add-terminal-tui-over-chat-file.md`, and
+  `T007_06_verify-chat-file-tool-harness.md`. T007 still avoids a database, server
+  runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, and
+  subagents.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -460,13 +460,10 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- Start the next runtime-harness implementation from `T007_02`, not from TUI or
-  side-effecting tools. Use
-  `docs/developer/specification/runtime-harness-implementation.md` for the planned
-  package, class, flow, event, tool, permission, callback, storage, and verification
-  shape. TUI must stay a runtime client, tools must pass through Codegeist-owned
-  mode, permission, workspace, event, and session policy, and raw Spring AI Agent
-  Utils tools must not be exposed directly to providers.
+- Start the next T007 implementation from `T007_02`, adding `ask --chat <chat.json>`
+  and the versioned chat file model before tools and TUI depend on it. Use
+  `docs/developer/specification/runtime-harness-implementation.md` for the current
+  chat-file tool harness plan.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`
