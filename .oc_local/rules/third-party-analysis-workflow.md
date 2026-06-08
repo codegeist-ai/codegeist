@@ -57,6 +57,10 @@ explicitly asks for a handoff snapshot.
 
 - Do not create competing workspaces for the same project name.
 - Do not write generated Graphify output inside `source/` or any source submodule.
+- When building a temporary focused Graphify input corpus, use a non-ignored
+  directory or a writable external temp path and delete it after the run. Do not
+  use ignored `graphify-corpus*` paths as active inputs because Graphify respects
+  repository ignore patterns and may detect a zero-file corpus.
 - `/analyse-project` must create or refresh `repomix-output.xml` for normal deep
   analysis.
 - Do not treat Graphify communities as final feature boundaries without checking

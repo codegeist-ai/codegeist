@@ -44,7 +44,10 @@ packages/opencode/src/config/**
 packages/opencode/src/agent/**
 ```
 
-Write Graphify outputs to:
+Create a temporary non-ignored input directory such as `graphify-input-focus` in
+this workspace. Do not use a `graphify-corpus*` directory as the active input:
+those paths are ignored by this repository and Graphify's detector skips ignored
+directories, which reports a zero-file corpus. Write Graphify outputs to:
 
 ```text
 docs/third-party/opencode/graphify-out/
@@ -60,8 +63,9 @@ graphify-out/graph.html
 ```
 
 `graphify-out/` is ignored but can remain locally as a useful cache for
-`/ask-project`. Temporary `graphify-corpus*` directories are only inputs to the
-Graphify run and may be deleted after these output files exist.
+`/ask-project`. Temporary input directories such as `graphify-input-focus` are
+only inputs to the Graphify run and should be deleted after these output files
+exist.
 
 ## Mermaid Rendering
 

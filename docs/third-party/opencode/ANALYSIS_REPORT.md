@@ -2,7 +2,7 @@
 
 ## Scope
 
-This report analyzes `https://github.com/anomalyco/opencode.git` at revision `22e64cac67f58c3371a93a8af64c337138f73684` on branch `dev`.
+This report analyzes `https://github.com/anomalyco/opencode.git` at revision `d46af9cf1e7168d519377044f2412dea08ead5f8` on branch `dev`.
 
 Source material used:
 
@@ -50,16 +50,17 @@ The central runtime path is session oriented:
 5. Tool execution is mediated by tool registries, agent mode, configuration, plugins, provider/model support, and permission decisions.
 6. Message parts, events, costs, and state are persisted or projected for clients.
 
-Graphify highlighted these highly connected abstractions:
+Graphify highlighted package-manifest dependency hubs plus these runtime and API
+hubs. Treat `catalog` and `scripts` as package-manifest navigation nodes rather
+than architecture abstractions:
 
-- `InstanceHttpApi`
-- `Authorization`
-- `InstanceRoutes()`
-- `InstanceContextMiddleware`
-- `WorkspaceRoutingMiddleware`
 - `SessionID`
-- `jsonRequest()`
-- `createHono()`
+- `Authorization`
+- `InstanceHttpApi`
+- `InstanceContextMiddleware`
+- `WorkspaceRoutingQuery`
+- `WorkspaceRoutingMiddleware`
+- `matchLegacyOpenApi()`
 
 ## Important Architecture Findings
 
@@ -71,14 +72,22 @@ Graphify highlighted these highly connected abstractions:
 
 ## Graphify Summary
 
-- Focused corpus: 195 files, about 117k words.
-- Graph: 1,247 nodes, 2,008 edges, 78 communities.
-- Extraction confidence: 99% extracted and 1% inferred.
-- Key grouped relationships included user interfaces, agent modes, core packages, development/production CLI equivalence, provider/model ecosystem, instance route parity, and HttpApi handler patterns.
+- Focused corpus: 148 files, about 96,767 words.
+- Graph: 1,340 nodes, 2,011 edges, 93 communities.
+- Extraction confidence: 99% extracted and 1% inferred, with 27 inferred edges.
+- Key grouped relationships included user interfaces, agent modes, core packages,
+  prompt families, package-directory development workflow, provider/model
+  ecosystem, instance route parity, and HttpApi handler patterns.
 
 ## Repomix Summary
 
 Repomix was generated from a broad source/document/config corpus with heavy generated or unusually large files excluded where practical. The artifact is intentionally ignored at `repomix-output.xml` and can be regenerated from `REGENERATE.md`.
+
+- Current packed output: 3,033 files, 28,647,149 bytes.
+- Security scan: Repomix reported no suspicious files.
+- The broad corpus still contains large generated, fixture, SDK, and OpenAPI
+  materials; use targeted `/ask-project` questions or Graphify for focused
+  runtime navigation.
 
 ## Gaps And Risks
 

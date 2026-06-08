@@ -20,6 +20,11 @@
   `.codegeist/compose.local.yml` for local runtime overrides. The legacy root
   `compose.local.yml` file is removed; `initialize.sh` can copy older local root
   files into `.codegeist/` when needed.
+- Devcontainer image extensions now live in `.codegeist/Dockerfile`. The former
+  root `Dockerfile` NVIDIA/GPU extension was moved there so
+  `.devcontainer/initialize.sh` can append it to
+  `.devcontainer/Dockerfile.merged.gen`; the repository root no longer has a
+  devcontainer-specific `Dockerfile`.
 - `start.sh` has been removed. Start the devcontainer through VS Code Dev
   Containers or `devcontainer up --workspace-folder .`.
 - `app/codegeist/cli` is the only implemented Codegeist application module. It is
@@ -320,6 +325,10 @@
   Third-party research prompts and synthesized answers live in
   `docs/tasks/T007_build-codegeist-runtime-harness/third-party-question-catalog.md`
   and `docs/tasks/T007_build-codegeist-runtime-harness/third-party-question-answers.md`.
+  Current T007 planning docs also include
+  `runtime-harness-spec.md` for planned grouped class diagrams,
+  `opencode-workflow-analysis.md` for source-backed OpenCode workflow evidence,
+  and `java-workflow-implementation.md` for the Java/Spring implementation guide.
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
   Remaining children are `T007_02_add-chat-file-and-ask-chat-option.md`,
@@ -471,15 +480,21 @@
 
 ## Third-Party Analysis
 
-- `docs/third-party/opencode/source` is a submodule for OpenCode on branch `dev`.
+- `docs/third-party/opencode/source` is a submodule for OpenCode on branch `dev`,
+  currently at `d46af9cf1e7168d519377044f2412dea08ead5f8`.
 - `docs/third-party/opencode/` contains the OpenCode analysis workspace:
   `README.md`, `ANALYSIS_REPORT.md`, `REGENERATE.md`, feature/user/developer
   notes, and Mermaid sources. Heavy Graphify, Repomix, manifest, verification,
-  and rendered artifacts are regenerable and ignored.
+  and rendered artifacts are regenerable and ignored. The latest Repomix run
+  packed 3,033 files; the focused Graphify run used 148 files and generated
+  1,340 nodes, 2,011 edges, and 93 communities. Use a temporary non-ignored
+  `graphify-input-focus` input directory for regeneration, not ignored
+  `graphify-corpus*` paths, because Graphify skips ignored directories.
 - `docs/third-party/spring-ai-agent-utils/` contains the Spring AI Agent Utils
   analysis workspace with source submodule, durable docs, and ignored local
-  Repomix/Graphify/manifest/verification artifacts. Use it for navigation, then
-  inspect source/tests before adoption decisions.
+  Repomix/Graphify/manifest/verification artifacts. The latest structural
+  Graphify cache has 1,586 nodes, 3,537 edges, and 69 communities. Use it for
+  navigation, then inspect source/tests before adoption decisions.
 
 ## Open Points
 

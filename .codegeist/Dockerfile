@@ -1,13 +1,13 @@
 # Dockerfile - project-local devcontainer extension for NVIDIA GPU tooling
 #
 # Why this exists:
-# - `.devcontainer/initialize.sh` appends this root file to the shared
-#   `.devcontainer/Dockerfile` when it writes `.devcontainer/Dockerfile.merged.gen`.
+# - `.devcontainer/initialize.sh` appends this file to the shared kit Dockerfile
+#   when it writes `.devcontainer/Dockerfile.merged.gen`.
 # - The devcontainer can then run Docker GPU workloads such as Ollama from its
 #   inner Docker daemon while keeping the shared devcontainer kit unchanged.
 # - The NVIDIA user-space driver package version should match the host driver;
 #   the kernel driver still runs on the host and GPU devices are exposed at
-#   runtime through `compose.local.yml`.
+#   runtime through `.codegeist/compose.local.yml`.
 #
 # Inputs:
 # - NVIDIA_DRIVER_VERSION defaults to the currently validated host driver package
@@ -15,7 +15,7 @@
 # - NVIDIA_CONTAINER_TOOLKIT_VERSION selects the inner Docker GPU runtime support.
 #
 # Related files:
-# - compose.local.yml
+# - .codegeist/compose.local.yml
 # - .devcontainer/README.md
 # - .devcontainer/initialize.sh
 

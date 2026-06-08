@@ -122,7 +122,9 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - For local GPU-backed Ollama development, keep NVIDIA runtime customizations in
   local `.codegeist/` devcontainer overrides such as `.codegeist/Dockerfile` and
   `.codegeist/compose.local.yml`; do not edit the shared `.devcontainer` submodule
-  for consumer-specific GPU setup. Keep Ollama models under
+  for consumer-specific GPU setup. A repository-root `Dockerfile` is not a
+  devcontainer image-extension path in the current kit; put those fragments in
+  `.codegeist/Dockerfile` instead. Keep Ollama models under
   `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}` and use `OLLAMA_ENTER=false task
   ollama-start` for non-interactive automation.
 - For Codegeist implementation verification, prefer the Taskfile entrypoint from

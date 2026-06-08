@@ -8,7 +8,7 @@ This workspace documents the third-party project at `https://github.com/anomalyc
 - Upstream: `https://github.com/anomalyco/opencode.git`
 - Local checkout: `docs/third-party/opencode/source`
 - Branch: `dev`
-- Revision: `22e64cac67f58c3371a93a8af64c337138f73684`
+- Revision: `d46af9cf1e7168d519377044f2412dea08ead5f8`
 
 ## What OpenCode Is
 
@@ -42,7 +42,13 @@ directory for graph-backed answers. If it is missing or incomplete,
 `/ask-project` should route regeneration through `/analyse-project`, which owns
 the shared Graphify skill workflow.
 
-Graphify was run through the shared `graphify` skill workflow against a focused runtime corpus because the full source/document corpus is too large for the default no-question path. Repomix was generated for the broader source tree and copied into this workspace as reproducible source material. Temporary `graphify-corpus*` directories may be deleted after a successful Graphify run.
+Graphify was run through the shared `graphify` skill workflow against a focused
+runtime corpus because the full source/document corpus is too large for the
+default no-question path. Repomix was generated for the broader source tree and
+copied into this workspace as reproducible source material. The latest run used
+a temporary non-ignored `graphify-input-focus` directory and deleted it after
+generation; do not use ignored `graphify-corpus*` directories as active Graphify
+inputs because Graphify's detector skips them.
 
 ## Runtime Evidence
 

@@ -38,15 +38,16 @@ released artifacts and dependency alignment.
 The local `/analyse-project` run generated an AST-focused Graphify cache under
 `docs/third-party/spring-ai-agent-utils/graphify-out/`.
 
-- Corpus: 156 supported files, roughly 265,270 words.
-- Graph: 1,030 nodes, 1,604 edges, 47 communities.
+- Corpus: 192 supported files, roughly 284,850 words.
+- Graph: 1,586 nodes, 3,537 edges, 69 communities.
 - High-value communities include Auto Memory Tools, Smart Web Fetch, Shell Tools,
   Subagent Execution, Skills Tooling, File System Tools, Todo Tool, Memory Advisor,
   Glob Tool, Brave Web Search, Task Repository, Subagent Resolution, Grep tests,
   Question tools, and List Directory Tool.
-- God nodes in the graph include `AutoMemoryTools`, `SmartWebFetchTool`,
-  `GrepTool`, `ClaudeSubagentDefinition`, `BackgroundTask`, and
-  `BraveWebSearchTool`.
+- God nodes in the current structural graph skew toward repeated test annotations
+  such as `Test` and `DisplayName`, plus `Prompt`; prefer the named communities
+  for domain navigation instead of treating those central nodes as architecture
+  abstractions.
 
 The graph is useful for navigation and follow-up questions, but it is not a full
 semantic audit. The T003 adoption report should still inspect source files and
