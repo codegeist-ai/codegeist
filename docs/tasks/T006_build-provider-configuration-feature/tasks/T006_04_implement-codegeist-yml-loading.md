@@ -35,21 +35,22 @@ commands, or remote provider calls.
 
 ## Supported Provider Config Classes
 
-| Config class | `@Provider` value | Minimum fields to bind and validate now |
+| Config class | Provider type | Minimum fields to bind and validate now |
 | --- | --- | --- |
-| `OllamaProviderConfig` | `ollama` | Stored fields: `name` and `base-url`; YAML `type` is dispatch-only and read back from `@Provider`. |
-| `OpenAiProviderConfig` | `openai` | Stored fields: `name`, `api-key`, optional `base-url`, `organization-id`, and `project-id`; YAML `type` is dispatch-only and read back from `@Provider`. |
+| `OllamaProviderConfig` | `ollama` | Stored fields: `name` and `base-url`; YAML `type` is dispatch-only and read back from `getType()`. |
+| `OpenAiProviderConfig` | `openai` | Stored fields: `name`, `api-key`, optional `base-url`, `organization-id`, and `project-id`; YAML `type` is dispatch-only and read back from `getType()`. |
 
 ## Implemented Behavior
 
 - `CodegeistApplication.APP_NAME` remains the shared application name and Spring
   config prefix source.
-- `CodegeistConfig` binds a typed provider map under `ai.codegeist.app.config` and
-  receives the qualified YAML `ObjectMapper` for raw provider map normalization.
+- `CodegeistConfig` stores parsed root elements under `ai.codegeist.app.config`,
+  and `ProvidersRootElement` parses the raw provider map into typed provider config
+  values.
 - `ProviderConfig` is an abstract base class for provider map values and
   currently permits only `OllamaProviderConfig` and `OpenAiProviderConfig`.
 - Provider map values are selected from the required YAML `type` field through
-  `@Provider` annotation values. There is no fallback to the provider map key.
+  registered provider type constants. There is no fallback to the provider map key.
 - `CodegeistConfigService.loadConfig(String)` reads direct YAML into a Jackson
   tree, evaluates Spring SpEL only in string scalar values containing `#{`, maps
   raw provider objects into concrete provider config classes, and runs explicit
@@ -62,7 +63,7 @@ commands, or remote provider calls.
   Validation failures include the config path.
 - `--show-config` prints direct `codegeist.yml` YAML without a `codegeist:` wrapper
   or YAML document marker, leaves configured values unchanged, and preserves empty
-  default config output as `provider: {}`.
+  default config output as `{}` without creating synthetic roots.
 - The current implementation has no model-level multi-source combination helper;
   each load returns one mapped `CodegeistConfig` instance.
 
@@ -109,7 +110,7 @@ commands, or remote provider calls.
 - `--show-config` writes only direct YAML to stdout, omits the Spring `codegeist:`
   wrapper, omits YAML document markers, leaves configured values unchanged, and
   keeps stderr empty.
-- Empty config output keeps the top-level shape visible as `provider: {}`.
+- Empty config output is `{}` and does not create top-level root elements.
 - Current-state architecture docs reflect the implemented two-provider config
   service behavior.
 
@@ -127,9 +128,9 @@ git --no-pager diff --check
 
 - Implemented the focused `ollama` and `openai` config-only YAML loading slice.
 - Deferred all other provider config classes to later provider-specific tasks.
-- Added focused tests for Spring binding, explicit path loading, SpEL evaluation,
-  provider annotation dispatch, unsupported provider rejection, validation, and
-  command output.
+- Added focused tests for parsed primary config, explicit path loading, SpEL
+  evaluation, explicit provider registry dispatch, unsupported provider rejection,
+  validation, and command output.
 - Updated `docs/developer/architecture/architecture.md`,
   `docs/developer/architecture/provider-configuration.md`, and
   `docs/memory-bank/chat.md` to describe the current two-provider state.

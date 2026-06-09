@@ -369,7 +369,7 @@ function Invoke-PackagedNativeSmoke {
         Invoke-CommandSmoke "Native archive show-config smoke" `
             $packageExe `
             @("--show-config") `
-            "provider: {}" `
+            "{}" `
             (Join-Path $smokeDir "codegeist-windows-native-show-config.log") `
             $TimeoutSeconds `
             "codegeist-windows-native-show-config" `

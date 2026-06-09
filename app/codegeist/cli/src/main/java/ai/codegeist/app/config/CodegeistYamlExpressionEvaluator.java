@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import java.util.Iterator;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -19,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class CodegeistYamlExpressionEvaluator {
 
     private static final String EXPRESSION_MARKER = "#{";
+    static final String SPEL_EVALUATION_ERROR_PREFIX = "Failed to evaluate SpEL expression at ";
     private static final TemplateParserContext TEMPLATE_PARSER_CONTEXT = new TemplateParserContext(
             EXPRESSION_MARKER, "}");
 
@@ -40,9 +40,7 @@ public class CodegeistYamlExpressionEvaluator {
 
         if (node instanceof ObjectNode objectNode) {
             ObjectNode evaluated = JsonNodeFactory.instance.objectNode();
-            Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            for (Map.Entry<String, JsonNode> field : objectNode.properties()) {
                 evaluated.set(field.getKey(), evaluateNode(field.getValue(), sourcePath,
                         childPath(yamlPath, field.getKey())));
             }
@@ -76,8 +74,8 @@ public class CodegeistYamlExpressionEvaluator {
                     .getValue(evaluationContext, String.class);
             return result == null ? JsonNodeFactory.instance.nullNode() : TextNode.valueOf(result);
         } catch (RuntimeException ex) {
-            throw new CodegeistConfigValidationException("Failed to evaluate SpEL expression at "
-                    + sourcePath + ":" + yamlPath, ex);
+            throw new CodegeistConfigValidationException(SPEL_EVALUATION_ERROR_PREFIX + sourcePath + ":" + yamlPath,
+                    ex);
         }
     }
 

@@ -56,7 +56,7 @@ The Windows smoke path validates these observable contracts inside Windows:
 - The zip can be expanded into a fresh temp directory, and extracted
   `codegeist.exe --version` prints the build version only.
 - The extracted `codegeist.exe --show-config` prints only the current default
-  direct YAML shape, `provider: {}`.
+  direct YAML shape, `{}`.
 - Jar and native runs write non-empty smoke log files under `target/smoke-test/`.
 - The host receives an explicit `passed`, `skipped`, or `failed` platform status.
 

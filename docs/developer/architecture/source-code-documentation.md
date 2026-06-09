@@ -89,8 +89,8 @@ points when they are relevant:
   configuration properties binding, or test context.
 - Which lifecycle step owns the behavior: context startup, property binding,
   command execution, explicit service method, or smoke script.
-- How validation runs, especially the difference between Spring-bound config and
-  direct Jackson-loaded config.
+- How validation runs, especially when direct Jackson-loaded config is parsed and
+  validated outside Spring property binding.
 - Which tests prove the behavior and whether they are Spring integration tests,
   unit tests, CLI tests, or smoke tests.
 

@@ -11,20 +11,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.test.context.ActiveProfiles;
 
 @ExtendWith(OutputCaptureExtension.class)
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
-    args = CodegeistConfigService.SHOW_CONFIG_COMMAND
+    args = CodegeistConfigService.SHOW_CONFIG_COMMAND,
+    properties = CodegeistConfigService.CONFIG_PROPERTY + "=src/test/resources/codegeist-current-config-test.yml"
 )
-@ActiveProfiles("codegeist-config-service-test")
 class CodegeistConfigCommandTest {
 
-    private static final String PROVIDER_ID = "ollama";
     private static final String OPENAI_PROVIDER_ID = "openai";
-    private static final String PROVIDER_NAME = "Ollama";
-    private static final String RAW_SECRET = "test-openai-secret";
+    private static final String RAW_SECRET = "injected-openai-key";
 
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
 
@@ -40,13 +37,8 @@ class CodegeistConfigCommandTest {
         assertThat(yaml.get("provider")).isInstanceOf(Map.class);
 
         Map<?, ?> provider = (Map<?, ?>) yaml.get("provider");
-        assertThat(provider).hasSize(2);
-        assertThat(provider.get(PROVIDER_ID)).isInstanceOf(Map.class);
+        assertThat(provider).hasSize(1);
         assertThat(provider.get(OPENAI_PROVIDER_ID)).isInstanceOf(Map.class);
-
-        Map<?, ?> ollama = (Map<?, ?>) provider.get(PROVIDER_ID);
-        assertThat(ollama.get("type")).isEqualTo(PROVIDER_ID);
-        assertThat(ollama.get("name")).isEqualTo(PROVIDER_NAME);
 
         Map<?, ?> openai = (Map<?, ?>) provider.get(OPENAI_PROVIDER_ID);
         assertThat(openai.get("type")).isEqualTo(OPENAI_PROVIDER_ID);

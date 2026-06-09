@@ -99,7 +99,7 @@ Implemented Java package:
 | --- | --- |
 | `ai.codegeist.app` | Spring Boot application entrypoint and version command |
 | `ai.codegeist.app.chat` | Provider-neutral one-turn chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, the local Ollama chat model, and the one-shot `ask` Spring Shell command |
-| `ai.codegeist.app.config` | Typed provider config classes, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
+| `ai.codegeist.app.config` | Top-level config root parser components, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
@@ -138,19 +138,24 @@ Current behavior:
   lifecycle, command, loading, validation, and bean-creation messages. With the
   current file-only Logback setup, these debug messages go to `LOG_FILE` when
   `logging.level.root=DEBUG` or `LOGGING_LEVEL_ROOT=DEBUG` is set.
-- `CodegeistConfig` is the root provider config model. It is a Spring component
-  with `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)`
-  and Jackson YAML naming metadata so the same root shape can bind from
-  application config or be mapped from a direct YAML file. It holds the
-  `provider` map and receives the qualified YAML `ObjectMapper` for raw provider
-  map normalization.
-  `CONFIGURATION_PREFIX` is set from `CodegeistApplication.APP_NAME`, keeping the
-  app name as the source of truth.
-- `ProviderConfig` is an abstract base class for typed provider map values.
-  The required provider object field `type` dispatches through `@Provider` to
-  concrete data-only provider config classes for `ollama` and `openai`, but it is
-  not stored as mutable provider config state. Runtime/output type is derived from
-  the concrete class `@Provider` annotation. Broader provider-matrix and
+- `CodegeistConfig` is the root config container. It stores parsed
+  `CodegeistConfigRootElement` instances instead of one Java field per top-level
+  YAML root. `CodegeistConfigService` parses direct `codegeist.yml` roots by
+  delegating top-level root lookup to `CodegeistConfigRootElementParserService`,
+  which selects from injected `CodegeistConfigRootElement` parser components.
+  `application.yaml` is not a Codegeist config source. The provider root is
+  `provider:`; there is no `providers:` alias. `CodegeistConfigRootElement` owns
+  shared map-entry validation and `type` dispatch for typed root entries;
+  `ProvidersRootElement` supplies the provider registry, while `McpClientsRootElement`
+  owns the first `mcp:` client catalog shape.
+- `CodegeistConfigElement` is the abstract base class for typed entries stored
+  under config roots, currently `ProviderConfig` and `McpClientConfig`.
+  `ProviderConfig` is the abstract base class for typed provider map values.
+  The required provider object field `type` dispatches through the explicit
+  `ProvidersRootElement` registry to concrete data-only provider config classes for
+  `ollama` and `openai`, but it is not stored as mutable provider config state.
+  Runtime/output type is returned by each concrete provider config's `getType()`
+  constant. Broader provider-matrix and
   OpenCode-only types remain unsupported in this task.
   Provider classes validate only local config completeness; they do not store model
   names, create Spring AI clients, or call providers.
@@ -172,25 +177,30 @@ Current behavior:
   to Spring AI's Ollama chat model. Ollama-specific Spring AI imports stay isolated
   in this class.
 - `CodegeistYamlConfiguration` exposes the qualified `codegeistYamlObjectMapper`
-  bean used for direct `codegeist.yml` parsing, provider normalization, and
-  rendering. The mapper carries Jackson injectable values for direct
-  `CodegeistConfig` loads.
+  bean used for direct `codegeist.yml` parsing, root element conversion, provider
+  normalization, and rendering.
 - `CodegeistYamlExpressionEvaluator` is a Spring service that receives the YAML
   mapper bean and evaluates SpEL only in direct-YAML string scalar values.
-- `CodegeistConfigService` receives the Spring-bound `CodegeistConfig` through
-  field `@Autowired` plus `@Qualifier(CodegeistConfig.SPRING_BOUND_CONFIG_BEAN)`.
-  Its `primaryCodegeistConfig` `@Primary` bean currently returns that config as the
-  primary config bean. Normal app components inject `CodegeistConfig` by type to
-  receive the primary config. `loadConfig(String configPath)` reads an
-  explicit YAML file path into a Jackson tree, evaluates SpEL only in string scalar
-  values containing `#{`, maps raw provider entries into concrete config classes,
-  then runs `jakarta.validation.Validator` and reports constraint failures through
+- `CodegeistConfigRootElementParserService` receives the root element parser
+  components and qualified YAML mapper, then owns top-level root lookup plus
+  unsupported-root errors.
+- `CodegeistConfigService` receives the root element parser service, YAML mapper,
+  SpEL evaluator, validator, and `codegeist.config` property by field injection.
+  Its `loadCurrentConfig` `@Primary` bean parses the configured
+  `codegeist.config` file when that property is set and otherwise returns the empty
+  default config. Normal app components inject `CodegeistConfig` by type to receive
+  that primary config.
+  `loadConfig(String configPath)` reads an explicit YAML file path into a Jackson
+  tree, evaluates SpEL only in string scalar values containing `#{`, delegates each
+  top-level root to the root element parser service, then runs
+  `jakarta.validation.Validator` and reports constraint failures through
   `CodegeistConfigValidationException` with source-path context. Jackson mapping
   and IO failures surface directly through Lombok `@SneakyThrows`.
-  `getCurrentConfig()` loads the configured `codegeist.config` path, typically
+  `loadCurrentConfig()` loads the configured `codegeist.config` path, typically
   supplied as `-Dcodegeist.config=<path>` at startup, otherwise it returns the
-  Spring-bound config. `toYaml(...)` renders direct `codegeist.yml` YAML with no
-  `codegeist:` wrapper, no YAML document marker, and configured values unchanged.
+  empty default config. `toYaml(...)` renders direct `codegeist.yml` YAML with no
+  `codegeist:` wrapper, no YAML document marker, configured values unchanged, and
+  no synthetic roots for an empty config.
 - `--show-config` is implemented as a Spring Shell command in
   `CodegeistConfigService`. The service resolves the current global config policy,
   renders YAML, and writes only that YAML to `CommandContext.outputWriter()`.
@@ -205,9 +215,10 @@ Current behavior:
   version and packaged native `--show-config` smokes print only direct YAML.
 - `ask` is implemented as a Spring Shell command in `AskCommands`. It accepts one
   positional prompt parameter, selects the first configured provider through
-  `CodegeistConfig.defaultProvider()`, uses `ProviderConfig.defaultModel()`, calls
-  `CodegeistChatService`, and writes only the model response to stdout. The current
-  Ollama provider default is `llama3.2:1b`.
+  optional `CodegeistConfig.defaultProvider()`, fails at the command boundary when
+  none exists, uses `ProviderConfig.defaultModel()`, calls `CodegeistChatService`,
+  and writes only the model response to stdout. The current Ollama provider default
+  is `llama3.2:1b`.
 - There are no implemented multi-turn prompt workflows, streaming output, provider
   flags, model flags, tool executions, permission prompts, workspace policies,
   storage adapters, server endpoints, Vaadin views, PF4J plugins, or JBang
@@ -224,22 +235,20 @@ interactive runner.
 the generated build version while stderr stays empty.
 
 `CodegeistConfigCommandTest` starts the Spring context with
-`CodegeistConfigService.SHOW_CONFIG_COMMAND` and a profile-specific config fixture.
-It verifies stdout is parseable direct Codegeist YAML, excludes the `codegeist:`
-Spring wrapper and YAML document marker, includes configured provider values, and
-keeps stderr empty.
+`CodegeistConfigService.SHOW_CONFIG_COMMAND` and an explicit `codegeist.config`
+fixture path. It verifies stdout is parseable direct Codegeist YAML, excludes the
+`codegeist:` Spring wrapper and YAML document marker, includes configured provider
+values, and keeps stderr empty.
 
-`CodegeistConfigServiceTest` activates a profile-specific test YAML file to prove
-Spring-bound config reaches `CodegeistConfigService` as typed provider classes and
-that unqualified `CodegeistConfig` injection receives the primary config
-  bean. It also writes a temporary `codegeist.yml` and proves `loadConfig(String)`
-  maps provider-specific fields. It proves the injected `codegeist.config` property
-  is the current global config source when set at context startup. Validation
-  coverage proves blank provider ids and present-but-blank provider names are
-  rejected, while an omitted provider name remains valid.
+`CodegeistConfigServiceTest` proves unqualified `CodegeistConfig` injection receives
+the parsed `codegeist.config` fixture. It writes temporary `codegeist.yml` files and
+proves `loadConfig(String)` maps provider-specific and MCP fields. It proves the
+injected `codegeist.config` property is the current global config source when set at
+context startup. Validation coverage proves blank provider ids and present-but-blank
+provider names are rejected, while an omitted provider name remains valid.
 
 `CodegeistProviderConfigTest` proves the supported `ollama` and `openai` provider
-types map through the explicit Java registry plus `@Provider` dispatch path to the
+types map through the explicit Java registry to the
 expected concrete config class. It also proves missing `type`, unsupported provider
 types, broader provider-matrix types, out-of-scope OpenCode-only provider types,
 and selected provider-specific required-field failures are rejected without creating
@@ -359,7 +368,7 @@ download or VM prerequisites.
 | `task test` | Runs `ollama-start` with `OLLAMA_ENTER=false`, then `mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test` | Taskfile-managed Ollama startup, Maven test lifecycle, Spring context-load test, version output test, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and optional focused selector such as `task test TEST=CodegeistApplicationTests` |
 | `task build` | `mvn --batch-mode --no-transfer-progress -DskipTests clean package` | Executable jar packaging |
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
-| `task native-smoke` | Builds native, then sources `scripts/tests/native-smoke.sh` and calls `run-native-smoke-tests` | Linux native archive unpacks in a temp directory, packaged `--version` output equals generated build version, packaged `--show-config` output equals `provider: {}`, packaged `ask` reaches host Ollama, and native smoke log file works |
+| `task native-smoke` | Builds native, then sources `scripts/tests/native-smoke.sh` and calls `run-native-smoke-tests` | Linux native archive unpacks in a temp directory, packaged `--version` output equals generated build version, packaged `--show-config` output equals `{}` for the empty default config, packaged `ask` reaches host Ollama, and native smoke log file works |
 | `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.sh` | Local Linux jar smoke, Maven tests, real Ollama-backed jar `ask`, and native smoke when native-image is available |
 | `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, starts host Ollama through `task ollama-start`, and runs Windows jar/native smoke over SSH |
 | `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.sh` | Local Linux and Windows smoke suite; both platforms must pass by default |

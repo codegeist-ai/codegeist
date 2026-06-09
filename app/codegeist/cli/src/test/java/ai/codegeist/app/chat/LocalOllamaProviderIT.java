@@ -7,6 +7,7 @@ import ai.codegeist.app.config.CodegeistConfig;
 import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.OllamaProviderConfig;
 import ai.codegeist.app.config.ProviderConfig;
+import ai.codegeist.app.config.ProvidersRootElement;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class LocalOllamaProviderIT {
             CodegeistChatService chatService = context.getBean(CodegeistChatService.class);
 
             CodegeistConfig config = configService.loadConfig(writeConfig().toString());
-            ProviderConfig providerConfig = config.getProvider().get(OLLAMA_PROVIDER_ID);
+            ProviderConfig providerConfig = providers(config).getProviders().get(OLLAMA_PROVIDER_ID);
             assertThat(providerConfig).isInstanceOf(OllamaProviderConfig.class);
 
             CodegeistChatResponse response = chatService.chat(providerConfig, new CodegeistChatRequest(OLLAMA_MODEL, PROMPT));
@@ -55,5 +56,9 @@ class LocalOllamaProviderIT {
                 base-url: %s
             """.formatted(OLLAMA_BASE_URL));
         return configFile;
+    }
+
+    private ProvidersRootElement providers(CodegeistConfig config) {
+        return config.rootElement(ProvidersRootElement.class).orElseThrow();
     }
 }

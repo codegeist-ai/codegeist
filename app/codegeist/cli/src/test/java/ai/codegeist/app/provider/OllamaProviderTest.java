@@ -11,6 +11,7 @@ import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.CodegeistConfigValidationException;
 import ai.codegeist.app.config.OllamaProviderConfig;
 import ai.codegeist.app.config.ProviderConfig;
+import ai.codegeist.app.config.ProvidersRootElement;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ class OllamaProviderTest {
                 base-url: http://localhost:11434
             """);
 
-        ProviderConfig provider = config.getProvider().get(PROVIDER_ID);
+        ProviderConfig provider = provider(config);
         assertThat(provider).isInstanceOf(OllamaProviderConfig.class);
         assertThat(provider.getBaseUrl()).isEqualTo("http://localhost:11434");
     }
@@ -72,7 +73,7 @@ class OllamaProviderTest {
             """.formatted(OLLAMA_BASE_URL));
 
         CodegeistChatResponse response = chatService.chat(
-                config.getProvider().get(PROVIDER_ID), new CodegeistChatRequest(OLLAMA_MODEL, PROMPT));
+                provider(config), new CodegeistChatRequest(OLLAMA_MODEL, PROMPT));
 
         assertThat(response.content()).containsIgnoringCase("codegeist");
     }
@@ -81,6 +82,10 @@ class OllamaProviderTest {
         Path configFile = tempDir.resolve("codegeist.yml");
         Files.writeString(configFile, yaml);
         return configService.loadConfig(configFile.toString());
+    }
+
+    private ProviderConfig provider(CodegeistConfig config) {
+        return config.rootElement(ProvidersRootElement.class).orElseThrow().getProviders().get(PROVIDER_ID);
     }
 
 }

@@ -253,7 +253,7 @@ Linux smoke should unpack the tarball into a clean temporary directory and run:
 The smoke must execute the packaged binary from the extracted directory or with a
 loader path that is equivalent to the extracted directory. The simpler and preferred
 contract is: run from inside the extracted package directory. With the current
-empty default config, `--show-config` must print exactly `provider: {}`.
+empty default config, `--show-config` must print exactly `{}`.
 
 ## Windows Package Shape
 
@@ -278,7 +278,7 @@ Windows smoke should unzip the package into a clean temporary directory and run:
 
 The executable and DLLs must remain in the same directory. Do not document or test
 copying only `codegeist.exe` as a supported runtime layout. With the current empty
-default config, `--show-config` must print exactly `provider: {}`.
+default config, `--show-config` must print exactly `{}`.
 
 ## User-Facing Guidance
 
@@ -307,7 +307,7 @@ Required package smoke for each native platform:
 - Run the executable from the extracted package directory.
 - Assert exact `--version` output and exit code `0`.
 - Assert exact `--show-config` output and exit code `0` for the current default
-  direct YAML shape, `provider: {}`.
+  direct YAML shape, `{}`.
 - Assert a non-empty log file is written when `LOG_FILE` is set.
 - Verify the archive checksum before publication.
 

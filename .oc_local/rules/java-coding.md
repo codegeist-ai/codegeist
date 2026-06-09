@@ -7,6 +7,11 @@ Use this rule when adding or changing Java source in Codegeist.
 - Prefer annotation-based Spring wiring and metadata.
 - For Spring-managed dependencies, use field injection with `@Autowired` on the
   field.
+- Prefer Spring dependency injection for Spring-managed collaborators and shared
+  framework objects instead of passing those dependencies through method parameters.
+  Method parameters should represent per-call input data; inject dependencies such
+  as an owned `ObjectMapper`, service, repository, or validator into the receiving
+  Spring bean.
 - Do not use constructor injection for Spring beans.
 - Do not use Lombok constructor annotations such as `@RequiredArgsConstructor` or
   `@AllArgsConstructor` to inject Spring dependencies.
@@ -16,8 +21,9 @@ Use this rule when adding or changing Java source in Codegeist.
   `@EnableConfigurationProperties`, `@Autowired`, and test annotations when they
   make ownership and runtime behavior explicit.
 - For the primary config bean, inject unqualified `CodegeistConfig` and let
-  Spring `@Primary` select it. Only `CodegeistConfigService` should qualify
-  `CodegeistConfig.SPRING_BOUND_CONFIG_BEAN` to access the Spring-bound source.
+  Spring `@Primary` select it. `CodegeistConfigService` owns conversion from
+  explicit `codegeist.yml` files into root elements; `application.yaml` is not a
+  Codegeist config source.
 - Prefer Bean Validation annotations on configuration POJOs for config validation.
   When config is loaded directly with Jackson rather than Spring binding, call
   `jakarta.validation.Validator` explicitly after mapping.
@@ -32,8 +38,12 @@ Use this rule when adding or changing Java source in Codegeist.
   focused Lombok annotations such as `@RequiredArgsConstructor` and `@Getter` with
   the narrowest useful access level over hand-written boilerplate.
 - Use Lombok `@NonNull` for simple required constructor or method parameters instead
-  of hand-written `Assert.notNull(...)` checks. Keep explicit assertions when they
-  validate richer contracts such as non-blank text or add domain-specific messages.
+  of hand-written `Assert.notNull(...)` checks. If a method parameter must not be
+  Java `null`, annotate that parameter with Lombok `@NonNull` instead of relying on
+  an undocumented caller contract. Keep explicit assertions when they validate richer
+  contracts such as non-blank text or add domain-specific messages. Do not add
+  `@NonNull` where Java `null` is valid input by contract; handle that case
+  explicitly.
 - Use Lombok `@Slf4j` on Spring `@Service` and `@Component` classes, and prefer
   concise `log.debug(...)` messages around non-obvious lifecycle, command,
   loading, validation, or bean-creation behavior. Spring Boot's default logging
@@ -54,9 +64,11 @@ Use this rule when adding or changing Java source in Codegeist.
 
 ## Configuration Properties
 
-- Use `@ConfigurationProperties` for Spring-bound configuration classes.
-- For Codegeist config, use `CodegeistConfig.CONFIGURATION_PREFIX` in
-  `@ConfigurationProperties`; define that constant from
+- Use `@ConfigurationProperties` for focused Spring configuration classes when a
+  Spring-only config type needs binding, but do not annotate `CodegeistConfig`
+  with it. Codegeist root config is parsed by `CodegeistConfigService` through
+  injected `CodegeistConfigRootElement` parser components.
+- For Codegeist config, keep `CodegeistConfig.CONFIGURATION_PREFIX` defined from
   `CodegeistApplication.APP_NAME` so the app name stays the source of truth.
 - Keep configuration classes small and shaped by current binding tests.
 - Use `kebab-case` in YAML and `camelCase` in Java fields.
@@ -71,8 +83,9 @@ Use this rule when adding or changing Java source in Codegeist.
 - Let each concrete `ProviderConfig` implement `defaultModel()` for the
   provider-owned runtime fallback, but do not add stored YAML model fields or
   command-owned hardcoded model defaults.
-- Put default first-provider selection in `CodegeistConfig.defaultProvider()`. Do
-  not duplicate provider-map iteration in command classes.
+- Put optional first-provider selection in `CodegeistConfig.defaultProvider()`.
+  Callers that require a provider should choose the failure behavior at their
+  boundary instead of duplicating provider-map iteration in command classes.
 - Keep selected provider config separate from runtime request data. Pass the
   validated `ProviderConfig` to `CodegeistChatService`, and keep
   `CodegeistChatRequest` focused on runtime model and prompt.
@@ -88,6 +101,8 @@ Use this rule when adding or changing Java source in Codegeist.
 - Use constants for contract-bearing strings, especially application names,
   configuration prefixes, property keys, CLI command names, environment variable
   names, file names, path segments, provider ids, and test selectors.
+- Use class-owned constants for exception messages and exception message prefixes
+  instead of inline string literals in `throw` statements.
 - Keep constants close to the class that owns the concept.
 - For shared application-wide values, prefer `CodegeistApplication` as the owner.
 - Annotation values must reference compile-time constants, for example
@@ -97,6 +112,17 @@ Use this rule when adding or changing Java source in Codegeist.
   of duplicating message fragments such as `Invalid Codegeist config file`.
 - Do not duplicate the same string literal across classes or tests when it
   represents one shared contract.
+
+## Imports And Type Names
+
+- Do not use fully qualified Java type names in code when a normal import works.
+  Prefer `new LinkedHashMap<>()` with `import java.util.LinkedHashMap;` over
+  `new java.util.LinkedHashMap<>()`.
+- Use fully qualified type names only when Java syntax or framework contracts make
+  them necessary, such as avoiding an unavoidable name collision or inside strings
+  that require a fully qualified class reference.
+- If an avoidable fully qualified type appears while changing nearby code, replace
+  it with an import in the same task.
 
 ## Framework Utilities
 
@@ -127,9 +153,9 @@ Use this rule when adding or changing Java source in Codegeist.
 - Prefer explicit discovery mechanisms that GraalVM can see at build time, such as
   Java registries, Spring configuration, or generated registries, over runtime
   classpath scanning.
-- For Codegeist provider config dispatch, use the explicit registry in
-  `ProviderConfigJacksonConverter` unless a future task intentionally replaces it
-  with a generated registry. Do not add ServiceLoader back for this path.
+- For Codegeist provider config dispatch, use the explicit provider class registry
+  in `ProvidersRootElement` unless a future task intentionally replaces it with a
+  generated registry. Do not add ServiceLoader back for this path.
 - When adding reflective config or domain types that Jackson or another framework
   must instantiate in native images, register the type in
   `src/main/resources/META-INF/native-image/reflect-config.json` or a centralized
@@ -143,8 +169,14 @@ Use this rule when adding or changing Java source in Codegeist.
 - Do not add one-line pass-through helper methods that only call another helper with
   a constant or parameter, such as `apiKey()` returning `requireEnv(API_KEY_ENV)`.
   Prefer the direct call at the use site when it stays readable.
+- If two methods have the same signature and behavior and differ only by name, keep
+  the one that callers should use and remove the other instead of adding a wrapper.
 - Add a helper only when it centralizes non-trivial behavior, improves repeated
   call sites, or names a real domain operation that would otherwise be unclear.
+- Do not add public production methods only to support tests. When tests need to
+  set internal state, prefer package-private fields or methods in the same package,
+  or a focused test utility that can set private fields, instead of expanding the
+  runtime API.
 
 ## Comments For Coding Agents
 

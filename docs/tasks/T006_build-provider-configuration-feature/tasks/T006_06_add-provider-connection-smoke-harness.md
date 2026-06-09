@@ -44,7 +44,7 @@ Ollama-backed Linux and Windows smokes. The current Ollama provider default is
 - Keep Windows QEMU on host Ollama through `http://10.0.2.2:11434`; do not start
   or install Ollama in the Windows guest.
 - Keep provider dispatch free of JVM/native runtime branching and register provider
-  config POJOs in `ProviderConfigJacksonConverter` plus native reflection metadata
+  config POJOs in `ProvidersRootElement` plus native reflection metadata
   for Jackson binding.
 - Classify every provider-call test method by category:
   - `local` for local providers such as Ollama.

@@ -12,7 +12,6 @@ import org.springframework.util.StringUtils;
 @Getter
 @Setter
 @NoArgsConstructor
-@Provider(OllamaProviderConfig.PROVIDER_TYPE)
 public final class OllamaProviderConfig extends ProviderConfig {
 
     public static final String PROVIDER_TYPE = "ollama";
@@ -22,6 +21,11 @@ public final class OllamaProviderConfig extends ProviderConfig {
     @JsonIgnore
     public boolean isBaseUrlConfigured() {
         return StringUtils.hasText(getBaseUrl());
+    }
+
+    @Override
+    public String getType() {
+        return PROVIDER_TYPE;
     }
 
     @Override

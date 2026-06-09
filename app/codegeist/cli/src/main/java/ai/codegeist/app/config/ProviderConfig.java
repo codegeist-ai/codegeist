@@ -2,8 +2,6 @@ package ai.codegeist.app.config;
 
 import ai.codegeist.app.chat.CodegeistChatModel;
 
-import java.util.Optional;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -18,7 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public abstract class ProviderConfig {
+public abstract class ProviderConfig extends CodegeistConfigElement {
 
     static final String NON_BLANK_WHEN_SET_PATTERN = "(?s).*\\S.*";
     static final String NON_BLANK_WHEN_SET_MESSAGE = "must not be blank when set";
@@ -29,13 +27,8 @@ public abstract class ProviderConfig {
     private String baseUrl;
 
     @JsonProperty(value = "type", access = JsonProperty.Access.READ_ONLY)
-    public String getType() {
-        Provider provider = getClass().getAnnotation(Provider.class);
-        if (provider == null) {
-            throw new IllegalStateException("Missing @Provider on " + getClass().getName());
-        }
-        return provider.value();
-    }
+    @Override
+    public abstract String getType();
 
     public abstract String defaultModel();
 

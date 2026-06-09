@@ -9,41 +9,46 @@ Parent: `../task.md`
 Specify the smallest useful Codegeist provider configuration model and loading
 direction.
 
-The config model should stay a plain Codegeist-owned POJO that can be used in two
-ways:
+The first specification targeted a plain Codegeist-owned POJO that could be used
+in two ways:
 
-- Spring can bind it from `application.yaml` with `@ConfigurationProperties`.
-- Jackson YAML can load the same model directly from a `codegeist.yml` file.
+- Spring could bind it from `application.yaml` with `@ConfigurationProperties`.
+- Jackson YAML could load the same model directly from a `codegeist.yml` file.
+
+The current implementation has evolved into root-element parsing. `CodegeistConfig`
+now stores `List<CodegeistConfigRootElement>`, `provider:` is the provider root,
+and `CodegeistConfigService` dispatches direct `codegeist.yml` roots through
+injected `CodegeistConfigRootElement` parser components.
 
 ## Decisions
 
 - Define `CodegeistApplication.APP_NAME = "codegeist"` as the shared application
   name and configuration prefix constant.
-- Use `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)` on
-  the config model so Spring can bind the same POJO from application configuration.
-  `CodegeistConfig.CONFIGURATION_PREFIX` should be defined from
-  `CodegeistApplication.APP_NAME`.
-- Use Jackson annotations on the same POJO so direct YAML loading remains possible.
+- Keep `CodegeistConfig.CONFIGURATION_PREFIX` defined from
+  `CodegeistApplication.APP_NAME` so `codegeist.config` stays aligned with the app
+  name.
+- Use `CodegeistConfigRootElement` parser components with explicit `rootName()`
+  constants for direct YAML roots.
+- Keep Jackson annotations on config POJOs so direct YAML loading remains possible.
 - Use Jackson YAML via `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml`
   for direct file loading.
 - Keep Lombok focused: `@Getter` and `@Setter` are acceptable for the config POJOs.
-- Keep the first config model intentionally tiny: top-level `provider` map only.
-- Keep each provider entry limited to `name` for now.
-- Do not add `model`, `small-model`, top-level provider filter lists, `type`,
-  `credentials`, `options`, `models`, capabilities, or limits yet.
+- The provider root is top-level `provider`; there is no `providers` alias.
+- Current provider entries are typed by `type` and stay access-only; model and
+  generation-option selection remain outside provider config.
+- Do not add top-level provider filter lists, `models`, capabilities, limits, or
+  runtime selection fields to provider config yet.
 
 ## Java Shape
 
-The initial model should be equivalent to this shape:
+The current model is equivalent to this shape:
 
 ```java
 @Getter
-@Setter
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)
 public class CodegeistConfig {
-    private Map<String, ProviderConfig> provider = new LinkedHashMap<>();
+    private final List<CodegeistConfigRootElement> rootElements = new ArrayList<>();
 }
 ```
 
@@ -61,19 +66,19 @@ public class ProviderConfig {
 }
 ```
 
-`CodegeistConfigService` should own access to this config in
-`ai.codegeist.app.config`. It may receive the Spring-bound config properties from
-`application.yaml` and should expose a direct `loadConfig(String configPath)`
-method for loading a specific `codegeist.yml` path with Jackson YAML.
+`CodegeistConfigService` owns access to this config in `ai.codegeist.app.config`.
+It exposes a direct `loadConfig(String configPath)` method for loading a specific
+`codegeist.yml` path with Jackson YAML. `application.yaml` is not a Codegeist root
+config source.
 
 ## File Loading Direction
 
 - The default `codegeist.yml` location is the user's home config path:
   `~/.config/codegeist/codegeist.yml`.
-- `codegeist.yml` is a dedicated file and should map directly to the config
-  properties POJO. It does not need a `codegeist` wrapper.
-- `application.yaml` may still configure the same POJO through the Spring prefix
-  from `CodegeistApplication.APP_NAME`.
+- `codegeist.yml` is a dedicated file and should map directly to top-level root
+  elements such as `provider:` and `mcp:`. It does not need a `codegeist` wrapper.
+- `application.yaml` must not configure Codegeist roots such as `provider:` or
+  `mcp:`. Keep application YAML limited to Spring Boot and Spring Shell settings.
 - Do not use Spring `EnvironmentPostProcessor`, `spring.factories`, or
   `application.yaml` import tricks to load `codegeist.yml`.
 - Do not use Spring `Binder` to load `codegeist.yml`; direct file loading belongs
@@ -84,7 +89,8 @@ method for loading a specific `codegeist.yml` path with Jackson YAML.
 This first task only defined the initial source order idea. The current
 implementation has no model-level merge or combination helper:
 
-- The primary config bean currently returns the Spring-bound config.
+- The primary config bean currently parses `codegeist.config` when that property is
+  set and otherwise returns an empty `CodegeistConfig`.
 - Explicit `codegeist.yml` paths are loaded as single files through
   `CodegeistConfigService.loadConfig(String configPath)`.
 - Later home-path or startup-file work must define combination semantics before
@@ -93,9 +99,8 @@ implementation has no model-level merge or combination helper:
 Historical candidate source order, if future work defines combination semantics,
 from lowest to highest precedence:
 
-1. Spring-bound defaults from `application.yaml`.
-2. Home config file at `~/.config/codegeist/codegeist.yml`.
-3. An explicit startup config path when one is provided later.
+1. Home config file at `~/.config/codegeist/codegeist.yml`.
+2. An explicit startup config path when one is provided later.
 
 Do not implement broader inheritance or delete semantics in the first loader.
 
@@ -106,13 +111,14 @@ With the current minimal model, validation should stay annotation-first and smal
 - Add Bean Validation through `spring-boot-starter-validation`.
 - Put constraints on the config POJOs instead of starting with a broad custom
   validation framework.
-- Validate provider map keys with `Map<@NotBlank String, @Valid ProviderConfig>`.
+- Validate provider YAML keys during root parsing and keep Bean Validation on mapped
+  provider config values.
 - Keep provider `name` optional, but reject it with a Bean Validation annotation
   when it is present and blank.
 - Run `jakarta.validation.Validator` after direct Jackson YAML loads because
   Jackson does not evaluate Bean Validation annotations by itself.
-- Let Spring validate the Spring-bound `@ConfigurationProperties` model through
-  `@Validated`.
+- Validate the parsed root-element `CodegeistConfig` through the explicit
+  `jakarta.validation.Validator` call in `CodegeistConfigService`.
 - Do not validate model references because the model has no model fields yet.
 - Keep unknown YAML keys ignored for now; strict unknown-key handling is not part
   of the annotation-first validation slice.
@@ -129,14 +135,13 @@ With the current minimal model, validation should stay annotation-first and smal
 
 ## Acceptance Criteria
 
-- The config model has only a provider map and provider names.
-- `@ConfigurationProperties(prefix = CodegeistConfig.CONFIGURATION_PREFIX)` is used
-  for Spring application configuration, with the prefix constant backed by
-  `CodegeistApplication.APP_NAME`.
-- Jackson YAML can map a direct `codegeist.yml` file into the same POJO.
-- `CodegeistConfigService` can receive the Spring-bound config and can load an
-  explicit YAML path through `loadConfig(String configPath)`.
-- Tests cover Spring-bound config service access and explicit YAML path loading.
+- The config model uses root elements and exposes derived provider accessors.
+- `CodegeistConfig.CONFIGURATION_PREFIX` remains backed by
+  `CodegeistApplication.APP_NAME` for the `codegeist.config` property.
+- Jackson YAML can map a direct `codegeist.yml` file into root elements.
+- `CodegeistConfigService` can load an explicit YAML path through
+  `loadConfig(String configPath)`.
+- Tests cover parsed primary config service access and explicit YAML path loading.
 - No Spring environment post-processor or `spring.factories` loader is introduced.
 
 ## Verification
@@ -151,13 +156,11 @@ git --no-pager diff --check
 
 - The provider configuration specification is complete for the current minimal
   slice.
-- The accepted model is `ai.codegeist.app.config.CodegeistConfig` with a
-  top-level `provider` map whose `ProviderConfig` entries currently contain only
-  `name`.
+- The accepted model is `ai.codegeist.app.config.CodegeistConfig` with root
+  elements. The provider YAML root is `provider:`.
 - The primary config bean is selected by unqualified `CodegeistConfig` injection
   through Spring `@Primary`.
-- `CodegeistConfigService` owns access to the Spring-bound config properties and
-  direct explicit-path YAML loading.
+- `CodegeistConfigService` owns direct explicit-path YAML loading.
 - Runtime home-path loading, service-level multi-source orchestration, provider
   options, credentials, model selection, and provider calls remain in later T006
   child tasks. Annotation-based validation belongs to `T006_04` with the loader

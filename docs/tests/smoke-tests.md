@@ -83,6 +83,8 @@ Labels should be stable and specific, for example:
   the extracted `./codegeist` binary, including `ask` with a generated smoke config.
 - Windows native smoke packages `target/dist/codegeist-windows-x64.zip` and tests
   the extracted `codegeist.exe` binary, including `ask` with a generated smoke config.
+- Linux and Windows native archive smokes both check `--show-config`; empty direct
+  `codegeist.yml` config must render exactly `{}`.
 - Smoke logs stay under `app/codegeist/cli/target/smoke-test`.
 - Generated smoke artifacts remain ignored build output unless a task explicitly
   asks for a handoff snapshot.

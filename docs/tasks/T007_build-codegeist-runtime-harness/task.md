@@ -26,6 +26,9 @@ database or server runtime for this task.
 - Provider config currently supports typed config-only `ollama` and `openai`
   entries. Runtime provider calls are implemented only for local Ollama through
   `OllamaChatModel`.
+- Direct `codegeist.yml` loading can parse the first minimal top-level `mcp:` client
+  catalog with `type`, `command`, and `args`; MCP callbacks and chat tools are not
+  implemented yet.
 - `task test` from `app/codegeist/cli` is the implementation verification entrypoint
   and starts the fixed local Ollama container with `OLLAMA_ENTER=false` before
   Maven.
@@ -118,12 +121,13 @@ environment, timeout, or enablement only when implementation tests need them.
 
 ## Child Tasks
 
-- `T007_01_define-chat-file-tool-harness-scope.md` - record this expanded feature
-  scope and close the earlier minimal-MCP-only plan.
+- `T007_01_define-chat-file-tool-harness-scope.md` - completed scope definition
+  for the expanded chat-file tool harness.
 - `T007_02_add-chat-file-and-ask-chat-option.md` - add `ask --chat <chat.json>` and
   the versioned chat file model/save-load behavior.
-- `T007_03_add-mcp-and-read-write-tools.md` - add Codegeist MCP config plus the first
-  read/list/glob/grep/write tool path.
+- `T007_03_add-mcp-and-read-write-tools.md` - finish MCP callbacks and the first
+  read/list/glob/grep/write tool path; the minimal `mcp:` config root is already
+  implemented.
 - `T007_04_add-patch-edit-and-shell-tools.md` - add bounded patch/edit and shell
   tools that persist tool activity into `chat.json`.
 - `T007_05_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,

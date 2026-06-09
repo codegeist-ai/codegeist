@@ -1,7 +1,6 @@
 package ai.codegeist.app.chat;
 
 import ai.codegeist.app.config.CodegeistConfig;
-import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.ProviderConfig;
 
 import lombok.NonNull;
@@ -19,15 +18,15 @@ class AskCommands {
     static final String ASK_COMMAND = "ask";
 
     @Autowired
-    private CodegeistConfigService configService;
+    private CodegeistConfig config;
 
     @Autowired
     private CodegeistChatService chatService;
 
     @Command(name = ASK_COMMAND, description = "Ask the first configured Codegeist provider")
     void ask(CommandContext context, @Arguments @NonNull String prompt) {
-        CodegeistConfig config = configService.getCurrentConfig();
-        ProviderConfig providerConfig = config.defaultProvider();
+        ProviderConfig providerConfig = config.defaultProvider()
+                .orElseThrow(() -> new IllegalStateException(CodegeistConfig.NO_PROVIDER_MESSAGE));
         String model = providerConfig.defaultModel();
         log.debug("Asking provider type {} with default model {}", providerConfig.getType(), model);
         CodegeistChatResponse response = chatService.chat(providerConfig, new CodegeistChatRequest(model, prompt));

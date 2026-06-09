@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -22,17 +23,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 class CodegeistProviderConfigTest {
 
     private final ObjectMapper yamlMapper = new CodegeistYamlConfiguration().codegeistYamlObjectMapper();
+    private final ProvidersRootElement providersRootElement = new ProvidersRootElement();
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @ParameterizedTest
     @MethodSource("supportedProviders")
-    void dispatchesSupportedProviderTypesThroughProviderAnnotation(String type,
+    void dispatchesSupportedProviderTypesThroughExplicitRegistry(String type,
             Class<? extends ProviderConfig> providerClass, String yamlBody, String expectedDefaultModel) {
         ProviderConfig provider = loadSingleProvider(yamlBody);
 
         assertThat(provider).isInstanceOf(providerClass);
         assertThat(provider.getType()).isEqualTo(type);
-        assertThat(provider.getClass().getAnnotation(Provider.class).value()).isEqualTo(type);
         assertThat(provider.defaultModel()).isEqualTo(expectedDefaultModel);
     }
 
@@ -43,7 +44,7 @@ class CodegeistProviderConfigTest {
               openai:
                 api-key: test-key
             """))
-                .isInstanceOf(JsonProcessingException.class)
+                .isInstanceOf(CodegeistConfigValidationException.class)
                 .hasMessageContaining("type is required");
     }
 
@@ -60,8 +61,8 @@ class CodegeistProviderConfigTest {
                 type: %s
                 api-key: test-key
             """.formatted(unsupportedType)))
-                .isInstanceOf(JsonProcessingException.class)
-                .hasMessageContaining("Unsupported provider type")
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessageContaining("Unsupported provider entry type")
                 .hasMessageContaining(unsupportedType);
     }
 
@@ -74,8 +75,12 @@ class CodegeistProviderConfigTest {
                 type: ollama
                 base-url: http://localhost:11434
             """);
+        ProvidersRootElement rootElement = providers(config);
 
-        assertThat(config.defaultProvider()).isInstanceOf(OllamaProviderConfig.class);
+        assertThat(rootElement.defaultProvider()).hasValueSatisfying(provider -> assertThat(provider)
+                .isInstanceOf(OllamaProviderConfig.class));
+        assertThat(config.defaultProvider()).hasValueSatisfying(provider -> assertThat(provider)
+                .isInstanceOf(OllamaProviderConfig.class));
     }
 
     @Test
@@ -83,10 +88,10 @@ class CodegeistProviderConfigTest {
         CodegeistConfig config = loadAndValidate("""
             provider: {}
             """);
+        ProvidersRootElement rootElement = providers(config);
 
-        assertThatThrownBy(config::defaultProvider)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage(CodegeistConfig.NO_PROVIDER_MESSAGE);
+        assertThat(rootElement.defaultProvider()).isEmpty();
+        assertThat(config.defaultProvider()).isEmpty();
     }
 
     @ParameterizedTest
@@ -123,7 +128,7 @@ class CodegeistProviderConfigTest {
 
     private ProviderConfig loadSingleProvider(String providerBody) {
         CodegeistConfig config = loadAndValidate("provider:\n  configured:\n" + indent(providerBody));
-        return config.getProvider().get("configured");
+        return providers(config).defaultProvider().orElseThrow();
     }
 
     private CodegeistConfig loadAndValidate(String yaml) {
@@ -142,10 +147,18 @@ class CodegeistProviderConfigTest {
 
     @SneakyThrows(JsonProcessingException.class)
     private CodegeistConfig readConfig(String yaml) {
-        return yamlMapper.readerFor(CodegeistConfig.class).readValue(yaml);
+        JsonNode root = yamlMapper.readTree(yaml);
+        CodegeistConfig config = new CodegeistConfig();
+        config.rootElements.add(providersRootElement.parse(root.get(ProvidersRootElement.ROOT_NAME), yamlMapper));
+        return config;
     }
 
     private String indent(String yamlBody) {
         return yamlBody.indent(4);
     }
+
+    private ProvidersRootElement providers(CodegeistConfig config) {
+        return config.rootElement(ProvidersRootElement.class).orElseThrow();
+    }
+
 }

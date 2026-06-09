@@ -3,14 +3,16 @@ package ai.codegeist.app.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +34,7 @@ public class CodegeistConfigService {
     public static final String CONFIG_PROPERTY = CodegeistConfig.CONFIGURATION_PREFIX + ".config";
 
     static final String VALIDATION_ERROR_PREFIX = "Invalid Codegeist config file: ";
-
-    @Getter
-    @Autowired
-    @Qualifier(CodegeistConfig.SPRING_BOUND_CONFIG_BEAN)
-    private CodegeistConfig springBoundConfig;
+    static final String ROOT_OBJECT_MESSAGE = "Codegeist config must be a YAML object";
 
     @Autowired
     private Validator validator;
@@ -48,24 +46,22 @@ public class CodegeistConfigService {
     @Autowired
     private CodegeistYamlExpressionEvaluator expressionEvaluator;
 
+    @Autowired
+    private CodegeistConfigRootElementParserService rootElementParserService;
+
     @Value("${" + CONFIG_PROPERTY + ":}")
     private String configPath;
 
     @Bean
     @Primary
-    public CodegeistConfig primaryCodegeistConfig() {
-        log.debug("Creating primary Codegeist config bean from Spring-bound config");
-        return springBoundConfig;
-    }
-
-    public CodegeistConfig getCurrentConfig() {
+    public CodegeistConfig loadCurrentConfig() {
         if (StringUtils.hasText(configPath)) {
             log.debug("Using Codegeist config from system property {}", CONFIG_PROPERTY);
             return loadConfig(configPath);
         }
 
-        log.debug("Using Spring-bound Codegeist config");
-        return primaryCodegeistConfig();
+        log.debug("Using empty default Codegeist config");
+        return new CodegeistConfig();
     }
 
     @SneakyThrows(IOException.class)
@@ -74,8 +70,7 @@ public class CodegeistConfigService {
         JsonNode rawTree = yamlMapper.readTree(Path.of(configPath).toFile());
         JsonNode sourceTree = rawTree == null ? yamlMapper.createObjectNode() : rawTree;
         JsonNode evaluatedTree = expressionEvaluator.evaluate(sourceTree, configPath);
-        CodegeistConfig loadedConfig = yamlMapper.readerFor(CodegeistConfig.class)
-                .readValue(evaluatedTree);
+        CodegeistConfig loadedConfig = parseConfig(evaluatedTree);
         validateConfig(loadedConfig, configPath);
         log.debug("Loaded valid Codegeist config file: {}", configPath);
         return loadedConfig;
@@ -84,7 +79,12 @@ public class CodegeistConfigService {
     @SneakyThrows(JsonProcessingException.class)
     public String toYaml(CodegeistConfig codegeistConfig) {
         log.debug("Rendering Codegeist config as YAML");
-        return yamlMapper.writeValueAsString(codegeistConfig == null ? new CodegeistConfig() : codegeistConfig);
+        CodegeistConfig config = codegeistConfig == null ? new CodegeistConfig() : codegeistConfig;
+        Map<String, Object> roots = new LinkedHashMap<>();
+        for (CodegeistConfigRootElement<? extends CodegeistConfigElement> rootElement : config.rootElements) {
+            roots.put(rootElement.rootName(), rootElement.toYamlValue());
+        }
+        return yamlMapper.writeValueAsString(roots);
     }
 
     @Command(name = SHOW_CONFIG_COMMAND, description = "Print the current Codegeist config")
@@ -94,7 +94,7 @@ public class CodegeistConfigService {
         // of this path.
         // Route through the global config policy so `-Dcodegeist.config=...` is
         // shared by CLI commands instead of being command-specific.
-        context.outputWriter().print(toYaml(getCurrentConfig()));
+        context.outputWriter().print(toYaml(loadCurrentConfig()));
         context.outputWriter().flush();
     }
 
@@ -113,5 +113,20 @@ public class CodegeistConfigService {
                 .collect(Collectors.joining("; "));
         log.debug("Codegeist config validation failed for {}: {}", configPath, message);
         throw new CodegeistConfigValidationException(VALIDATION_ERROR_PREFIX + configPath + ": " + message);
+    }
+
+    private CodegeistConfig parseConfig(JsonNode source) {
+        CodegeistConfig config = new CodegeistConfig();
+        if (source == null || source.isNull()) {
+            return config;
+        }
+        if (!(source instanceof ObjectNode objectNode)) {
+            throw new CodegeistConfigValidationException(ROOT_OBJECT_MESSAGE);
+        }
+
+        for (Map.Entry<String, JsonNode> field : objectNode.properties()) {
+            config.rootElements.add(rootElementParserService.parseRootElement(field.getKey(), field.getValue()));
+        }
+        return config;
     }
 }

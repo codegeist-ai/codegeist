@@ -305,7 +305,7 @@ jobs:
                   sys.exit(1)
 
           run_smoke("Native version smoke", ["--version"], expected)
-          run_smoke("Native show-config smoke", ["--show-config"], "provider: {}")
+          run_smoke("Native show-config smoke", ["--show-config"], "{}")
 
           if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
               print(f"Expected non-empty native smoke log: {log_file}", file=sys.stderr)
@@ -393,7 +393,7 @@ jobs:
               }
 
               Invoke-NativeCommandSmoke "Native version smoke" @("--version") $env:RELEASE_VERSION "codegeist-windows-native"
-              Invoke-NativeCommandSmoke "Native show-config smoke" @("--show-config") "provider: {}" "codegeist-windows-native-show-config"
+              Invoke-NativeCommandSmoke "Native show-config smoke" @("--show-config") "{}" "codegeist-windows-native-show-config"
           }
           finally {
               Remove-Item -Recurse -Force -LiteralPath $tempRoot -ErrorAction SilentlyContinue

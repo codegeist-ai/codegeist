@@ -131,7 +131,7 @@ run-native-smoke-tests() {
 
   expected="$(codegeist_read_build_version target/classes/META-INF/build-info.properties)"
   # Keep aligned with CodegeistConfigService and docs/developer/architecture/provider-configuration.md.
-  expected_config='provider: {}'
+  expected_config='{}'
   package_name="codegeist-linux-x64"
 
   rm -rf "$smoke_dir"

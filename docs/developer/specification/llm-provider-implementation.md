@@ -324,8 +324,8 @@ Rules:
   `OllamaChatModel` without storing a runtime model.
 - Each concrete `ProviderConfig` owns a `defaultModel()` runtime fallback for
   commands that intentionally do not expose a model selector.
-- Provider ids are resolved by `ProviderConfig.getType()` from the concrete
-  config class `@Provider` annotation, so concrete chat models do not duplicate
+- Provider ids are resolved by `ProviderConfig.getType()` from the concrete config
+  class constant, so concrete chat models do not duplicate
   provider id strings.
 - Each concrete chat model receives only its typed provider config from its
   provider config.
@@ -422,9 +422,9 @@ Implementation constraints:
 `ask` is the first CLI-facing prompt workflow. It intentionally stays small:
 
 - It accepts one positional prompt parameter.
-- It uses `CodegeistConfigService.getCurrentConfig()`, so
-  `-Dcodegeist.config=<path>` is global command configuration rather than an
-  `ask` option.
+- It injects the primary `CodegeistConfig` bean created by
+  `CodegeistConfigService.loadCurrentConfig()`, so `-Dcodegeist.config=<path>` is
+  global command configuration rather than an `ask` option.
 - It selects the first provider configured in the ordered `provider` map.
 - It uses `ProviderConfig.defaultModel()` from the selected provider config. The
   current Ollama provider default is `llama3.2:1b`.
@@ -444,8 +444,8 @@ types in the first runtime slice.
 3. Add the smallest required Spring AI dependency.
 4. Add a concrete `ProviderConfig` only when config binding or runtime mapping
    needs typed fields.
-5. Add the provider config class in the config package and annotate it with
-   `@Provider("<type>")` so the explicit provider registry can match it.
+5. Add the provider config class in the config package with `PROVIDER_TYPE` plus
+   `getType()` so the explicit provider registry can match it.
 6. Implement `defaultModel()` on the provider config without adding a stored YAML
    model field.
 7. Implement `createChatModel()` on the provider config.

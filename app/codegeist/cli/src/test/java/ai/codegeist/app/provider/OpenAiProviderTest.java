@@ -8,6 +8,7 @@ import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.CodegeistConfigValidationException;
 import ai.codegeist.app.config.OpenAiProviderConfig;
 import ai.codegeist.app.config.ProviderConfig;
+import ai.codegeist.app.config.ProvidersRootElement;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -71,7 +72,7 @@ class OpenAiProviderTest {
                 project-id: project-local
             """);
 
-        ProviderConfig provider = config.getProvider().get(PROVIDER_ID);
+        ProviderConfig provider = provider(config);
         assertThat(provider).isInstanceOf(OpenAiProviderConfig.class);
         OpenAiProviderConfig openai = (OpenAiProviderConfig) provider;
         assertThat(openai.getApiKey()).isEqualTo("local-openai-key");
@@ -158,6 +159,10 @@ class OpenAiProviderTest {
         Path configFile = tempDir.resolve("codegeist.yml");
         Files.writeString(configFile, yaml);
         return configService.loadConfig(configFile.toString());
+    }
+
+    private ProviderConfig provider(CodegeistConfig config) {
+        return config.rootElement(ProvidersRootElement.class).orElseThrow().getProviders().get(PROVIDER_ID);
     }
 
     private HttpResponse<String> postJson(String path, Map<String, Object> requestBody) throws Exception {

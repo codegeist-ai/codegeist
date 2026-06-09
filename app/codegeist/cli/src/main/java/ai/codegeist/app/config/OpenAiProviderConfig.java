@@ -9,7 +9,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Provider(OpenAiProviderConfig.PROVIDER_TYPE)
 public final class OpenAiProviderConfig extends ProviderConfig {
 
     public static final String PROVIDER_TYPE = "openai";
@@ -21,6 +20,11 @@ public final class OpenAiProviderConfig extends ProviderConfig {
     private String organizationId;
 
     private String projectId;
+
+    @Override
+    public String getType() {
+        return PROVIDER_TYPE;
+    }
 
     @Override
     public String defaultModel() {

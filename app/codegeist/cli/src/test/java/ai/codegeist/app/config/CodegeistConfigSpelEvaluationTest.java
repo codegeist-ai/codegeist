@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class CodegeistConfigSpelEvaluationTest {
 
     private static final String CONFIG_FILE_NAME = "codegeist.yml";
-    private static final String LITERAL_PROVIDER_ID = "#{literal-provider-key}";
+    private static final String OLLAMA_PROVIDER_TYPE = OllamaProviderConfig.PROVIDER_TYPE;
 
     @Autowired
     private CodegeistConfigService service;
@@ -35,9 +35,10 @@ class CodegeistConfigSpelEvaluationTest {
             """);
 
         CodegeistConfig config = service.loadConfig(configFile.toString());
-        ProviderConfig provider = config.getProvider().get(LITERAL_PROVIDER_ID);
+        ProvidersRootElement providers = providers(config);
+        ProviderConfig provider = providers.getProviders().get(OLLAMA_PROVIDER_TYPE);
 
-        assertThat(config.getProvider()).containsOnlyKeys(LITERAL_PROVIDER_ID);
+        assertThat(providers.getProviders()).containsOnlyKeys(OLLAMA_PROVIDER_TYPE);
         assertThat(provider).isInstanceOf(OllamaProviderConfig.class);
         assertThat(provider.getName()).isEqualTo("local-ollama");
         assertThat(provider.getBaseUrl()).isEqualTo("http://localhost:11434");
@@ -75,5 +76,9 @@ class CodegeistConfigSpelEvaluationTest {
                 .hasMessageContaining(configFile.toString())
                 .hasMessageContaining("provider.openai.api-key")
                 .hasMessageNotContaining("super-secret-material");
+    }
+
+    private ProvidersRootElement providers(CodegeistConfig config) {
+        return config.rootElement(ProvidersRootElement.class).orElseThrow();
     }
 }

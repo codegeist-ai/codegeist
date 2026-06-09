@@ -50,14 +50,14 @@ classDiagram
     namespace ExistingConfig {
       class CodegeistConfigService {
         <<existing>>
-        +getCurrentConfig() CodegeistConfig
+        +loadCurrentConfig() CodegeistConfig
       }
 
       class CodegeistConfig {
         <<existing>>
-        Map~String ProviderConfig~ provider
-        Map~String McpClientConfig~ mcp
-        +defaultProvider() ProviderConfig
+        List~CodegeistConfigRootElement~ rootElements
+        +rootElement(Class~T~ rootElementType) Optional~T~
+        +defaultProvider() Optional~ProviderConfig~
       }
 
       class ProviderConfig {

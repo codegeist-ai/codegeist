@@ -27,10 +27,10 @@ The current provider implementation is intentionally small:
 - Provider config does not store model names, generation options, enablement,
   provider routing, or completion paths.
 - YAML `provider.<id>.type` is a dispatch-only input. Runtime/output type is
-  derived from the concrete class `@Provider` annotation.
-- `ProviderConfigJacksonConverter` uses an explicit Java registry to map registered
-  `@Provider` config classes. It maps the raw YAML object into the matching class
-  without branching on JVM versus native-image runtime.
+  returned by each concrete provider config's `getType()` constant.
+- `ProvidersRootElement` uses an explicit Java registry to map registered provider
+  type constants to config classes. It maps the raw YAML object into the matching
+  class without branching on JVM versus native-image runtime.
 - `OllamaProviderConfig` creates the implemented local Ollama chat model.
 - `OpenAiProviderConfig` is currently config-only for runtime chat; the OpenAI
   provider feature tests call selected HTTP endpoints directly.

@@ -24,6 +24,14 @@ tools for resumable chats.
 - Record tool calls and bounded tool results in `chat.json` when used in a chat;
   keep MCP client definitions and enabled tool definitions in config/runtime state.
 
+## Current Progress
+
+- The minimal direct `codegeist.yml` `mcp:` config root is already implemented and
+  tested through `McpClientsRootElement`, `McpClientConfig`, and
+  `CodegeistConfigServiceTest`.
+- Remaining work still includes Spring AI MCP client/callback setup,
+  read/list/glob/grep/write tools, and chat-file tool-result persistence.
+
 ## Acceptance Criteria
 
 - A focused config test proves direct `codegeist.yml` can load the minimal `mcp:`

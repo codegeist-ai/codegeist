@@ -5,6 +5,24 @@
     "allPublicMethods": true
   },
   {
+    "name": "ai.codegeist.app.config.ProvidersRootElement",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.McpClientsRootElement",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.McpClientConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
     "name": "ai.codegeist.app.config.OllamaProviderConfig",
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,

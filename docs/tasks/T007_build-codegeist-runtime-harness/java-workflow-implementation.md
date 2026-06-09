@@ -242,7 +242,7 @@ sequenceDiagram
     Harness->>File: loadOrCreate(chatPath, workingDir)
     File-->>Harness: ChatFile
     Harness->>File: append user message
-    Harness->>Config: getCurrentConfig()
+    Harness->>Config: loadCurrentConfig()
     Config-->>Harness: CodegeistConfig
     Harness->>Tools: callbacks(ChatExecutionContext)
     Tools-->>Harness: ToolCallback[]

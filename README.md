@@ -19,7 +19,10 @@ vision:
 
 - a compose-based devcontainer setup mounted from the `.devcontainer/` submodule
 - a Spring Boot CLI application under `app/codegeist/cli` built in the devcontainer with Java 25 and GraalVM Community 25
-- a Spring Shell `--version` command backed by Spring Boot build metadata
+- Spring Shell commands for `--version`, direct `codegeist.yml` `--show-config`,
+  and one-shot `ask`
+- direct `codegeist.yml` parsing for typed `provider:` entries and the first
+  minimal `mcp:` client catalog shape
 - a GraalVM native-image Maven profile and local native smoke check
 - local Linux and Windows smoke scripts under `scripts/tests/`
 - a GitHub Actions release workflow for branch validation, pre-tag validation,
@@ -93,9 +96,10 @@ Implementation notes:
   GraalVM toolchain and system Maven
 - Java 25 is the current project baseline
 - the Maven build includes a `native` profile with the GraalVM native build tools
-- the application currently implements `--version` as the only Codegeist-owned
-  Spring Shell command
-- the runtime configuration lives in `app/codegeist/cli/src/main/resources/application.yaml`
+- the application implements Spring Shell commands such as `--version`,
+  `--show-config`, and `ask`
+- `application.yaml` is only Spring Boot/Shell configuration; Codegeist runtime
+  config is loaded from explicit `codegeist.yml` paths
 
 ## Local Smoke Tests
 

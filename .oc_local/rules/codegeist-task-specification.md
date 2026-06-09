@@ -119,6 +119,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   and `curl` as part of the script contract and call them directly. Use
   command-existence checks only when the result drives real `passed`, `skipped`,
   `failed`, or guest installation behavior.
+- For Codegeist smoke scripts, keep `--show-config` expectations aligned across
+  Linux and Windows archive/native smoke paths. Empty direct `codegeist.yml` config
+  currently renders exactly `{}`; do not keep stale `provider: {}` smoke
+  expectations in one platform script after changing the config renderer.
 - For local GPU-backed Ollama development, keep NVIDIA runtime customizations in
   local `.codegeist/` devcontainer overrides such as `.codegeist/Dockerfile` and
   `.codegeist/compose.local.yml`; do not edit the shared `.devcontainer` submodule
@@ -267,8 +271,9 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   intentionally do not expose a model selector.
 - Keep provider discriminator fields such as YAML `type` dispatch-only, not stored
   as mutable `ProviderConfig` state. Validate the incoming YAML discriminator in
-  the converter, derive runtime/output provider type from `@Provider` through
-  `getType()`, and add persistent fields only when runtime behavior needs them.
+  `ProvidersRootElement`, derive runtime/output provider type from concrete
+  `getType()` constants, and add persistent fields only when runtime behavior needs
+  them.
 - For provider feature tests, use one provider-specific test class per provider and
   guard each non-config feature method with an explicit category: `local`,
   `remote_free`, or `remote_paid`. Do not let API-key presence or Maven's default
