@@ -324,14 +324,20 @@
   low-cost OpenAI models `gpt-image-1-mini`, `tts-1`, and
   `gpt-4o-mini-transcribe`; the speech-to-text test generates its default English
   `espeak-ng` fixture under `target/provider-tests/` when needed.
-- `docs/tasks/T007_build-codegeist-runtime-harness/` is open as the chat-file tool
-  harness epic. T007 now means `ask --chat <chat.json>`, resumable file-based chat
-  state, Codegeist-owned `codegeist.yml` `mcp:` client config, MCP/read/write tools
-  where `write` is focused create/overwrite behavior, patch/edit, shell, and a
-  minimum usable terminal coding-agent TUI over the same chat file. `chat.json` is the
-  source of truth for saving and resuming chat history and tool activity only; it
-  must not store provider config, selected provider/model, MCP client definitions,
-  enabled tool definitions, or status. `T007_01` is completed as the
+- `docs/tasks/T007_build-codegeist-runtime-harness/` is open as the session-store
+  tool harness epic. T007 now means `.codegeist/session.json`, `ask -c/--continue`,
+  resumable file-based session state with multiple sessions per working directory,
+  Codegeist-owned `codegeist.yml` `mcp:` client config, MCP/read/write tools where
+  `write` is focused create/overwrite behavior, patch/edit, shell, and a minimum
+  usable terminal coding-agent TUI over the same session store. `.codegeist/session.json`
+  is the source of truth for saving and resuming chat history and tool activity
+  only; it must not store provider config, selected provider/model, MCP client
+  definitions, enabled tool definitions, permission rules, runtime status, or TUI
+  state. `T007_02` is currently scoped to add the session store, `ask -c/--continue`,
+  `TextSessionPart`, and `CompactionSessionPart`; it does not generate compaction
+  summaries or perform runtime context pruning. Planned tool parts should stay
+  minimal and omit optional title, metadata, timing, compaction-marker, and extra
+  lifecycle-state fields until a focused task needs them. `T007_01` is completed as the
   scope-definition child at
   `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_01_define-chat-file-tool-harness-scope.md`.
   Third-party research prompts and synthesized answers live in
@@ -344,9 +350,9 @@
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
   The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
-  implemented and tested; MCP callbacks, read/write tools, and chat-file tool-result
-  persistence remain open. Remaining children are
-  `T007_02_add-chat-file-and-ask-chat-option.md`,
+  implemented and tested; MCP callbacks, read/write tools, and session-store
+  tool-result persistence remain open. Remaining children are
+  `T007_02_add-session-store-and-continue-option.md`,
   `T007_03_add-mcp-and-read-write-tools.md`,
   `T007_04_add-patch-edit-and-shell-tools.md`,
   `T007_05_add-terminal-tui-over-chat-file.md`, and
@@ -487,10 +493,11 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- Start the next T007 implementation from `T007_02`, adding `ask --chat <chat.json>`
-  and the versioned chat file model before tools and TUI depend on it. Use
-  `docs/developer/specification/runtime-harness-implementation.md` for the current
-  chat-file tool harness plan.
+- Start the next T007 implementation from `T007_02`, adding `.codegeist/session.json`,
+  `ask -c/--continue`, `TextSessionPart`, and `CompactionSessionPart` before tools
+  and TUI depend on persisted session state. Use
+  `docs/tasks/T007_build-codegeist-runtime-harness/session-store-model-specification.md`
+  for the current session-store model.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`

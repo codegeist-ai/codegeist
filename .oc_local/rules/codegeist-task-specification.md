@@ -182,15 +182,22 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   workflow and avoid placeholder classes, ids, ports, enums, package layers, or
   validation hierarchies.
 - For `T007_build-codegeist-runtime-harness` implementation tasks, use
-  `docs/developer/specification/runtime-harness-implementation.md` as the chat-file
-  tool harness implementation map. T007 now means `ask --chat <chat.json>`,
-  resumable file-based chat state, Codegeist-owned `codegeist.yml` `mcp:` client
-  config, MCP/read/write tools, patch/edit, shell, and a minimum usable terminal
-  coding-agent TUI over the same chat file. Keep `chat.json` limited to chat
-  history and tool activity; do not store provider config, selected provider/model,
-  MCP client definitions, enabled tool definitions, or status there. Do not add a
-  database, server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills,
-  memory, or subagents inside T007 unless the task is explicitly rescoped again.
+  `docs/developer/specification/runtime-harness-implementation.md` as the runtime
+  harness implementation map, then follow the active task files for current scope.
+  T007 now means `.codegeist/session.json`, `ask -c/--continue`, resumable
+  file-based session state with multiple sessions per working directory,
+  Codegeist-owned `codegeist.yml` `mcp:` client config, MCP/read/write tools,
+  patch/edit, shell, and a minimum usable terminal coding-agent TUI over the same
+  session store. Keep `.codegeist/session.json` limited to chat history and tool
+  activity; do not store provider config, selected provider/model, MCP client
+  definitions, enabled tool definitions, permission rules, runtime status, or TUI
+  state there. T007_02 implements `TextSessionPart` and `CompactionSessionPart`,
+  but not runtime compaction triggering, token estimation, summary generation, or
+  context pruning. Future T007 tool parts should omit optional fields such as
+  title, metadata, timing, compaction markers, and extra lifecycle states until a
+  focused task needs them. Do not add a database, server runtime, remote sync,
+  API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or subagents inside T007
+  unless the task is explicitly rescoped again.
 - For `T007_05`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md` as
   the source-backed OpenCode TUI element inventory and JLine implementation mapping.
