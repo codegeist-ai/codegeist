@@ -30,8 +30,49 @@ tools for resumable chats.
 - The minimal direct `codegeist.yml` `mcp:` config root is already implemented and
   tested through `McpClientsRootElement`, `McpClientConfig`, and
   `CodegeistConfigServiceTest`.
+- This child is currently in specification-first mode. The detailed planned
+  contract lives in
+  `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`.
+- Source-backed research questions for OpenCode and Spring AI Agent Utils live in
+  `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-question-catalog.md`.
+- Source-backed answers live in
+  `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-research.md`.
+  They recommend implementing this slice as a narrow `ChatHarnessService` plus
+  scoped `CodegeistToolRun`, with Agent Utils used as source inspiration rather than
+  directly exposed file tools.
+- A broader coding-agent harness comparison table lives in
+  `docs/tasks/T007_build-codegeist-runtime-harness/coding-agent-harness-implementations.md`.
+  The T007_03 research now also analyzes Aider, SWE-agent, and mini-SWE-agent as
+  smaller harness references that argue against adding repo-map, git automation,
+  benchmark trajectory, Docker, or shell-first runtime features to this child.
 - Remaining work still includes Spring AI MCP client/callback setup,
   read/list/glob/grep/write tools, and session-store tool-result persistence.
+
+## Specification Reference
+
+Use `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`
+as the implementation handoff for this child. It defines the planned public MCP
+config contract, chat execution context, MCP adapter, local file tool contracts,
+workspace policy, output bounds, `ToolSessionPart` persistence shape, test plan,
+implementation order, and non-goals.
+
+Use `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-question-catalog.md`
+to query OpenCode and Spring AI Agent Utils with `/ask-project` before Java
+implementation. Feed the source-backed answers back into the specification or a
+focused research summary.
+
+Use `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-research.md`
+as the current answer set for that catalog. Refresh it only when the third-party
+analysis workspaces change or a specific implementation question remains unclear.
+
+Use `docs/tasks/T007_build-codegeist-runtime-harness/coding-agent-harness-implementations.md`
+as the compact comparison of public coding-agent harness implementations. Treat the
+Aider, SWE-agent, and mini-SWE-agent rows as scope discipline for this child: they
+inform the harness boundary but do not add implementation requirements beyond the
+accepted T007_03 MCP and read/write tool contracts.
+
+Do not implement Java runtime changes from this child until that specification has
+been reviewed or explicitly accepted for implementation.
 
 ## Acceptance Criteria
 

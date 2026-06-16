@@ -376,12 +376,25 @@
   Current T007 planning docs also include
   `runtime-harness-spec.md` for planned grouped class diagrams,
   `opencode-workflow-analysis.md` for source-backed OpenCode workflow evidence,
-  and `java-workflow-implementation.md` for the Java/Spring implementation guide.
+  `java-workflow-implementation.md` for the Java/Spring implementation guide, and
+  `mcp-and-readwrite-tools-spec.md` as the specification-first handoff for
+  `T007_03` MCP callbacks plus read/list/glob/grep/write tools.
+  `mcp-and-readwrite-tools-question-catalog.md` is the focused `/ask-project`
+  research catalog for OpenCode and Spring AI Agent Utils evidence before that
+  implementation, and `mcp-and-readwrite-tools-research.md` now answers that
+  catalog. `coding-agent-harness-implementations.md` documents the public coding-agent
+  harness comparison table. The research recommends implementing `T007_03` as a
+  narrow `ChatHarnessService` plus scoped `CodegeistToolRun`, keeping Agent Utils as
+  source inspiration rather than directly exposing its file tools. It also analyzes
+  Aider, SWE-agent, and mini-SWE-agent as smaller harness references: use them for
+  scope discipline, not as new T007_03 requirements. Do not implement `T007_03` Java
+  runtime changes until that spec is reviewed or explicitly accepted for
+  implementation.
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
   The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
   implemented and tested; MCP callbacks, read/write tools, and session-store
-  tool-result persistence remain open. Remaining children are
+  tool-result persistence remain open implementation work. Remaining children are
   `T007_03_add-mcp-and-read-write-tools.md`,
   `T007_04_add-patch-edit-and-shell-tools.md`,
   `T007_05_add-terminal-tui-over-chat-file.md`, and

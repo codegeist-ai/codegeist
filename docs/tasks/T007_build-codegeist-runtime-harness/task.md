@@ -140,7 +140,9 @@ environment, timeout, or enablement only when implementation tests need them.
   `.codegeist/session.json` and `ask -c/--continue` behavior.
 - `T007_03_add-mcp-and-read-write-tools.md` - finish MCP callbacks and the first
   read/list/glob/grep/write tool path; the minimal `mcp:` config root is already
-  implemented.
+  implemented. Its planning docs include `mcp-and-readwrite-tools-spec.md`,
+  `mcp-and-readwrite-tools-research.md`, and
+  `coding-agent-harness-implementations.md`.
 - `T007_04_add-patch-edit-and-shell-tools.md` - add bounded patch/edit and shell
   tools that persist tool activity into `.codegeist/session.json`.
 - `T007_05_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,
