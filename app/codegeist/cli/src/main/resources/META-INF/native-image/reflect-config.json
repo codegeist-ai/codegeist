@@ -33,5 +33,45 @@
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,
     "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.session.SessionStore",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.session.CodegeistSession",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.session.SessionMessage",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.session.SessionMessageRole",
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.session.SessionPart",
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.session.TextSessionPart",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.session.CompactionSessionPart",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
   }
 ]

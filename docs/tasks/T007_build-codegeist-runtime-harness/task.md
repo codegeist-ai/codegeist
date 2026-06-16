@@ -7,7 +7,7 @@ Status: open
 Implement a resumable Codegeist chat harness centered on a portable
 `.codegeist/session.json` store. The existing `ask` command gains optional
 `-c/--continue` support that appends to the latest stored session, while plain
-`ask` stays one-shot and does not write session state.
+`ask` creates a new stored session for the turn.
 
 T007 now targets a practical local coding-agent loop: one directory-local session
 store with multiple chat sessions, optional MCP, Codegeist tools, patch/edit,
@@ -20,7 +20,7 @@ this task.
 - The application uses Java 25, Spring Boot 4.0.6, Spring Shell 4.0.2, Spring AI
   `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, Lombok, and GraalVM native build
   tooling.
-- Implemented commands are `--version`, `--show-config`, and one-shot `ask`.
+- Implemented commands are `--version`, `--show-config`, and provider-backed `ask`.
 - `ask` selects the first configured provider through `CodegeistConfig`, uses the
   provider config's `defaultModel()`, calls `CodegeistChatService`, and prints the
   response text.
@@ -42,13 +42,13 @@ this task.
 T007 is complete only when these features are implemented and tested:
 
 - `ask` accepts optional `-c/--continue` support.
+- Every successful `ask` saves the prompt and response/tool activity to
+  `.codegeist/session.json`.
 - With `-c/--continue`, `ask` loads `.codegeist/session.json`, appends the new
   prompt and response/tool activity to the session with the newest `updatedAt`, and
-  saves the same store.
-- With `-c/--continue`, missing `.codegeist/session.json` or an empty `sessions[]`
-  fails with exactly `No session to continue`.
-- Without `-c/--continue`, `ask` keeps the existing one-shot behavior and stdout
-  contract without writing session state.
+  saves the same store. Missing stores or empty `sessions[]` create a new session.
+- Without `-c/--continue`, `ask` keeps the existing stdout contract and creates a
+  new stored session instead of appending to the latest session.
 - `.codegeist/session.json` stores only session-relevant information needed to
   resume and save chats: schema version, working directory, store timestamps,
   sessions, session timestamps, messages, assistant responses, tool calls/results,
@@ -71,7 +71,7 @@ T007 is complete only when these features are implemented and tested:
   the chat, tool activity, file changes, shell output, runtime status, and errors
   needed for daily local coding-agent use, submit prompts, and save back to the
   same store.
-- Existing `--version`, `--show-config`, and plain one-shot `ask` behavior keeps
+- Existing `--version`, `--show-config`, and plain `ask` stdout behavior keeps
   working.
 
 ## Session Store Contract
@@ -88,7 +88,7 @@ need them, but the file must support this information class:
   "updatedAt": "2026-06-06T12:01:00Z",
   "sessions": [
     {
-      "id": "ses_20260606T120000Z_abc123",
+      "id": "11111111-1111-4111-8111-111111111111",
       "title": "New session - 2026-06-06T12:00:00Z",
       "createdAt": "2026-06-06T12:00:00Z",
       "updatedAt": "2026-06-06T12:01:00Z",
@@ -152,9 +152,9 @@ environment, timeout, or enablement only when implementation tests need them.
 
 - `ask -c/--continue <prompt>` can resume the latest stored session from
   `.codegeist/session.json`.
-- Missing `.codegeist/session.json` or an empty `sessions[]` fails continuation
-  with exactly `No session to continue`.
-- The no-`--continue` `ask` path still works without requiring session state.
+- Missing `.codegeist/session.json` or an empty `sessions[]` creates a new session.
+- The no-`--continue` `ask` path still works without requiring pre-existing session
+  state and saves the turn to a new session.
 - `CodegeistConfig` can load the minimal `mcp:` client map from direct
   `codegeist.yml`.
 - Configured MCP callbacks can be made available to chat calls.

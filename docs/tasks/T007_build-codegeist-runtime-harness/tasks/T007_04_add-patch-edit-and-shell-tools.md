@@ -10,23 +10,25 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 
 ## Scope
 
-- Add patch/edit tools that mutate files under the chat working directory and record reviewable summaries in
-  `chat.json`.
+- Add patch/edit tools that mutate files under the chat working directory and record
+  reviewable summaries in `.codegeist/session.json`.
 - Add shell tools that run local commands with explicit cwd, timeout, exit code, and
   bounded stdout/stderr summaries.
-- Keep tool output bounded before it reaches the model, TUI, or chat file.
-- Record each side-effecting tool call and result in the active `chat.json`.
+- Keep tool output bounded before it reaches the model, TUI, or session store.
+- Record each side-effecting tool call and result in the active
+  `.codegeist/session.json`.
 - Keep working-directory path/cwd validation minimal but real: no outside-workingDir
   file mutation or cwd escape.
 
 ## Acceptance Criteria
 
 - A focused test proves patch/edit mutates only an allowed working-directory file and records
-  a bounded tool result in `chat.json`.
+  a bounded tool result in `.codegeist/session.json`.
 - A focused test proves shell runs with bounded output, timeout behavior, exit code,
-  and chat-file persistence.
+  and session-store persistence.
 - Outside-workingDir file mutation or cwd escape fails before the side effect runs.
-- Existing read/write tools and no-`--chat` command behavior remain unaffected.
+- Existing read/write tools and plain no-continue `ask` command behavior remain
+  unaffected.
 - Architecture docs describe the implemented patch/edit and shell behavior.
 
 ## Non-Goals
@@ -42,7 +44,7 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 - Temporary working-directory fixtures for patch/edit.
 - Simple cross-platform shell command or Java-level fake for shell behavior.
 - Timeout and output-bound checks.
-- Chat file persistence checks for side-effecting tool results.
+- Session-store persistence checks for side-effecting tool results.
 
 Candidate commands from `app/codegeist/cli`:
 

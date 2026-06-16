@@ -72,10 +72,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   Keep `META-INF/build-info.properties` available as the generated build-info
   source and include it in GraalVM resource metadata when the native image needs
   it.
-- For Spring Shell command output, prefer the command `CommandContext` and
-  `CommandContext.outputWriter()` over direct `System.out`/`System.err` usage or
-  a custom stdout service bean. Flush the writer after no-newline command output
-  such as `--version`.
+- For Spring Shell command output, keep `CommandContext` as the per-invocation
+  command parameter and inject `CommandOutputService` for writing. The service owns
+  `CommandContext.outputWriter().print(...)` and flush behavior. Do not inject
+  `CommandContext` into singleton beans, and do not write command output through
+  direct `System.out` or `System.err` calls.
 - For packaging, release, platform, or binary-smoke work, use
   `docs/developer/specification/build-release-and-binary-smoke-strategy.md`:
   GitHub Releases are the release target, Windows/Linux/macOS support must be

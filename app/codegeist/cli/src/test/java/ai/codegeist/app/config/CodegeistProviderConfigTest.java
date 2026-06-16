@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -22,7 +21,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class CodegeistProviderConfigTest {
 
-    private final ObjectMapper yamlMapper = new CodegeistYamlConfiguration().codegeistYamlObjectMapper();
+    private final CodegeistConfigYamlMapper yamlMapper = new CodegeistConfigYamlMapper();
     private final ProvidersRootElement providersRootElement = new ProvidersRootElement();
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 

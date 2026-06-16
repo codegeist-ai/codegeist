@@ -31,22 +31,33 @@
   a Spring Boot 4 and Spring Shell 4 CLI bootstrap with Java 25, Maven, Spring AI
   `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, and GraalVM native build posture.
 - `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
-  through `CommandContext.outputWriter()` and prints only the Spring Boot build
-  version, currently `0.1.0-SNAPSHOT`.
+  through `CommandOutputService` and prints only the Spring Boot build version,
+  currently `0.1.0-SNAPSHOT`.
+- `CodegeistCommandExceptionMapper` is the shared Spring Shell command-boundary
+  mapper. Commands reference it through `@Command(exitStatusExceptionMapper = ...)`,
+  throw domain exceptions directly, and let the mapper log the exception and return
+  a user-facing `ExitStatus` description. The corrupt or unsupported existing
+  session-store message stays exactly `No session to continue`.
 - `app/codegeist/cli` implements `--show-config` as a Spring Shell command in
   `ai.codegeist.app.config.CodegeistConfigService`. The service resolves the
   current global config policy, including `-Dcodegeist.config=<path>`, and prints
   only direct `codegeist.yml` YAML with no `codegeist:` wrapper and no YAML document
   marker.
-- `app/codegeist/cli` implements `ask` as a one-shot Spring Shell prompt command in
-  `ai.codegeist.app.chat.AskCommands`. It accepts a single positional prompt
-  parameter, uses optional `CodegeistConfig.defaultProvider()` to select the first
-  provider configured in the active config, fails at the command boundary when none
-  exists, uses that provider config's `defaultModel()` runtime fallback, calls
-  `CodegeistChatService`, and prints only the provider response text.
+- `app/codegeist/cli` implements `ask` as a Spring Shell prompt command in
+  `ai.codegeist.app.chat.AskCommands`. Plain `ask <prompt>` accepts a single
+  positional prompt parameter, uses optional `CodegeistConfig.defaultProvider()` to
+  select the first provider configured in the active config, fails at the command
+  boundary when none exists, uses that provider config's `defaultModel()` runtime
+  fallback, calls `CodegeistChatService`, prints only the provider response text,
+  and saves the turn through `SessionStoreService`. Plain `ask` creates a new
+  session. `ask -c/--continue <prompt>` appends to the newest existing session when
+  one exists, creates a new session for missing or empty stores, and refuses corrupt
+  or unsupported existing stores instead of overwriting them.
 - `application.yaml` sets `spring.shell.interactive.enabled=false` so Spring
   Shell's noninteractive runner handles `--version` by default without a custom
-  runner class. Interactive shell behavior is deferred.
+  runner class. Interactive shell behavior is deferred. Codegeist-owned
+  application defaults such as `codegeist.session.*` live in
+  `CodegeistSpringAppProperties`, not in the repo `application.yaml`.
 - `CodegeistApplication.APP_NAME` is the shared application name and Spring config
   prefix. Configuration code lives under `ai.codegeist.app.config`.
   `CodegeistConfig` is now a container of generic parsed
@@ -79,13 +90,30 @@
   `OllamaChatModel` is the first concrete provider model. It maps
   `OllamaProviderConfig` into Spring AI `OllamaApi`, then maps the request model to
   `OllamaChatOptions` at call time before delegating to the Spring AI Ollama model.
-- `CodegeistYamlConfiguration` exposes the qualified `codegeistYamlObjectMapper`
-  bean used by the config service for direct `codegeist.yml` parsing, root element
-  conversion, provider normalization, and rendering.
-- `CodegeistYamlExpressionEvaluator` is a Spring service that receives the YAML
-  mapper bean and owns scalar SpEL preprocessing for direct YAML loads.
+- Local session-store runtime code lives under `ai.codegeist.app.session`.
+  `SessionStoreService` owns the first `.codegeist/session.json` model with schema
+  version, working directory, store timestamps, multiple `CodegeistSession` values,
+  chronological `SessionMessage` values, `SessionMessageRole`, ordered
+  `SessionPart` values, and implemented `TextSessionPart` plus
+  `CompactionSessionPart`. Session, message, part, parent-message, and compaction
+  tail references use plain UUID values, not prefixed strings. The store uses an
+  ISO-instant JSON mapper and native reflection metadata for the session records. It persists chat history and
+  compaction markers only; it does not store API keys, provider config, selected
+  provider/model, MCP client definitions, enabled tools, permission rules, runtime
+  status, or TUI state. `CodegeistSpringAppProperties` owns the built-in default
+  `.codegeist/session.json` path and binds Spring keys `codegeist.session.directory`
+  and `codegeist.session.store-file`; external Spring application properties or
+  `CODEGEIST_SESSION_DIRECTORY` and `CODEGEIST_SESSION_STORE_FILE` can override it.
+  These values are not direct `codegeist.yml` provider/tool config. Continuing a
+  session currently persists the new turn but does not yet rebuild provider-facing
+  model context from stored history.
+- `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper
+  used by the config service for direct `codegeist.yml` parsing, empty-safe source
+  tree loading, root element conversion, provider normalization, and rendering.
+- `CodegeistYamlExpressionEvaluator` is a Spring service that receives the config
+  mapper and owns scalar SpEL preprocessing for direct YAML loads.
 - `CodegeistConfigRootElementParserService` receives root element parser components
-  and the qualified YAML mapper, then owns top-level root lookup plus
+  and the config mapper, then owns top-level root lookup plus
   unsupported-root errors.
 - `CodegeistConfigService` receives the root element parser service, YAML mapper,
   SpEL evaluator, validator, and `codegeist.config` property. It exposes
@@ -115,8 +143,8 @@
   discovery, service-level combination beyond the explicit config path,
   inheritance, provider runtime selection beyond a caller-supplied config,
   provider clients beyond the selected local Ollama `ChatModel`, model catalogs,
-  multi-turn prompt workflows, streaming, provider flags, and model flags are not
-  implemented yet.
+  provider-facing multi-turn prompt reconstruction, streaming, provider flags, and
+  model flags are not implemented yet.
 - `app/codegeist/cli/src/main/resources/logback.xml` routes logs only to
   `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
   output. Current Spring `@Service` and `@Component` classes use Lombok `@Slf4j`
@@ -148,7 +176,7 @@
   empty config. The Windows guest reaches host Ollama at `http://10.0.2.2:11434`
   by default. Smoke scripts now emit stable `Duration: <label>: <seconds>s` lines
   for Maven, package, jar, native compile, archive smoke, platform total, SSH, and
-  QEMU wrapper timings. The latest full `task test` passed with 50 tests, 0
+  QEMU wrapper timings. The latest full `task test` passed with 67 tests, 0
   failures, 0 errors, and 6 skips. The latest `task final-smoke-suite` passed with
   `linux native ask smoke: 0.529s`, `windows jar ask smoke: 4.523s`, and
   `windows native ask smoke: 1.264s`.
@@ -333,12 +361,14 @@
   is the source of truth for saving and resuming chat history and tool activity
   only; it must not store provider config, selected provider/model, MCP client
   definitions, enabled tool definitions, permission rules, runtime status, or TUI
-  state. `T007_02` is currently scoped to add the session store, `ask -c/--continue`,
+  state. `T007_02` is completed with `ai.codegeist.app.session`,
+  `SessionStoreService`, the typed `SessionStoreObjectMapper`, `ask -c/--continue`,
   `TextSessionPart`, and `CompactionSessionPart`; it does not generate compaction
-  summaries or perform runtime context pruning. Planned tool parts should stay
-  minimal and omit optional title, metadata, timing, compaction-marker, and extra
-  lifecycle-state fields until a focused task needs them. `T007_01` is completed as the
-  scope-definition child at
+  summaries, perform runtime context pruning, or rebuild provider-facing context from
+  stored history.
+  Planned tool parts should stay minimal and omit optional title, metadata, timing,
+  compaction-marker, and extra lifecycle-state fields until a focused task needs
+  them. `T007_01` is completed as the scope-definition child at
   `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_01_define-chat-file-tool-harness-scope.md`.
   Third-party research prompts and synthesized answers live in
   `docs/tasks/T007_build-codegeist-runtime-harness/third-party-question-catalog.md`
@@ -352,7 +382,6 @@
   The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
   implemented and tested; MCP callbacks, read/write tools, and session-store
   tool-result persistence remain open. Remaining children are
-  `T007_02_add-session-store-and-continue-option.md`,
   `T007_03_add-mcp-and-read-write-tools.md`,
   `T007_04_add-patch-edit-and-shell-tools.md`,
   `T007_05_add-terminal-tui-over-chat-file.md`, and
@@ -370,10 +399,10 @@
   non-obvious framework behavior, cross-file contracts, or sharp edges, and include
   related file/doc references when they help recover context quickly.
 - `.oc_local/rules/java-coding.md` records the Codegeist Java coding convention:
-  prefer annotation-based Spring wiring, use field `@Autowired` for Spring-managed
-  dependencies instead of constructor injection, use Lombok `@Slf4j` on Spring
-  `@Service` and `@Component` classes, and use focused Lombok annotations such as
-  `@Getter` and `@Setter` to reduce boilerplate. Prefer named
+  prefer annotation-based Spring wiring, use Lombok `@RequiredArgsConstructor` with
+  `private final` collaborators for Spring-managed dependencies, use Lombok `@Slf4j`
+  on Spring `@Service` and `@Component` classes, and use focused Lombok annotations
+  such as `@Getter` and `@Setter` to reduce boilerplate. Prefer named
   `static final String` constants for contract-bearing strings; shared app-wide
   values belong in `CodegeistApplication`, for example `APP_NAME`. Tests should
   reuse owning constants for class-owned error messages and prefixes, such as
@@ -384,8 +413,12 @@
   rule now also prefers dependency injection over passing Spring-managed
   collaborators such as `ObjectMapper` through method parameters, uses Lombok
   `@NonNull` for method parameters that must not be Java `null`, avoids avoidable
-  fully qualified Java type names in code, keeps provider config access-only,
-  centralizes optional default
+  fully qualified Java type names in code, forbids dead code and speculative
+  convenience APIs without a current call site or framework/serialization contract,
+  avoids duplicate Jackson property constructors when no-arg mutable binding is the
+  chosen contract, forbids pass-through wrappers that only delegate to another
+  method with the same inputs,
+  keeps provider config access-only, centralizes optional default
   provider selection in `CodegeistConfig.defaultProvider()`, uses
   `ProviderConfig.defaultModel()` for provider-owned runtime fallbacks, keeps
   provider config separate from `CodegeistChatRequest`, and prevents reintroducing
@@ -493,9 +526,9 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- Start the next T007 implementation from `T007_02`, adding `.codegeist/session.json`,
-  `ask -c/--continue`, `TextSessionPart`, and `CompactionSessionPart` before tools
-  and TUI depend on persisted session state. Use
+- Start the next T007 implementation from `T007_03`, adding MCP callbacks and the
+  first read/list/glob/grep/write tool path on top of the implemented
+  `.codegeist/session.json` store. Use
   `docs/tasks/T007_build-codegeist-runtime-harness/session-store-model-specification.md`
   for the current session-store model.
 - Source-close third-party questions should use

@@ -3,7 +3,6 @@ package ai.codegeist.app.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,14 +14,14 @@ public abstract class CodegeistConfigRootElement<T extends CodegeistConfigElemen
 
     private static final String TYPE_FIELD = "type";
 
-    public abstract CodegeistConfigRootElement<T> parse(JsonNode source, ObjectMapper objectMapper);
+    public abstract CodegeistConfigRootElement<T> parse(JsonNode source, CodegeistConfigYamlMapper yamlMapper);
 
     public abstract Object toYamlValue();
 
     @JsonIgnore
     public abstract String rootName();
 
-    protected List<T> convertElements(JsonNode source, ObjectMapper objectMapper) {
+    protected List<T> convertElements(JsonNode source, CodegeistConfigYamlMapper yamlMapper) {
         List<T> converted = new ArrayList<>();
         if (source == null || source.isNull()) {
             return converted;
@@ -35,7 +34,7 @@ public abstract class CodegeistConfigRootElement<T extends CodegeistConfigElemen
             if (!StringUtils.hasText(element.getKey())) {
                 throw new CodegeistConfigValidationException(elementIdRequiredMessage());
             }
-            converted.add(convertElement(element.getValue(), objectMapper));
+            converted.add(convertElement(element.getValue(), yamlMapper));
         }
         return converted;
     }
@@ -64,25 +63,25 @@ public abstract class CodegeistConfigRootElement<T extends CodegeistConfigElemen
         return "Unsupported " + rootName() + " entry type: ";
     }
 
-    private T convertElement(JsonNode configElement, ObjectMapper objectMapper) {
+    private T convertElement(JsonNode configElement, CodegeistConfigYamlMapper yamlMapper) {
         if (configElement == null || configElement.isNull()) {
             return null;
         }
         if (!(configElement instanceof ObjectNode objectNode)) {
             throw new CodegeistConfigValidationException(elementObjectMessage());
         }
-        return convertConfigElement(objectNode, objectMapper);
+        return convertConfigElement(objectNode, yamlMapper);
     }
 
     @SneakyThrows(JsonProcessingException.class)
-    private T convertConfigElement(ObjectNode node, ObjectMapper objectMapper) {
+    private T convertConfigElement(ObjectNode node, CodegeistConfigYamlMapper yamlMapper) {
         JsonNode typeNode = node.get(TYPE_FIELD);
         if (typeNode == null || !typeNode.isTextual() || !StringUtils.hasText(typeNode.asText())) {
             throw new CodegeistConfigValidationException(elementTypeRequiredMessage());
         }
 
         String elementType = typeNode.asText();
-        return objectMapper.treeToValue(node, findElementClass(elementType));
+        return yamlMapper.treeToValue(node, findElementClass(elementType));
     }
 
     private Class<? extends T> findElementClass(String type) {

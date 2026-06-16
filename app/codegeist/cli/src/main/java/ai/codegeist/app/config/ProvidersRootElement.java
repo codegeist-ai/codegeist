@@ -1,7 +1,6 @@
 package ai.codegeist.app.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -25,9 +24,9 @@ public class ProvidersRootElement extends CodegeistConfigRootElement<ProviderCon
     private final List<@Valid ProviderConfig> providers = new ArrayList<>();
 
     @Override
-    public ProvidersRootElement parse(JsonNode source, ObjectMapper objectMapper) {
+    public ProvidersRootElement parse(JsonNode source, CodegeistConfigYamlMapper yamlMapper) {
         ProvidersRootElement root = new ProvidersRootElement();
-        root.providers.addAll(convertElements(source, objectMapper));
+        root.providers.addAll(convertElements(source, yamlMapper));
         return root;
     }
 

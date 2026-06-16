@@ -40,7 +40,9 @@ Ollama and uses the runtime model name from the request, a Spring Shell `--versi
 command that prints the build version, and a Spring Shell `--show-config` command
 that prints the current Codegeist config as direct `codegeist.yml` YAML with
 configured values unchanged. A Spring Shell `ask` command sends one prompt to the
-first configured provider with that provider config's default runtime model.
+first configured provider with that provider config's default runtime model; with
+`-c/--continue`, it appends the prompt and provider response to the newest session
+in `.codegeist/session.json`.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -65,7 +67,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, native version/config/ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, native version/config/ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama provider dependency is
 used programmatically instead of through global Spring AI auto-configuration.
@@ -97,9 +99,10 @@ Implemented Java package:
 
 | Package | Current responsibility |
 | --- | --- |
-| `ai.codegeist.app` | Spring Boot application entrypoint and version command |
-| `ai.codegeist.app.chat` | Provider-neutral one-turn chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, the local Ollama chat model, and the one-shot `ask` Spring Shell command |
+| `ai.codegeist.app` | Spring Boot application entrypoint, version command, and shared command exception mapping |
+| `ai.codegeist.app.chat` | Provider-neutral one-turn chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, the local Ollama chat model, and the `ask` Spring Shell command with optional session continuation |
 | `ai.codegeist.app.config` | Top-level config root parser components, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
+| `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
@@ -176,16 +179,20 @@ Current behavior:
   `OllamaChatOptions` from the runtime model when a request is called, and delegates
   to Spring AI's Ollama chat model. Ollama-specific Spring AI imports stay isolated
   in this class.
-- `CodegeistYamlConfiguration` exposes the qualified `codegeistYamlObjectMapper`
-  bean used for direct `codegeist.yml` parsing, root element conversion, provider
-  normalization, and rendering.
-- `CodegeistYamlExpressionEvaluator` is a Spring service that receives the YAML
-  mapper bean and evaluates SpEL only in direct-YAML string scalar values.
+- `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper for
+  direct `codegeist.yml` parsing, root element conversion, provider normalization,
+  and rendering. It owns helper methods for reading empty-safe config source trees
+  and writing direct config YAML without a `codegeist:` wrapper.
+- `CodegeistYamlExpressionEvaluator` is a Spring service that receives
+  `CodegeistConfigYamlMapper` and evaluates SpEL only in direct-YAML string scalar
+  values.
 - `CodegeistConfigRootElementParserService` receives the root element parser
-  components and qualified YAML mapper, then owns top-level root lookup plus
+  components and `CodegeistConfigYamlMapper`, then owns top-level root lookup plus
   unsupported-root errors.
-- `CodegeistConfigService` receives the root element parser service, YAML mapper,
-  SpEL evaluator, validator, and `codegeist.config` property by field injection.
+- `CodegeistConfigService` receives the root element parser service, config mapper,
+  SpEL evaluator, validator, and command output service as final collaborators
+  through Lombok `@RequiredArgsConstructor`. Its `configPath` remains a non-final
+  `@Value` field for the injected `codegeist.config` property.
   Its `loadCurrentConfig` `@Primary` bean parses the configured
   `codegeist.config` file when that property is set and otherwise returns the empty
   default config. Normal app components inject `CodegeistConfig` by type to receive
@@ -203,25 +210,58 @@ Current behavior:
   no synthetic roots for an empty config.
 - `--show-config` is implemented as a Spring Shell command in
   `CodegeistConfigService`. The service resolves the current global config policy,
-  renders YAML, and writes only that YAML to `CommandContext.outputWriter()`.
+  renders YAML, and writes only that YAML through `CommandOutputService`.
 - `--version` is implemented as a Spring Shell command in `VersionCommands`. It
   uses Spring Boot's `BuildProperties` bean, backed by the generated
-  `META-INF/build-info.properties`, and writes through Spring Shell's
-  `CommandContext.outputWriter()` so output is only the version string, for
+  `META-INF/build-info.properties`, and writes through `CommandOutputService` so
+  output is only the version string, for
   example `0.1.0-SNAPSHOT`. Its debug log is file-only and does not pollute
   command stdout.
 - `logback.xml` writes logs only to `${LOG_FILE:-logs/codegeist.log}`. Console
   output is reserved for command output, so jar `--version` smokes print only the
   version and packaged native `--show-config` smokes print only direct YAML.
+- `CodegeistCommandExceptionMapper` is the shared Spring Shell command-boundary
+  mapper. Commands reference it through `@Command(exitStatusExceptionMapper = ...)`,
+  throw domain exceptions directly, and let the mapper log the exception and return
+  a user-facing `ExitStatus` description. For corrupt or unsupported existing
+  session stores, the mapped user-facing message stays exactly
+  `No session to continue`.
 - `ask` is implemented as a Spring Shell command in `AskCommands`. It accepts one
-  positional prompt parameter, selects the first configured provider through
-  optional `CodegeistConfig.defaultProvider()`, fails at the command boundary when
-  none exists, uses `ProviderConfig.defaultModel()`, calls `CodegeistChatService`,
-  and writes only the model response to stdout. The current Ollama provider default
-  is `llama3.2:1b`.
-- There are no implemented multi-turn prompt workflows, streaming output, provider
-  flags, model flags, tool executions, permission prompts, workspace policies,
-  storage adapters, server endpoints, Vaadin views, PF4J plugins, or JBang
+  positional prompt parameter plus optional `-c/--continue`. Plain `ask <prompt>`
+  selects the first configured provider through optional
+  `CodegeistConfig.defaultProvider()`, fails at the command boundary when none
+  exists, uses `ProviderConfig.defaultModel()`, calls `CodegeistChatService`, writes
+  only the model response to stdout through `CommandOutputService`, and saves the
+  turn through `SessionStoreService`. Without `-c/--continue`, the service creates a
+  new session. With `-c/--continue`, it appends to the newest existing session when
+  one exists, creates a session for missing or empty stores, and refuses corrupt or
+  unsupported existing stores instead of overwriting them. The current Ollama
+  provider default is `llama3.2:1b`.
+- `SessionStoreService` owns the first local session persistence model. The store
+  root is `SessionStore` with `schemaVersion`, `workingDir`, timestamps, and a list
+  of `CodegeistSession` values. Each session owns chronological `SessionMessage`
+  values with `SessionMessageRole` and ordered `SessionPart` values. T007_02
+  implements `TextSessionPart` and `CompactionSessionPart` only; tool, patch, shell,
+  file, reasoning, and step parts are deferred until focused tool tasks persist
+  them. The JSON mapper registers Java time support, emits ISO instants, omits null
+  fields, and writes inspectable JSON. Native reflection metadata includes the
+  session store records and part implementations. `CodegeistSpringAppProperties` binds
+  Spring application configuration under `codegeist.session.*` and owns the built-in
+  default `.codegeist/session.json` path. External Spring `application.yaml` values
+  or `CODEGEIST_SESSION_DIRECTORY` and `CODEGEIST_SESSION_STORE_FILE` environment
+  variables can override the path. These settings are not part of direct
+  `codegeist.yml` provider/tool configuration.
+- The default `.codegeist/session.json` store does not store API keys, OAuth tokens, cloud credentials,
+  evaluated secret values, provider config, selected provider, selected model, MCP
+  client definitions, enabled tool definitions, permission rules, runtime status, or
+  TUI layout state. Provider, model, MCP, tool, permission, runtime, and UI state are
+  resolved from current runtime configuration when a session continues.
+- There is no implemented provider-facing model-context reconstruction from stored
+  sessions yet. Continuing a session currently persists the new turn but still sends
+  the current prompt as a one-turn `CodegeistChatRequest`.
+- There are no implemented streaming output, provider flags, model flags, tool
+  executions, permission prompts, workspace policies beyond the session store's
+  working-directory field, server endpoints, Vaadin views, PF4J plugins, or JBang
   execution paths.
 
 ## Test Architecture
@@ -233,6 +273,9 @@ interactive runner.
 `VersionCommandsTests` starts the Spring context with
 `VersionCommands.VERSION_COMMAND` as an argument and verifies that stdout equals
 the generated build version while stderr stays empty.
+
+`CodegeistCommandExceptionMapperTest` proves command-boundary exceptions are mapped
+to user-facing `ExitStatus` descriptions, including wrapped no-session causes.
 
 `CodegeistConfigCommandTest` starts the Spring context with
 `CodegeistConfigService.SHOW_CONFIG_COMMAND` and an explicit `codegeist.config`
@@ -282,6 +325,20 @@ test` starts Ollama before Maven for every test run.
 arguments, writes a test config file under `target/provider-tests`, supplies
 `codegeist.config` through Spring dynamic properties, and verifies the captured
 model response contains `codegeist`.
+
+`SessionStoreServiceTest` is the focused session persistence test. It uses a temp
+working directory, fixed clock, and the session-store JSON mapper to prove newest
+session selection, user/assistant text part persistence, multiple sessions,
+missing/empty store session creation, corrupt-store failure, compaction part plus
+parent-linked summary message round-tripping, and absence of representative runtime
+config and secret fields in serialized `.codegeist/session.json`.
+
+`AskCommandsSessionStoreTest` is the focused provider-free command/session test. It
+injects a stub `CodegeistChatService`, calls `AskCommands` directly for plain and
+continued `ask` paths, verifies plain `ask` creates a new session store, verifies
+continued `ask` appends prompt/response text parts or creates a missing session,
+and checks Spring Shell parsing for both `ask -c "prompt"` and
+`ask --continue "prompt"`.
 
 ```mermaid
 sequenceDiagram
@@ -424,19 +481,19 @@ The implemented release artifact names are:
 The following concepts are discussed in strategy docs but are not implemented in
 Java source:
 
-- CLI-facing prompt workflows.
+- Provider-facing multi-turn prompt reconstruction from stored sessions.
 - Provider selection policy beyond the caller supplying one validated
   `ProviderConfig`.
 - Runtime orchestration.
-- Session or event models.
+- Event models beyond persisted session messages and parts.
 - Context loading.
 - Tool registry or tool execution.
 - Permission approval flow.
-- Workspace and file-access policy.
+- Workspace and file-access policy beyond the stored session `workingDir` value.
 - Patch/edit proposal flow.
 - Controlled shell execution.
-- Storage ports or adapters.
-- CLI/Spring Shell commands beyond `--version` and `--show-config`.
+- Storage ports or adapters beyond local `.codegeist/session.json` persistence.
+- CLI/Spring Shell commands beyond `--version`, `--show-config`, and `ask`.
 - Headless server endpoints.
 - Vaadin client.
 - PF4J plugin loading.

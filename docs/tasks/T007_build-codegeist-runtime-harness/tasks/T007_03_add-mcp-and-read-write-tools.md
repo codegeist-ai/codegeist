@@ -21,8 +21,9 @@ tools for resumable chats.
 - Add the first Codegeist-owned read/write tool path for list/read/glob/grep/write.
 - Keep `write` focused on creating or overwriting allowed files under the chat
   working directory; patch/edit semantics remain in `T007_04`.
-- Record tool calls and bounded tool results in `chat.json` when used in a chat;
-  keep MCP client definitions and enabled tool definitions in config/runtime state.
+- Record tool calls and bounded tool results in `.codegeist/session.json` when used
+  in a continued chat; keep MCP client definitions and enabled tool definitions in
+  config/runtime state.
 
 ## Current Progress
 
@@ -30,7 +31,7 @@ tools for resumable chats.
   tested through `McpClientsRootElement`, `McpClientConfig`, and
   `CodegeistConfigServiceTest`.
 - Remaining work still includes Spring AI MCP client/callback setup,
-  read/list/glob/grep/write tools, and chat-file tool-result persistence.
+  read/list/glob/grep/write tools, and session-store tool-result persistence.
 
 ## Acceptance Criteria
 
@@ -40,8 +41,8 @@ tools for resumable chats.
   call path.
 - Focused tests prove read/list/glob/grep tools return bounded results.
 - A focused test proves `write` creates or overwrites only an allowed working-directory
-  file and records a bounded tool result in `chat.json`.
-- Tool calls/results are stored in `chat.json` without unbounded output.
+  file and records a bounded tool result in `.codegeist/session.json`.
+- Tool calls/results are stored in `.codegeist/session.json` without unbounded output.
 - `CodegeistChatRequest` still contains only runtime model and prompt.
 - Architecture docs describe the actual MCP and read/write tool behavior.
 
@@ -57,7 +58,7 @@ tools for resumable chats.
 - Config test for one `stdio` MCP client.
 - Chat service or model test with a fake or test `ToolCallbackProvider`.
 - Temporary working-directory fixtures for read/list/glob/grep/write.
-- Chat file assertions for bounded tool result persistence.
+- Session-store assertions for bounded tool result persistence.
 
 Candidate commands from `app/codegeist/cli`:
 

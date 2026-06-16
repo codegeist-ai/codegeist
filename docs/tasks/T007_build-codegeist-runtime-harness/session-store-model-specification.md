@@ -5,14 +5,13 @@ Specification for the first Codegeist `.codegeist/session.json` model used by
 
 ## Purpose
 
-Define the portable directory-local session store before `ask -c/--continue` is
-implemented. The design is oriented by OpenCode's persisted project, session,
-message, and part behavior, but Codegeist owns a Java/Spring, file-only
+Document the portable directory-local session store implemented with
+`ask -c/--continue`. The design is oriented by OpenCode's persisted project,
+session, message, and part behavior, but Codegeist owns a Java/Spring, file-only
 translation centered on one `.codegeist/session.json` file per working directory.
 
-This document is current task specification, not implemented architecture. Update
-`docs/developer/architecture/architecture.md` only after Java source implements the
-model and command behavior.
+This document is the T007_02 implementation contract. The current implemented
+architecture is summarized in `docs/developer/architecture/architecture.md`.
 
 ## Source Evidence
 
@@ -56,13 +55,20 @@ Codegeist should preserve the useful behavior, not the storage or runtime shape.
 
 ## Codegeist Translation
 
-For T007, `.codegeist/session.json` is the portable equivalent of the subset of
-OpenCode project/session/message/part data needed to keep multiple resumable local
-chats in one working directory.
+For T007, `.codegeist/session.json` is the default portable equivalent of the subset
+of OpenCode project/session/message/part data needed to keep multiple resumable
+local chats in one working directory. `CodegeistSpringAppProperties` owns the
+built-in defaults and binds Spring keys `codegeist.session.directory` and
+`codegeist.session.store-file`; external Spring application properties or
+`CODEGEIST_SESSION_DIRECTORY` and `CODEGEIST_SESSION_STORE_FILE` environment
+overrides may change the directory and file name while keeping the same store
+schema. These values are not part of direct `codegeist.yml` provider/tool
+configuration.
 
 The Codegeist model must:
 
-- Store one session store at `.codegeist/session.json` per working directory.
+- Store one session store at `.codegeist/session.json` per working directory by
+  default.
 - Store multiple sessions in that file.
 - Store schema version, working directory, store timestamps, sessions, messages,
   and ordered message parts.
@@ -101,22 +107,25 @@ codegeist ask --continue "prompt"
 
 Rules:
 
-- Plain `ask "prompt"` remains one-shot. It prints only the provider response and
-  does not create, load, or save `.codegeist/session.json`.
+- Plain `ask "prompt"` prints only the provider response and saves the turn to a new
+  session in the configured store path, creating the store first when needed.
 - `ask -c "prompt"` and `ask --continue "prompt"` load `.codegeist/session.json`
-  from the current working directory's `.codegeist` directory.
+  from the current working directory's `.codegeist` directory by default when it
+  exists.
 - Continuation selects the session with the newest `updatedAt`. If two sessions
   have the same `updatedAt`, implementation may use stable id ordering as the
   tie-breaker.
 - Continuation appends a user message and assistant message to the selected
   session and updates both session-level and store-level `updatedAt`.
 - If `.codegeist/session.json` is missing or the store has no sessions,
-  continuation fails with exactly `No session to continue`.
+  continuation creates a new session instead.
+- Corrupt or unsupported existing `.codegeist/session.json` content fails instead
+  of being overwritten.
 - Do not add `--new-session` in this child.
 - Do not add `--session <id>` in this child; explicit session selection can be a
   later focused task.
-- Do not create a first session implicitly when `-c/--continue` has no session to
-  continue.
+- Do not overwrite corrupt or unsupported existing `.codegeist/session.json` files
+  when creating a new session.
 
 ## Session Class Diagram
 
@@ -143,7 +152,7 @@ classDiagram
 
     class CodegeistSession {
       <<record>>
-      String id
+      UUID id
       String title
       Instant createdAt
       Instant updatedAt
@@ -152,12 +161,11 @@ classDiagram
 
     class SessionMessage {
       <<record>>
-      String id
+      UUID id
       SessionMessageRole role
       Instant createdAt
       Instant completedAt
-      String parentMessageId
-      boolean summary
+      UUID parentMessageId
       List~SessionPart~ parts
     }
 
@@ -168,34 +176,34 @@ classDiagram
     }
 
     class SessionPart {
-      <<interface>>
-      String id
+      <<abstract>>
+      UUID id
       String type
     }
 
     class TextSessionPart {
-      <<record>>
-      String id
+      <<final>>
+      UUID id
       String type
       String text
     }
 
     class ToolSessionPart {
       <<planned>>
-      String id
+      UUID id
       String type
-      String callId
+      UUID callId
       String tool
       ToolSessionState state
     }
 
     class CompactionSessionPart {
-      <<record>>
-      String id
+      <<final>>
+      UUID id
       String type
       boolean auto
       boolean overflow
-      String tailStartMessageId
+      UUID tailStartMessageId
     }
 
     class ToolSessionState {
@@ -209,9 +217,9 @@ classDiagram
     CodegeistSession "1" --> "*" SessionMessage : messages
     SessionMessage "1" --> "*" SessionPart : parts
     SessionMessage --> SessionMessageRole : role
-    SessionPart <|.. TextSessionPart
-    SessionPart <|.. CompactionSessionPart
-    SessionPart <|.. ToolSessionPart
+    SessionPart <|-- TextSessionPart
+    SessionPart <|-- CompactionSessionPart
+    SessionPart <|-- ToolSessionPart
     ToolSessionPart "1" --> "1" ToolSessionState : state
 ```
 
@@ -249,7 +257,7 @@ Each session is one chat:
 
 ```json
 {
-  "id": "ses_20260609T120000Z_abc123",
+  "id": "11111111-1111-4111-8111-111111111111",
   "title": "New session - 2026-06-09T12:00:00Z",
   "createdAt": "2026-06-09T12:00:00Z",
   "updatedAt": "2026-06-09T12:05:00Z",
@@ -261,7 +269,7 @@ Session fields:
 
 | Field | Meaning |
 | --- | --- |
-| `id` | Stable session id. |
+| `id` | Stable session UUID. |
 | `title` | Human-readable session title. Later tasks can add explicit title editing. |
 | `createdAt` | ISO-8601 instant when the session was created. |
 | `updatedAt` | ISO-8601 instant updated whenever the session changes. |
@@ -277,7 +285,7 @@ Messages keep role and timing metadata separate from content parts:
 
 ```json
 {
-  "id": "msg_20260609T120005Z_abc123",
+  "id": "22222222-2222-4222-8222-222222222222",
   "role": "user",
   "createdAt": "2026-06-09T12:00:05Z",
   "parts": []
@@ -286,11 +294,11 @@ Messages keep role and timing metadata separate from content parts:
 
 ```json
 {
-  "id": "msg_20260609T120010Z_def456",
+  "id": "44444444-4444-4444-8444-444444444444",
   "role": "assistant",
   "createdAt": "2026-06-09T12:00:10Z",
   "completedAt": "2026-06-09T12:00:20Z",
-  "parentMessageId": "msg_20260609T120005Z_abc123",
+  "parentMessageId": "22222222-2222-4222-8222-222222222222",
   "parts": []
 }
 ```
@@ -299,12 +307,11 @@ Message fields:
 
 | Field | Meaning |
 | --- | --- |
-| `id` | Stable message id. |
+| `id` | Stable message UUID. |
 | `role` | `user` or `assistant` for T007_02. |
 | `createdAt` | ISO-8601 instant when the message was added. |
 | `completedAt` | Optional ISO-8601 instant for assistant completion. |
 | `parentMessageId` | Optional parent message id. For T007_02 assistant messages should point to the user message that triggered them. |
-| `summary` | Optional boolean for assistant messages that contain compaction summaries. Omit or `false` for normal messages. |
 | `parts` | Ordered content and activity parts for this message. |
 
 ## Initial Part Shape
@@ -313,7 +320,7 @@ T007_02 should implement only text parts:
 
 ```json
 {
-  "id": "prt_20260609T120005Z_abc123",
+  "id": "33333333-3333-4333-8333-333333333333",
   "type": "text",
   "text": "Fix this test"
 }
@@ -323,7 +330,7 @@ Text part fields:
 
 | Field | Meaning |
 | --- | --- |
-| `id` | Stable part id unique within the session store. |
+| `id` | Stable part UUID unique within the session store. |
 | `type` | `text`. |
 | `text` | User prompt text or assistant response text. |
 
@@ -336,8 +343,9 @@ OpenCode compaction is modeled as durable transcript state, not destructive
 deletion. Codegeist should keep the same behavior in `.codegeist/session.json`:
 
 - A user message contains a `compaction` part that marks a compaction boundary.
-- An assistant message with `summary: true` and `parentMessageId` pointing to that
-  user message stores the summary text.
+- An assistant message with `parentMessageId` pointing to that user message stores
+  the summary text. The referenced user message's `compaction` part is the summary
+  marker; no separate message-level `summary` flag is needed.
 - `tailStartMessageId` identifies the first retained recent message that should be
   included raw after the summary when later model context is rebuilt.
 - Original pre-compaction messages remain in the session store for rendering,
@@ -350,16 +358,16 @@ Compaction user message:
 
 ```json
 {
-  "id": "msg_20260609T121000Z_compact_user",
+  "id": "66666666-6666-4666-8666-666666666666",
   "role": "user",
   "createdAt": "2026-06-09T12:10:00Z",
   "parts": [
     {
-      "id": "prt_20260609T121000Z_compact",
+      "id": "77777777-7777-4777-8777-777777777777",
       "type": "compaction",
       "auto": true,
       "overflow": true,
-      "tailStartMessageId": "msg_20260609T120500Z_tail"
+      "tailStartMessageId": "88888888-8888-4888-8888-888888888888"
     }
   ]
 }
@@ -369,15 +377,14 @@ Summary assistant message:
 
 ```json
 {
-  "id": "msg_20260609T121010Z_summary",
+  "id": "99999999-9999-4999-8999-999999999999",
   "role": "assistant",
   "createdAt": "2026-06-09T12:10:10Z",
   "completedAt": "2026-06-09T12:10:20Z",
-  "parentMessageId": "msg_20260609T121000Z_compact_user",
-  "summary": true,
+  "parentMessageId": "66666666-6666-4666-8666-666666666666",
   "parts": [
     {
-      "id": "prt_20260609T121010Z_summary_text",
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       "type": "text",
       "text": "Summary of earlier work and decisions."
     }
@@ -389,7 +396,7 @@ Compaction part fields:
 
 | Field | Meaning |
 | --- | --- |
-| `id` | Stable part id unique within the session store. |
+| `id` | Stable part UUID unique within the session store. |
 | `type` | `compaction`. |
 | `auto` | `true` when compaction was triggered automatically by context pressure. |
 | `overflow` | `true` when the previous provider request exceeded the usable context. |
@@ -408,9 +415,9 @@ T007_02 or optional fields before a focused task needs them:
 
 ```json
 {
-  "id": "prt_20260609T120012Z_tool001",
+  "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   "type": "tool",
-  "callId": "call_20260609T120012Z_abc123",
+  "callId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
   "tool": "read",
   "state": {
     "status": "completed",
@@ -494,26 +501,26 @@ store:
       "updatedAt": "2026-06-09T12:05:20Z",
       "messages": [
         {
-          "id": "msg_20260609T120505Z_abc123",
+          "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
           "role": "user",
           "createdAt": "2026-06-09T12:05:05Z",
           "parts": [
             {
-              "id": "prt_20260609T120505Z_abc123",
+              "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
               "type": "text",
               "text": "Fix this test"
             }
           ]
         },
         {
-          "id": "msg_20260609T120510Z_def456",
+          "id": "ffffffff-ffff-4fff-8fff-ffffffffffff",
           "role": "assistant",
           "createdAt": "2026-06-09T12:05:10Z",
           "completedAt": "2026-06-09T12:05:20Z",
-          "parentMessageId": "msg_20260609T120505Z_abc123",
+          "parentMessageId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
           "parts": [
             {
-              "id": "prt_20260609T120510Z_def456",
+              "id": "abababab-abab-4aba-8bab-abababababab",
               "type": "text",
               "text": "I found the issue."
             }
@@ -533,7 +540,7 @@ Use names that match persisted concepts:
 - `CodegeistSession` - one chat session inside the store.
 - `SessionMessage` - one user or assistant message.
 - `SessionMessageRole` - message role enum.
-- `SessionPart` - common part contract or base type.
+- `SessionPart` - abstract base class for persisted message parts.
 - `TextSessionPart` - implemented T007_02 part type.
 - `CompactionSessionPart` - implemented compaction boundary marker.
 - `SessionStoreService` - load, save, find latest session, append user/assistant
@@ -546,16 +553,18 @@ focused later child task persists those parts.
 
 Focused tests should prove:
 
-- Plain `ask` without `-c/--continue` writes no `.codegeist/session.json` and prints
-  only the provider response.
+- Plain `ask` without `-c/--continue` prints only the provider response and writes a
+  new session to `.codegeist/session.json`.
 - `ask -c` and `ask --continue` append to the newest existing session by
   `updatedAt`.
 - The user prompt is a user message with one `text` part.
 - The assistant response is an assistant message with one `text` part and
   `parentMessageId` pointing to the matching user message.
 - Existing older sessions stay unchanged when the latest session is continued.
-- Missing `.codegeist/session.json` fails with exactly `No session to continue`.
-- Empty `sessions[]` fails with exactly `No session to continue`.
+- Missing `.codegeist/session.json` creates a new session.
+- Empty `sessions[]` creates a new session.
+- Corrupt or unsupported existing `.codegeist/session.json` content fails instead
+  of being overwritten.
 - The compaction shape can round-trip as a `compaction` part plus a summary
   assistant message and does not imply runtime compaction generation in T007_02.
 - Representative provider config secrets and runtime-only fields are absent from

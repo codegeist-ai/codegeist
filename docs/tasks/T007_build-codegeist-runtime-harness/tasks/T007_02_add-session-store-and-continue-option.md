@@ -2,7 +2,7 @@
 
 Parent: `T007_build-codegeist-runtime-harness`
 
-Status: open
+Status: completed
 
 ## Goal
 
@@ -66,23 +66,30 @@ implementation:
   specified for compatibility with later T007 children, but not implemented as
   unused Java placeholders.
 - Implement `CompactionSessionPart` as the durable user `compaction` part with a
-  retained-tail marker, and allow assistant messages to carry the `summary` flag.
+  retained-tail marker. The assistant summary message should point back to that
+  compaction user message through `parentMessageId`; do not add a separate
+  message-level `summary` flag.
   Do not generate compaction summaries in T007_02 unless the implementation task
   is explicitly expanded again.
 - Add load/save behavior for one `.codegeist/session.json` store per working
   directory.
 - Add `ask -c <prompt>` and `ask --continue <prompt>`.
-- When `-c/--continue` is present, load `.codegeist/session.json`, find the
-  session with the newest `updatedAt`, append the new prompt/response, and save
-  the same store.
-- When `.codegeist/session.json` is missing, invalid for continuation, or contains
-  no sessions, fail `-c/--continue` with exactly `No session to continue`.
-- Store the new user prompt as a user message with a `text` part in the continued
+- Every successful `ask` saves the new prompt/response turn to
+  `.codegeist/session.json`.
+- Without `-c/--continue`, create a new session in the current store, creating the
+  store first when needed.
+- When `-c/--continue` is present, load `.codegeist/session.json` when it exists,
+  find the session with the newest `updatedAt`, append the new prompt/response,
+  and save the same store. If the file is missing or contains no sessions, create a
+  new session instead.
+- Corrupt or unsupported existing `.codegeist/session.json` content must fail
+  instead of being overwritten.
+- Store the new user prompt as a user message with a `text` part in the target
   session.
 - Store the provider response as an assistant message with a `text` part and a
   parent message reference to the user message in the same continued session.
-- Without `-c/--continue`, preserve current one-shot `ask` stdout behavior and
-  avoid mandatory file writes.
+- Preserve current `ask` stdout behavior: stdout contains only the provider
+  response even though the session turn is persisted.
 - Keep `CodegeistChatRequest` focused on model and prompt.
 - Do not store session store state inside `CodegeistChatRequest`.
 
@@ -99,32 +106,32 @@ small:
   "updatedAt": "2026-06-09T12:01:00Z",
   "sessions": [
     {
-      "id": "ses_20260609T120000Z_abc123",
+      "id": "11111111-1111-4111-8111-111111111111",
       "title": "New session - 2026-06-09T12:00:00Z",
       "createdAt": "2026-06-09T12:00:00Z",
       "updatedAt": "2026-06-09T12:01:00Z",
       "messages": [
         {
-          "id": "msg_20260609T120005Z_abc123",
+          "id": "22222222-2222-4222-8222-222222222222",
           "role": "user",
           "createdAt": "2026-06-09T12:00:05Z",
           "parts": [
             {
-              "id": "prt_20260609T120005Z_abc123",
+              "id": "33333333-3333-4333-8333-333333333333",
               "type": "text",
               "text": "Fix this test"
             }
           ]
         },
         {
-          "id": "msg_20260609T120010Z_def456",
+          "id": "44444444-4444-4444-8444-444444444444",
           "role": "assistant",
           "createdAt": "2026-06-09T12:00:10Z",
           "completedAt": "2026-06-09T12:00:20Z",
-          "parentMessageId": "msg_20260609T120005Z_abc123",
+          "parentMessageId": "22222222-2222-4222-8222-222222222222",
           "parts": [
             {
-              "id": "prt_20260609T120010Z_def456",
+              "id": "55555555-5555-4555-8555-555555555555",
               "type": "text",
               "text": "I found the issue."
             }
@@ -153,12 +160,14 @@ that persists those parts needs them.
 ## Acceptance Criteria
 
 - A focused test proves plain `ask <prompt>` still prints only the provider
-  response and does not create or require `.codegeist/session.json`.
+  response and creates a new session in `.codegeist/session.json`.
 - A focused test proves `ask -c <prompt>` and `ask --continue <prompt>` load
   `.codegeist/session.json`, select the session with the newest `updatedAt`, append
   to that session, and save the same store.
 - A focused test proves missing `.codegeist/session.json` or an empty `sessions[]`
-  fails `-c/--continue` with exactly `No session to continue`.
+  creates a new session for `-c/--continue`.
+- A focused test proves corrupt or unsupported existing `.codegeist/session.json`
+  fails instead of being overwritten.
 - A focused test proves `.codegeist/session.json` can contain multiple sessions.
 - The continued session contains `messages[].parts[]`, not only flat message text
   or a top-level tool result list.
@@ -169,7 +178,7 @@ that persists those parts needs them.
 - The persisted shape can be used by later tasks to reconstruct a chronological
   transcript for model context and TUI rendering.
 - The session store model implements compaction as a user `compaction` part,
-  supports a summary assistant message, and persists a retained-tail marker so
+  supports a summary assistant message linked by `parentMessageId`, and persists a retained-tail marker so
   later tasks can rebuild model context from summary plus recent tail without
   deleting old messages.
 - `.codegeist/session.json` does not store API keys, OAuth tokens, cloud
@@ -189,8 +198,8 @@ that persists those parts needs them.
 - Do not add `--chat <chat.json>` in this child.
 - Do not add `--session <id>` in this child; explicit session selection can be a
   later focused task.
-- Do not create a first session implicitly when `-c/--continue` has no session to
-  continue.
+- Do not overwrite corrupt or unsupported existing `.codegeist/session.json` files
+  when creating a new session.
 - Do not implement runtime compaction triggering, token estimation, summary
   generation, or context pruning in this child; this child implements only the
   session-store model shape needed for later compaction.
@@ -204,16 +213,14 @@ that persists those parts needs them.
 ## Suggested Tests
 
 - No-`--continue` command assertion that stdout still contains only the provider
-  response and `.codegeist/session.json` is not created.
+  response and `.codegeist/session.json` contains a new session with the turn.
 - Existing `.codegeist/session.json` fixture with two sessions, asserting
   `-c/--continue` appends to the newest session by `updatedAt` and preserves the
   older session unchanged.
-- `-c/--continue` missing-store assertion with exact `No session to continue`
-  error.
-- `-c/--continue` empty-`sessions[]` assertion with exact
-  `No session to continue` error.
-- Corrupt or unsupported schema version behavior if the first parser needs it, in
-  addition to the missing/empty continuation error contract.
+- `-c/--continue` missing-store and empty-`sessions[]` assertions that create a new
+  session.
+- Corrupt or unsupported schema version behavior that fails instead of overwriting
+  an existing file.
 - Session-store fixture with a `compaction` part and summary assistant message,
   asserting the model can load and save compaction state without generating a new
   summary.
@@ -225,5 +232,30 @@ Candidate commands from `app/codegeist/cli`:
 
 ```bash
 task test TEST=<session-store-test-selector>
+task test
+```
+
+## Result
+
+Implemented in `app/codegeist/cli`:
+
+- Added `ai.codegeist.app.session` with the versioned `.codegeist/session.json`
+  model, `SessionStoreService`, `TextSessionPart`, and `CompactionSessionPart`.
+- Added `ask -c/--continue <prompt>` to append to the current working directory
+  store's newest session when one exists, and to create a new session for missing
+  or empty stores. Plain `ask <prompt>` now creates a new stored session while
+  keeping stdout response-only. Command-boundary failures now flow through the
+  shared `CodegeistCommandExceptionMapper` via Spring Shell
+  `@Command(exitStatusExceptionMapper = ...)` instead of local print-and-rethrow
+  blocks.
+- Kept `CodegeistChatRequest` focused on runtime model and prompt.
+- Registered session store records in native reflection metadata.
+- Updated `docs/developer/architecture/architecture.md` with the current session
+  model, command behavior, and tests.
+
+Verification:
+
+```bash
+task test TEST=CodegeistCommandExceptionMapperTest,SessionStoreServiceTest,AskCommandsSessionStoreTest
 task test
 ```

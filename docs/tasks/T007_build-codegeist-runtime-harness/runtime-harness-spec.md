@@ -108,7 +108,7 @@ classDiagram
     class ChatFile {
       <<planned record>>
       int schemaVersion
-      String id
+      UUID id
       Instant createdAt
       Instant updatedAt
       Path workingDir
@@ -153,7 +153,7 @@ classDiagram
 
     class ChatMessage {
       <<planned record>>
-      String id
+      UUID id
       Instant createdAt
       ChatMessageRole role
       String text
@@ -185,7 +185,7 @@ classDiagram
 
     class ChatToolCall {
       <<planned record>>
-      String id
+      UUID id
       Instant createdAt
       String toolName
       String inputSummary
@@ -193,8 +193,8 @@ classDiagram
 
     class ChatToolResult {
       <<planned record>>
-      String id
-      String callId
+      UUID id
+      UUID callId
       Instant completedAt
       ChatToolStatus status
     }

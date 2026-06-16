@@ -1,20 +1,19 @@
 package ai.codegeist.app.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class CodegeistYamlExpressionEvaluator {
 
     private static final String EXPRESSION_MARKER = "#{";
@@ -25,9 +24,7 @@ public class CodegeistYamlExpressionEvaluator {
     private final SpelExpressionParser parser = new SpelExpressionParser();
     private final StandardEvaluationContext evaluationContext = new StandardEvaluationContext();
 
-    @Autowired
-    @Qualifier(CodegeistYamlConfiguration.CODEGEIST_YAML_OBJECT_MAPPER_BEAN)
-    private ObjectMapper objectMapper;
+    private final CodegeistConfigYamlMapper yamlMapper;
 
     public JsonNode evaluate(JsonNode root, String sourcePath) {
         return evaluateNode(root, sourcePath, "");
@@ -67,7 +64,7 @@ public class CodegeistYamlExpressionEvaluator {
             if (isWholeExpression(value)) {
                 Object result = parser.parseExpression(value.substring(2, value.length() - 1))
                         .getValue(evaluationContext);
-                return objectMapper.valueToTree(result);
+                return yamlMapper.valueToTree(result);
             }
 
             String result = parser.parseExpression(value, TEMPLATE_PARSER_CONTEXT)

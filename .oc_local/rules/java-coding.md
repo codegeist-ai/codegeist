@@ -5,25 +5,35 @@ Use this rule when adding or changing Java source in Codegeist.
 ## Spring Wiring
 
 - Prefer annotation-based Spring wiring and metadata.
-- For Spring-managed dependencies, use field injection with `@Autowired` on the
-  field.
+- For Spring-managed dependencies in production beans, use Lombok
+  `@RequiredArgsConstructor` on the bean and `private final` collaborator fields.
+  Do not add new `@Autowired` fields for normal Spring bean injection.
 - Prefer Spring dependency injection for Spring-managed collaborators and shared
   framework objects instead of passing those dependencies through method parameters.
   Method parameters should represent per-call input data; inject dependencies such
   as an owned `ObjectMapper`, service, repository, or validator into the receiving
   Spring bean.
-- Do not use constructor injection for Spring beans.
-- Do not use Lombok constructor annotations such as `@RequiredArgsConstructor` or
-  `@AllArgsConstructor` to inject Spring dependencies.
-- Use constructors only for non-Spring value objects, records, test fixtures, or
-  local helper types where Spring dependency injection is not involved.
+- Prefer Lombok-generated constructor injection over hand-written constructors for
+  Spring beans. Keep explicit constructors only when annotations, superclass
+  constants, or custom initialization make the generated constructor unclear.
+- Do not use Lombok `@AllArgsConstructor` to inject Spring dependencies; prefer
+  `@RequiredArgsConstructor` so optional or non-final fields such as `@Value`
+  properties are not constructor parameters.
 - Prefer Spring annotations such as `@Component`, `@ConfigurationProperties`,
-  `@EnableConfigurationProperties`, `@Autowired`, and test annotations when they
+  `@EnableConfigurationProperties`, `@Qualifier`, `@Value`, and test annotations when they
   make ownership and runtime behavior explicit.
 - For the primary config bean, inject unqualified `CodegeistConfig` and let
   Spring `@Primary` select it. `CodegeistConfigService` owns conversion from
   explicit `codegeist.yml` files into root elements; `application.yaml` is not a
   Codegeist config source.
+- `CodegeistConfigService` is the reference shape for constructor-injected Spring
+  services: use Lombok `@RequiredArgsConstructor` with final collaborator fields,
+  keep `configPath` as a non-final `@Value` field, and inject the concrete
+  `CodegeistConfigYamlMapper` type instead of a qualified generic `ObjectMapper`.
+- When a Spring dependency would need `@Qualifier` only to distinguish generic
+  infrastructure beans such as Jackson mappers, prefer a domain-specific bean type
+  such as `CodegeistConfigYamlMapper` over Lombok compiler configuration or
+  qualifier-copy workarounds.
 - Prefer Bean Validation annotations on configuration POJOs for config validation.
   When config is loaded directly with Jackson rather than Spring binding, call
   `jakarta.validation.Validator` explicitly after mapping.
@@ -37,6 +47,11 @@ Use this rule when adding or changing Java source in Codegeist.
 - For trivial enum or value-object constructor and accessor boilerplate, prefer
   focused Lombok annotations such as `@RequiredArgsConstructor` and `@Getter` with
   the narrowest useful access level over hand-written boilerplate.
+- For non-Spring abstract base classes with only required final fields, prefer
+  Lombok `@RequiredArgsConstructor(access = AccessLevel.PROTECTED)` plus `@NonNull`
+  fields over hand-written protected constructors.
+- Keep explicit constructors when Jackson annotations, superclass constants, or
+  custom initialization make generated constructors unclear.
 - Use Lombok `@NonNull` for simple required constructor or method parameters instead
   of hand-written `Assert.notNull(...)` checks. If a method parameter must not be
   Java `null`, annotate that parameter with Lombok `@NonNull` instead of relying on
@@ -59,6 +74,9 @@ Use this rule when adding or changing Java source in Codegeist.
 - Use Lombok `@SneakyThrows` to remove checked-exception boilerplate when a catch
   block only wraps or rethrows a checked exception. Keep explicit catches when they
   add domain context, recovery, cleanup, or intentionally translate runtime errors.
+- Do not use experimental Lombok APIs such as `lombok.experimental.Accessors`.
+  Prefer standard Lombok annotations and JavaBean-style accessors such as
+  `getText()` or `isAuto()` when records are not a fit.
 - When adding Lombok to the Maven build on Java 25 or newer, configure Lombok as an
   explicit annotation processor instead of relying on implicit processor discovery.
 
@@ -68,6 +86,10 @@ Use this rule when adding or changing Java source in Codegeist.
   Spring-only config type needs binding, but do not annotate `CodegeistConfig`
   with it. Codegeist root config is parsed by `CodegeistConfigService` through
   injected `CodegeistConfigRootElement` parser components.
+- For Codegeist-owned Spring application settings such as `codegeist.session.*`,
+  keep built-in defaults in `CodegeistSpringAppProperties` instead of repo
+  `application.yaml`; use external Spring application properties or environment
+  variables as overrides.
 - For Codegeist config, keep `CodegeistConfig.CONFIGURATION_PREFIX` defined from
   `CodegeistApplication.APP_NAME` so the app name stays the source of truth.
 - Keep configuration classes small and shaped by current binding tests.
@@ -107,6 +129,10 @@ Use this rule when adding or changing Java source in Codegeist.
 - For shared application-wide values, prefer `CodegeistApplication` as the owner.
 - Annotation values must reference compile-time constants, for example
   `CodegeistConfig.CONFIGURATION_PREFIX`.
+- Use named constants for Jackson contract strings such as `@JsonProperty(...)`
+  names and `@JsonTypeInfo.property` values, especially when the same persisted
+  field name appears on fields and constructor parameters. Keep the constant on
+  the class that owns the persisted field.
 - When tests assert class-owned error messages or prefixes, reuse the owning
   constant, for example `CodegeistConfigService.VALIDATION_ERROR_PREFIX`, instead
   of duplicating message fragments such as `Invalid Codegeist config file`.
@@ -134,6 +160,13 @@ Use this rule when adding or changing Java source in Codegeist.
   normalization loops.
 - Do not add a new utility dependency only to replace a trivial check; this rule
   applies to utilities already available through the current framework stack.
+
+## Exception Handling
+
+- Do not add null branches only to choose between exception constructor overloads
+  when the overload already accepts `null` with the intended behavior. Prefer one
+  direct call such as `new DomainException(MESSAGE, cause)` instead of branching to
+  `new DomainException(MESSAGE)` when `cause == null`.
 
 ## Runtime Environment Boundaries
 
@@ -166,9 +199,23 @@ Use this rule when adding or changing Java source in Codegeist.
 
 ## Helper Methods
 
+- Do not add dead code. New constructors, methods, setters, fields, overloads,
+  helpers, annotations, or constants must have a current production call site,
+  framework binding contract, serialization contract, or test-visible behavior.
+  Remove speculative convenience APIs instead of keeping them for possible future
+  use.
+- When a Jackson-bound type intentionally uses a no-argument constructor plus
+  mutable properties, do not keep a duplicate property constructor only for
+  convenience. Use setters at the current call site unless a required production
+  or framework contract needs constructor binding.
 - Do not add one-line pass-through helper methods that only call another helper with
   a constant or parameter, such as `apiKey()` returning `requireEnv(API_KEY_ENV)`.
   Prefer the direct call at the use site when it stays readable.
+- Do not add public or private pass-through wrappers that only delegate to another
+  method with the same inputs, such as `load(path)` returning `read(path)`. Put the
+  real implementation on the method callers should use, unless the wrapper adds a
+  distinct contract such as interface adaptation, error translation, access control,
+  or framework binding.
 - If two methods have the same signature and behavior and differ only by name, keep
   the one that callers should use and remove the other instead of adding a wrapper.
 - Add a helper only when it centralizes non-trivial behavior, improves repeated

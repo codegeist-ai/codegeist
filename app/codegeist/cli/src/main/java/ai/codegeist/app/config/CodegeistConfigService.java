@@ -1,22 +1,20 @@
 package ai.codegeist.app.config;
 
+import ai.codegeist.app.CommandOutputService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -27,6 +25,7 @@ import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CodegeistConfigService {
 
     static final String SHOW_CONFIG_COMMAND = "--show-config";
@@ -36,18 +35,15 @@ public class CodegeistConfigService {
     static final String VALIDATION_ERROR_PREFIX = "Invalid Codegeist config file: ";
     static final String ROOT_OBJECT_MESSAGE = "Codegeist config must be a YAML object";
 
-    @Autowired
-    private Validator validator;
+    private final Validator validator;
 
-    @Autowired
-    @Qualifier(CodegeistYamlConfiguration.CODEGEIST_YAML_OBJECT_MAPPER_BEAN)
-    private ObjectMapper yamlMapper;
+    private final CodegeistConfigYamlMapper yamlMapper;
 
-    @Autowired
-    private CodegeistYamlExpressionEvaluator expressionEvaluator;
+    private final CodegeistYamlExpressionEvaluator expressionEvaluator;
 
-    @Autowired
-    private CodegeistConfigRootElementParserService rootElementParserService;
+    private final CodegeistConfigRootElementParserService rootElementParserService;
+
+    private final CommandOutputService outputService;
 
     @Value("${" + CONFIG_PROPERTY + ":}")
     private String configPath;
@@ -67,8 +63,7 @@ public class CodegeistConfigService {
     @SneakyThrows(IOException.class)
     public CodegeistConfig loadConfig(String configPath) {
         log.debug("Loading Codegeist config file: {}", configPath);
-        JsonNode rawTree = yamlMapper.readTree(Path.of(configPath).toFile());
-        JsonNode sourceTree = rawTree == null ? yamlMapper.createObjectNode() : rawTree;
+        JsonNode sourceTree = yamlMapper.readConfigSourceTree(Path.of(configPath));
         JsonNode evaluatedTree = expressionEvaluator.evaluate(sourceTree, configPath);
         CodegeistConfig loadedConfig = parseConfig(evaluatedTree);
         validateConfig(loadedConfig, configPath);
@@ -79,12 +74,7 @@ public class CodegeistConfigService {
     @SneakyThrows(JsonProcessingException.class)
     public String toYaml(CodegeistConfig codegeistConfig) {
         log.debug("Rendering Codegeist config as YAML");
-        CodegeistConfig config = codegeistConfig == null ? new CodegeistConfig() : codegeistConfig;
-        Map<String, Object> roots = new LinkedHashMap<>();
-        for (CodegeistConfigRootElement<? extends CodegeistConfigElement> rootElement : config.rootElements) {
-            roots.put(rootElement.rootName(), rootElement.toYamlValue());
-        }
-        return yamlMapper.writeValueAsString(roots);
+        return yamlMapper.writeConfig(codegeistConfig);
     }
 
     @Command(name = SHOW_CONFIG_COMMAND, description = "Print the current Codegeist config")
@@ -94,8 +84,7 @@ public class CodegeistConfigService {
         // of this path.
         // Route through the global config policy so `-Dcodegeist.config=...` is
         // shared by CLI commands instead of being command-specific.
-        context.outputWriter().print(toYaml(loadCurrentConfig()));
-        context.outputWriter().flush();
+        outputService.print(context, toYaml(loadCurrentConfig()));
     }
 
     private void validateConfig(CodegeistConfig loadedConfig, String configPath) {

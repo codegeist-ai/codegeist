@@ -48,9 +48,9 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Access config class for local Ollama settings, the `llama3.2:1b` default runtime model, and the concrete config-owned chat model seam. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Access config class for OpenAI settings and the `gpt-5-mini` default runtime model; chat-model creation is not implemented yet. |
 | `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-config.json` | GraalVM reflection metadata that lets Jackson instantiate provider config POJOs in native images. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlConfiguration.java` | Spring configuration that exposes the qualified `codegeistYamlObjectMapper` bean for direct `codegeist.yml` parsing, root element conversion, provider normalization, and rendering. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlExpressionEvaluator.java` | Spring service that receives the YAML mapper bean and evaluates SpEL in direct-YAML string scalar values only. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigService.java` | Spring service that receives the YAML mapper bean, root element parser service, the injected `codegeist.config` value, and the SpEL evaluator service; exposes the primary config bean parsed from `codegeist.config` when set, owns `--show-config`, loads explicit YAML, runs validation, and renders direct YAML. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigYamlMapper.java` | Spring service and Jackson mapper for direct `codegeist.yml` parsing, empty-safe source-tree loading, root element conversion, provider normalization, and direct YAML rendering. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlExpressionEvaluator.java` | Spring service that receives `CodegeistConfigYamlMapper` and evaluates SpEL in direct-YAML string scalar values only. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigService.java` | Spring service that receives `CodegeistConfigYamlMapper`, root element parser service, the injected `codegeist.config` value, and the SpEL evaluator service; exposes the primary config bean parsed from `codegeist.config` when set, owns `--show-config`, loads explicit YAML, runs validation, and renders direct YAML. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigValidationException.java` | User-facing runtime exception for Bean Validation failures, provider dispatch failures before Jackson wraps them, and SpEL failures. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigServiceTest.java` | Spring integration test for binding, direct load, primary config injection, validation, and direct YAML rendering. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistProviderConfigTest.java` | Explicit provider registry dispatch, provider-specific default-model, and validation tests. |
@@ -236,17 +236,21 @@ types include the broader provider matrix from `T006_02` and `T006_03`, such as
 
 ## Spring Component Model
 
-`CodegeistConfigService` is a Spring `@Service`. It receives the YAML mapper,
-`CodegeistConfigRootElementParserService`, `codegeist.config` property, SpEL
-evaluator, and Bean Validation `Validator` by field injection.
+`CodegeistConfigService` is a Spring `@Service`. It receives
+`CodegeistConfigYamlMapper`, `CodegeistConfigRootElementParserService`, SpEL
+evaluator, Bean Validation `Validator`, and `CommandOutputService` as final
+collaborators through Lombok `@RequiredArgsConstructor`. The `codegeist.config`
+property remains a non-final `@Value` field.
 
 ```java
-@Autowired
-private CodegeistConfigRootElementParserService rootElementParserService;
+@RequiredArgsConstructor
+public class CodegeistConfigService {
+    private final CodegeistConfigYamlMapper yamlMapper;
+}
 ```
 
 `CodegeistConfigRootElementParserService` is the separate Spring service that
-receives all `CodegeistConfigRootElement` components and the qualified YAML mapper,
+receives all `CodegeistConfigRootElement` components and `CodegeistConfigYamlMapper`,
 then owns unsupported top-level root errors.
 
 The service exposes the current primary config bean:
@@ -266,10 +270,10 @@ same policy.
 
 ## Direct YAML Loading Flow
 
-`CodegeistYamlConfiguration` provides the qualified `codegeistYamlObjectMapper`
-bean. `CodegeistYamlExpressionEvaluator` receives that mapper as a Spring service,
-and `CodegeistConfigService.loadConfig(String configPath)` uses both beans in a
-phased parser for an explicit file path:
+`CodegeistConfigYamlMapper` provides the direct config YAML Jackson behavior and
+empty-safe source-tree loading. `CodegeistYamlExpressionEvaluator` receives that
+mapper as a Spring service, and `CodegeistConfigService.loadConfig(String
+configPath)` uses both services in a phased parser for an explicit file path:
 
 ```mermaid
 flowchart TD
@@ -369,9 +373,9 @@ sequenceDiagram
     participant User as User
     participant Shell as Spring Shell
     participant Service as CodegeistConfigService
+    participant Output as CommandOutputService
     participant Config as CodegeistConfig
     participant Mapper as Jackson YAML ObjectMapper
-    participant Writer as CommandContext.outputWriter
 
     User->>Shell: ./codegeist --show-config
     Shell->>Service: showConfig(context)
@@ -384,8 +388,8 @@ sequenceDiagram
     Service-->>Config: current config
     Service->>Mapper: write direct codegeist.yml YAML
     Mapper-->>Service: YAML without document marker
-    Service->>Writer: print YAML only
-    Service->>Writer: flush()
+    Service->>Output: print YAML only
+    Output->>Shell: print and flush context writer
 ```
 
 Rendering intentionally omits a Spring `codegeist:` wrapper and YAML document

@@ -292,7 +292,7 @@ classDiagram
 
     class ChatFile {
       int schemaVersion
-      String id
+      UUID id
       Instant createdAt
       Instant updatedAt
       Path workingDir
@@ -300,7 +300,7 @@ classDiagram
     }
 
     class ChatMessage {
-      String id
+      UUID id
       Instant createdAt
       Instant completedAt
       ChatRole role
