@@ -23,10 +23,12 @@ match when it has several of these runtime responsibilities around model calls:
 
 ## Evidence Limits
 
-- Local analyzed workspaces currently exist only for OpenCode and Spring AI Agent
-  Utils under `docs/third-party/`.
+- Local analyzed workspaces currently exist for OpenCode, Spring AI Agent Utils,
+  Aider, and mini-SWE-agent under `docs/third-party/`.
 - Other open-source projects below were inspected through public GitHub source,
   README files, and code-search evidence. Runtime tests were not executed.
+- A focused local Aider and mini-SWE-agent expansion lives in
+  `aider-mini-swe-harness-research.md`.
 - Closed-source or source-available products are listed only when public docs make
   the harness responsibilities visible. Treat those rows as public-doc-backed, not
   source-backed.

@@ -382,14 +382,15 @@
   `mcp-and-readwrite-tools-question-catalog.md` is the focused `/ask-project`
   research catalog for OpenCode and Spring AI Agent Utils evidence before that
   implementation, and `mcp-and-readwrite-tools-research.md` now answers that
-  catalog. `coding-agent-harness-implementations.md` documents the public coding-agent
-  harness comparison table. The research recommends implementing `T007_03` as a
-  narrow `ChatHarnessService` plus scoped `CodegeistToolRun`, keeping Agent Utils as
-  source inspiration rather than directly exposing its file tools. It also analyzes
-  Aider, SWE-agent, and mini-SWE-agent as smaller harness references: use them for
-  scope discipline, not as new T007_03 requirements. Do not implement `T007_03` Java
-  runtime changes until that spec is reviewed or explicitly accepted for
-  implementation.
+  catalog. `coding-agent-harness-implementations.md` documents the coding-agent
+  harness comparison table, while `aider-mini-swe-harness-research.md` applies the
+  smaller-harness catalog to the local Aider and mini-SWE-agent workspaces. The
+  research recommends implementing `T007_03` as a narrow `ChatHarnessService` plus
+  scoped `CodegeistToolRun`, keeping Agent Utils as source inspiration rather than
+  directly exposing its file tools. It also analyzes Aider, SWE-agent, and
+  mini-SWE-agent as smaller harness references: use them for scope discipline, not as
+  new T007_03 requirements. Do not implement `T007_03` Java runtime changes until
+  that spec is reviewed or explicitly accepted for implementation.
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
   The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
@@ -566,6 +567,24 @@
   Repomix/Graphify/manifest/verification artifacts. The latest structural
   Graphify cache has 1,586 nodes, 3,537 edges, and 69 communities. Use it for
   navigation, then inspect source/tests before adoption decisions.
+- `docs/third-party/aider/` contains the Aider analysis workspace with source
+  submodule on `main` at `5dc9490bb35f9729ef2c95d00a19ccd30c26339c`, durable
+  handoff docs, an editable Mermaid runtime-flow source, and ignored local
+  Repomix/Graphify/manifest/verification artifacts. Use it for harness, repo-map,
+  git/edit/lint/test loop, and terminal coding-agent comparisons, not as an MCP
+  lifecycle reference.
+- `docs/third-party/mini-swe-agent/` contains the mini-SWE-agent analysis
+  workspace with source submodule on `main` at
+  `2caffc565474b8856a323ff163ffb7ab98d1ef02`, durable handoff docs, an editable
+  Mermaid runtime-flow source, and ignored local Repomix/Graphify/manifest/
+  verification artifacts. The latest focused Graphify run used 203 filtered
+  source/doc files and generated 1,874 nodes, 2,955 edges, and 131 communities;
+  use `/ask-project mini-swe-agent ...` for follow-up source-backed questions.
+- `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`
+  applies the T007_03 smaller-harness catalog to the local Aider and
+  mini-SWE-agent workspaces. It confirms that neither project implements MCP, but
+  Aider is useful for broad repository-tooling hazards and mini-SWE-agent is useful
+  for keeping Codegeist's first `ChatHarnessService` plus `CodegeistToolRun` narrow.
 
 ## Open Points
 

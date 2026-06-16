@@ -13,3 +13,9 @@
 [submodule "docs/third-party/spring-ai-agent-utils/source"]
 	path = docs/third-party/spring-ai-agent-utils/source
 	url = https://github.com/spring-ai-community/spring-ai-agent-utils.git
+[submodule "docs/third-party/aider/source"]
+	path = docs/third-party/aider/source
+	url = https://github.com/Aider-AI/aider
+[submodule "docs/third-party/mini-swe-agent/source"]
+	path = docs/third-party/mini-swe-agent/source
+	url = https://github.com/SWE-agent/mini-swe-agent.git

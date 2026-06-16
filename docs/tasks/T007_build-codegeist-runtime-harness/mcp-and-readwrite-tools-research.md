@@ -25,8 +25,9 @@ Evidence used:
   `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`.
 - Coding-agent harness comparison table at
   `docs/tasks/T007_build-codegeist-runtime-harness/coding-agent-harness-implementations.md`.
-- Public GitHub source and documentation evidence for Aider, SWE-agent, and
-  mini-SWE-agent.
+- Focused local Aider and mini-SWE-agent comparison in
+  `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`.
+- Public GitHub source and documentation evidence for SWE-agent.
 
 Limits:
 
@@ -35,9 +36,8 @@ Limits:
   `docs/third-party/opencode/ANALYSIS_REPORT.md`.
 - Agent Utils behavior is static-source evidence from revision documented in
   `docs/third-party/spring-ai-agent-utils/ANALYSIS_REPORT.md`.
-- Aider, SWE-agent, and mini-SWE-agent were not imported as local third-party
-  workspaces for this pass. Their analysis is based on public source paths and
-  project documentation inspected during planning.
+- Aider and mini-SWE-agent now have local third-party workspaces. SWE-agent remains
+  public-source-only in this research set unless it is imported later.
 
 ## Executive Answers
 
@@ -135,6 +135,8 @@ service or a nearby harness method without duplicating tool/session orchestratio
 
 The full comparison table lives in
 `docs/tasks/T007_build-codegeist-runtime-harness/coding-agent-harness-implementations.md`.
+The focused local Aider and mini-SWE-agent expansion lives in
+`docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`.
 For T007_03, the most relevant additional open-source counterexamples are Aider,
 SWE-agent, and mini-SWE-agent because they prove that a practical coding-agent
 harness can be intentionally smaller than OpenCode-style MCP/plugin/server systems.

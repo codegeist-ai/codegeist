@@ -1,0 +1,38 @@
+flowchart TD
+    CLI[aider console script] --> Main[aider.main]
+    Main --> Args[CLI config env parser]
+    Main --> IO[InputOutput]
+    Main --> Repo[GitRepo]
+    Main --> Model[Model and ModelSettings]
+    Main --> Coder[Coder.create]
+
+    Coder --> Loop[Coder.run]
+    Loop --> Preproc[preproc_user_input]
+    Preproc --> Commands[Commands slash and bang dispatcher]
+    Preproc --> Mentions[file and URL detection]
+    Commands --> Switch[SwitchCoder mode change]
+    Switch --> Coder
+
+    Loop --> SendMessage[Coder.send_message]
+    SendMessage --> Chunks[ChatChunks message assembly]
+    Chunks --> RepoMap[RepoMap ranked context]
+    SendMessage --> TokenCheck[token and cache checks]
+    SendMessage --> Send[Coder.send]
+    Send --> LiteLLM[Model.send_completion via LiteLLM]
+    LiteLLM --> Response[assistant response or function args]
+
+    Response --> Parser[active coder edit parser]
+    Parser --> Apply[apply_updates]
+    Apply --> Permission[allowed_to_edit confirmations]
+    Permission --> Files[working tree files]
+    Apply --> Reflect[malformed edit reflection]
+    Reflect --> SendMessage
+
+    Apply --> AutoCommit[auto commit and dirty pre-commit]
+    AutoCommit --> Repo
+    Apply --> LintTest[lint test shell feedback]
+    LintTest --> Commands
+    LintTest --> Reflect
+
+    Response --> History[cur_messages done_messages]
+    History --> Summary[chat history summarizer]

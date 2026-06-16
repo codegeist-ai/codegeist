@@ -1,0 +1,37 @@
+flowchart TD
+    CLI[mini Typer CLI] --> Config[Load YAML and key-value config specs]
+    Config --> Merge[recursive_merge]
+    Merge --> Model[get_model]
+    Merge --> Env[get_environment]
+    Merge --> Agent[get_agent]
+    Model --> Run[agent.run task]
+    Env --> Run
+    Agent --> Run
+
+    subgraph Loop[DefaultAgent loop]
+        Init[Render system and task messages]
+        Step[step]
+        Query[query model]
+        Execute[execute actions]
+        Observe[format observation messages]
+        Save[save trajectory]
+        Exit{latest message role is exit}
+        Init --> Step --> Query --> Execute --> Observe --> Save --> Exit
+        Exit -- no --> Step
+    end
+
+    Run --> Init
+    Query --> Litellm[LitellmModel or provider model]
+    Litellm --> Actions[Parsed bash actions]
+    Actions --> Execute
+    Execute --> Local[LocalEnvironment subprocess]
+    Execute --> Sandbox[Docker, Singularity, SWE-ReX, Bubblewrap, ConTree]
+    Local --> Submitted[Submitted sentinel exception]
+    Sandbox --> Submitted
+    Submitted --> ExitMessage[Exit message with submission]
+    ExitMessage --> Save
+    Exit -- yes --> Result[Return exit_status and submission]
+
+    Save --> Trajectory[.traj.json messages and info]
+    Trajectory --> Inspector[mini-extra inspector]
+    Result --> User[CLI result]

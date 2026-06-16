@@ -45,6 +45,10 @@ tools for resumable chats.
   The T007_03 research now also analyzes Aider, SWE-agent, and mini-SWE-agent as
   smaller harness references that argue against adding repo-map, git automation,
   benchmark trajectory, Docker, or shell-first runtime features to this child.
+- A focused local Aider and mini-SWE-agent expansion lives in
+  `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`.
+  It confirms that neither project is an MCP lifecycle reference, but both support
+  the narrow `ChatHarnessService` plus scoped `CodegeistToolRun` boundary.
 - Remaining work still includes Spring AI MCP client/callback setup,
   read/list/glob/grep/write tools, and session-store tool-result persistence.
 
