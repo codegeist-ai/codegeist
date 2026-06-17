@@ -280,7 +280,7 @@ After enough questions are answered, create or update:
 
 - `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`
 - `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-research.md`
-- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_03_add-mcp-and-read-write-tools.md`
+- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_03_add-mcp-and-read-write-tools/task.md`
 
 The research document should include source citations, decisions, unresolved
 questions, and recommended changes to the T007_03 specification. Keep it separate

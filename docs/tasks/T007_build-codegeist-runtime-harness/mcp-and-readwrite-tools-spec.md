@@ -626,6 +626,6 @@ After implementation changes source behavior, update:
 
 - `docs/developer/architecture/architecture.md` with implemented packages, classes,
   runtime flow, and tests.
-- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_03_add-mcp-and-read-write-tools.md`
+- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_03_add-mcp-and-read-write-tools/task.md`
   with completed progress and verification evidence.
 - `docs/memory-bank/chat.md` if future sessions need the implementation state.

@@ -11,6 +11,9 @@ tools for resumable chats.
 
 ## Scope
 
+- Treat this task as the aggregate for the split T007_03 implementation work. Do
+  not implement it as one large runtime change; solve the child tasks in dependency
+  order.
 - Add `spring-ai-starter-mcp-client` to `app/codegeist/cli`.
 - Add the minimal `CodegeistConfig` model needed to load MCP clients from direct
   `codegeist.yml` under the top-level `mcp:` map.
@@ -30,9 +33,13 @@ tools for resumable chats.
 - The minimal direct `codegeist.yml` `mcp:` config root is already implemented and
   tested through `McpClientsRootElement`, `McpClientConfig`, and
   `CodegeistConfigServiceTest`.
-- This child is currently in specification-first mode. The detailed planned
+- This aggregate is currently in specification-first mode. The detailed planned
   contract lives in
   `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`.
+- The implementation handoff lives in
+  `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-implementation-plan.md`.
+  It defines the planned Java packages, class contracts, workflows, tests, and
+  verification order for the implementation pass.
 - Source-backed research questions for OpenCode and Spring AI Agent Utils live in
   `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-question-catalog.md`.
 - Source-backed answers live in
@@ -52,6 +59,31 @@ tools for resumable chats.
 - Remaining work still includes Spring AI MCP client/callback setup,
   read/list/glob/grep/write tools, and session-store tool-result persistence.
 
+## Child Tasks
+
+- `tasks/T007_03_01_add-tool-session-persistence.md` - add `ToolSessionPart`,
+  session-store append overloads, and native reflection metadata for tool parts.
+- `tasks/T007_03_02_add-workspace-policy-and-output-bounds.md` - add shared
+  workspace path safety and output-bound helpers used by local and MCP tools.
+- `tasks/T007_03_03_add-local-file-tools.md` - add Codegeist-owned
+  `read`/`list`/`glob`/`grep`/`write` local file callbacks with bounded persisted
+  results.
+- `tasks/T007_03_04_add-tool-aware-chat-harness.md` - add the reusable one-turn
+  `ChatHarnessService`, tool-aware chat context, tool run, and `AskCommands`
+  refactor.
+- `tasks/T007_03_05_add-mcp-callback-adapter.md` - add Spring AI MCP dependency,
+  stdio-only adapter, and MCP callback integration with the tool run.
+- `tasks/T007_03_06_finalize-tool-docs-and-verification.md` - update current-state
+  docs, refresh task state, and run focused plus broad verification.
+
+## Dependency Order
+
+- `T007_03_01` and `T007_03_02` can be implemented first and independently.
+- `T007_03_03` depends on `T007_03_01` and `T007_03_02`.
+- `T007_03_04` depends on `T007_03_03`.
+- `T007_03_05` depends on `T007_03_04`.
+- `T007_03_06` comes last.
+
 ## Specification Reference
 
 Use `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`
@@ -59,6 +91,12 @@ as the implementation handoff for this child. It defines the planned public MCP
 config contract, chat execution context, MCP adapter, local file tool contracts,
 workspace policy, output bounds, `ToolSessionPart` persistence shape, test plan,
 implementation order, and non-goals.
+
+Use
+`docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-implementation-plan.md`
+as the concrete implementation plan after the specification is accepted. It names
+the target classes, method shapes, package responsibilities, local tool behavior,
+MCP workflow, session-store changes, tests, and verification commands.
 
 Use `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-question-catalog.md`
 to query OpenCode and Spring AI Agent Utils with `/ask-project` before Java
@@ -75,8 +113,8 @@ Aider, SWE-agent, and mini-SWE-agent rows as scope discipline for this child: th
 inform the harness boundary but do not add implementation requirements beyond the
 accepted T007_03 MCP and read/write tool contracts.
 
-Do not implement Java runtime changes from this child until that specification has
-been reviewed or explicitly accepted for implementation.
+Do not implement Java runtime changes directly from this aggregate task. Use the
+focused child tasks once the implementation pass starts.
 
 ## Acceptance Criteria
 
@@ -108,6 +146,6 @@ been reviewed or explicitly accepted for implementation.
 Candidate commands from `app/codegeist/cli`:
 
 ```bash
-task test TEST=<mcp-and-readwrite-tools-test-selector>
+task test TEST=<focused-t007-03-test-selector>
 task test
 ```

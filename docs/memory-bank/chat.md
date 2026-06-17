@@ -389,14 +389,16 @@
   scoped `CodegeistToolRun`, keeping Agent Utils as source inspiration rather than
   directly exposing its file tools. It also analyzes Aider, SWE-agent, and
   mini-SWE-agent as smaller harness references: use them for scope discipline, not as
-  new T007_03 requirements. Do not implement `T007_03` Java runtime changes until
-  that spec is reviewed or explicitly accepted for implementation.
+  new T007_03 requirements. `mcp-and-readwrite-tools-implementation-plan.md` is the
+  concrete implementation plan with focused class views and a child-task split for
+  `T007_03`; implement that work through the child tasks under
+  `T007_03_add-mcp-and-read-write-tools/tasks/`, not as one large runtime change.
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
   The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
   implemented and tested; MCP callbacks, read/write tools, and session-store
   tool-result persistence remain open implementation work. Remaining children are
-  `T007_03_add-mcp-and-read-write-tools.md`,
+  `T007_03_add-mcp-and-read-write-tools/task.md`,
   `T007_04_add-patch-edit-and-shell-tools.md`,
   `T007_05_add-terminal-tui-over-chat-file.md`, and
   `T007_06_verify-chat-file-tool-harness.md`. T007 still avoids a database, server
