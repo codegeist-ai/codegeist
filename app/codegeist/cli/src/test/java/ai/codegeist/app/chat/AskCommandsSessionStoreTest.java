@@ -73,8 +73,8 @@ class AskCommandsSessionStoreTest {
         assertThat(Files.exists(sessionStoreService.currentStorePath())).isTrue();
 
         SessionStore updated = sessionStoreService.load(sessionStoreService.currentStorePath());
-        assertThat(updated.sessions()).hasSize(1);
-        List<SessionMessage> messages = updated.sessions().get(0).messages();
+        assertThat(updated.getSessions()).hasSize(1);
+        List<SessionMessage> messages = updated.getSessions().get(0).messages();
         assertThat(messages).hasSize(2);
         assertThat(messages.get(0).role()).isEqualTo(SessionMessageRole.USER);
         assertThat(((TextSessionPart) messages.get(0).parts().get(0)).getText()).isEqualTo("Plain prompt");
@@ -85,19 +85,20 @@ class AskCommandsSessionStoreTest {
 
     @Test
     void continueAskAppendsPromptAndResponseToNewestSession() throws IOException {
-        sessionStoreService.save(sessionStoreService.currentStorePath(), new SessionStore(
-                SessionStore.SCHEMA_VERSION,
-                tempDir.toString(),
-                CREATED_AT,
-                CREATED_AT,
-                List.of(new CodegeistSession(LATEST_SESSION_ID, "Latest", CREATED_AT, CREATED_AT, List.of()))));
+        sessionStoreService.save(sessionStoreService.currentStorePath(), SessionStore.builder()
+                .schemaVersion(SessionStore.SCHEMA_VERSION)
+                .workingDir(tempDir.toString())
+                .createdAt(CREATED_AT)
+                .updatedAt(CREATED_AT)
+                .sessions(List.of(new CodegeistSession(LATEST_SESSION_ID, "Latest", CREATED_AT, CREATED_AT, List.of())))
+                .build());
         StringWriter output = new StringWriter();
 
         commands.ask(commandContext(output), true, "Continue prompt");
 
         assertThat(output).hasToString(StubChatService.RESPONSE);
         SessionStore updated = sessionStoreService.load(sessionStoreService.currentStorePath());
-        List<SessionMessage> messages = updated.sessions().get(0).messages();
+        List<SessionMessage> messages = updated.getSessions().get(0).messages();
         assertThat(messages).hasSize(2);
         assertThat(messages.get(0).role()).isEqualTo(SessionMessageRole.USER);
         assertThat(((TextSessionPart) messages.get(0).parts().get(0)).getText()).isEqualTo("Continue prompt");
@@ -114,8 +115,8 @@ class AskCommandsSessionStoreTest {
 
         assertThat(output).hasToString(StubChatService.RESPONSE);
         SessionStore updated = sessionStoreService.load(sessionStoreService.currentStorePath());
-        assertThat(updated.sessions()).hasSize(1);
-        List<SessionMessage> messages = updated.sessions().get(0).messages();
+        assertThat(updated.getSessions()).hasSize(1);
+        List<SessionMessage> messages = updated.getSessions().get(0).messages();
         assertThat(messages).hasSize(2);
         assertThat(((TextSessionPart) messages.get(0).parts().get(0)).getText()).isEqualTo("Continue prompt");
         assertThat(((TextSessionPart) messages.get(1).parts().get(0)).getText()).isEqualTo(StubChatService.RESPONSE);

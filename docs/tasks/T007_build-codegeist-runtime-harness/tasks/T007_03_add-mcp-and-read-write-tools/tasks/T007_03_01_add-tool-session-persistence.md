@@ -2,7 +2,7 @@
 
 Parent: `T007_03_add-mcp-and-read-write-tools`
 
-Status: open
+Status: completed
 
 ## Goal
 
@@ -21,9 +21,10 @@ provider request data or adding actual tool execution yet.
   new `tool` discriminator.
 - Add `SessionStoreService.currentWorkingDirectory()` and reuse it from
   `currentStorePath()`.
-- Add `SessionStoreService` overloads that append a user text message and an
-  assistant message containing ordered `ToolSessionPart` values followed by the
-  assistant text part.
+- Add session-store append support for a user text message and an assistant message
+  containing ordered `ToolSessionPart` values followed by the assistant text part.
+  `SessionStoreService` owns file I/O and clock input; `SessionStore` owns the
+  in-memory session-list changes.
 - Preserve existing text-only save methods by delegating with an empty tool-part
   list.
 - Add `ToolSessionPart` to `META-INF/native-image/reflect-config.json`.
@@ -31,13 +32,15 @@ provider request data or adding actual tool execution yet.
 ## Acceptance Criteria
 
 - `ToolSessionPart` round-trips through the existing session-store JSON mapper.
+- `ToolSessionPart` stores only the tool name, enum status, and bounded output
+  preview.
 - Saved exchanges with tool parts store assistant tool parts before the assistant
   text part.
 - Saved exchanges without tool parts keep the existing text-only behavior.
 - Persisted tool output is already bounded by caller-provided fields and does not
   introduce runtime-only state.
-- Existing corrupt or unsupported session-store failures still map to
-  `No session to continue`.
+- Missing or empty session stores create a session when continuing.
+- Existing corrupt session-store JSON failures still map to `No session to continue`.
 
 ## Non-Goals
 
@@ -60,3 +63,11 @@ Candidate commands from `app/codegeist/cli`:
 ```bash
 task test TEST=SessionStoreServiceTest
 ```
+
+## Verification
+
+- 2026-06-17: `task test TEST=SessionStoreServiceTest,AskCommandsSessionStoreTest`
+  passed from `app/codegeist/cli` with 16 tests, 0 failures, 0 errors, and 0 skips.
+- 2026-06-18: `task build` and
+  `task test TEST=SessionStoreServiceTest,AskCommandsSessionStoreTest` passed from
+  `app/codegeist/cli` after moving session-list mutation logic into `SessionStore`.

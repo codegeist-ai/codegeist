@@ -5,20 +5,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessionStoreService {
 
-    public static final String NO_SESSION_TO_CONTINUE_MESSAGE = "No session to continue";
+    public static final String NO_SESSION_TO_CONTINUE_MESSAGE = SessionStore.NO_SESSION_TO_CONTINUE_MESSAGE;
 
     private final SessionStoreObjectMapper objectMapper;
 
@@ -29,8 +29,12 @@ public class SessionStoreService {
     @Value("${user.dir}")
     String workingDir;
 
+    public Path currentWorkingDirectory() {
+        return Path.of(workingDir).toAbsolutePath().normalize();
+    }
+
     public Path currentStorePath() {
-        return Path.of(workingDir).toAbsolutePath().normalize()
+        return currentWorkingDirectory()
                 .resolve(properties.getSession().getDirectory())
                 .resolve(properties.getSession().getStoreFile());
     }
@@ -39,12 +43,15 @@ public class SessionStoreService {
         return loadForContinue(currentStorePath());
     }
 
-    public SessionStore appendExchangeToLatestCurrentSession(
-            @NonNull SessionStore store,
-            @NonNull String prompt,
-            @NonNull String response) {
-        SessionStore updatedStore = appendExchangeToSession(store, latestSessionIndex(store.sessions()), prompt, response);
-        save(currentStorePath(), updatedStore);
+    public SessionStore appendExchangeToLatestCurrentSession(@NonNull SessionStore.SessionExchange exchange) {
+        Path storePath = currentStorePath();
+        log.debug(
+                "Appending exchange to latest current session at {} with {} tool parts",
+                storePath,
+                exchange.getToolParts().size());
+        SessionStore updatedStore = loadForContinue(storePath)
+                .appendExchangeToLatestSession(exchange, sessionStoreClock.now(), sessionStoreClock.now());
+        save(storePath, updatedStore);
         return updatedStore;
     }
 
@@ -52,18 +59,45 @@ public class SessionStoreService {
             boolean continueSession,
             @NonNull String prompt,
             @NonNull String response) {
+        return saveExchangeToCurrentSession(continueSession, prompt, response, List.of());
+    }
+
+    public SessionStore saveExchangeToCurrentSession(
+            boolean continueSession,
+            @NonNull String prompt,
+            @NonNull String response,
+            List<ToolSessionPart> toolParts) {
+        List<ToolSessionPart> normalizedToolParts = toolParts == null ? List.of() : List.copyOf(toolParts);
         Path storePath = currentStorePath();
         SessionStore store = loadExistingOrCreateStore(storePath);
         int sessionIndex;
-        if (continueSession && !store.sessions().isEmpty()) {
-            sessionIndex = latestSessionIndex(store.sessions());
+        if (continueSession && !store.getSessions().isEmpty()) {
+            sessionIndex = store.latestSessionIndex();
+            log.debug(
+                    "Continuing session {} at {} with {} tool parts",
+                    store.getSessions().get(sessionIndex).id(),
+                    storePath,
+                    normalizedToolParts.size());
         }
         else {
-            store = addNewSession(store);
-            sessionIndex = store.sessions().size() - 1;
+            store = store.addNewSession(sessionStoreClock.now());
+            sessionIndex = store.getSessions().size() - 1;
+            log.debug(
+                    "Starting new session {} at {} with {} tool parts",
+                    store.getSessions().get(sessionIndex).id(),
+                    storePath,
+                    normalizedToolParts.size());
         }
 
-        SessionStore updatedStore = appendExchangeToSession(store, sessionIndex, prompt, response);
+        SessionStore updatedStore = store.appendExchangeToSession(
+                SessionStore.SessionExchange.builder()
+                        .prompt(prompt)
+                        .response(response)
+                        .toolParts(normalizedToolParts)
+                        .build(),
+                sessionIndex,
+                sessionStoreClock.now(),
+                sessionStoreClock.now());
         save(storePath, updatedStore);
         return updatedStore;
     }
@@ -76,145 +110,53 @@ public class SessionStoreService {
     public void save(@NonNull Path storePath, @NonNull SessionStore store) {
         Files.createDirectories(storePath.getParent());
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(storePath.toFile(), store);
-    }
-
-    public SessionStore appendExchangeToLatestSession(
-            @NonNull SessionStore store,
-            @NonNull String prompt,
-            @NonNull String response) {
-        return appendExchangeToSession(store, latestSessionIndex(store.sessions()), prompt, response);
-    }
-
-    private SessionStore appendExchangeToSession(
-            SessionStore store,
-            int sessionIndex,
-            String prompt,
-            String response) {
-        List<CodegeistSession> sessions = new ArrayList<>(store.sessions());
-        CodegeistSession session = sessions.get(sessionIndex);
-        Instant now = sessionStoreClock.now();
-        UUID userMessageId = UUID.randomUUID();
-        SessionMessage userMessage = new SessionMessage(
-                userMessageId,
-                SessionMessageRole.USER,
-                now,
-                null,
-                null,
-                List.of(new TextSessionPart(UUID.randomUUID(), prompt)));
-        Instant completedAt = sessionStoreClock.now();
-        SessionMessage assistantMessage = new SessionMessage(
-                UUID.randomUUID(),
-                SessionMessageRole.ASSISTANT,
-                completedAt,
-                completedAt,
-                userMessageId,
-                List.of(new TextSessionPart(UUID.randomUUID(), response)));
-        List<SessionMessage> updatedMessages = new ArrayList<>(session.messages());
-        updatedMessages.add(userMessage);
-        updatedMessages.add(assistantMessage);
-        CodegeistSession updatedSession = new CodegeistSession(
-                session.id(),
-                session.title(),
-                session.createdAt(),
-                completedAt,
-                List.copyOf(updatedMessages));
-        sessions.set(sessionIndex, updatedSession);
-        return new SessionStore(
-                store.schemaVersion(),
-                store.workingDir(),
-                store.createdAt(),
-                completedAt,
-                List.copyOf(sessions));
+        log.debug("Saved session store {} with {} sessions", storePath, store.getSessions().size());
     }
 
     private SessionStore loadExistingOrCreateStore(Path storePath) {
         if (!Files.exists(storePath)) {
+            log.debug("Creating new session store at {}", storePath);
             return newStore();
         }
 
         try {
             SessionStore store = load(storePath);
-            validateLoadableStore(store);
+            log.debug("Loaded session store {} with {} sessions", storePath, store.getSessions().size());
             return store;
         }
         catch (IOException exception) {
+            log.debug("Failed to load session store at {}", storePath, exception);
             throw new NoSessionToContinueException(NO_SESSION_TO_CONTINUE_MESSAGE, exception);
         }
     }
 
     private SessionStore newStore() {
         Instant now = sessionStoreClock.now();
-        return new SessionStore(
-                SessionStore.SCHEMA_VERSION,
-                Path.of(workingDir).toAbsolutePath().normalize().toString(),
-                now,
-                now,
-                List.of());
-    }
-
-    private SessionStore addNewSession(SessionStore store) {
-        Instant now = sessionStoreClock.now();
-        List<CodegeistSession> sessions = new ArrayList<>(store.sessions());
-        sessions.add(new CodegeistSession(
-                UUID.randomUUID(),
-                "New session - " + now,
-                now,
-                now,
-                List.of()));
-        return new SessionStore(
-                store.schemaVersion(),
-                store.workingDir(),
-                store.createdAt(),
-                now,
-                List.copyOf(sessions));
+        return SessionStore.newStore(currentWorkingDirectory().toString(), now);
     }
 
     private SessionStore loadForContinue(Path storePath) {
         if (!Files.exists(storePath)) {
-            throw new NoSessionToContinueException(NO_SESSION_TO_CONTINUE_MESSAGE);
+            log.debug("Creating new session store at {} for continue", storePath);
+            SessionStore store = newStore().addNewSession(sessionStoreClock.now());
+            save(storePath, store);
+            return store;
         }
 
         try {
             SessionStore store = load(storePath);
-            validateContinuationStore(store);
+            if (store.getSessions().isEmpty()) {
+                log.debug("Creating first session in empty store {} for continue", storePath);
+                store = store.addNewSession(sessionStoreClock.now());
+                save(storePath, store);
+            }
+            log.debug("Loaded continuation session store {} with {} sessions", storePath, store.getSessions().size());
             return store;
         }
         catch (IOException exception) {
+            log.debug("Failed to load continuation session store at {}", storePath, exception);
             throw new NoSessionToContinueException(NO_SESSION_TO_CONTINUE_MESSAGE, exception);
         }
     }
 
-    private void validateContinuationStore(SessionStore store) {
-        if (store == null
-                || store.schemaVersion() != SessionStore.SCHEMA_VERSION
-                || store.sessions() == null
-                || store.sessions().isEmpty()) {
-            throw new NoSessionToContinueException(NO_SESSION_TO_CONTINUE_MESSAGE);
-        }
-    }
-
-    private void validateLoadableStore(SessionStore store) {
-        if (store == null
-                || store.schemaVersion() != SessionStore.SCHEMA_VERSION
-                || store.sessions() == null) {
-            throw new NoSessionToContinueException(NO_SESSION_TO_CONTINUE_MESSAGE);
-        }
-    }
-
-    private int latestSessionIndex(List<CodegeistSession> sessions) {
-        if (sessions.isEmpty()) {
-            throw new NoSessionToContinueException(NO_SESSION_TO_CONTINUE_MESSAGE);
-        }
-
-        int latestIndex = 0;
-        for (int index = 1; index < sessions.size(); index++) {
-            CodegeistSession candidate = sessions.get(index);
-            CodegeistSession latest = sessions.get(latestIndex);
-            int timestampComparison = candidate.updatedAt().compareTo(latest.updatedAt());
-            if (timestampComparison > 0 || timestampComparison == 0 && candidate.id().compareTo(latest.id()) > 0) {
-                latestIndex = index;
-            }
-        }
-        return latestIndex;
-    }
 }

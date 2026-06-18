@@ -223,9 +223,8 @@ Current behavior:
 - `CodegeistCommandExceptionMapper` is the shared Spring Shell command-boundary
   mapper. Commands reference it through `@Command(exitStatusExceptionMapper = ...)`,
   throw domain exceptions directly, and let the mapper log the exception and return
-  a user-facing `ExitStatus` description. For corrupt or unsupported existing
-  session stores, the mapped user-facing message stays exactly
-  `No session to continue`.
+  a user-facing `ExitStatus` description. Corrupt existing session-store JSON maps
+  to the user-facing message `No session to continue`.
 - `ask` is implemented as a Spring Shell command in `AskCommands`. It accepts one
   positional prompt parameter plus optional `-c/--continue`. Plain `ask <prompt>`
   selects the first configured provider through optional
@@ -234,28 +233,38 @@ Current behavior:
   only the model response to stdout through `CommandOutputService`, and saves the
   turn through `SessionStoreService`. Without `-c/--continue`, the service creates a
   new session. With `-c/--continue`, it appends to the newest existing session when
-  one exists, creates a session for missing or empty stores, and refuses corrupt or
-  unsupported existing stores instead of overwriting them. The current Ollama
-  provider default is `llama3.2:1b`.
-- `SessionStoreService` owns the first local session persistence model. The store
-  root is `SessionStore` with `schemaVersion`, `workingDir`, timestamps, and a list
-  of `CodegeistSession` values. Each session owns chronological `SessionMessage`
-  values with `SessionMessageRole` and ordered `SessionPart` values. T007_02
-  implements `TextSessionPart` and `CompactionSessionPart` only; tool, patch, shell,
-  file, reasoning, and step parts are deferred until focused tool tasks persist
-  them. The JSON mapper registers Java time support, emits ISO instants, omits null
-  fields, and writes inspectable JSON. Native reflection metadata includes the
-  session store records and part implementations. `CodegeistSpringAppProperties` binds
-  Spring application configuration under `codegeist.session.*` and owns the built-in
-  default `.codegeist/session.json` path. External Spring `application.yaml` values
-  or `CODEGEIST_SESSION_DIRECTORY` and `CODEGEIST_SESSION_STORE_FILE` environment
+  one exists, creates a session for missing or empty stores, and refuses corrupt JSON
+  stores instead of overwriting them. The current Ollama provider default is
+  `llama3.2:1b`.
+- `SessionStoreService` owns session-store file paths, JSON I/O, and clock input;
+  `SessionStore` owns in-memory store changes such as creating a store, adding a
+  session, selecting the latest session, and appending a prompt/response exchange.
+  The store root has `schemaVersion`, `workingDir`, timestamps, and a list of
+  `CodegeistSession` values. Each session owns chronological `SessionMessage`
+  values with `SessionMessageRole` and ordered `SessionPart` values. Implemented
+  part types are `TextSessionPart`, `CompactionSessionPart`, and the additive
+  `ToolSessionPart` for bounded completed or failed tool activity. Tool parts persist
+  only the tool name, nested `ToolSessionPart.ToolSessionPartStatus`, and bounded
+  `outputPreview`. Actual local file tools, MCP callbacks, patch/edit, shell,
+  reasoning, and step parts are
+  deferred until focused tool tasks add the matching execution paths. `SessionStore`
+  is a Lombok getter/setter/builder class with a default empty session list;
+  session, message, and existing part model entries stay records or Jackson-bound
+  classes as implemented. The JSON mapper registers Java time support, emits ISO
+  instants, omits null fields, and writes inspectable JSON. Native reflection
+  metadata includes the session model types and part implementations.
+  `CodegeistSpringAppProperties` binds Spring application configuration under
+  `codegeist.session.*` and owns the built-in default
+  `.codegeist/session.json` path. External Spring `application.yaml` values or
+  `CODEGEIST_SESSION_DIRECTORY` and `CODEGEIST_SESSION_STORE_FILE` environment
   variables can override the path. These settings are not part of direct
   `codegeist.yml` provider/tool configuration.
-- The default `.codegeist/session.json` store does not store API keys, OAuth tokens, cloud credentials,
-  evaluated secret values, provider config, selected provider, selected model, MCP
-  client definitions, enabled tool definitions, permission rules, runtime status, or
-  TUI layout state. Provider, model, MCP, tool, permission, runtime, and UI state are
-  resolved from current runtime configuration when a session continues.
+- The default `.codegeist/session.json` store does not store API keys, OAuth tokens,
+  cloud credentials, evaluated secret values, provider config, selected provider,
+  selected model, MCP client definitions, enabled tool definitions, permission rules,
+  runtime status, or TUI layout state. Provider, model, MCP, tool, permission,
+  runtime, and UI state are resolved from current runtime configuration when a
+  session continues.
 - There is no implemented provider-facing model-context reconstruction from stored
   sessions yet. Continuing a session currently persists the new turn but still sends
   the current prompt as a one-turn `CodegeistChatRequest`.

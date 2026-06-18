@@ -36,8 +36,8 @@
 - `CodegeistCommandExceptionMapper` is the shared Spring Shell command-boundary
   mapper. Commands reference it through `@Command(exitStatusExceptionMapper = ...)`,
   throw domain exceptions directly, and let the mapper log the exception and return
-  a user-facing `ExitStatus` description. The corrupt or unsupported existing
-  session-store message stays exactly `No session to continue`.
+  a user-facing `ExitStatus` description. Corrupt existing session-store JSON maps
+  to the user-facing message `No session to continue`.
 - `app/codegeist/cli` implements `--show-config` as a Spring Shell command in
   `ai.codegeist.app.config.CodegeistConfigService`. The service resolves the
   current global config policy, including `-Dcodegeist.config=<path>`, and prints
@@ -52,7 +52,7 @@
   and saves the turn through `SessionStoreService`. Plain `ask` creates a new
   session. `ask -c/--continue <prompt>` appends to the newest existing session when
   one exists, creates a new session for missing or empty stores, and refuses corrupt
-  or unsupported existing stores instead of overwriting them.
+  JSON stores instead of overwriting them.
 - `application.yaml` sets `spring.shell.interactive.enabled=false` so Spring
   Shell's noninteractive runner handles `--version` by default without a custom
   runner class. Interactive shell behavior is deferred. Codegeist-owned
@@ -91,14 +91,23 @@
   `OllamaProviderConfig` into Spring AI `OllamaApi`, then maps the request model to
   `OllamaChatOptions` at call time before delegating to the Spring AI Ollama model.
 - Local session-store runtime code lives under `ai.codegeist.app.session`.
-  `SessionStoreService` owns the first `.codegeist/session.json` model with schema
-  version, working directory, store timestamps, multiple `CodegeistSession` values,
-  chronological `SessionMessage` values, `SessionMessageRole`, ordered
-  `SessionPart` values, and implemented `TextSessionPart` plus
-  `CompactionSessionPart`. Session, message, part, parent-message, and compaction
-  tail references use plain UUID values, not prefixed strings. The store uses an
-  ISO-instant JSON mapper and native reflection metadata for the session records. It persists chat history and
-  compaction markers only; it does not store API keys, provider config, selected
+  `SessionStoreService` owns `.codegeist/session.json` paths, JSON I/O, and clock
+  input. `SessionStore` owns in-memory store changes: creating a store, adding a
+  session, selecting the latest session, and appending prompt/response exchanges.
+  The store model has schema version, working directory, store timestamps, multiple
+  `CodegeistSession` values, chronological `SessionMessage` values,
+  `SessionMessageRole`, ordered `SessionPart` values, and implemented
+  `TextSessionPart`, `CompactionSessionPart`, plus additive `ToolSessionPart` for
+  bounded completed or failed tool activity. Tool status uses nested
+  `ToolSessionPart.ToolSessionPartStatus` values `completed` and `failed`.
+  Session, message, part,
+  parent-message, and compaction tail references use plain UUID values, not
+  prefixed strings. `SessionStore` is a Lombok getter/setter/builder class with a
+  default empty session list, while session, message, and existing part model
+  entries remain records or Jackson-bound classes as implemented. The store uses an
+  ISO-instant JSON mapper and native reflection metadata for the session model types
+  and part implementations. It persists chat history, compaction markers, and bounded
+  tool activity parts only; it does not store API keys, provider config, selected
   provider/model, MCP client definitions, enabled tools, permission rules, runtime
   status, or TUI state. `CodegeistSpringAppProperties` owns the built-in default
   `.codegeist/session.json` path and binds Spring keys `codegeist.session.directory`

@@ -12,10 +12,11 @@ import lombok.Setter;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = SessionPart.TYPE_PROPERTY)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = TextSessionPart.class, name = TextSessionPart.TYPE),
-        @JsonSubTypes.Type(value = CompactionSessionPart.class, name = CompactionSessionPart.TYPE)
+        @JsonSubTypes.Type(value = CompactionSessionPart.class, name = CompactionSessionPart.TYPE),
+        @JsonSubTypes.Type(value = ToolSessionPart.class, name = ToolSessionPart.TYPE)
 })
 @Getter
-public abstract sealed class SessionPart permits TextSessionPart, CompactionSessionPart {
+public abstract sealed class SessionPart permits TextSessionPart, CompactionSessionPart, ToolSessionPart {
 
     public static final String TYPE_PROPERTY = "type";
     public static final String ID_PROPERTY = "id";

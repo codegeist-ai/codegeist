@@ -216,10 +216,19 @@ Use this rule when adding or changing Java source in Codegeist.
   real implementation on the method callers should use, unless the wrapper adds a
   distinct contract such as interface adaptation, error translation, access control,
   or framework binding.
+- When replacing a repeated parameter list with a request object, record, or other
+  grouped input type, remove the old parameter-list overloads and pass-through
+  wrappers in the same task. Update all production and test call sites immediately.
+  Keep a compatibility overload only when a concrete external API, framework binding,
+  serialization contract, or shipped consumer requires it.
 - If two methods have the same signature and behavior and differ only by name, keep
   the one that callers should use and remove the other instead of adding a wrapper.
 - Add a helper only when it centralizes non-trivial behavior, improves repeated
   call sites, or names a real domain operation that would otherwise be unclear.
+- For Codegeist session-store work, keep in-memory store operations on
+  `SessionStore`, including creating a store, adding sessions, choosing the latest
+  session, and appending exchanges. Keep `SessionStoreService` focused on path
+  resolution, JSON I/O, clock input, and orchestration.
 - Do not add public production methods only to support tests. When tests need to
   set internal state, prefer package-private fields or methods in the same package,
   or a focused test utility that can set private fields, instead of expanding the
