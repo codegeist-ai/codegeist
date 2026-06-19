@@ -29,14 +29,14 @@ Implemented before this plan:
 
 - `app/codegeist/cli` is the only runtime module.
 - `CodegeistConfig` can parse direct `codegeist.yml` top-level `mcp:` entries
-  through `McpClientsRootElement` and `McpClientConfig`.
+  through `McpClientsRootElement`, `McpClientsConfig`, and `McpClientConfig`.
 - `ask` selects the first configured provider, uses that provider's
   `defaultModel()`, calls `CodegeistChatService`, prints only response text, and
   saves a text-only exchange to `.codegeist/session.json`.
 - `CodegeistChatRequest` contains only `model` and `prompt`.
 - `SessionPart` supports only `text` and `compaction`.
 - No Spring AI MCP client dependency, MCP adapter, local read/write tools, tool
-  callbacks, workspace policy, or persisted tool parts exist yet.
+  callbacks, workspace resolution, or persisted tool parts exist yet.
 
 ## Target Result
 
@@ -77,7 +77,8 @@ After implementation:
 | Package | Classes to add or change | Responsibility |
 | --- | --- | --- |
 | `ai.codegeist.app.chat` | `ChatHarnessService`, `CodegeistChatExecutionContext`, `AskCommands`, `CodegeistChatService`, `CodegeistChatModel`, `OllamaChatModel` | One-turn chat orchestration and provider chat calls with runtime tool callbacks. |
-| `ai.codegeist.app.tool` | `CodegeistToolService`, `CodegeistToolRun`, `DefaultCodegeistToolRun`, `CodegeistFileTools`, `WorkspacePolicy`, `ToolOutputBounds`, `ToolOutputPreview`, `CodegeistLocalToolCallback`, `RecordingToolCallback`, `CodegeistToolResult` | Local file tools, workspace safety, output bounds, callback assembly, and tool-result recording. |
+| `ai.codegeist.app.config` | `WorkspaceRootElement`, `WorkspaceConfig` | Direct `codegeist.yml` `workspace.directory` parsing. |
+| `ai.codegeist.app.tool` | `CodegeistToolService`, `CodegeistToolRun`, `DefaultCodegeistToolRun`, `CodegeistFileTools`, `WorkspaceResolver`, `ToolOutputBounds`, `CodegeistLocalToolCallback`, `RecordingToolCallback`, `CodegeistToolResult` | Local file tools, workspace resolution, output bounds, callback assembly, and tool-result recording. |
 | `ai.codegeist.app.mcp` | `CodegeistMcpAdapter`, `CodegeistMcpRun`, `DefaultCodegeistMcpRun` | Lazy mapping from Codegeist `mcp:` config to Spring AI MCP callbacks and closeable resources. |
 | `ai.codegeist.app.session` | `ToolSessionPart`, `SessionPart`, `SessionStoreService` | Persist bounded tool activity in the existing session store model. |
 | `app/codegeist/cli` build/resources | `pom.xml`, `reflect-config.json` | Add Spring AI MCP dependency and native reflection metadata. |
@@ -93,7 +94,7 @@ Implement this plan through the focused child tasks under
 | Child task | Implementation focus | Depends on |
 | --- | --- | --- |
 | `T007_03_01_add-tool-session-persistence.md` | `ToolSessionPart`, session-store append overloads, `currentWorkingDirectory()`, and native reflection metadata. | `T007_02` |
-| `T007_03_02_add-workspace-policy-and-output-bounds.md` | `WorkspacePolicy`, `ToolOutputBounds`, and `ToolOutputPreview`. | `T007_02` |
+| `T007_03_02_add-workspace-resolution-and-output-bounds.md` | `WorkspaceRootElement`, `WorkspaceConfig`, `WorkspaceResolver`, and `ToolOutputBounds`. | `T007_02` |
 | `T007_03_03_add-local-file-tools.md` | `CodegeistFileTools`, `CodegeistLocalToolCallback`, `CodegeistToolResult`, and `codegeist_read`/`list`/`glob`/`grep`/`write`. | `T007_03_01`, `T007_03_02` |
 | `T007_03_04_add-tool-aware-chat-harness.md` | `ChatHarnessService`, `CodegeistChatExecutionContext`, tool-aware chat/model overloads, `CodegeistToolService`, `CodegeistToolRun`, and `AskCommands` refactor. | `T007_03_03` |
 | `T007_03_05_add-mcp-callback-adapter.md` | Spring AI MCP dependency, `CodegeistMcpAdapter`, `CodegeistMcpRun`, stdio-only mapping, and MCP callback recording integration. | `T007_03_04` |
@@ -287,18 +288,14 @@ classDiagram
     class CodegeistFileTools {
       <<Component>>
       <<RequiredArgsConstructor>>
-      -WorkspacePolicy workspacePolicy
+      -WorkspaceResolver workspaceResolver
       -ToolOutputBounds outputBounds
       +callbacks(Path workingDirectory, Path sessionStorePath, Consumer recorder) List ToolCallback
     }
 
-    class WorkspacePolicy {
+    class WorkspaceResolver {
       <<Component>>
-      +resolveExistingFile(Path workingDirectory, String inputPath) Path
-      +resolveExistingDirectory(Path workingDirectory, String inputPath) Path
-      +resolveExistingFileOrDirectory(Path workingDirectory, String inputPath) Path
-      +resolveWriteTarget(Path workingDirectory, Path sessionStorePath, String inputPath) Path
-      +relativePath(Path workingDirectory, Path path) String
+      +currentWorkspace() Path
     }
 
     class ToolOutputBounds {
@@ -307,18 +304,11 @@ classDiagram
       +MAX_LINE_CHARS int
       +MAX_RESULTS int
       +DEFAULT_READ_LINES int
-      +preview(String text) ToolOutputPreview
+      +preview(String text) String
       +linePreview(String line) String
       +cappedResultLimit(Integer requestedLimit) int
       +cappedReadLimit(Integer requestedLimit) int
       +errorPreview(String message) String
-    }
-
-    class ToolOutputPreview {
-      <<record>>
-      String text
-      boolean truncated
-      int omittedCharacters
     }
 
     class CodegeistLocalToolCallback {
@@ -337,7 +327,7 @@ classDiagram
       <<record>>
       <<packagePrivate>>
       Map input
-      ToolOutputPreview outputPreview
+      String outputPreview
       Integer resultCount
       List affectedPaths
     }
@@ -389,10 +379,9 @@ classDiagram
       +call(String toolInput) String
     }
 
-    CodegeistFileTools --> WorkspacePolicy
+    CodegeistFileTools --> WorkspaceResolver
     CodegeistFileTools --> ToolOutputBounds
     CodegeistFileTools --> CodegeistLocalToolCallback
-    ToolOutputBounds --> ToolOutputPreview
     CodegeistLocalToolCallback ..|> ToolCallback
     CodegeistLocalToolCallback --> CodegeistToolResult
     CodegeistLocalToolCallback --> ToolSessionPart
@@ -439,11 +428,16 @@ classDiagram
 
     class McpClientsRootElement {
       <<existing>>
-      +getClients() Map
+    }
+
+    class McpClientsConfig {
+      <<existing>>
+      List clients
     }
 
     class McpClientConfig {
       <<existing>>
+      String id
       String type
       String command
       List args
@@ -460,7 +454,8 @@ classDiagram
 
     CodegeistMcpAdapter --> CodegeistConfig
     CodegeistConfig --> McpClientsRootElement
-    McpClientsRootElement --> McpClientConfig
+    McpClientsRootElement --> McpClientsConfig
+    McpClientsConfig --> McpClientConfig
     CodegeistMcpAdapter --> CodegeistMcpRun
     CodegeistMcpRun <|.. DefaultCodegeistMcpRun
     AutoCloseable <|.. CodegeistMcpRun
@@ -509,8 +504,6 @@ classDiagram
       -String status
       -Map input
       -String outputPreview
-      -boolean truncated
-      -Integer omittedCharacters
       -Integer resultCount
       -List affectedPaths
       -String errorMessage
@@ -579,6 +572,7 @@ Constructor-injected collaborators:
 - `CodegeistConfig config`
 - `CodegeistChatService chatService`
 - `CodegeistToolService toolService`
+- `WorkspaceResolver workspaceResolver`
 - `SessionStoreService sessionStoreService`
 
 Public method:
@@ -593,7 +587,7 @@ Algorithm:
 ProviderConfig providerConfig = config.defaultProvider()
         .orElseThrow(() -> new IllegalStateException(CodegeistConfig.NO_PROVIDER_MESSAGE));
 String model = providerConfig.defaultModel();
-Path workingDirectory = sessionStoreService.currentWorkingDirectory();
+Path workingDirectory = workspaceResolver.currentWorkspace();
 Path sessionStorePath = sessionStoreService.currentStorePath();
 
 try (CodegeistToolRun toolRun = toolService.openRun(config, workingDirectory, sessionStorePath)) {
@@ -815,43 +809,76 @@ Implementation rules:
 - `close()` closes MCP resources and must be idempotent enough for normal
   try-with-resources cleanup.
 
-### `WorkspacePolicy`
+### `WorkspaceRootElement` And `WorkspaceConfig`
 
-Location: `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/WorkspacePolicy.java`
+Locations:
+
+- `app/codegeist/cli/src/main/java/ai/codegeist/app/config/WorkspaceRootElement.java`
+- `app/codegeist/cli/src/main/java/ai/codegeist/app/config/WorkspaceConfig.java`
+
+Public direct YAML shape:
+
+```yaml
+workspace:
+  directory: /some/path
+```
+
+Rules:
+
+- `workspace:` and `workspace.directory` are optional.
+- A present non-object `workspace:` root fails with a concise config validation
+  message.
+- `WorkspaceRootElement.rootName()` returns `workspace`.
+- `WorkspaceRootElement.configType()` returns `WorkspaceConfig.class`.
+- `WorkspaceConfig` extends `CodegeistConfigElement` and stores nullable
+  `directory` only.
+- Do not add path-safety fields, ignored-file fields, write rules, or future
+  workspace metadata in this slice.
+
+### `WorkspaceResolver`
+
+Location: `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/WorkspaceResolver.java`
 
 Annotations:
 
 ```java
 @Component
-public class WorkspacePolicy {
+@RequiredArgsConstructor
+public class WorkspaceResolver {
 }
 ```
 
-Purpose: one place for read/write path safety.
+Constructor-injected collaborators:
 
-Suggested public methods:
+- `CodegeistConfig config`
+
+Field injection:
 
 ```java
-public Path resolveExistingFile(Path workingDirectory, String inputPath)
-public Path resolveExistingDirectory(Path workingDirectory, String inputPath)
-public Path resolveExistingFileOrDirectory(Path workingDirectory, String inputPath)
-public Path resolveWriteTarget(Path workingDirectory, Path sessionStorePath, String inputPath)
-public String relativePath(Path workingDirectory, Path path)
+@Value("${user.dir}")
+String workingDir;
 ```
 
-Policy:
+Public method:
 
-- Normalize `workingDirectory` to an absolute path.
-- Relative inputs resolve under `workingDirectory`.
-- Absolute inputs are allowed only when they normalize under `workingDirectory`.
-- Existing paths must pass `toRealPath()` containment under the real working
-  directory so symlink escapes are rejected.
-- Missing write targets are allowed only when the normalized target stays under
-  the working directory and the existing parent directory passes a real-path
-  containment check.
-- Mutating tools reject symbolic-link file targets instead of following them.
-- `codegeist_write` rejects the active session store path.
-- Error messages are concise and do not include secret config values.
+```java
+public Path currentWorkspace()
+```
+
+Resolution rules:
+
+- Use `Path.of(workingDir).toAbsolutePath().normalize()` as the process working
+  directory.
+- If direct `codegeist.yml` has no `workspace:` root, return the process working
+  directory.
+- If `workspace.directory` is absent or blank, return the process working directory.
+- If `workspace.directory` is absolute, normalize and return it.
+- If `workspace.directory` is relative, resolve it against the process working
+  directory, normalize it, and return it.
+- A filesystem root or drive root is valid.
+- Do not reject paths outside the repository, symlinks, traversal segments after
+  normalization, or the active session store path. The configured workspace is
+  intentional user input, not an access-control boundary.
 
 ### `ToolOutputBounds`
 
@@ -877,7 +904,7 @@ public static final int DEFAULT_READ_LINES = 200;
 Suggested methods:
 
 ```java
-public ToolOutputPreview preview(String text)
+public String preview(String text)
 public String linePreview(String line)
 public int cappedResultLimit(Integer requestedLimit)
 public int cappedReadLimit(Integer requestedLimit)
@@ -888,22 +915,7 @@ Rules:
 
 - Bound output before returning it to Spring AI.
 - Persist the same bounded preview returned to the model.
-- Persist `truncated` and `omittedCharacters` when known.
 - Cap requested result limits instead of trusting model-supplied values.
-
-### `ToolOutputPreview`
-
-Location: `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/ToolOutputPreview.java`
-
-Shape:
-
-```java
-public record ToolOutputPreview(
-        @NonNull String text,
-        boolean truncated,
-        int omittedCharacters) {
-}
-```
 
 ### `CodegeistFileTools`
 
@@ -920,7 +932,7 @@ public class CodegeistFileTools {
 
 Constructor-injected collaborators:
 
-- `WorkspacePolicy workspacePolicy`
+- `WorkspaceResolver workspaceResolver`
 - `ToolOutputBounds outputBounds`
 
 Public method:
@@ -957,7 +969,7 @@ Location:
 `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalToolCallback.java`
 
 Purpose: custom Spring AI `ToolCallback` for Codegeist-owned tools that need
-workspace policy, bounded output, and rich persisted metadata.
+workspace-relative resolution, bounded output, and rich persisted metadata.
 
 Constructor inputs:
 
@@ -988,7 +1000,7 @@ Suggested shape:
 ```java
 record CodegeistToolResult(
         Map<String, Object> input,
-        ToolOutputPreview outputPreview,
+        String outputPreview,
         Integer resultCount,
         List<String> affectedPaths) {
 }
@@ -1039,8 +1051,9 @@ Behavior:
 - `path` is required.
 - `offset` defaults to `1` and is 1-based.
 - `limit` defaults to `ToolOutputBounds.DEFAULT_READ_LINES` and is capped.
-- Reject missing paths, directories, files outside the workspace, symlink escapes,
-  and binary files.
+- Resolve relative paths against the active workspace.
+- Accept absolute paths as caller-provided filesystem paths.
+- Reject missing paths, directories, and binary files.
 - Return line-numbered UTF-8 text.
 - Truncate each line to `MAX_LINE_CHARS` and total output to
   `MAX_PREVIEW_CHARS`.
@@ -1064,7 +1077,9 @@ Behavior:
 
 - `path` defaults to `.`.
 - `limit` defaults to `MAX_RESULTS` and is capped.
-- Reject file paths, paths outside the workspace, and symlink escapes.
+- Resolve relative paths against the active workspace.
+- Accept absolute paths as caller-provided filesystem paths.
+- Reject file paths.
 - List only direct entries; do not recurse.
 - Sort lexicographically by relative path.
 - Return entries with stable markers:
@@ -1085,7 +1100,8 @@ Behavior:
 - `pattern` is required.
 - `path` defaults to `.` and is the base directory.
 - `limit` defaults to `MAX_RESULTS` and is capped.
-- Reject base paths outside the workspace.
+- Resolve relative base paths against the active workspace.
+- Accept absolute base paths as caller-provided filesystem paths.
 - Walk without following symbolic links.
 - Match relative paths from the base directory with Java NIO glob semantics.
 - Include files and directories.
@@ -1129,8 +1145,9 @@ Behavior:
 - `path` and `content` are required.
 - Create a new regular text file when the parent directory exists.
 - Overwrite an existing regular text file.
-- Reject directories, symbolic-link targets, missing parent directories, paths
-  outside the workspace, and the active session store file.
+- Resolve relative paths against the active workspace.
+- Accept absolute paths as caller-provided filesystem paths.
+- Reject directories and missing parent directories.
 - Do not create parent directories.
 - Do not delete, rename, chmod, patch, insert, or partially edit files.
 - Return affected relative path, created/overwritten state, and content character
@@ -1238,8 +1255,6 @@ public final class ToolSessionPart extends SessionPart {
     private String status;
     private Map<String, Object> input;
     private String outputPreview;
-    private boolean truncated;
-    private Integer omittedCharacters;
     private Integer resultCount;
     private List<String> affectedPaths;
     private String errorMessage;
@@ -1254,8 +1269,8 @@ public final class ToolSessionPart extends SessionPart {
 Rules:
 
 - Use persisted JSON field names from the Java property names:
-  `callId`, `tool`, `status`, `input`, `outputPreview`, `truncated`,
-  `omittedCharacters`, `resultCount`, `affectedPaths`, `errorMessage`.
+  `callId`, `tool`, `status`, `input`, `outputPreview`, `resultCount`,
+  `affectedPaths`, `errorMessage`.
 - Keep `status` as a lower-case string for now. Do not add an enum unless a test
   requires stronger typing.
 - Do not add title, metadata, token counts, timestamps, server status, raw MCP
@@ -1388,25 +1403,32 @@ sequenceDiagram
 
 Use the Taskfile from `app/codegeist/cli` for every test command.
 
-### `WorkspacePolicyTest`
+### `CodegeistWorkspaceConfigTest`
 
 Prove:
 
-- relative paths resolve under the working directory
-- absolute paths under the working directory are allowed
-- traversal outside the working directory is rejected
-- existing symlink escapes are rejected
-- write symlink targets are rejected
-- missing write parent directories are rejected
-- active session store writes are rejected
-- model-visible relative paths are stable
+- direct YAML `workspace.directory` loads into `WorkspaceConfig`
+- omitted `workspace:` root is accepted
+- blank `workspace.directory` is accepted for resolver fallback
+- non-object `workspace:` root fails clearly
+
+### `WorkspaceResolverTest`
+
+Prove:
+
+- absent workspace config resolves to the process working directory
+- blank `workspace.directory` resolves to the process working directory
+- absolute workspace overrides are normalized and returned
+- relative workspace overrides resolve against the process working directory
+- filesystem root or drive root is accepted as the active workspace
+- traversal segments in configured workspace values are normalized, not treated as
+  errors
 
 ### `ToolOutputBoundsTest`
 
 Prove:
 
 - previews cap at `MAX_PREVIEW_CHARS`
-- omitted character counts are correct when known
 - line previews cap at `MAX_LINE_CHARS`
 - requested result limits cap at `MAX_RESULTS`
 - requested read line limits default and cap correctly
@@ -1419,15 +1441,16 @@ Use `@TempDir` fixtures.
 Prove:
 
 - `codegeist_read` returns line-numbered bounded text
-- `codegeist_read` rejects missing file, directory, outside path, and binary file
+- `codegeist_read` resolves relative paths from the active workspace and rejects
+  missing files, directories, and binary files
 - `codegeist_list` returns stable direct entries with `[DIR]` and `[FILE]`
 - `codegeist_glob` returns sorted relative matches and honors limits
 - `codegeist_grep` returns sorted `path:line: preview` matches
 - `codegeist_grep` records invalid regex as failed tool result
 - `codegeist_write` creates a file when parent exists
 - `codegeist_write` overwrites an existing regular file
-- `codegeist_write` rejects outside path, directory, symlink target, missing parent,
-  and active session store path
+- `codegeist_write` resolves relative paths from the active workspace and rejects
+  directories plus missing parent directories
 - every successful and failed tool records a bounded `ToolSessionPart`
 
 ### `CodegeistMcpAdapterTest`
@@ -1484,7 +1507,7 @@ Use hand-written fakes.
 Prove:
 
 - harness selects default provider and default model
-- harness opens a tool run with current working directory and session store path
+- harness opens a tool run with resolved workspace and session store path
 - harness passes tool callbacks to the chat service through
   `CodegeistChatExecutionContext`
 - harness saves prompt, recorded tool parts, and assistant text
@@ -1509,7 +1532,7 @@ test where practical, implement only that slice, and run the child-specific
 Taskfile selector documented in the child task file.
 
 1. `T007_03_01_add-tool-session-persistence.md`
-2. `T007_03_02_add-workspace-policy-and-output-bounds.md`
+2. `T007_03_02_add-workspace-resolution-and-output-bounds.md`
 3. `T007_03_03_add-local-file-tools.md`
 4. `T007_03_04_add-tool-aware-chat-harness.md`
 5. `T007_03_05_add-mcp-callback-adapter.md`
@@ -1520,7 +1543,7 @@ Taskfile selector documented in the child task file.
 Focused command after implementation:
 
 ```bash
-task test TEST=WorkspacePolicyTest,ToolOutputBoundsTest,CodegeistFileToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
+task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistFileToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
 ```
 
 Broad JVM verification:
@@ -1552,8 +1575,8 @@ When the Java implementation is complete, update these files in the same task:
 - `docs/developer/architecture/architecture.md`
   - Add implemented `ai.codegeist.app.tool` and `ai.codegeist.app.mcp` packages.
   - Describe `ChatHarnessService` as the command/TUI-reusable one-turn harness.
-  - Describe local tool names, workspace policy, MCP callback setup, and persisted
-    `ToolSessionPart` behavior.
+  - Describe local tool names, workspace resolution, MCP callback setup, and
+    persisted `ToolSessionPart` behavior.
   - Move implemented items out of the `Not Implemented Yet` section.
 - `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_03_add-mcp-and-read-write-tools/task.md`
   - Mark implementation progress and verification evidence.
@@ -1565,11 +1588,9 @@ When the Java implementation is complete, update these files in the same task:
 - Spring AI MCP and tool APIs are milestone APIs. Compile against the pinned
   `2.0.0-M6` artifacts and keep adapter code isolated in `ai.codegeist.app.mcp`
   and provider-specific tool option code in `OllamaChatModel`.
-- MCP tools can have side effects outside Codegeist's local workspace policy. This
+- MCP tools can have side effects outside Codegeist's active local workspace. This
   slice records MCP calls and bounds results, but it does not sandbox remote or
   external MCP server behavior.
-- Symlink tests can be platform-sensitive. Keep tests focused on local Linux
-  behavior unless a cross-platform smoke task explicitly expands the contract.
 - Do not weaken existing no-session error behavior. `NoSessionToContinueException`
   remains specific to corrupt or unsupported session stores, not local tool
   failures.

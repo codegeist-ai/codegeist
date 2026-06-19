@@ -18,7 +18,7 @@ in two ways:
 The current implementation has evolved into root-element parsing. `CodegeistConfig`
 now stores `List<CodegeistConfigRootElement>`, `provider:` is the provider root,
 and `CodegeistConfigService` dispatches direct `codegeist.yml` roots through
-injected `CodegeistConfigRootElement` parser components.
+the central `CodegeistConfigRootParser` Spring service.
 
 ## Decisions
 
@@ -27,8 +27,8 @@ injected `CodegeistConfigRootElement` parser components.
 - Keep `CodegeistConfig.CONFIGURATION_PREFIX` defined from
   `CodegeistApplication.APP_NAME` so `codegeist.config` stays aligned with the app
   name.
-- Use `CodegeistConfigRootElement` parser components with explicit `rootName()`
-  constants for direct YAML roots.
+- Use plain `CodegeistConfigRootElement` models with explicit root names, and parse
+  direct YAML roots through `CodegeistConfigRootParser`.
 - Keep Jackson annotations on config POJOs so direct YAML loading remains possible.
 - Use Jackson YAML via `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml`
   for direct file loading.

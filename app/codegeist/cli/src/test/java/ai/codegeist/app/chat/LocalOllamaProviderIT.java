@@ -7,7 +7,6 @@ import ai.codegeist.app.config.CodegeistConfig;
 import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.OllamaProviderConfig;
 import ai.codegeist.app.config.ProviderConfig;
-import ai.codegeist.app.config.ProvidersRootElement;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -18,7 +17,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 class LocalOllamaProviderIT {
 
-    private static final String OLLAMA_PROVIDER_ID = "ollama";
     private static final String OLLAMA_BASE_URL = "http://localhost:11434";
     private static final String OLLAMA_MODEL = "llama3.2:1b";
     private static final String SPRING_SHELL_AUTO_CONFIGURATION =
@@ -38,7 +36,7 @@ class LocalOllamaProviderIT {
             CodegeistChatService chatService = context.getBean(CodegeistChatService.class);
 
             CodegeistConfig config = configService.loadConfig(writeConfig().toString());
-            ProviderConfig providerConfig = providers(config).getProviders().get(OLLAMA_PROVIDER_ID);
+            ProviderConfig providerConfig = config.defaultProvider().orElseThrow();
             assertThat(providerConfig).isInstanceOf(OllamaProviderConfig.class);
 
             CodegeistChatResponse response = chatService.chat(providerConfig, new CodegeistChatRequest(OLLAMA_MODEL, PROMPT));
@@ -58,7 +56,4 @@ class LocalOllamaProviderIT {
         return configFile;
     }
 
-    private ProvidersRootElement providers(CodegeistConfig config) {
-        return config.rootElement(ProvidersRootElement.class).orElseThrow();
-    }
 }

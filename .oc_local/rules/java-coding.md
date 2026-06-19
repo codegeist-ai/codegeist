@@ -236,12 +236,17 @@ Use this rule when adding or changing Java source in Codegeist.
 
 ## Comments For Coding Agents
 
-- Keep source comments sparse and useful for later coding agents.
+- Prefer detailed explanatory comments or Javadocs for non-trivial Java classes and
+  methods when they help later coding agents understand the code quickly.
+- Explain what a class or method does, important inputs, returned values, side
+  effects, failure paths, constraints, and major branches when those details are
+  useful for safe modification.
 - Comment why, invariants, cross-file contracts, framework behavior, or sharp
   edges that are not obvious from names, annotations, and tests.
 - Include nearby file or documentation references when they help recover context,
   such as related tests, smoke scripts, or focused architecture docs.
-- Do not narrate obvious Java, Spring, Lombok, or shell syntax.
+- Avoid comments that only restate one obvious Java, Spring, Lombok, or shell
+  statement at a time; comments should add useful behavior or contract context.
 - Update or delete comments when the referenced behavior, file path, or contract
   changes.
 

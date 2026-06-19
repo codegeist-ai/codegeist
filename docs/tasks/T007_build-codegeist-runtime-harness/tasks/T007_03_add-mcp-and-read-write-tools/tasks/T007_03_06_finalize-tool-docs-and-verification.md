@@ -47,7 +47,7 @@ the completed T007_03 MCP and local read/write tool slice.
 Candidate focused command from `app/codegeist/cli`:
 
 ```bash
-task test TEST=WorkspacePolicyTest,ToolOutputBoundsTest,CodegeistFileToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
+task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistFileToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
 ```
 
 Final JVM command from `app/codegeist/cli`:

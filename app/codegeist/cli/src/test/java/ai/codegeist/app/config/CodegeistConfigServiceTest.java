@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
@@ -26,6 +27,9 @@ class CodegeistConfigServiceTest {
     private CodegeistConfigService service;
 
     @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
     private CodegeistConfig primaryConfig;
 
     @TempDir
@@ -33,10 +37,11 @@ class CodegeistConfigServiceTest {
 
     @Test
     void exposesPrimaryCodegeistConfigBeanFromInjectedConfigPath() {
-        Map<String, ProviderConfig> providers = providers(primaryConfig).getProviders();
+        ProviderConfig provider = provider(primaryConfig);
 
-        assertThat(providers).containsOnlyKeys(OPENAI_PROVIDER_ID);
-        OpenAiProviderConfig openai = (OpenAiProviderConfig) providers.get(OPENAI_PROVIDER_ID);
+        assertThat(providers(primaryConfig).getConfig().getElements()).hasSize(1);
+        assertThat(provider.getType()).isEqualTo(OPENAI_PROVIDER_ID);
+        OpenAiProviderConfig openai = (OpenAiProviderConfig) provider;
         assertThat(openai.getApiKey()).isEqualTo("injected-openai-key");
         assertThat(primaryConfig.rootElement(McpClientsRootElement.class)).isEmpty();
     }
@@ -49,11 +54,18 @@ class CodegeistConfigServiceTest {
     @Test
     void usesInjectedConfigPathAsCurrentConfig() {
         CodegeistConfig config = service.loadCurrentConfig();
-        Map<String, ProviderConfig> providers = providers(config).getProviders();
+        ProviderConfig provider = provider(config);
 
-        assertThat(providers).containsOnlyKeys(OPENAI_PROVIDER_ID);
-        OpenAiProviderConfig openai = (OpenAiProviderConfig) providers.get(OPENAI_PROVIDER_ID);
+        assertThat(provider.getType()).isEqualTo(OPENAI_PROVIDER_ID);
+        OpenAiProviderConfig openai = (OpenAiProviderConfig) provider;
         assertThat(openai.getApiKey()).isEqualTo("injected-openai-key");
+    }
+
+    @Test
+    void rootElementsAreNotSpringBeans() {
+        assertThat(applicationContext.getBeansOfType(ProvidersRootElement.class)).isEmpty();
+        assertThat(applicationContext.getBeansOfType(McpClientsRootElement.class)).isEmpty();
+        assertThat(applicationContext.getBeansOfType(WorkspaceRootElement.class)).isEmpty();
     }
 
     @Test
@@ -70,11 +82,10 @@ class CodegeistConfigServiceTest {
             """);
 
         CodegeistConfig config = service.loadConfig(configFile.toString());
-        Map<String, ProviderConfig> providers = providers(config).getProviders();
+        ProviderConfig provider = provider(config);
 
-        assertThat(providers).containsOnlyKeys(OPENAI_PROVIDER_ID);
-        ProviderConfig provider = providers.get(OPENAI_PROVIDER_ID);
         assertThat(provider).isInstanceOf(OpenAiProviderConfig.class);
+        assertThat(provider.getType()).isEqualTo(OPENAI_PROVIDER_ID);
         assertThat(provider.getName()).isEqualTo("OpenAI");
         OpenAiProviderConfig openai = (OpenAiProviderConfig) provider;
         assertThat(openai.getApiKey()).isEqualTo("local-openai-key");
@@ -106,13 +117,53 @@ class CodegeistConfigServiceTest {
             """);
 
         CodegeistConfig config = service.loadConfig(configFile.toString());
-        Map<String, McpClientConfig> clients = mcp(config).getClients();
+        McpClientsRootElement mcp = mcp(config);
+        McpClientConfig client = mcp.getConfig().getElements().getFirst();
+        Map<?, ?> rendered = renderedYaml(config);
+        Map<?, ?> clients = (Map<?, ?>) rendered.get("mcp");
+        Map<?, ?> filesystem = (Map<?, ?>) clients.get("filesystem");
 
-        assertThat(clients).containsOnlyKeys("filesystem");
-        assertThat(clients.get("filesystem").getType()).isEqualTo("stdio");
-        assertThat(clients.get("filesystem").getCommand()).isEqualTo("npx");
-        assertThat(clients.get("filesystem").getArgs())
-                .containsExactly("-y", "@modelcontextprotocol/server-filesystem", ".");
+        assertThat(mcp.getConfig().getElements()).hasSize(1);
+        assertThat(client.getId()).isEqualTo("filesystem");
+        assertThat(client.getType()).isEqualTo("stdio");
+        assertThat(client.getCommand()).isEqualTo("npx");
+        assertThat(client.getArgs()).containsExactly("-y", "@modelcontextprotocol/server-filesystem", ".");
+        assertThat(clients.keySet().stream().map(Object::toString).toList()).containsOnly("filesystem");
+        assertThat(filesystem.containsKey("id")).isFalse();
+        assertThat(filesystem.get("type")).isEqualTo("stdio");
+        assertThat(filesystem.get("command")).isEqualTo("npx");
+        assertThat(filesystem.get("args"))
+                .isEqualTo(client.getArgs());
+    }
+
+    @Test
+    void keepsMultipleMcpClientsWithSameType() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            mcp:
+              filesystem:
+                type: stdio
+                command: npx
+              git:
+                type: stdio
+                command: uvx
+            """);
+
+        CodegeistConfig config = service.loadConfig(configFile.toString());
+        Map<?, ?> rendered = renderedYaml(config);
+        Map<?, ?> clients = (Map<?, ?>) rendered.get("mcp");
+        Map<?, ?> filesystem = (Map<?, ?>) clients.get("filesystem");
+        Map<?, ?> git = (Map<?, ?>) clients.get("git");
+
+        assertThat(mcp(config).getConfig().getElements().stream().map(McpClientConfig::getId).toList())
+                .containsExactly("filesystem", "git");
+        assertThat(clients.keySet().stream().map(Object::toString).toList()).containsOnly("filesystem", "git");
+        assertThat(filesystem.containsKey("id")).isFalse();
+        assertThat(filesystem.get("type")).isEqualTo("stdio");
+        assertThat(filesystem.get("command")).isEqualTo("npx");
+        assertThat(git.containsKey("id")).isFalse();
+        assertThat(git.get("type")).isEqualTo("stdio");
+        assertThat(git.get("command")).isEqualTo("uvx");
     }
 
     @Test
@@ -134,8 +185,12 @@ class CodegeistConfigServiceTest {
 
         assertThat(rendered.keySet().stream().map(Object::toString).toList())
                 .containsExactlyInAnyOrder("provider", "mcp");
-        assertThat(((Map<?, ?>) rendered.get("mcp")).keySet().stream().map(Object::toString).toList())
-                .containsExactly("grep");
+        Map<?, ?> clients = (Map<?, ?>) rendered.get("mcp");
+        Map<?, ?> grep = (Map<?, ?>) clients.get("grep");
+        assertThat(clients.keySet().stream().map(Object::toString).toList()).containsOnly("grep");
+        assertThat(grep.get("type")).isEqualTo("stdio");
+        assertThat(grep.get("command")).isEqualTo("npx");
+        assertThat(grep.containsKey("id")).isFalse();
     }
 
     @Test
@@ -149,10 +204,10 @@ class CodegeistConfigServiceTest {
             """);
 
         CodegeistConfig config = service.loadConfig(configFile.toString());
-        Map<String, ProviderConfig> providers = providers(config).getProviders();
+        ProviderConfig provider = provider(config);
 
-        assertThat(providers).containsOnlyKeys(OLLAMA_PROVIDER_ID);
-        assertThat(providers.get(OLLAMA_PROVIDER_ID).getName()).isNull();
+        assertThat(provider.getType()).isEqualTo(OLLAMA_PROVIDER_ID);
+        assertThat(provider.getName()).isNull();
     }
 
     @Test
@@ -192,7 +247,15 @@ class CodegeistConfigServiceTest {
         return config.rootElement(ProvidersRootElement.class).orElseThrow();
     }
 
+    private ProviderConfig provider(CodegeistConfig config) {
+        return config.defaultProvider().orElseThrow();
+    }
+
     private McpClientsRootElement mcp(CodegeistConfig config) {
         return config.rootElement(McpClientsRootElement.class).orElseThrow();
+    }
+
+    private Map<?, ?> renderedYaml(CodegeistConfig config) throws IOException {
+        return new YAMLMapper().readValue(service.toYaml(config), Map.class);
     }
 }

@@ -33,8 +33,15 @@ public class CodegeistConfigYamlMapper extends ObjectMapper {
         CodegeistConfig config = codegeistConfig == null ? new CodegeistConfig() : codegeistConfig;
         Map<String, Object> roots = new LinkedHashMap<>();
         for (CodegeistConfigRootElement<? extends CodegeistConfigElement> rootElement : config.rootElements) {
-            roots.put(rootElement.rootName(), rootElement.toYamlValue());
+            roots.put(rootElement.rootName(), yamlValue(rootElement.getConfig()));
         }
         return writeValueAsString(roots);
+    }
+
+    private Object yamlValue(CodegeistConfigElement config) {
+        if (config instanceof CodegeistConfigKeyedListElement<?> keyedList) {
+            return keyedList.keyedElements();
+        }
+        return config;
     }
 }

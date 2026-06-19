@@ -5,6 +5,12 @@
     "allPublicMethods": true
   },
   {
+    "name": "ai.codegeist.app.config.ProvidersConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
     "name": "ai.codegeist.app.config.ProvidersRootElement",
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,
@@ -17,7 +23,25 @@
     "allPublicMethods": true
   },
   {
+    "name": "ai.codegeist.app.config.McpClientsConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
     "name": "ai.codegeist.app.config.McpClientConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.WorkspaceRootElement",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.WorkspaceConfig",
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,
     "allPublicMethods": true

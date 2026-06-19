@@ -11,7 +11,6 @@ import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.CodegeistConfigValidationException;
 import ai.codegeist.app.config.OllamaProviderConfig;
 import ai.codegeist.app.config.ProviderConfig;
-import ai.codegeist.app.config.ProvidersRootElement;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -85,7 +84,9 @@ class OllamaProviderTest {
     }
 
     private ProviderConfig provider(CodegeistConfig config) {
-        return config.rootElement(ProvidersRootElement.class).orElseThrow().getProviders().get(PROVIDER_ID);
+        ProviderConfig provider = config.defaultProvider().orElseThrow();
+        assertThat(provider.getType()).isEqualTo(PROVIDER_ID);
+        return provider;
     }
 
 }

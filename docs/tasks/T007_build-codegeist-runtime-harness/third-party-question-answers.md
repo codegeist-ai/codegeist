@@ -710,7 +710,7 @@ The right mapping is an adapter boundary:
 
 ```mermaid
 flowchart LR
-    Yaml[codegeist.yml mcp map] --> Config[CodegeistMcpConfig]
+    Yaml[codegeist.yml mcp keyed object] --> Config[CodegeistMcpConfig]
     Config --> Adapter[CodegeistMcpAdapter]
     Adapter --> SpringProps[Spring AI MCP client config or builder]
     SpringProps --> Provider[ToolCallbackProvider]

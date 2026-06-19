@@ -637,7 +637,7 @@ sequenceDiagram
     participant Prompt as SessionPrompt
     participant Model as AI SDK model call
 
-    Config->>MCP: mcp map
+    Config->>MCP: mcp keyed object
     MCP->>Transport: create transport per server
     Transport->>Client: connect
     Client-->>MCP: listTools()

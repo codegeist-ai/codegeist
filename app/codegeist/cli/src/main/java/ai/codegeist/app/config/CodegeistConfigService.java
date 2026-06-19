@@ -41,7 +41,7 @@ public class CodegeistConfigService {
 
     private final CodegeistYamlExpressionEvaluator expressionEvaluator;
 
-    private final CodegeistConfigRootElementParserService rootElementParserService;
+    private final CodegeistConfigRootParser rootParser;
 
     private final CommandOutputService outputService;
 
@@ -114,7 +114,7 @@ public class CodegeistConfigService {
         }
 
         for (Map.Entry<String, JsonNode> field : objectNode.properties()) {
-            config.rootElements.add(rootElementParserService.parseRootElement(field.getKey(), field.getValue()));
+            config.rootElements.add(rootParser.parseRootElement(field.getKey(), field.getValue()));
         }
         return config;
     }

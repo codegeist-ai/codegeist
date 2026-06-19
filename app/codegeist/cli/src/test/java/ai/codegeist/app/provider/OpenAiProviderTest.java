@@ -8,7 +8,6 @@ import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.CodegeistConfigValidationException;
 import ai.codegeist.app.config.OpenAiProviderConfig;
 import ai.codegeist.app.config.ProviderConfig;
-import ai.codegeist.app.config.ProvidersRootElement;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -162,7 +161,9 @@ class OpenAiProviderTest {
     }
 
     private ProviderConfig provider(CodegeistConfig config) {
-        return config.rootElement(ProvidersRootElement.class).orElseThrow().getProviders().get(PROVIDER_ID);
+        ProviderConfig provider = config.defaultProvider().orElseThrow();
+        assertThat(provider.getType()).isEqualTo(PROVIDER_ID);
+        return provider;
     }
 
     private HttpResponse<String> postJson(String path, Map<String, Object> requestBody) throws Exception {

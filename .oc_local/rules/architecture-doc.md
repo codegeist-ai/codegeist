@@ -103,6 +103,14 @@ specification documentation under `docs/developer/architecture/` and
 - Keep Mermaid class diagrams readable on a single DIN A4 landscape page when
   rendered or printed. Split large diagrams into focused views instead of forcing
   many classes onto one page.
+- In Mermaid `classDiagram` blocks, render framework and code annotations as
+  stereotypes on the annotated class, not as separate classes, components, nodes,
+  or dependency edges. For example, use `<<Component>>`,
+  `<<RequiredArgsConstructor>>`, `<<Getter>>`, `<<Setter>>`, `<<JsonProperty>>`,
+  or `<<Value>>` inside the class body when that annotation matters. Do not create
+  separate annotation classes such as `class RequiredArgsConstructor` or
+  `class Component` unless the diagram is explicitly about annotation types
+  themselves.
 - In Mermaid `classDiagram` blocks, format class attributes and methods on their
   own lines inside the class body instead of compressing them onto one line. Use
   this shape so records, enums, and method lists stay readable:

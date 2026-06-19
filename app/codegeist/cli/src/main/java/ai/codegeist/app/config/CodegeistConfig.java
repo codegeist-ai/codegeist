@@ -21,7 +21,7 @@ public class CodegeistConfig {
 
     public Optional<ProviderConfig> defaultProvider() {
         return rootElement(ProvidersRootElement.class)
-                .flatMap(ProvidersRootElement::defaultProvider);
+                .flatMap(root -> root.getConfig().defaultProvider());
     }
 
     public <T extends CodegeistConfigRootElement<? extends CodegeistConfigElement>> Optional<T> rootElement(

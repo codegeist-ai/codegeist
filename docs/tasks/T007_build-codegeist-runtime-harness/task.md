@@ -28,8 +28,8 @@ this task.
   entries. Runtime provider calls are implemented only for local Ollama through
   `OllamaChatModel`.
 - Direct `codegeist.yml` loading can parse the first minimal top-level `mcp:` client
-  catalog with `type`, `command`, and `args`; MCP callbacks and chat tools are not
-  implemented yet.
+  catalog as a YAML object keyed by client id with `type`, `command`, and `args`;
+  MCP callbacks and chat tools are not implemented yet.
 - `task test` from `app/codegeist/cli` is the implementation verification entrypoint
   and starts the fixed local Ollama container with `OLLAMA_ENTER=false` before
   Maven.

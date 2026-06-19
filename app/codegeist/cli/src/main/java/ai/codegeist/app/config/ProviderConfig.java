@@ -16,7 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public abstract class ProviderConfig extends CodegeistConfigElement {
+public abstract class ProviderConfig extends CodegeistTypedConfigElement {
 
     static final String NON_BLANK_WHEN_SET_PATTERN = "(?s).*\\S.*";
     static final String NON_BLANK_WHEN_SET_MESSAGE = "must not be blank when set";

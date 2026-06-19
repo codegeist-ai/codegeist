@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class CodegeistProviderConfigTest {
 
     private final CodegeistConfigYamlMapper yamlMapper = new CodegeistConfigYamlMapper();
-    private final ProvidersRootElement providersRootElement = new ProvidersRootElement();
+    private final CodegeistConfigRootParser rootParser = new CodegeistConfigRootParser(yamlMapper);
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @ParameterizedTest
@@ -76,7 +76,7 @@ class CodegeistProviderConfigTest {
             """);
         ProvidersRootElement rootElement = providers(config);
 
-        assertThat(rootElement.defaultProvider()).hasValueSatisfying(provider -> assertThat(provider)
+        assertThat(rootElement.getConfig().defaultProvider()).hasValueSatisfying(provider -> assertThat(provider)
                 .isInstanceOf(OllamaProviderConfig.class));
         assertThat(config.defaultProvider()).hasValueSatisfying(provider -> assertThat(provider)
                 .isInstanceOf(OllamaProviderConfig.class));
@@ -89,7 +89,7 @@ class CodegeistProviderConfigTest {
             """);
         ProvidersRootElement rootElement = providers(config);
 
-        assertThat(rootElement.defaultProvider()).isEmpty();
+        assertThat(rootElement.getConfig().defaultProvider()).isEmpty();
         assertThat(config.defaultProvider()).isEmpty();
     }
 
@@ -127,7 +127,7 @@ class CodegeistProviderConfigTest {
 
     private ProviderConfig loadSingleProvider(String providerBody) {
         CodegeistConfig config = loadAndValidate("provider:\n  configured:\n" + indent(providerBody));
-        return providers(config).defaultProvider().orElseThrow();
+        return providers(config).getConfig().defaultProvider().orElseThrow();
     }
 
     private CodegeistConfig loadAndValidate(String yaml) {
@@ -148,7 +148,8 @@ class CodegeistProviderConfigTest {
     private CodegeistConfig readConfig(String yaml) {
         JsonNode root = yamlMapper.readTree(yaml);
         CodegeistConfig config = new CodegeistConfig();
-        config.rootElements.add(providersRootElement.parse(root.get(ProvidersRootElement.ROOT_NAME), yamlMapper));
+        config.rootElements.add(rootParser.parseRootElement(ProvidersRootElement.ROOT_NAME,
+                root.get(ProvidersRootElement.ROOT_NAME)));
         return config;
     }
 

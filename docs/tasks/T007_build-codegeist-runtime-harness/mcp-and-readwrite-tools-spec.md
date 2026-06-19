@@ -28,8 +28,9 @@ Implemented before this slice:
 
 - `app/codegeist/cli` is the only runtime module.
 - `CodegeistConfig` can parse direct top-level `mcp:` YAML through
-  `McpClientsRootElement` and `McpClientConfig`.
-- The first MCP config shape includes `type`, `command`, and `args`.
+  `McpClientsRootElement`, `McpClientsConfig`, and `McpClientConfig`.
+- The first MCP config shape is a YAML object keyed by client id with `type`,
+  `command`, and `args` fields. `type` remains the transport kind.
 - `ask` selects the first configured provider, uses `ProviderConfig.defaultModel()`,
   creates `CodegeistChatRequest(model, prompt)`, and calls `CodegeistChatService`.
 - `CodegeistChatRequest` contains only runtime `model` and `prompt`.
@@ -56,11 +57,11 @@ The broader coding-agent harness comparison table lives in
 Key conclusions:
 
 - OpenCode evidence supports a harness boundary because tool execution crosses
-  provider calls, dynamic MCP registration, permissions, workspace policy, output
-  bounds, and persisted assistant message parts.
+  provider calls, dynamic MCP registration, workspace resolution, output bounds, and
+  persisted assistant message parts.
 - Spring AI Agent Utils is useful as source inspiration and a callback-pattern
   reference, but its file tools must not be exposed directly without Codegeist
-  workspace policy, output bounds, and session persistence wrappers.
+  workspace resolution, output bounds, and session persistence wrappers.
 - Codegeist should start with a narrow `ChatHarnessService` plus subordinate
   `CodegeistToolRun`, not a broad runtime framework.
 - Aider, SWE-agent, and mini-SWE-agent support this narrowness from smaller-agent
@@ -81,13 +82,13 @@ Key conclusions:
 - Build tool callbacks lazily for a chat run. `--show-config`, config loading, and
   Spring context startup must not spawn MCP processes.
 - Treat local file tools as Codegeist-owned behavior. Spring AI Agent Utils may be a
-  source reference or private delegate only after Codegeist applies workspace policy,
-  output bounds, and session persistence.
+  source reference or private delegate only after Codegeist applies workspace
+  resolution, output bounds, and session persistence.
 - Prefer explicit per-chat `ToolCallback` wrappers over annotation-only singleton
   `@Tool` methods. Wrappers can capture the active working directory, bounds, and
   recorder without leaking these details into global application state.
 - Store bounded tool activity in the session store, but do not store the enabled tool
-  registry, MCP client definitions, MCP runtime status, permission policy, or TUI
+  registry, MCP client definitions, MCP runtime status, permission settings, or TUI
   state.
 
 ## User-Facing Config Contract
@@ -160,7 +161,7 @@ Suggested package responsibilities:
 | Package | Planned responsibility |
 | --- | --- |
 | `ai.codegeist.app.chat` | Existing ask command, narrow `ChatHarnessService`, provider chat boundary, and chat execution context. |
-| `ai.codegeist.app.tool` | Local tool callbacks, tool run scope, output bounds, workspace policy, and tool result records. |
+| `ai.codegeist.app.tool` | Local tool callbacks, tool run scope, output bounds, workspace resolution, and tool result records. |
 | `ai.codegeist.app.mcp` | Map Codegeist MCP config into Spring AI MCP clients and MCP tool callbacks. |
 | `ai.codegeist.app.session` | Add the persisted `ToolSessionPart` and append tool parts with text exchanges. |
 
@@ -283,33 +284,33 @@ future provider-native names.
 
 Persist the callback name in `ToolSessionPart.tool`.
 
-## Workspace Policy
+## Workspace Resolution
 
-All local file tools share the same workspace policy.
+All local file tools use the same active workspace for resolving relative paths.
 
-Working directory:
+Workspace source:
 
-- The active working directory is `SessionStoreService`'s normalized `workingDir`.
-- Persisted session stores keep `workingDir` as an absolute string, but the runtime
-  should resolve the active boundary from the current command environment.
+- The default active workspace is the current process working directory.
+- Direct `codegeist.yml` may override it with `workspace.directory`.
+- Relative `workspace.directory` values resolve against the process working
+  directory.
+- Absolute `workspace.directory` values are normalized and used directly.
+- A filesystem root or drive root is valid when a session intentionally needs broad
+  filesystem access.
 
 Path resolution:
 
-- Relative inputs resolve against the working directory.
-- Absolute inputs are allowed only when they normalize under the working directory.
-- Existing paths must pass a real-path check so symlinks cannot escape the working
-  directory.
-- Missing write targets must pass a normalized target check, and their existing
-  parent directory must pass a real-path check under the working directory.
-- Mutating tools must reject symbolic-link file targets instead of following them.
-- Model-visible and persisted paths should be relative to the working directory when
-  possible.
+- Relative tool input paths resolve against the active workspace.
+- Absolute tool input paths are accepted as caller-provided filesystem paths.
+- This slice does not add permission rules, path escape rejection, symlink rejection,
+  session-store write protection, or ignored/generated-file filtering.
 
-Protected paths:
+Rendered paths:
 
-- `codegeist_write` must reject writes to the active session store file.
-- This slice does not need a full ignored-file policy. Generated and ignored-file
-  filtering can be added only when a focused test requires it.
+- Model-visible and persisted paths should be relative to the active workspace when
+  practical.
+- If a path cannot be rendered relative to the workspace, use the normalized path the
+  tool actually accessed.
 
 Side effects:
 
@@ -334,8 +335,8 @@ Rules:
 
 - Truncate before returning output to Spring AI and before persisting to the session
   store.
-- Persist whether output was truncated.
-- Persist omitted character or result counts when they are cheap to know.
+- Persist only the bounded preview string plus result counts when they are cheap to
+  know.
 - Do not persist full file contents, full grep output, full directory trees, or full
   write content beyond the bounded preview.
 - Error messages must be concise and must not include secret-bearing config values.
@@ -348,13 +349,13 @@ Input fields:
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `path` | yes | File path under the working directory. |
+| `path` | yes | File path. Relative values resolve against the active workspace. |
 | `offset` | no | 1-based starting line. Defaults to `1`. |
 | `limit` | no | Maximum lines to return. Defaults to `DEFAULT_READ_LINES` and is capped. |
 
 Behavior:
 
-- Reject missing paths, directories, files outside the workspace, and binary files.
+- Reject missing paths, directories, and binary files.
 - Return line-numbered text for the requested bounded range.
 - Report total returned lines and truncation when known.
 
@@ -364,12 +365,12 @@ Input fields:
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `path` | no | Directory path under the working directory. Defaults to `.`. |
+| `path` | no | Directory path. Relative values resolve against the active workspace. Defaults to `.`. |
 | `limit` | no | Maximum entries to return. Defaults to `MAX_RESULTS` and is capped. |
 
 Behavior:
 
-- Reject file paths and paths outside the workspace.
+- Reject file paths.
 - Return stable lexicographic entries with a directory marker.
 - Do not recurse in the first slice unless a focused test adds a `depth` contract.
 
@@ -380,12 +381,12 @@ Input fields:
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `pattern` | yes | Java glob pattern, evaluated under the base path. |
-| `path` | no | Base directory under the working directory. Defaults to `.`. |
+| `path` | no | Base directory. Relative values resolve against the active workspace. Defaults to `.`. |
 | `limit` | no | Maximum matched paths. Defaults to `MAX_RESULTS` and is capped. |
 
 Behavior:
 
-- Reject base paths outside the workspace.
+- Resolve relative base paths against the active workspace.
 - Return relative matched paths in stable lexicographic order.
 - Match files and directories unless implementation tests intentionally narrow it.
 - Do not shell out to `find` or `grep` for this tool.
@@ -397,7 +398,7 @@ Input fields:
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `pattern` | yes | Java regular expression. |
-| `path` | no | File or directory under the working directory. Defaults to `.`. |
+| `path` | no | File or directory. Relative values resolve against the active workspace. Defaults to `.`. |
 | `include` | no | Optional Java glob include filter such as `**/*.java`. |
 | `caseInsensitive` | no | Whether to use case-insensitive regex matching. Defaults to `false`. |
 | `limit` | no | Maximum matching lines. Defaults to `MAX_RESULTS` and is capped. |
@@ -417,15 +418,14 @@ Input fields:
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `path` | yes | File path under the working directory. |
+| `path` | yes | File path. Relative values resolve against the active workspace. |
 | `content` | yes | Text content to write. |
 
 Behavior:
 
 - Create a new regular text file when the parent directory exists.
 - Overwrite an existing regular text file.
-- Reject directories, symlink targets, paths outside the workspace, the active session
-  store file, and missing parent directories.
+- Reject directories and missing parent directories.
 - Return affected relative path, byte or character count, and whether the file was
   created or overwritten.
 - Persist only a bounded content preview, not the full content when it exceeds
@@ -447,8 +447,6 @@ Suggested persisted fields:
 | `status` | `completed` or `failed` for this slice. |
 | `input` | Sanitized bounded scalar map of model-supplied inputs. |
 | `outputPreview` | Bounded model-visible result or failure text. |
-| `truncated` | Whether output preview was truncated. |
-| `omittedCharacters` | Number of omitted characters when known. |
 | `resultCount` | Number of entries or matches when relevant and known. |
 | `affectedPaths` | Relative paths affected by mutating tools. |
 | `errorMessage` | Bounded failure message for failed calls. |
@@ -479,7 +477,6 @@ Illustrative JSON shape:
     "limit": 20
   },
   "outputPreview": "1: # Codegeist\n2: ...",
-  "truncated": false,
   "resultCount": 20,
   "affectedPaths": []
 }
@@ -502,7 +499,7 @@ sequenceDiagram
     Chat->>Model: call(request, context)
     alt model invokes local or MCP tool
         Model->>Callback: call(toolInput)
-        Callback->>Callback: validate workspace and execute
+        Callback->>Callback: resolve workspace paths and execute
         Callback->>Callback: bound output and build ToolSessionPart
         Callback-->>Model: bounded model-visible output
     end
@@ -518,10 +515,9 @@ parts.
 
 Examples:
 
-- Path outside workspace: failed tool result with a concise policy error.
 - Invalid regex: failed `codegeist_grep` result with regex error summary.
 - Missing file for read: failed result saying the file does not exist.
-- Write to protected session store path: failed policy result.
+- Write target parent missing: failed result with a concise write-target error.
 - MCP setup failure: fail the chat run before provider execution unless a focused
   implementation chooses to surface it as failed MCP tool availability.
 
@@ -549,13 +545,12 @@ Use the Taskfile from `app/codegeist/cli` for all implementation verification.
 ### Local Tool Tests
 
 - `CodegeistFileToolsTest`: uses `@TempDir` fixtures for read/list/glob/grep/write.
-- Prove every tool rejects paths outside the working directory.
-- Prove symlink escapes are rejected for at least one read path and one write path.
+- Prove relative tool paths resolve from the active workspace.
+- Prove absolute tool paths are accepted as caller-provided filesystem paths.
 - Prove read output line and character bounds.
 - Prove list, glob, and grep result limits.
 - Prove grep invalid regex returns a failed bounded result.
-- Prove write creates and overwrites a file under the working directory.
-- Prove write rejects the active `.codegeist/session.json` path.
+- Prove write creates and overwrites a file relative to the active workspace.
 
 ### Session Store Tests
 
@@ -594,8 +589,8 @@ resource loading, or command startup behavior beyond adding reflection metadata 
 
 Recommended order after this specification is accepted:
 
-1. Add focused failing tests for local file tools and workspace policy.
-2. Implement `WorkspacePolicy`, `ToolOutputBounds`, and local file tool execution.
+1. Add focused failing tests for local file tools and workspace resolution.
+2. Implement `WorkspaceResolver`, `ToolOutputBounds`, and local file tool execution.
 3. Add `ToolSessionPart` and session-store append support for recorded tool parts.
 4. Add chat-run context and tool-aware `CodegeistChatService`/`CodegeistChatModel`
    overloads while keeping `CodegeistChatRequest` unchanged.
@@ -614,8 +609,8 @@ Recommended order after this specification is accepted:
 - No MCP OAuth.
 - No MCP server discovery or server management commands.
 - No hosted provider calls.
-- No broad tool registry, permission prompt UI, or policy engine beyond the tested
-  workspace path checks.
+- No broad tool registry, permission prompt UI, path-safety engine, or filesystem
+  allow/deny rules.
 - No provider-facing multi-turn reconstruction from stored sessions.
 - No database, server runtime, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or
   subagents.

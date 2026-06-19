@@ -72,7 +72,7 @@ flowchart TD
     Tools --> Mutating[Patch/edit and shell]
     Tools --> Mcp[MCP tool callbacks]
     Config[CodegeistConfigService] --> Chat
-    Config --> McpConfig[codegeist.yml mcp map]
+    Config --> McpConfig[codegeist.yml mcp keyed object]
 ```
 
 Dependency direction:

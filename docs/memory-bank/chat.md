@@ -62,20 +62,28 @@
   prefix. Configuration code lives under `ai.codegeist.app.config`.
   `CodegeistConfig` is now a container of generic parsed
   `CodegeistConfigRootElement<? extends CodegeistConfigElement>` instances instead
-  of a class with one field per top-level YAML root. `ProviderConfig` and
-  `McpClientConfig` both extend the shared `CodegeistConfigElement` base class.
+  of a class with one field per top-level YAML root. `CodegeistConfigElement` is the
+  common base for single-object config, typed entries, and keyed list config;
+  `CodegeistTypedConfigElement` owns a shared validated `type` field with Lombok
+  getter/setter, and `ProviderConfig` and `McpClientConfig` extend it.
   `CodegeistConfigService` iterates top-level direct `codegeist.yml` fields and
-  delegates root lookup to `CodegeistConfigRootElementParserService`, which finds
-  the matching injected `CodegeistConfigRootElement` by `rootName()` and asks that
-  root parser to map the value. `CodegeistConfigRootElement` owns shared map-entry
-  validation and `type` dispatch for typed root entries. The provider root is
-  `provider:`; there is no `providers:` alias. `ProvidersRootElement` supplies the
-  explicit provider class registry plus provider type constants to select concrete
-  access-only provider config classes. The first MCP catalog root is `mcp:` and maps
-  to `McpClientsRootElement` with `type`, `command`, and `args`. Provider dispatch
-  does not branch on JVM versus native-image runtime;
-  `reflect-config.json` includes root element, MCP, and
-  provider config POJOs for native images. Supported config-only provider classes
+  delegates root parsing to the central `CodegeistConfigRootParser` Spring service.
+  Root element subclasses are plain model objects, not Spring components.
+  `CodegeistConfigRootParser` owns shared root-shape validation and `type` dispatch
+  for typed root entries. The provider root is
+  `provider:`; there is no `providers:` alias. `CodegeistConfigRootParser` supplies
+  the explicit provider class registry plus provider type constants to select
+  concrete access-only provider config classes. `provider:` and `mcp:` roots now
+  store `ProvidersConfig` and `McpClientsConfig`, both list-backed
+  `CodegeistConfigKeyedListElement` implementations that render provider-style YAML
+  objects. The first MCP catalog root is `mcp:` and maps as a YAML object keyed by
+  client id with `type`, `command`, and `args`; multiple clients can share the same
+  transport type such as `stdio`. The optional
+  `workspace:` root maps to `WorkspaceRootElement`, which stores `WorkspaceConfig` in
+  the inherited generic `CodegeistConfigRootElement<T>` config slot with only a
+  nullable `directory` field. Provider dispatch does not branch on JVM versus
+  native-image runtime; `reflect-config.json` includes root element, MCP, workspace,
+  and provider config POJOs for native images. Supported config-only provider classes
   are currently only `ollama` and `openai`; each concrete provider config owns a
   provider-specific `defaultModel()` without adding YAML model fields. The broader
   provider matrix and OpenCode-only provider types remain unsupported in this slice.
@@ -116,21 +124,30 @@
   These values are not direct `codegeist.yml` provider/tool config. Continuing a
   session currently persists the new turn but does not yet rebuild provider-facing
   model context from stored history.
+- Tool helper runtime code now lives under `ai.codegeist.app.tool`.
+  `WorkspaceResolver` resolves the active workspace from optional direct
+  `codegeist.yml` `workspace.directory` or `${user.dir}`; absolute values are
+  normalized, relative values resolve against the process working directory, and
+  filesystem roots/traversal-normalized paths are intentionally allowed because no
+  workspace policy exists yet. `ToolOutputBounds` centralizes deterministic string
+  and limit caps for future local and MCP tool output: preview, line preview,
+  result limits, read limits, and normalized error previews. It returns only strings
+  and integer limits, with no truncation metadata object.
 - `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper
   used by the config service for direct `codegeist.yml` parsing, empty-safe source
-  tree loading, root element conversion, provider normalization, and rendering.
+  tree loading, list-backed keyed element rendering, and direct YAML output.
 - `CodegeistYamlExpressionEvaluator` is a Spring service that receives the config
   mapper and owns scalar SpEL preprocessing for direct YAML loads.
-- `CodegeistConfigRootElementParserService` receives root element parser components
-  and the config mapper, then owns top-level root lookup plus
-  unsupported-root errors.
-- `CodegeistConfigService` receives the root element parser service, YAML mapper,
-  SpEL evaluator, validator, and `codegeist.config` property. It exposes
+- `CodegeistConfigRootParser` receives the config mapper, owns supported root-name
+  dispatch, explicit `provider:`, `mcp:`, and `workspace:` parser methods, provider
+  `type` dispatch, MCP YAML-key id copying, shape checks, and unsupported-root errors.
+- `CodegeistConfigService` receives the root parser, YAML mapper, SpEL evaluator,
+  validator, and `codegeist.config` property. It exposes
   `loadCurrentConfig` as a primary `@Bean` parsed from `codegeist.config` when
   that property is set, and can load an explicit YAML path with
   `loadConfig(String configPath)` using a phased parser: read YAML into a Jackson
   tree, evaluate SpEL only in string scalar values containing `#{`, parse each
-  top-level root through `CodegeistConfigRootElementParserService`, then call
+  top-level root through `CodegeistConfigRootParser`, then call
   `jakarta.validation.Validator`. Normal app code injects unqualified
   `CodegeistConfig` to get the primary config.
   `loadCurrentConfig()` uses the same global `codegeist.config` config path when
@@ -288,7 +305,7 @@
 - `docs/tasks/T006_build-provider-configuration-feature/` is open as the provider
   configuration feature epic. `T006_01` is solved with the minimal provider config
   model; the later current implementation now loads only explicit `codegeist.yml`
-  paths through root-element parser components instead of direct
+  paths through the central root parser instead of direct
   `@ConfigurationProperties` binding on `CodegeistConfig` or Codegeist roots in
   `application.yaml`.
   `T006_02` is solved with a Spring AI `2.0.0-M6` provider matrix, source evidence,
@@ -405,7 +422,9 @@
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
   The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
-  implemented and tested; MCP callbacks, read/write tools, and session-store
+  implemented and tested. `T007_03_02` is completed with workspace config parsing,
+  active workspace resolution, output-bound helpers, focused tests, and native
+  reflection metadata. MCP callbacks, read/write tools, and session-store
   tool-result persistence remain open implementation work. Remaining children are
   `T007_03_add-mcp-and-read-write-tools/task.md`,
   `T007_04_add-patch-edit-and-shell-tools.md`,
@@ -454,9 +473,9 @@
   or provider feature test method, while concrete provider configs own their default
   runtime model fallback.
   `CodegeistConfig` should stay a root-element container; new top-level config
-  sections should add `CodegeistConfigRootElement` parser components picked up by
-  `CodegeistConfigRootElementParserService` instead of adding one field per root to
-  `CodegeistConfig`.
+  sections should extend the central `CodegeistConfigRootParser` dispatch and return
+  plain `CodegeistConfigRootElement` model objects instead of adding one field per
+  root to `CodegeistConfig`.
 - Use Jackson YAML (`jackson-dataformat-yaml`) as the current direct YAML-to-POJO
   mapping framework for `codegeist.yml`. Current direct YAML loading evaluates a
   minimal Spring SpEL phase before mapping string scalar values containing `#{`.
@@ -551,9 +570,9 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- Start the next T007 implementation from `T007_03`, adding MCP callbacks and the
-  first read/list/glob/grep/write tool path on top of the implemented
-  `.codegeist/session.json` store. Use
+- Continue the next T007 implementation from `T007_03_03`, adding the first
+  read/list/glob/grep/write tool path on top of the implemented workspace resolver,
+  output bounds, and `.codegeist/session.json` store. Use
   `docs/tasks/T007_build-codegeist-runtime-harness/session-store-model-specification.md`
   for the current session-store model.
 - Source-close third-party questions should use

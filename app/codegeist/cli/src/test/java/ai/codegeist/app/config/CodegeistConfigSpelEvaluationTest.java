@@ -36,10 +36,11 @@ class CodegeistConfigSpelEvaluationTest {
 
         CodegeistConfig config = service.loadConfig(configFile.toString());
         ProvidersRootElement providers = providers(config);
-        ProviderConfig provider = providers.getProviders().get(OLLAMA_PROVIDER_TYPE);
+        ProviderConfig provider = config.defaultProvider().orElseThrow();
 
-        assertThat(providers.getProviders()).containsOnlyKeys(OLLAMA_PROVIDER_TYPE);
+        assertThat(providers.getConfig().getElements()).hasSize(1);
         assertThat(provider).isInstanceOf(OllamaProviderConfig.class);
+        assertThat(provider.getType()).isEqualTo(OLLAMA_PROVIDER_TYPE);
         assertThat(provider.getName()).isEqualTo("local-ollama");
         assertThat(provider.getBaseUrl()).isEqualTo("http://localhost:11434");
     }

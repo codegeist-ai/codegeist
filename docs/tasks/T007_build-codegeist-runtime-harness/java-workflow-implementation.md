@@ -472,8 +472,8 @@ mcp:
 
 Implementation direction:
 
-- Add `McpClientConfig` under Codegeist config with `type`, `command`, and `args`
-  first.
+- Add `McpClientConfig` under Codegeist config with YAML-key `id`, `type`,
+  `command`, and `args` first.
 - Keep only `stdio` in the first T007 MCP slice unless a focused test requires
   another transport.
 - `CodegeistMcpAdapter` maps direct Codegeist config to Spring AI MCP clients.
@@ -486,7 +486,7 @@ Implementation direction:
 
 ```mermaid
 sequenceDiagram
-    participant Config as codegeist.yml mcp map
+    participant Config as codegeist.yml mcp keyed object
     participant Adapter as CodegeistMcpAdapter
     participant Client as Spring AI MCP client
     participant Provider as SyncMcpToolCallbackProvider

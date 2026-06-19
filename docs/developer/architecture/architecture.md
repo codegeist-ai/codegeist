@@ -34,15 +34,18 @@ docs:
 Codegeist currently contains one Java/Spring Boot CLI application under
 `app/codegeist/cli`. Implemented runtime behavior is Spring Boot application
 startup, typed access-only provider config loading and validation, trusted local
-SpEL preprocessing for explicit `codegeist.yml` files, provider-neutral one-turn
-chat execution through a lazily created Codegeist chat model that wraps Spring AI
-Ollama and uses the runtime model name from the request, a Spring Shell `--version`
-command that prints the build version, and a Spring Shell `--show-config` command
-that prints the current Codegeist config as direct `codegeist.yml` YAML with
-configured values unchanged. A Spring Shell `ask` command sends one prompt to the
-first configured provider with that provider config's default runtime model; with
-`-c/--continue`, it appends the prompt and provider response to the newest session
-in `.codegeist/session.json`.
+SpEL preprocessing for explicit `codegeist.yml` files, direct workspace config
+loading and active workspace resolution, provider-neutral one-turn chat execution
+through a lazily created Codegeist chat model that wraps Spring AI Ollama and uses
+the runtime model name from the request, a Spring Shell `--version` command that
+prints the build version, and a Spring Shell `--show-config` command that prints the
+current Codegeist config as direct `codegeist.yml` YAML with configured values
+unchanged. A Spring Shell `ask` command sends one prompt to the first configured
+provider with that provider config's default runtime model; with `-c/--continue`, it
+appends the prompt and provider response to the newest session in
+`.codegeist/session.json`. Tool execution is not implemented yet, but the shared
+workspace resolver and output-bound helper primitives are available for upcoming
+local and MCP tool work.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -67,7 +70,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, native version/config/ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace config/resolver/output-bound tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, native version/config/ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama provider dependency is
 used programmatically instead of through global Spring AI auto-configuration.
@@ -101,8 +104,9 @@ Implemented Java package:
 | --- | --- |
 | `ai.codegeist.app` | Spring Boot application entrypoint, version command, and shared command exception mapping |
 | `ai.codegeist.app.chat` | Provider-neutral one-turn chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, the local Ollama chat model, and the `ask` Spring Shell command with optional session continuation |
-| `ai.codegeist.app.config` | Top-level config root parser components, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
+| `ai.codegeist.app.config` | Top-level config root models, the central root parser, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
 | `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
+| `ai.codegeist.app.tool` | Shared helper primitives for active workspace resolution and deterministic tool-output bounds. No model-callable local or MCP tools exist yet. |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
@@ -112,7 +116,8 @@ No other `ai.codegeist.*` application packages currently exist in source code.
 startup to `SpringApplication.run`. GraalVM metadata is kept out of Java code in
 `src/main/resources/META-INF/native-image/`: `resource-config.json` includes
 `logback.xml` and `META-INF/build-info.properties`, and `reflect-config.json`
-registers provider config POJOs for Jackson binding in the native binary.
+registers config root elements and config POJOs for Jackson binding in the native
+binary.
 
 ```mermaid
 flowchart TD
@@ -144,21 +149,30 @@ Current behavior:
 - `CodegeistConfig` is the root config container. It stores parsed
   `CodegeistConfigRootElement` instances instead of one Java field per top-level
   YAML root. `CodegeistConfigService` parses direct `codegeist.yml` roots by
-  delegating top-level root lookup to `CodegeistConfigRootElementParserService`,
-  which selects from injected `CodegeistConfigRootElement` parser components.
+  delegating top-level root parsing to the central `CodegeistConfigRootParser`.
   `application.yaml` is not a Codegeist config source. The provider root is
-  `provider:`; there is no `providers:` alias. `CodegeistConfigRootElement` owns
-  shared map-entry validation and `type` dispatch for typed root entries;
-  `ProvidersRootElement` supplies the provider registry, while `McpClientsRootElement`
-  owns the first `mcp:` client catalog shape.
-- `CodegeistConfigElement` is the abstract base class for typed entries stored
-  under config roots, currently `ProviderConfig` and `McpClientConfig`.
+  `provider:`; there is no `providers:` alias. `CodegeistConfigRootParser` owns
+  shared root-shape validation and `type` dispatch for typed root entries.
+  `ProvidersRootElement` stores a `ProvidersConfig` list-backed element,
+  `McpClientsRootElement` stores a `McpClientsConfig` list-backed element whose ids
+  come from YAML keys, and `WorkspaceRootElement` stores the direct `workspace:`
+  object shape.
+- `CodegeistConfigElement` is the abstract base class for every config payload shape,
+  including single objects, typed entries, and list-backed keyed objects.
+  `CodegeistTypedConfigElement` owns the shared validated `type` field and Lombok
+  getter/setter for entries that have a dispatch or transport type.
+  `CodegeistConfigKeyedListElement<T>` owns the shared
+  list state and transient YAML-object rendering for roots such as `provider:` and
+  `mcp:`.
+  `CodegeistConfigRootElement<T>` owns a generic validated `T config` slot for
+  root payloads, so collection-shaped roots no longer keep side-list fields next to
+  `config`. Root element subclasses are not Spring components.
   `ProviderConfig` is the abstract base class for typed provider map values.
   The required provider object field `type` dispatches through the explicit
-  `ProvidersRootElement` registry to concrete data-only provider config classes for
-  `ollama` and `openai`, but it is not stored as mutable provider config state.
-  Runtime/output type is returned by each concrete provider config's `getType()`
-  constant. Broader provider-matrix and
+  `CodegeistConfigRootParser` registry to concrete data-only provider config classes
+  for `ollama` and `openai`. The parser also copies that validated value into the
+  shared base field, while runtime/output type is still returned by each concrete
+  provider config's `getType()` constant. Broader provider-matrix and
   OpenCode-only types remain unsupported in this task.
   Provider classes validate only local config completeness; they do not store model
   names, create Spring AI clients, or call providers.
@@ -180,17 +194,20 @@ Current behavior:
   to Spring AI's Ollama chat model. Ollama-specific Spring AI imports stay isolated
   in this class.
 - `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper for
-  direct `codegeist.yml` parsing, root element conversion, provider normalization,
-  and rendering. It owns helper methods for reading empty-safe config source trees
-  and writing direct config YAML without a `codegeist:` wrapper.
+  direct `codegeist.yml` parsing and rendering. It owns helper methods for reading
+  empty-safe config source trees, rendering list-backed keyed config elements as
+  provider-style YAML objects, and writing direct config YAML without a `codegeist:`
+  wrapper.
 - `CodegeistYamlExpressionEvaluator` is a Spring service that receives
   `CodegeistConfigYamlMapper` and evaluates SpEL only in direct-YAML string scalar
   values.
-- `CodegeistConfigRootElementParserService` receives the root element parser
-  components and `CodegeistConfigYamlMapper`, then owns top-level root lookup plus
-  unsupported-root errors.
-- `CodegeistConfigService` receives the root element parser service, config mapper,
-  SpEL evaluator, validator, and command output service as final collaborators
+- `CodegeistConfigRootParser` is the central Spring parser for top-level direct YAML
+  roots. It receives `CodegeistConfigYamlMapper`, owns unsupported-root errors, and
+  now uses explicit parser methods for `provider:`, `mcp:`, and `workspace:` instead
+  of generic root-shape helpers. Provider entries dispatch through a compact explicit
+  registry; MCP entries copy the YAML key into `McpClientConfig.id`.
+- `CodegeistConfigService` receives the root parser, config mapper, SpEL evaluator,
+  validator, and command output service as final collaborators
   through Lombok `@RequiredArgsConstructor`. Its `configPath` remains a non-final
   `@Value` field for the injected `codegeist.config` property.
   Its `loadCurrentConfig` `@Primary` bean parses the configured
@@ -199,7 +216,7 @@ Current behavior:
   that primary config.
   `loadConfig(String configPath)` reads an explicit YAML file path into a Jackson
   tree, evaluates SpEL only in string scalar values containing `#{`, delegates each
-  top-level root to the root element parser service, then runs
+  top-level root to `CodegeistConfigRootParser`, then runs
   `jakarta.validation.Validator` and reports constraint failures through
   `CodegeistConfigValidationException` with source-path context. Jackson mapping
   and IO failures surface directly through Lombok `@SneakyThrows`.
@@ -208,6 +225,25 @@ Current behavior:
   empty default config. `toYaml(...)` renders direct `codegeist.yml` YAML with no
   `codegeist:` wrapper, no YAML document marker, configured values unchanged, and
   no synthetic roots for an empty config.
+- `WorkspaceRootElement` parses optional direct `codegeist.yml` `workspace:`
+  objects into the inherited generic `CodegeistConfigRootElement<WorkspaceConfig>`
+  config slot. The only implemented `WorkspaceConfig` field is nullable `directory`;
+  omitted or blank values are accepted so the resolver can fall back to the process
+  working directory. The root does not define permission rules, path safety fields,
+  ignored-file behavior, write protection, or symlink rules.
+- `WorkspaceResolver` is a Spring component under `ai.codegeist.app.tool`. It reads
+  the active `CodegeistConfig`, uses `${user.dir}` as the process working directory,
+  returns that directory when no workspace override is configured, normalizes
+  absolute overrides, and resolves relative overrides against the process working
+  directory. It intentionally allows filesystem roots, paths outside the repository,
+  and normalized traversal segments because this slice is workspace resolution, not
+  workspace policy.
+- `ToolOutputBounds` is a Spring component under `ai.codegeist.app.tool`. It
+  centralizes deterministic string capping for future model-visible and persisted
+  tool output: preview text is capped at `MAX_PREVIEW_CHARS`, single-line previews
+  and normalized error previews are capped at `MAX_LINE_CHARS`, result limits are
+  capped at `MAX_RESULTS`, and read limits are capped at `DEFAULT_READ_LINES`.
+  Bounds return strings or integer limits only; no truncation metadata object exists.
 - `--show-config` is implemented as a Spring Shell command in
   `CodegeistConfigService`. The service resolves the current global config policy,
   renders YAML, and writes only that YAML through `CommandOutputService`.
@@ -269,9 +305,8 @@ Current behavior:
   sessions yet. Continuing a session currently persists the new turn but still sends
   the current prompt as a one-turn `CodegeistChatRequest`.
 - There are no implemented streaming output, provider flags, model flags, tool
-  executions, permission prompts, workspace policies beyond the session store's
-  working-directory field, server endpoints, Vaadin views, PF4J plugins, or JBang
-  execution paths.
+  executions, permission prompts, workspace or file-access policies, server
+  endpoints, Vaadin views, PF4J plugins, or JBang execution paths.
 
 ## Test Architecture
 
@@ -298,6 +333,11 @@ proves `loadConfig(String)` maps provider-specific and MCP fields. It proves the
 injected `codegeist.config` property is the current global config source when set at
 context startup. Validation coverage proves blank provider ids and present-but-blank
 provider names are rejected, while an omitted provider name remains valid.
+
+`CodegeistWorkspaceConfigTest` proves direct `codegeist.yml` can load optional
+`workspace.directory`, accepts omitted and blank workspace configuration so the
+resolver can fall back later, and rejects a present non-object `workspace:` root with
+a focused validation message.
 
 `CodegeistProviderConfigTest` proves the supported `ollama` and `openai` provider
 types map through the explicit Java registry to the
@@ -348,6 +388,13 @@ continued `ask` paths, verifies plain `ask` creates a new session store, verifie
 continued `ask` appends prompt/response text parts or creates a missing session,
 and checks Spring Shell parsing for both `ask -c "prompt"` and
 `ask --continue "prompt"`.
+
+`WorkspaceResolverTest` proves active workspace fallback, absolute overrides,
+relative overrides, filesystem root support, and traversal-segment normalization
+without treating those configured values as policy violations.
+
+`ToolOutputBoundsTest` proves deterministic preview capping, line capping, result
+limit capping, read-limit defaults and caps, and normalized bounded error previews.
 
 ```mermaid
 sequenceDiagram
@@ -498,7 +545,8 @@ Java source:
 - Context loading.
 - Tool registry or tool execution.
 - Permission approval flow.
-- Workspace and file-access policy beyond the stored session `workingDir` value.
+- Workspace and file-access policy beyond active workspace resolution and the stored
+  session `workingDir` value.
 - Patch/edit proposal flow.
 - Controlled shell execution.
 - Storage ports or adapters beyond local `.codegeist/session.json` persistence.

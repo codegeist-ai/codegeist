@@ -18,11 +18,11 @@ The current slice solves these problems:
 - Resolve the Spring `codegeist.config` property as the current global CLI config
   source when it is set, commonly through `-Dcodegeist.config=<path>` at startup.
 - Evaluate trusted local Spring SpEL only in direct YAML string scalar values.
-- Iterate each top-level config root and dispatch it to a matching annotated Spring
-  `CodegeistConfigRootElement` parser.
+- Iterate each top-level config root and dispatch it through the central
+  `CodegeistConfigRootParser` Spring service.
 - Dispatch `provider.<id>.type` to concrete Java provider config classes.
-- Parse a first top-level `mcp:` client catalog root with `type`, `command`, and
-  `args` fields.
+- Parse a first top-level `mcp:` client catalog root as a provider-style YAML object
+  keyed by client id, backed by a Java list with `type`, `command`, and `args` fields.
 - Validate config locally with Bean Validation after mapping.
 - Render `--show-config` YAML directly, including configured sensitive values.
 - Keep provider config free of models, generation options, enablement, and
@@ -38,19 +38,23 @@ The current slice solves these problems:
 | `app/codegeist/cli/pom.xml` | Provides Jackson YAML, Lombok, Bean Validation, and the Spring AI dependency baseline. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/CodegeistApplication.java` | Owns `APP_NAME = "codegeist"`, the shared Spring configuration prefix and application name. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfig.java` | Root config container. Holds a list of parsed `CodegeistConfigRootElement<? extends CodegeistConfigElement>` instances and exposes generic typed root lookup without per-root fields. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigElement.java` | Abstract base class for typed config entries stored under root elements, currently providers and MCP clients. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigRootElement.java` | Generic root element base class for naming and parsing one top-level YAML value into `CodegeistConfigElement` entries. It owns shared map-entry validation, `type` dispatch, and rendering contracts. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigRootElementParserService.java` | Spring service that receives root element parser components and the qualified YAML mapper, then resolves each top-level YAML root by `rootName()` before delegating parsing. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProvidersRootElement.java` | `provider:` root parser and holder. It owns the explicit provider class registry, stores parsed provider config values, and provides optional first-provider lookup. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/McpClientsRootElement.java` | `mcp:` root parser and holder for the first MCP client catalog shape. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/McpClientConfig.java` | Minimal MCP client config data contract with `type`, `command`, and `args`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigElement.java` | Abstract base class for every config payload shape, including single objects, typed entries, and list-backed keyed objects. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistTypedConfigElement.java` | Base class for entries that store a validated `type` value with Lombok getter/setter, currently providers and MCP clients. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigKeyedListElement.java` | Shared list-backed config element that builds a transient provider-style YAML object from subclass-defined keys. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigRootElement.java` | Generic root element base class for naming one top-level YAML value and rendering its validated `T config` payload back to direct config YAML. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigRootParser.java` | Central Spring parser for all supported top-level direct YAML roots. It owns root dispatch, explicit `provider:`, `mcp:`, and `workspace:` parser methods, provider `type` dispatch, MCP YAML-key id copying, shape checks, and unsupported-root errors. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProvidersRootElement.java` | `provider:` root model that wraps `ProvidersConfig`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProvidersConfig.java` | List-backed provider config element that renders a provider-keyed YAML object and exposes optional first-provider lookup. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/McpClientsRootElement.java` | `mcp:` root model for the first MCP client catalog shape. It wraps `McpClientsConfig`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/McpClientsConfig.java` | List-backed MCP clients config element that renders a YAML object keyed by client id. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/McpClientConfig.java` | Minimal MCP client config data contract with internal `id` copied from the YAML key plus `type`, `command`, and `args`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract base class for provider map values. Holds common access fields, exposes read-only output `type` through concrete constants, and declares provider-owned `defaultModel()` plus `createChatModel()`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Access config class for local Ollama settings, the `llama3.2:1b` default runtime model, and the concrete config-owned chat model seam. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Access config class for OpenAI settings and the `gpt-5-mini` default runtime model; chat-model creation is not implemented yet. |
 | `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-config.json` | GraalVM reflection metadata that lets Jackson instantiate provider config POJOs in native images. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigYamlMapper.java` | Spring service and Jackson mapper for direct `codegeist.yml` parsing, empty-safe source-tree loading, root element conversion, provider normalization, and direct YAML rendering. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigYamlMapper.java` | Spring service and Jackson mapper for direct `codegeist.yml` parsing, empty-safe source-tree loading, list-backed keyed element rendering, and direct YAML output. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlExpressionEvaluator.java` | Spring service that receives `CodegeistConfigYamlMapper` and evaluates SpEL in direct-YAML string scalar values only. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigService.java` | Spring service that receives `CodegeistConfigYamlMapper`, root element parser service, the injected `codegeist.config` value, and the SpEL evaluator service; exposes the primary config bean parsed from `codegeist.config` when set, owns `--show-config`, loads explicit YAML, runs validation, and renders direct YAML. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigService.java` | Spring service that receives `CodegeistConfigYamlMapper`, `CodegeistConfigRootParser`, the injected `codegeist.config` value, and the SpEL evaluator service; exposes the primary config bean parsed from `codegeist.config` when set, owns `--show-config`, loads explicit YAML, runs validation, and renders direct YAML. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigValidationException.java` | User-facing runtime exception for Bean Validation failures, provider dispatch failures before Jackson wraps them, and SpEL failures. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigServiceTest.java` | Spring integration test for binding, direct load, primary config injection, validation, and direct YAML rendering. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistProviderConfigTest.java` | Explicit provider registry dispatch, provider-specific default-model, and validation tests. |
@@ -75,16 +79,15 @@ public class CodegeistConfig {
 
 `CodegeistConfigService` builds this container only from explicit direct
 `codegeist.yml` files by delegating each top-level YAML field to
-`CodegeistConfigRootElementParserService`. Each top-level YAML field must match one
-parser component's `rootName()`. `application.yaml` is not a Codegeist config
-source.
+`CodegeistConfigRootParser`. Each top-level YAML field must match one root name
+supported by that parser. `application.yaml` is not a Codegeist config source.
 
 The direct `codegeist.yml` provider root is `provider:`. There is no `providers:`
 alias.
 
 Provider entries are selected by the required provider object field `type` through
-shared `CodegeistConfigRootElement` map-entry conversion; there is no fallback to
-the provider map key. For example:
+the shared typed-map parsing path in `CodegeistConfigRootParser`; there is no
+fallback to the provider map key. For example:
 
 ```yaml
 provider:
@@ -93,7 +96,8 @@ provider:
     api-key: "#{T(java.lang.System).getenv('OPENAI_API_KEY')}"
 ```
 
-The first MCP root shape is parsed through the same root-parser list:
+The first MCP root shape mirrors the provider YAML style while keeping the runtime
+model list-backed:
 
 ```yaml
 mcp:
@@ -106,17 +110,24 @@ mcp:
       - .
 ```
 
+The `mcp:` root is a YAML object keyed by client id, but `McpClientsConfig` stores
+clients as a list. `CodegeistConfigRootParser` copies the YAML key into the internal
+`McpClientConfig.id` field, so multiple MCP clients can share the same transport
+`type`, such as `stdio`, without overwriting one another.
+
 `ProviderConfig` is an abstract base class with common stored fields:
 
 - `name`
 - `base-url`
 
-The YAML `type` field is dispatch-only input. `CodegeistConfigRootElement` validates
-it before concrete mapping, and each concrete `ProviderConfig.getType()` returns
-its constant read-only output value.
-`ProvidersRootElement.defaultProvider()` returns an `Optional<ProviderConfig>` for
-the first non-null provider in its parsed provider list. `getProviders()` derives a
-map view keyed by provider type.
+The YAML `type` field is dispatch-only input for providers. `CodegeistConfigRootParser`
+validates it before concrete mapping, copies it into the shared
+`CodegeistTypedConfigElement` field for Bean Validation, and each concrete
+`ProviderConfig.getType()` still returns its constant read-only output value.
+`ProvidersConfig.defaultProvider()` returns an `Optional<ProviderConfig>` for the
+first non-null provider in its parsed provider list. The provider root stores this
+list-backed config element and renders a provider-keyed YAML object only at
+serialization time.
 `CodegeistConfig.defaultProvider()` also returns `Optional<ProviderConfig>`;
 callers that require a provider choose the failure policy at their boundary.
 
@@ -138,38 +149,68 @@ classDiagram
 
     class CodegeistConfigElement {
       <<abstract>>
+    }
+
+    class CodegeistTypedConfigElement {
+      <<abstract>>
       getType() String
+    }
+
+    class CodegeistConfigKeyedListElement {
+      <<abstract>>
+      List~CodegeistConfigElement~ elements
+      key(CodegeistConfigElement element) String
     }
 
     class CodegeistConfigRootElement {
       <<abstract>>
+      CodegeistConfigElement config
+      getConfig() CodegeistConfigElement
       rootName() String
-      parse(JsonNode source, ObjectMapper mapper) CodegeistConfigRootElement
-      convertElements(JsonNode source, ObjectMapper mapper) List~CodegeistConfigElement~
-      elementClasses() Map~String, Class~
     }
 
     class CodegeistConfigService {
       parseConfig(JsonNode source) CodegeistConfig
     }
 
-    class CodegeistConfigRootElementParserService {
-      List~CodegeistConfigRootElement~ rootElementParsers
+    class CodegeistConfigYamlMapper {
+      writeConfig(CodegeistConfig codegeistConfig) String
+    }
+
+    class CodegeistConfigRootParser {
       ObjectMapper yamlMapper
       parseRootElement(String rootName, JsonNode source) CodegeistConfigRootElement
+      parseProviders(JsonNode source) ProvidersRootElement
+      parseMcpClients(JsonNode source) McpClientsRootElement
+      parseWorkspace(JsonNode source) WorkspaceRootElement
     }
 
     class ProvidersRootElement {
       <<root provider>>
-      Map~String, Class~ PROVIDER_CLASSES
+      ProvidersConfig config
+    }
+
+    class ProvidersConfig {
+      <<keyed list>>
       List~ProviderConfig~ providers
-      getProviders() Map~String, ProviderConfig~
       defaultProvider() Optional~ProviderConfig~
     }
 
     class McpClientsRootElement {
       <<root mcp>>
-      Map~String, McpClientConfig~ clients
+      McpClientsConfig config
+    }
+
+    class McpClientsConfig {
+      <<keyed list>>
+      List~McpClientConfig~ clients
+    }
+
+    class McpClientConfig {
+      String id
+      String type
+      String command
+      List~String~ args
     }
 
     class ProviderConfig {
@@ -199,21 +240,29 @@ classDiagram
       createChatModel() CodegeistChatModel
     }
 
-    CodegeistConfigService --> CodegeistConfigRootElementParserService : delegates top-level roots
-    CodegeistConfigRootElementParserService --> CodegeistConfigRootElement : selects by rootName
+    CodegeistConfigService --> CodegeistConfigRootParser : delegates top-level roots
+    CodegeistConfigYamlMapper --> CodegeistConfigKeyedListElement : requests keyed YAML value
+    CodegeistConfigRootParser --> CodegeistConfigRootElement : creates root models
     CodegeistConfigService --> CodegeistConfig : builds
     CodegeistConfig --> ProvidersRootElement : contains
     CodegeistConfig --> McpClientsRootElement : contains
+    CodegeistConfigElement <|-- CodegeistTypedConfigElement
+    CodegeistConfigElement <|-- CodegeistConfigKeyedListElement
+    CodegeistTypedConfigElement <|-- ProviderConfig
+    CodegeistTypedConfigElement <|-- McpClientConfig
+    CodegeistConfigKeyedListElement <|-- ProvidersConfig
+    CodegeistConfigKeyedListElement <|-- McpClientsConfig
     CodegeistConfigRootElement <|-- ProvidersRootElement
     CodegeistConfigRootElement <|-- McpClientsRootElement
-    ProvidersRootElement --> ProviderConfig : stores provider list
-    CodegeistConfigRootElement ..> CodegeistConfigElement : converts entries
-    CodegeistConfigElement <|-- ProviderConfig
-    CodegeistConfigElement <|-- McpClientConfig
+    ProvidersRootElement --> ProvidersConfig : stores
+    McpClientsRootElement --> McpClientsConfig : stores
+    ProvidersConfig --> ProviderConfig : elements
+    McpClientsConfig --> McpClientConfig : elements
+    CodegeistConfigRootParser ..> CodegeistConfigElement : converts entries
     ProviderConfig <|-- OllamaProviderConfig
     ProviderConfig <|-- OpenAiProviderConfig
-    ProvidersRootElement ..> OllamaProviderConfig : registered class
-    ProvidersRootElement ..> OpenAiProviderConfig : registered class
+    CodegeistConfigRootParser ..> OllamaProviderConfig : registered class
+    CodegeistConfigRootParser ..> OpenAiProviderConfig : registered class
 ```
 
 Implemented provider types are:
@@ -223,9 +272,9 @@ ollama, openai
 ```
 
 Other provider types are unsupported because this slice ships no concrete config
-class registered for them. `CodegeistConfigRootElement` performs the shared
-type-field lookup, and `ProvidersRootElement` supplies its explicit Java registry of
-provider type constants and config classes without branching on runtime environment.
+class registered for them. `CodegeistConfigRootParser` performs the shared
+type-field lookup and supplies its explicit Java registry of provider type constants
+and config classes without branching on runtime environment.
 A provider class that Jackson must instantiate in the native image also needs
 matching `reflect-config.json` metadata. Unsupported
 types include the broader provider matrix from `T006_02` and `T006_03`, such as
@@ -237,8 +286,8 @@ types include the broader provider matrix from `T006_02` and `T006_03`, such as
 ## Spring Component Model
 
 `CodegeistConfigService` is a Spring `@Service`. It receives
-`CodegeistConfigYamlMapper`, `CodegeistConfigRootElementParserService`, SpEL
-evaluator, Bean Validation `Validator`, and `CommandOutputService` as final
+`CodegeistConfigYamlMapper`, `CodegeistConfigRootParser`, SpEL evaluator, Bean
+Validation `Validator`, and `CommandOutputService` as final
 collaborators through Lombok `@RequiredArgsConstructor`. The `codegeist.config`
 property remains a non-final `@Value` field.
 
@@ -249,9 +298,10 @@ public class CodegeistConfigService {
 }
 ```
 
-`CodegeistConfigRootElementParserService` is the separate Spring service that
-receives all `CodegeistConfigRootElement` components and `CodegeistConfigYamlMapper`,
-then owns unsupported top-level root errors.
+`CodegeistConfigRootParser` is the separate Spring service that receives
+`CodegeistConfigYamlMapper`, owns unsupported top-level root errors, and creates
+non-Spring `CodegeistConfigRootElement` model instances. Root element subclasses are
+not Spring components.
 
 The service exposes the current primary config bean:
 
@@ -280,7 +330,7 @@ flowchart TD
     Start([Explicit codegeist.yml path])
     ReadTree[Read YAML into Jackson tree]
     Evaluate[Evaluate SpEL in string scalar values containing the SpEL marker]
-    MapConfig[Delegate top-level roots to parser service]
+    MapConfig[Delegate top-level roots to CodegeistConfigRootParser]
     Validate[Run jakarta.validation.Validator]
     Valid{Violations?}
     Return([Return CodegeistConfig])
@@ -311,39 +361,38 @@ SpEL behavior is intentionally narrow and trusted-local-input only:
 sequenceDiagram
     participant Source as Jackson tree
     participant Service as CodegeistConfigService
-    participant ParserService as CodegeistConfigRootElementParserService
+    participant Parser as CodegeistConfigRootParser
     participant Root as ProvidersRootElement
     participant ProviderClass as Concrete ProviderConfig class
     participant Validator as Bean Validation
 
     Source->>Service: top-level provider root
-    Service->>ParserService: parse root named provider
-    ParserService->>Root: parse provider map
-    Root->>Root: require non-blank type
-    Root->>Root: check registered provider classes and match type constant
-    Root->>ProviderClass: map same object into concrete class
-    Root-->>ParserService: typed ProvidersRootElement
-    ParserService-->>Service: typed ProvidersRootElement
+    Service->>Parser: parse root named provider
+    Parser->>Parser: require provider map object
+    Parser->>Parser: require non-blank type
+    Parser->>Parser: check registered provider classes and match type constant
+    Parser->>ProviderClass: map same object into concrete class
+    Parser->>Root: create ProvidersRootElement
+    Parser-->>Service: typed ProvidersRootElement
     Service->>Validator: validate root and nested provider config
 ```
 
-`ProvidersRootElement` owns the explicit registry of supported `ProviderConfig`
+`CodegeistConfigRootParser` owns the explicit registry of supported `ProviderConfig`
 implementations, matches each registered provider type constant against the YAML
-`type` field, and does not branch on whether Codegeist is running on the JVM or as
-a native image. This keeps provider dispatch GraalVM-friendly
-instead of relying on runtime classpath scanning.
+`type` field, and does not branch on whether Codegeist is running on the JVM or as a
+native image. This keeps provider dispatch GraalVM-friendly instead of relying on
+runtime classpath scanning.
 
 ## Native Metadata Flow
 
 Native-image metadata has two separate jobs. `resource-config.json` embeds runtime
 resources such as `logback.xml` and `META-INF/build-info.properties`.
 `reflect-config.json` grants Jackson reflective access to config root element and
-concrete provider config POJOs selected by the parser service and root element
-components.
+concrete provider config POJOs selected by the central root parser.
 
 ```mermaid
 flowchart TD
-    Registry[ProvidersRootElement.PROVIDER_CLASSES]
+    Registry[CodegeistConfigRootParser.PROVIDER_CLASSES]
     ProviderClasses[Root elements, MCP config, OllamaProviderConfig, OpenAiProviderConfig]
     Reflect[reflect-config.json]
     Jackson[Jackson treeToValue]
@@ -443,7 +492,8 @@ lives in `docs/tests/provider-feature-tests.md`.
 | --- | --- |
 | Unqualified `CodegeistConfig` injection receives the parsed `codegeist.config` file when configured | `@Primary` targets normal app injection without treating `application.yaml` as Codegeist config. |
 | Explicit YAML path loads provider-specific fields | Direct Jackson YAML loading maps into typed `CodegeistConfig`. |
-| Explicit YAML path loads MCP client fields | Direct root iteration reaches `McpClientsRootElement` and maps the first MCP catalog shape. |
+| Explicit YAML path loads MCP client fields | Direct root iteration reaches `McpClientsRootElement` and maps the first MCP provider-style YAML object into a list-backed model. |
+| Multiple MCP clients can use the same `type` | Client identity comes from the YAML object key, not from transport type values such as `stdio`. |
 | `-Dcodegeist.config=<path>` resolves current CLI config | Command paths can share one global explicit config source instead of per-command config options. |
 | SpEL string scalars evaluate before mapping | Trusted local expressions can produce strings, booleans, numbers, and nulls. |
 | YAML keys and non-string scalars stay literal | SpEL does not rewrite provider keys before root parsing or existing scalar types. |
@@ -471,13 +521,12 @@ git --no-pager diff --check
 
 - `codegeist.yml` SpEL is trusted local input and can run arbitrary allowed SpEL in
   the current JVM process. Do not treat it as safe for untrusted remote config.
-- Config roots must have a matching `CodegeistConfigRootElement.rootName()` resolved
-  by `CodegeistConfigRootElementParserService`. Direct YAML loading rejects
-  unsupported top-level roots instead of ignoring them.
-- `CodegeistConfigRootElement` owns shared map-entry parsing for type-dispatched
-  root elements. `ProvidersRootElement` owns only the provider-specific registry.
-  Do not reintroduce per-root fields such as `provider` or `mcp` on
-  `CodegeistConfig`.
+- Config roots must have a matching root name in `CodegeistConfigRootParser`. Direct
+  YAML loading rejects unsupported top-level roots instead of ignoring them.
+- `CodegeistConfigRootParser` owns shared map-entry parsing for type-dispatched root
+  elements, while `CodegeistConfigRootElement` owns the generic validated `T config`
+  slot for single-object roots. Do not reintroduce per-root fields such as
+  `provider`, `mcp`, or `workspace` on `CodegeistConfig`.
 - Jackson mapping and IO failures are not wrapped by `CodegeistConfigService`;
   Lombok `@SneakyThrows` lets them surface directly.
 - Debug logging uses Lombok `@Slf4j` and remains file-only through current

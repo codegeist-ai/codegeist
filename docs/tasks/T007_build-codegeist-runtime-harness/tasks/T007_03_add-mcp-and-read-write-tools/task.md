@@ -17,7 +17,8 @@ tools for resumable chats.
 - Add `spring-ai-starter-mcp-client` to `app/codegeist/cli`.
 - Add the minimal `CodegeistConfig` model needed to load MCP clients from direct
   `codegeist.yml` under the top-level `mcp:` map.
-- Start with `stdio` MCP clients using `type`, `command`, and `args`.
+- Start with `stdio` MCP clients using the YAML key as client id plus `type`,
+  `command`, and `args` fields.
 - Map Codegeist MCP config into Spring AI MCP client/tool callback setup where
   needed. Spring AI's `spring.ai.mcp.client.*` properties are not the public
   Codegeist config contract.
@@ -31,14 +32,20 @@ tools for resumable chats.
 ## Current Progress
 
 - The minimal direct `codegeist.yml` `mcp:` config root is already implemented and
-  tested through `McpClientsRootElement`, `McpClientConfig`, and
-  `CodegeistConfigServiceTest`.
+  tested through `McpClientsRootElement`, `McpClientsConfig`, `McpClientConfig`, and
+  `CodegeistConfigServiceTest`. MCP client identity comes from the YAML key, so
+  multiple clients can share the same transport `type` while the runtime model stays
+  list-backed.
 - `T007_03_01` is implemented and verified. `ToolSessionPart` now round-trips in
   `.codegeist/session.json`, session exchanges can append ordered tool parts before
   assistant text, missing or empty session stores create a session when continuing,
   `SessionStoreService.currentWorkingDirectory()` is available, `SessionStore` owns
   in-memory session-list mutation, and native reflection metadata includes the new
   part type.
+- `T007_03_02` is implemented and verified. Direct `codegeist.yml`
+  `workspace.directory` parsing, active workspace resolution, deterministic output
+  capping, and native reflection metadata for the workspace config POJOs are in
+  place.
 - This aggregate is currently in specification-first mode. The detailed planned
   contract lives in
   `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`.
@@ -62,17 +69,18 @@ tools for resumable chats.
   `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`.
   It confirms that neither project is an MCP lifecycle reference, but both support
   the narrow `ChatHarnessService` plus scoped `CodegeistToolRun` boundary.
-- Remaining work still includes workspace policy and output bounds, local
-  read/list/glob/grep/write tools, the tool-aware chat harness, Spring AI MCP
-  client/callback setup, and final docs plus broad verification.
+- Remaining work still includes local read/list/glob/grep/write tools, the
+  tool-aware chat harness, Spring AI MCP client/callback setup, and final docs plus
+  broad verification.
 
 ## Child Tasks
 
 - `tasks/T007_03_01_add-tool-session-persistence.md` - completed; added
   `ToolSessionPart`, session-store append overloads, and native reflection metadata
   for tool parts.
-- `tasks/T007_03_02_add-workspace-policy-and-output-bounds.md` - add shared
-  workspace path safety and output-bound helpers used by local and MCP tools.
+- `tasks/T007_03_02_add-workspace-resolution-and-output-bounds.md` - completed;
+  added shared workspace resolution and output-bound helpers used by local and MCP
+  tools.
 - `tasks/T007_03_03_add-local-file-tools.md` - add Codegeist-owned
   `read`/`list`/`glob`/`grep`/`write` local file callbacks with bounded persisted
   results.
@@ -97,7 +105,7 @@ tools for resumable chats.
 Use `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`
 as the implementation handoff for this child. It defines the planned public MCP
 config contract, chat execution context, MCP adapter, local file tool contracts,
-workspace policy, output bounds, `ToolSessionPart` persistence shape, test plan,
+workspace resolution, output bounds, `ToolSessionPart` persistence shape, test plan,
 implementation order, and non-goals.
 
 Use
