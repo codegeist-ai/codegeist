@@ -37,6 +37,7 @@ import org.springframework.util.StringUtils;
 public class CodegeistConfigRootParser {
 
     static final String UNSUPPORTED_ROOT_ELEMENT_PREFIX = "Unsupported Codegeist config root element: ";
+    static final String WORKSPACE_MAPPING_ERROR_PREFIX = "Invalid workspace root element";
 
     private static final String TYPE_FIELD = "type";
     // Keep provider dispatch explicit so native images do not need runtime scanning.
@@ -108,8 +109,13 @@ public class CodegeistConfigRootParser {
      * instead of a generic mapping exception.
      */
     private WorkspaceRootElement parseWorkspace(JsonNode source) {
-        return new WorkspaceRootElement(yamlMapper.convertValue(
-                requireRootObject(source, WorkspaceRootElement.ROOT_NAME), WorkspaceConfig.class));
+        ObjectNode workspaceObject = requireRootObject(source, WorkspaceRootElement.ROOT_NAME);
+        try {
+            return new WorkspaceRootElement(yamlMapper.convertValue(workspaceObject, WorkspaceConfig.class));
+        }
+        catch (IllegalArgumentException exception) {
+            throw new CodegeistConfigValidationException(WORKSPACE_MAPPING_ERROR_PREFIX, exception);
+        }
     }
 
     /**

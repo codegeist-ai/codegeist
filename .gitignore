@@ -9,6 +9,8 @@
 *.project
 /.local.env
 /.codegeist/.local.env
+/.codegeist/session.json
+/app/codegeist/cli/.codegeist/session.json
 /.local/
 /docs/third-party/**/analysis-manifest.json
 /docs/third-party/**/VERIFY_REPORT.md

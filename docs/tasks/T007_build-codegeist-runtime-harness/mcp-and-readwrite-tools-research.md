@@ -583,7 +583,7 @@ Recommended implementation test order:
      symlink targets, and active session store writes.
 2. `ToolOutputBoundsTest`
    - Bound characters, line lengths, result counts, omitted counts, and error text.
-3. `CodegeistFileToolsTest`
+3. `CodegeistLocalToolsTest`
    - Prove read/list/glob/grep/write success paths and focused failure paths.
 4. `CodegeistMcpAdapterTest`
    - Prove Codegeist stdio config maps to the adapter and unsupported types fail.
@@ -599,7 +599,7 @@ Recommended implementation test order:
 Focused verification command after implementation:
 
 ```bash
-task test TEST=WorkspacePolicyTest,ToolOutputBoundsTest,CodegeistFileToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest
+task test TEST=WorkspacePolicyTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest
 ```
 
 Final JVM verification after implementation:

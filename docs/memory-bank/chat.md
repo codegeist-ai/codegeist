@@ -124,15 +124,29 @@
   These values are not direct `codegeist.yml` provider/tool config. Continuing a
   session currently persists the new turn but does not yet rebuild provider-facing
   model context from stored history.
-- Tool helper runtime code now lives under `ai.codegeist.app.tool`.
+- Tool runtime code now lives under `ai.codegeist.app.tool`.
   `WorkspaceResolver` resolves the active workspace from optional direct
   `codegeist.yml` `workspace.directory` or `${user.dir}`; absolute values are
   normalized, relative values resolve against the process working directory, and
   filesystem roots/traversal-normalized paths are intentionally allowed because no
   workspace policy exists yet. `ToolOutputBounds` centralizes deterministic string
-  and limit caps for future local and MCP tool output: preview, line preview,
-  result limits, read limits, and normalized error previews. It returns only strings
-  and integer limits, with no truncation metadata object.
+  and limit caps for local and future MCP tool output: preview, line preview, result
+  limits, read limits, and normalized error previews. `CodegeistLocalTools` assembles
+  Codegeist-owned local Spring AI callbacks and currently discovers the file-backed
+  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
+  `codegeist_write` components through a `List<CodegeistLocalTool>`. Callback order
+  is non-semantic because tools are selected by name. `CodegeistToolInput` wraps raw
+  Spring AI JSON at the local-tool boundary. File tools use `CodegeistFileToolSupport`
+  and the injected `CodegeistToolJsonMapper` to parse tool input, resolve the active
+  workspace, return bounded model-visible text, and record the same bounded preview
+  in `ToolSessionPart`. `CodegeistFileEncoding` resolves the global file-tool charset
+  from optional direct `codegeist.yml` `workspace.encoding`, defaulting to UTF-8.
+  Local file-tool multi-line output joins with `CodegeistFileToolSupport.LINE_SEPARATOR`,
+  a shared constant backed by `System.lineSeparator()`, instead of inline newline
+  literals.
+  `docs/developer/architecture/local-file-tools.md` is the detailed current-state
+  source-code guide for this subsystem. They are not wired into provider chat calls
+  yet.
 - `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper
   used by the config service for direct `codegeist.yml` parsing, empty-safe source
   tree loading, list-backed keyed element rendering, and direct YAML output.
@@ -174,7 +188,9 @@
 - `app/codegeist/cli/src/main/resources/logback.xml` routes logs only to
   `${LOG_FILE:-logs/codegeist.log}`. Console output is reserved for command
   output. Current Spring `@Service` and `@Component` classes use Lombok `@Slf4j`
-  and emit concise debug logs with `log.debug(...)`; enable them with
+  and emit `log.info(...)` for important system events, `log.debug(...)` for
+  actionable diagnostics, and `log.trace(...)` for high-volume routine details;
+  enable them with
   `logging.level.root=DEBUG` or `LOGGING_LEVEL_ROOT=DEBUG`.
 - `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`,
   `native-smoke`, `local-linux-smoke`, `qemu-windows-smoke`,
@@ -202,10 +218,10 @@
   empty config. The Windows guest reaches host Ollama at `http://10.0.2.2:11434`
   by default. Smoke scripts now emit stable `Duration: <label>: <seconds>s` lines
   for Maven, package, jar, native compile, archive smoke, platform total, SSH, and
-  QEMU wrapper timings. The latest full `task test` passed with 67 tests, 0
+  QEMU wrapper timings. The latest full `task test` passed with 110 tests, 0
   failures, 0 errors, and 6 skips. The latest `task final-smoke-suite` passed with
-  `linux native ask smoke: 0.529s`, `windows jar ask smoke: 4.523s`, and
-  `windows native ask smoke: 1.264s`.
+  `linux native ask smoke: 0.681s`, `windows jar ask smoke: 5.421s`, and
+  `windows native ask smoke: 0.750s`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
@@ -244,8 +260,8 @@
   runs Linux direct smoke and automated Windows QEMU/SSH smoke. Default mode
   requires both platforms to pass; `--allow-skips` is developer-only. The suite
   has passed locally with Linux and Windows jar/native statuses all `passed`; the
-  latest run reported `linux platform smoke total: 87.823s` and
-  `windows platform smoke total: 217.085s`.
+  latest run reported `linux platform smoke total: 96.305s` and
+  `windows platform smoke total: 233.946s`.
 - `scripts/tests/qemu-windows-vm.sh` downloads the official Windows Server 2025
   Evaluation ISO with `curl` when no local ISO exists, stores VM state under
   `.local/windows-qemu`, provisions OpenSSH/GraalVM/Maven/MSVC in the guest, syncs
@@ -439,16 +455,20 @@
 ## Durable Decisions
 
 - Future implementation should be iterative, Spring-first, and test-driven.
-- Source comments should stay sparse and useful for coding agents: explain why,
-  non-obvious framework behavior, cross-file contracts, or sharp edges, and include
-  related file/doc references when they help recover context quickly.
+- Source comments should stay useful for coding agents: add or update class-level
+  comments or Javadocs for new or substantially changed non-trivial Java classes,
+  explain why, non-obvious framework behavior, cross-file contracts, or sharp
+  edges, and include related file/doc references when they help recover context
+  quickly.
 - `.oc_local/rules/java-coding.md` records the Codegeist Java coding convention:
   prefer annotation-based Spring wiring, use Lombok `@RequiredArgsConstructor` with
   `private final` collaborators for Spring-managed dependencies, use Lombok `@Slf4j`
   on Spring `@Service` and `@Component` classes, and use focused Lombok annotations
   such as `@Getter` and `@Setter` to reduce boilerplate. Prefer named
   `static final String` constants for contract-bearing strings; shared app-wide
-  values belong in `CodegeistApplication`, for example `APP_NAME`. Tests should
+  values belong in `CodegeistApplication`, for example `APP_NAME`; common SDK-owned
+  values such as line separators should be exposed through shared class-owned
+  constants backed by Java SDK calls such as `System.lineSeparator()`. Tests should
   reuse owning constants for class-owned error messages and prefixes, such as
   `CodegeistConfigService.VALIDATION_ERROR_PREFIX`, instead of duplicating string
   fragments. Use existing framework utilities before hand-written helper logic,
@@ -459,9 +479,15 @@
   `@NonNull` for method parameters that must not be Java `null`, avoids avoidable
   fully qualified Java type names in code, forbids dead code and speculative
   convenience APIs without a current call site or framework/serialization contract,
-  avoids duplicate Jackson property constructors when no-arg mutable binding is the
+  emits meaningful SLF4J diagnostics for non-obvious lifecycle, parsing,
+  validation, fallback, skipped-candidate, external-call, and failure-translation
+  behavior with `info` for important system events, `debug` for actionable skips
+  such as malformed files, and `trace` for high-volume routine details, avoids
+  duplicate Jackson property constructors when no-arg mutable binding is the
   chosen contract, forbids pass-through wrappers that only delegate to another
-  method with the same inputs,
+  method with the same inputs, requires a small refactoring check for touched Java
+  classes and packages, requires focused developer documentation for each new
+  implemented feature,
   keeps provider config access-only, centralizes optional default
   provider selection in `CodegeistConfig.defaultProvider()`, uses
   `ProviderConfig.defaultModel()` for provider-owned runtime fallbacks, keeps

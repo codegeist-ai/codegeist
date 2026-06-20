@@ -59,10 +59,8 @@ Use this rule when adding or changing Java source in Codegeist.
   contracts such as non-blank text or add domain-specific messages. Do not add
   `@NonNull` where Java `null` is valid input by contract; handle that case
   explicitly.
-- Use Lombok `@Slf4j` on Spring `@Service` and `@Component` classes, and prefer
-  concise `log.debug(...)` messages around non-obvious lifecycle, command,
-  loading, validation, or bean-creation behavior. Spring Boot's default logging
-  stack routes SLF4J to Logback.
+- Use Lombok `@Slf4j` on Spring `@Service` and `@Component` classes that need
+  logs. Spring Boot's default logging stack routes SLF4J to Logback.
 - Do not add constructors or lifecycle methods only to log trivial object creation,
   such as `log.debug("Creating ...")`; those logs add noise without explaining
   behavior.
@@ -79,6 +77,24 @@ Use this rule when adding or changing Java source in Codegeist.
   `getText()` or `isAuto()` when records are not a fit.
 - When adding Lombok to the Maven build on Java 25 or newer, configure Lombok as an
   explicit annotation processor instead of relying on implicit processor discovery.
+
+## Logging
+
+- Add or update meaningful SLF4J log messages when a Java change introduces
+  non-obvious lifecycle steps, command flow, loading, parsing, validation,
+  fallback decisions, skipped candidates, external calls, or failure translation.
+- Use `log.info(...)` for important system events that operators should see in
+  normal logs, such as startup mode selection, major service readiness, durable
+  state migrations, or explicit user-triggered workflow milestones.
+- Prefer `log.debug(...)` for concise lifecycle, decision, and actionable skip
+  diagnostics such as malformed files. Use `log.trace(...)` for high-volume or
+  routine per-candidate detail such as parser branches, ignored candidates, or
+  retry probes.
+- Never log secrets, API keys, raw credentials, or full provider payloads that may
+  contain user data. Prefer identifiers, display paths, counts, selected branches,
+  and exception objects when they help diagnose behavior.
+- Do not add logs that merely restate trivial object creation, getters, setters,
+  or direct one-line delegation.
 
 ## Configuration Properties
 
@@ -123,6 +139,9 @@ Use this rule when adding or changing Java source in Codegeist.
 - Use constants for contract-bearing strings, especially application names,
   configuration prefixes, property keys, CLI command names, environment variable
   names, file names, path segments, provider ids, and test selectors.
+- For common SDK-owned values such as platform line separators, prefer a shared
+  class-owned constant initialized from the Java SDK, for example
+  `System.lineSeparator()`, instead of repeating inline literals such as `"\n"`.
 - Use class-owned constants for exception messages and exception message prefixes
   instead of inline string literals in `throw` statements.
 - Keep constants close to the class that owns the concept.
@@ -234,8 +253,24 @@ Use this rule when adding or changing Java source in Codegeist.
   or a focused test utility that can set private fields, instead of expanding the
   runtime API.
 
+## Refactoring Check
+
+- For every Java change, inspect the touched class and immediate package for
+  refactoring that the change makes necessary: duplicated logic, stale names,
+  obsolete helpers, over-broad constructors, dead branches, unclear boundaries, or
+  pass-through wrappers that no longer add a distinct contract.
+- Apply small refactors in the same task when they make the changed behavior
+  simpler, safer, or easier to test. Keep broad or unrelated rewrites out of scope
+  unless the active task explicitly asks for them.
+- If a useful refactor is discovered but would expand the task too far, record it
+  as future work instead of hiding it inside the current implementation.
+
 ## Comments For Coding Agents
 
+- Add or update a useful class-level comment or Javadoc for each new or
+  substantially changed non-trivial Java class. The comment should state the
+  class's role, important collaborators, side effects, and constraints when those
+  are not obvious from the name and annotations.
 - Prefer detailed explanatory comments or Javadocs for non-trivial Java classes and
   methods when they help later coding agents understand the code quickly.
 - Explain what a class or method does, important inputs, returned values, side
@@ -259,5 +294,10 @@ Use this rule when adding or changing Java source in Codegeist.
   `@ActiveProfiles("<profile>")` so the fixture is isolated to that test.
 - Use inline `@SpringBootTest(properties = ...)` only when the test does not need
   to prove YAML file loading.
+- For every new implemented feature, create or update focused developer
+  documentation under `docs/developer/architecture/` that describes the current
+  source behavior, important classes, runtime flow, tests, and sharp edges. Link it
+  from `docs/developer/architecture/architecture.md` when it becomes part of the
+  current architecture map.
 - Update `docs/developer/architecture/architecture.md` when Java packages,
   classes, configuration behavior, or tests change.

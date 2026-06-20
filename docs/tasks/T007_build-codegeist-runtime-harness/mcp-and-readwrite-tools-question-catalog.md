@@ -148,7 +148,7 @@ current `mcp-and-readwrite-tools-spec.md` harness shape is correct.
 
 /ask-project spring-ai-agent-utils "Analyze Agent Utils assumptions that conflict with Codegeist T007_03: memory systems, skills, task tools, subagents, background shell processes, broad runtime state, or server-like orchestration."
 
-/ask-project spring-ai-agent-utils "Create a minimal Java/Spring component diagram for Codegeist T007_03 using Agent Utils where useful. Include AskCommands, CodegeistChatService, CodegeistChatExecutionContext, CodegeistToolService, CodegeistMcpAdapter, CodegeistFileTools, ToolOutputBounds, WorkspacePolicy, and SessionStoreService."
+/ask-project spring-ai-agent-utils "Create a minimal Java/Spring component diagram for Codegeist T007_03 using Agent Utils where useful. Include AskCommands, CodegeistChatService, CodegeistChatExecutionContext, CodegeistToolService, CodegeistMcpAdapter, CodegeistLocalTools, ToolOutputBounds, WorkspacePolicy, and SessionStoreService."
 
 /ask-project spring-ai-agent-utils "Recommend direct dependency versus source-inspired reimplementation for each Codegeist local tool: read, list, glob, grep, write. Include rationale, risks, test implications, and which Agent Utils classes to cite."
 ```
@@ -249,7 +249,7 @@ Run these only after the corresponding third-party workspaces are imported under
 
 /ask-project spring-ai-agent-utils "List Agent Utils tests that Codegeist should mirror for T007_03. Group by FileSystemTools, ListDirectoryTool, GlobTool, GrepTool, ToolCallback registration, ToolContext, and error handling."
 
-/ask-project opencode "Recommend Codegeist T007_03 tests in order: WorkspacePolicyTest, ToolOutputBoundsTest, CodegeistFileToolsTest, CodegeistMcpAdapterTest, CodegeistToolServiceTest, SessionStoreServiceTest, AskCommandsSessionStoreTest. Include what each test should assert."
+/ask-project opencode "Recommend Codegeist T007_03 tests in order: WorkspacePolicyTest, ToolOutputBoundsTest, CodegeistLocalToolsTest, CodegeistMcpAdapterTest, CodegeistToolServiceTest, SessionStoreServiceTest, AskCommandsSessionStoreTest. Include what each test should assert."
 
 /ask-project spring-ai-agent-utils "Recommend how to test Spring AI ToolCallback wrappers without making real provider calls. Include fake ChatModel, fake ToolCallbackProvider, and direct callback invocation patterns."
 

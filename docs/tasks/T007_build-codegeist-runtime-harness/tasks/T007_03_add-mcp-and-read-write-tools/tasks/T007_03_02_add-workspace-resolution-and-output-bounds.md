@@ -26,8 +26,8 @@ direct `codegeist.yml`.
 - Add `WorkspaceConfig` under `ai.codegeist.app.config`.
 - Add `WorkspaceResolver` under `ai.codegeist.app.tool`.
 - Add `ToolOutputBounds` under `ai.codegeist.app.tool`.
-- Keep `WorkspaceResolver` and `ToolOutputBounds` as Spring beans because
-  `CodegeistFileTools` and MCP recording wrappers will inject them later.
+- Keep `WorkspaceResolver` and `ToolOutputBounds` as Spring beans because local tool
+  components and MCP recording wrappers will inject them later.
 - Implement current-directory defaults, optional `workspace.directory` overrides,
   relative override resolution, root workspace support, preview truncation, line
   truncation, result-limit capping, and bounded error previews.
@@ -462,7 +462,9 @@ Required cases:
 ## Implementation Result
 
 - Added `WorkspaceRootElement` and `WorkspaceConfig` for optional direct
-  `codegeist.yml` `workspace.directory` parsing.
+  `codegeist.yml` `workspace.directory` parsing. `WorkspaceConfig` now also accepts
+  optional `workspace.encoding` for local file tool text I/O and validates that any
+  configured value is a supported Java charset.
 - Added `WorkspaceResolver` as a Spring bean that resolves the active workspace from
   the configured directory or the process working directory.
 - Moved the single-object workspace config storage into

@@ -78,7 +78,7 @@ After implementation:
 | --- | --- | --- |
 | `ai.codegeist.app.chat` | `ChatHarnessService`, `CodegeistChatExecutionContext`, `AskCommands`, `CodegeistChatService`, `CodegeistChatModel`, `OllamaChatModel` | One-turn chat orchestration and provider chat calls with runtime tool callbacks. |
 | `ai.codegeist.app.config` | `WorkspaceRootElement`, `WorkspaceConfig` | Direct `codegeist.yml` `workspace.directory` parsing. |
-| `ai.codegeist.app.tool` | `CodegeistToolService`, `CodegeistToolRun`, `DefaultCodegeistToolRun`, `CodegeistFileTools`, `WorkspaceResolver`, `ToolOutputBounds`, `CodegeistLocalToolCallback`, `RecordingToolCallback`, `CodegeistToolResult` | Local file tools, workspace resolution, output bounds, callback assembly, and tool-result recording. |
+| `ai.codegeist.app.tool` | `CodegeistToolService`, `CodegeistToolRun`, `DefaultCodegeistToolRun`, `CodegeistLocalTools`, `WorkspaceResolver`, `ToolOutputBounds`, `CodegeistLocalToolCallback`, `RecordingToolCallback`, `CodegeistToolResult` | Local file tools, workspace resolution, output bounds, callback assembly, and tool-result recording. |
 | `ai.codegeist.app.mcp` | `CodegeistMcpAdapter`, `CodegeistMcpRun`, `DefaultCodegeistMcpRun` | Lazy mapping from Codegeist `mcp:` config to Spring AI MCP callbacks and closeable resources. |
 | `ai.codegeist.app.session` | `ToolSessionPart`, `SessionPart`, `SessionStoreService` | Persist bounded tool activity in the existing session store model. |
 | `app/codegeist/cli` build/resources | `pom.xml`, `reflect-config.json` | Add Spring AI MCP dependency and native reflection metadata. |
@@ -95,7 +95,7 @@ Implement this plan through the focused child tasks under
 | --- | --- | --- |
 | `T007_03_01_add-tool-session-persistence.md` | `ToolSessionPart`, session-store append overloads, `currentWorkingDirectory()`, and native reflection metadata. | `T007_02` |
 | `T007_03_02_add-workspace-resolution-and-output-bounds.md` | `WorkspaceRootElement`, `WorkspaceConfig`, `WorkspaceResolver`, and `ToolOutputBounds`. | `T007_02` |
-| `T007_03_03_add-local-file-tools.md` | `CodegeistFileTools`, `CodegeistLocalToolCallback`, `CodegeistToolResult`, and `codegeist_read`/`list`/`glob`/`grep`/`write`. | `T007_03_01`, `T007_03_02` |
+| `T007_03_03_add-local-file-tools.md` | `CodegeistLocalTools`, `CodegeistLocalToolCallback`, `CodegeistToolResult`, and `codegeist_read`/`list`/`glob`/`grep`/`write`. | `T007_03_01`, `T007_03_02` |
 | `T007_03_04_add-tool-aware-chat-harness.md` | `ChatHarnessService`, `CodegeistChatExecutionContext`, tool-aware chat/model overloads, `CodegeistToolService`, `CodegeistToolRun`, and `AskCommands` refactor. | `T007_03_03` |
 | `T007_03_05_add-mcp-callback-adapter.md` | Spring AI MCP dependency, `CodegeistMcpAdapter`, `CodegeistMcpRun`, stdio-only mapping, and MCP callback recording integration. | `T007_03_04` |
 | `T007_03_06_finalize-tool-docs-and-verification.md` | Architecture docs, task progress updates, optional memory refresh, focused verification, and broad `task test`. | `T007_03_05` |
@@ -209,7 +209,7 @@ classDiagram
       <<Service>>
       <<Slf4j>>
       <<RequiredArgsConstructor>>
-      -CodegeistFileTools fileTools
+      -CodegeistLocalTools localTools
       -CodegeistMcpAdapter mcpAdapter
       +openRun(CodegeistConfig config, Path workingDirectory, Path sessionStorePath) CodegeistToolRun
     }
@@ -231,9 +231,9 @@ classDiagram
       +close() void
     }
 
-    class CodegeistFileTools {
+    class CodegeistLocalTools {
       <<Component>>
-      +callbacks(Path workingDirectory, Path sessionStorePath, Consumer recorder) List ToolCallback
+      +callbacks(Consumer recorder) List ToolCallback
     }
 
     class CodegeistMcpAdapter {
@@ -264,7 +264,7 @@ classDiagram
       +close() void
     }
 
-    CodegeistToolService --> CodegeistFileTools
+    CodegeistToolService --> CodegeistLocalTools
     CodegeistToolService --> CodegeistMcpAdapter
     CodegeistToolService --> CodegeistToolRun
     AutoCloseable <|.. CodegeistToolRun
@@ -285,12 +285,30 @@ This view shows only the Codegeist-owned read/list/glob/grep/write tool path.
 classDiagram
     direction LR
 
-    class CodegeistFileTools {
+    class CodegeistLocalTools {
       <<Component>>
       <<RequiredArgsConstructor>>
-      -WorkspaceResolver workspaceResolver
       -ToolOutputBounds outputBounds
-      +callbacks(Path workingDirectory, Path sessionStorePath, Consumer recorder) List ToolCallback
+      -List CodegeistLocalTool localTools
+      +callbacks(Consumer recorder) List ToolCallback
+    }
+
+    class CodegeistLocalTool {
+      <<interface>>
+      +definition() ToolDefinition
+      +execute(CodegeistToolInput toolInput) CodegeistToolResult
+    }
+
+    class CodegeistToolInput {
+      <<record>>
+      String json
+    }
+
+    class CodegeistFileToolSupport {
+      <<Component>>
+      -ToolOutputBounds outputBounds
+      -WorkspaceResolver workspaceResolver
+      +currentWorkspace() Path
     }
 
     class WorkspaceResolver {
@@ -379,17 +397,20 @@ classDiagram
       +call(String toolInput) String
     }
 
-    CodegeistFileTools --> WorkspaceResolver
-    CodegeistFileTools --> ToolOutputBounds
-    CodegeistFileTools --> CodegeistLocalToolCallback
+    CodegeistLocalTools --> ToolOutputBounds
+    CodegeistLocalTools --> CodegeistLocalTool
+    CodegeistLocalTools --> CodegeistLocalToolCallback
+    CodegeistLocalTool --> CodegeistToolInput
+    CodegeistFileToolSupport --> WorkspaceResolver
+    CodegeistFileToolSupport --> ToolOutputBounds
     CodegeistLocalToolCallback ..|> ToolCallback
     CodegeistLocalToolCallback --> CodegeistToolResult
     CodegeistLocalToolCallback --> ToolSessionPart
-    CodegeistFileTools ..> ReadToolInput
-    CodegeistFileTools ..> ListToolInput
-    CodegeistFileTools ..> GlobToolInput
-    CodegeistFileTools ..> GrepToolInput
-    CodegeistFileTools ..> WriteToolInput
+    CodegeistLocalTool <|.. CodegeistReadFileTool
+    CodegeistLocalTool <|.. CodegeistListFileTool
+    CodegeistLocalTool <|.. CodegeistGlobFileTool
+    CodegeistLocalTool <|.. CodegeistGrepFileTool
+    CodegeistLocalTool <|.. CodegeistWriteFileTool
 ```
 
 ### MCP Adapter View
@@ -752,7 +773,7 @@ public class CodegeistToolService {
 
 Constructor-injected collaborators:
 
-- `CodegeistFileTools fileTools`
+- `CodegeistLocalTools localTools`
 - `CodegeistMcpAdapter mcpAdapter`
 
 Public method:
@@ -917,42 +938,37 @@ Rules:
 - Persist the same bounded preview returned to the model.
 - Cap requested result limits instead of trusting model-supplied values.
 
-### `CodegeistFileTools`
+### `CodegeistLocalTools`
 
-Location: `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistFileTools.java`
+Location: `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalTools.java`
 
 Annotations:
 
 ```java
 @Component
 @RequiredArgsConstructor
-public class CodegeistFileTools {
+public class CodegeistLocalTools {
 }
 ```
 
 Constructor-injected collaborators:
 
-- `WorkspaceResolver workspaceResolver`
 - `ToolOutputBounds outputBounds`
+- `List<CodegeistLocalTool> localTools`
 
 Public method:
 
 ```java
-public List<ToolCallback> callbacks(
-        @NonNull Path workingDirectory,
-        @NonNull Path sessionStorePath,
-        @NonNull Consumer<ToolSessionPart> recorder)
+public List<ToolCallback> callbacks(@NonNull Consumer<ToolSessionPart> recorder)
 ```
 
 Implementation:
 
-- Return exactly five `CodegeistLocalToolCallback` instances in stable order:
-  1. `codegeist_read`
-  2. `codegeist_list`
-  3. `codegeist_glob`
-  4. `codegeist_grep`
-  5. `codegeist_write`
-- Define local input records as package-private records or static nested records:
+- Return one `CodegeistLocalToolCallback` instance for each local tool. Callback
+  order is not part of the runtime contract because tools are selected by callback
+  name.
+- Local file tools define their own input records as package-private records or
+  static nested records:
   - `ReadToolInput(String path, Integer offset, Integer limit)`
   - `ListToolInput(String path, Integer limit)`
   - `GlobToolInput(String pattern, String path, Integer limit)`
@@ -968,8 +984,8 @@ Implementation:
 Location:
 `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalToolCallback.java`
 
-Purpose: custom Spring AI `ToolCallback` for Codegeist-owned tools that need
-workspace-relative resolution, bounded output, and rich persisted metadata.
+Purpose: custom Spring AI `ToolCallback` for Codegeist-owned local tools that need
+bounded output and persisted tool activity.
 
 Constructor inputs:
 
@@ -1054,7 +1070,7 @@ Behavior:
 - Resolve relative paths against the active workspace.
 - Accept absolute paths as caller-provided filesystem paths.
 - Reject missing paths, directories, and binary files.
-- Return line-numbered UTF-8 text.
+- Return line-numbered text decoded with the configured workspace encoding.
 - Truncate each line to `MAX_LINE_CHARS` and total output to
   `MAX_PREVIEW_CHARS`.
 - Persist `resultCount` as returned line count.
@@ -1360,7 +1376,7 @@ Update `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-confi
 - Add `ai.codegeist.app.session.ToolSessionPart` with declared constructors,
   fields, and public methods.
 - If Spring AI tool schema generation needs reflection for local input records in
-  native smoke, add only the specific input records used by `CodegeistFileTools`.
+  native smoke, add only the specific input records used by the local file tools.
   Do not add broad package-level reflection.
 
 Run `task native-smoke` only if implementation or tests show the new reflection
@@ -1434,7 +1450,7 @@ Prove:
 - requested read line limits default and cap correctly
 - error previews are bounded
 
-### `CodegeistFileToolsTest`
+### `CodegeistLocalToolsTest`
 
 Use `@TempDir` fixtures.
 
@@ -1543,7 +1559,7 @@ Taskfile selector documented in the child task file.
 Focused command after implementation:
 
 ```bash
-task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistFileToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
+task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
 ```
 
 Broad JVM verification:

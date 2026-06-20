@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,21 @@ class CodegeistWorkspaceConfigTest {
     }
 
     @Test
+    void loadsWorkspaceEncodingFromDirectYaml() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            workspace:
+              encoding: ISO-8859-1
+            """);
+
+        CodegeistConfig config = service.loadConfig(configFile.toString());
+
+        WorkspaceRootElement workspace = workspace(config);
+        assertThat(workspace.getConfig().getEncoding()).isEqualTo(StandardCharsets.ISO_8859_1);
+        assertThat(service.toYaml(config)).contains("encoding: \"ISO-8859-1\"");
+    }
+
+    @Test
     void omittedWorkspaceRootIsAllowed() throws IOException {
         Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
         Files.writeString(configFile, "{}\n");
@@ -67,6 +83,19 @@ class CodegeistWorkspaceConfigTest {
         assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
                 .isInstanceOf(CodegeistConfigValidationException.class)
                 .hasMessage(CodegeistConfigRootParser.rootObjectMessage(WorkspaceRootElement.ROOT_NAME));
+    }
+
+    @Test
+    void unsupportedWorkspaceEncodingFailsValidation() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            workspace:
+              encoding: not a charset
+            """);
+
+        assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessage(CodegeistConfigRootParser.WORKSPACE_MAPPING_ERROR_PREFIX);
     }
 
     private WorkspaceRootElement workspace(CodegeistConfig config) {

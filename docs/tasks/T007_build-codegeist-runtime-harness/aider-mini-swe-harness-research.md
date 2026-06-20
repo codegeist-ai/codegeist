@@ -302,7 +302,7 @@ responses, environment config, and selected model unless a focused test needs th
 1. `WorkspacePolicyTest`: relative path, absolute path, traversal, symlink escape,
    ignored/generated file behavior when implemented.
 2. `ToolOutputBoundsTest`: line, byte, match, result, and error truncation.
-3. `CodegeistFileToolsTest`: read/list/glob/grep/write success and failure cases.
+3. `CodegeistLocalToolsTest`: read/list/glob/grep/write success and failure cases.
 4. `CodegeistMcpAdapterTest`: fake `ToolCallbackProvider`, stdio config mapping, MCP
    setup failure, and close behavior without launching network-dependent servers.
 5. `SessionStoreServiceTest`: `ToolSessionPart` JSON round-trip and bounded output.

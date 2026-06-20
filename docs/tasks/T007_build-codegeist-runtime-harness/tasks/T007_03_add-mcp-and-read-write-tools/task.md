@@ -43,11 +43,14 @@ tools for resumable chats.
   in-memory session-list mutation, and native reflection metadata includes the new
   part type.
 - `T007_03_02` is implemented and verified. Direct `codegeist.yml`
-  `workspace.directory` parsing, active workspace resolution, deterministic output
-  capping, and native reflection metadata for the workspace config POJOs are in
-  place.
-- This aggregate is currently in specification-first mode. The detailed planned
-  contract lives in
+  `workspace.directory` parsing, direct `workspace.encoding` parsing and validation,
+  active workspace resolution, deterministic output capping, and native reflection
+  metadata for the workspace config POJOs are in place.
+- `T007_03_03` is implemented and verified. `CodegeistLocalTools` now exposes local
+  read/list/glob/grep/write Spring AI callbacks with active workspace resolution,
+  configured workspace encoding, bounded model-visible output, and matching bounded
+  `ToolSessionPart` recording.
+- The detailed accepted contract lives in
   `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`.
 - The implementation handoff lives in
   `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-implementation-plan.md`.
@@ -69,9 +72,8 @@ tools for resumable chats.
   `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`.
   It confirms that neither project is an MCP lifecycle reference, but both support
   the narrow `ChatHarnessService` plus scoped `CodegeistToolRun` boundary.
-- Remaining work still includes local read/list/glob/grep/write tools, the
-  tool-aware chat harness, Spring AI MCP client/callback setup, and final docs plus
-  broad verification.
+- Remaining work still includes the tool-aware chat harness, Spring AI MCP
+  client/callback setup, and final docs plus broad verification.
 
 ## Child Tasks
 
@@ -81,7 +83,7 @@ tools for resumable chats.
 - `tasks/T007_03_02_add-workspace-resolution-and-output-bounds.md` - completed;
   added shared workspace resolution and output-bound helpers used by local and MCP
   tools.
-- `tasks/T007_03_03_add-local-file-tools.md` - add Codegeist-owned
+- `tasks/T007_03_03_add-local-file-tools.md` - completed; added Codegeist-owned
   `read`/`list`/`glob`/`grep`/`write` local file callbacks with bounded persisted
   results.
 - `tasks/T007_03_04_add-tool-aware-chat-harness.md` - add the reusable one-turn

@@ -134,7 +134,7 @@ flowchart TD
     Harness[ChatHarnessService]
     Config[CodegeistConfig]
     ToolService[CodegeistToolService]
-    LocalTools[CodegeistFileTools]
+    LocalTools[CodegeistLocalTools]
     McpAdapter[CodegeistMcpAdapter]
     ToolRun[CodegeistToolRun]
     ChatContext[CodegeistChatExecutionContext]
@@ -544,7 +544,7 @@ Use the Taskfile from `app/codegeist/cli` for all implementation verification.
 
 ### Local Tool Tests
 
-- `CodegeistFileToolsTest`: uses `@TempDir` fixtures for read/list/glob/grep/write.
+- `CodegeistLocalToolsTest`: uses `@TempDir` fixtures for read/list/glob/grep/write.
 - Prove relative tool paths resolve from the active workspace.
 - Prove absolute tool paths are accepted as caller-provided filesystem paths.
 - Prove read output line and character bounds.
@@ -572,7 +572,7 @@ Use the Taskfile from `app/codegeist/cli` for all implementation verification.
 Candidate focused command after implementation:
 
 ```bash
-task test TEST=CodegeistFileToolsTest,CodegeistToolServiceTest,CodegeistMcpAdapterTest,SessionStoreServiceTest,AskCommandsSessionStoreTest
+task test TEST=CodegeistLocalToolsTest,CodegeistToolServiceTest,CodegeistMcpAdapterTest,SessionStoreServiceTest,AskCommandsSessionStoreTest
 ```
 
 Final JVM verification after implementation:

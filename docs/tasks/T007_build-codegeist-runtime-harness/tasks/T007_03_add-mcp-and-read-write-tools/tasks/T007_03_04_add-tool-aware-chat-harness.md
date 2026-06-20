@@ -55,5 +55,5 @@ callbacks to the provider call path, saves recorded tool parts, and keeps
 Candidate commands from `app/codegeist/cli`:
 
 ```bash
-task test TEST=ChatHarnessServiceTest,AskCommandsSessionStoreTest,CodegeistFileToolsTest,SessionStoreServiceTest
+task test TEST=ChatHarnessServiceTest,AskCommandsSessionStoreTest,CodegeistLocalToolsTest,SessionStoreServiceTest
 ```

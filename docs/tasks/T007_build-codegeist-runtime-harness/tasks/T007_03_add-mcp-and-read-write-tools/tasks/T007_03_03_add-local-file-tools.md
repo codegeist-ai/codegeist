@@ -2,7 +2,7 @@
 
 Parent: `T007_03_add-mcp-and-read-write-tools`
 
-Status: open
+Status: completed
 
 ## Goal
 
@@ -17,7 +17,11 @@ results.
 
 ## Scope
 
-- Add `CodegeistFileTools` under `ai.codegeist.app.tool`.
+- Add `CodegeistLocalTools` under `ai.codegeist.app.tool`.
+- Add `CodegeistLocalTool` under `ai.codegeist.app.tool` as the generic local tool
+  contract.
+- Add `CodegeistToolInput` under `ai.codegeist.app.tool` so local tools receive a
+  typed raw JSON payload instead of a bare `String`.
 - Add `CodegeistLocalToolCallback` under `ai.codegeist.app.tool`.
 - Add `CodegeistToolResult` and local input records under `ai.codegeist.app.tool`.
 - Implement callback definitions for:
@@ -32,8 +36,9 @@ results.
 
 ## Acceptance Criteria
 
-- `codegeist_read` reads bounded line-numbered UTF-8 text relative to the active
-  workspace and rejects missing files, directories, and binary files.
+- `codegeist_read` reads bounded line-numbered text relative to the active workspace
+  using the configured workspace encoding and rejects missing files, directories, and
+  binary files.
 - `codegeist_list` returns stable non-recursive `[DIR]` and `[FILE]` entries.
 - `codegeist_glob` returns stable bounded matches relative to the active workspace
   without shelling out.
@@ -55,12 +60,61 @@ results.
 
 ## Suggested Tests
 
-- `CodegeistFileToolsTest` with `@TempDir` fixtures for all five callbacks.
+- `CodegeistLocalToolsTest` with `@TempDir` fixtures for all five callbacks.
 - Prove success paths and focused failures for each tool.
 - Prove every successful and failed call records a bounded `ToolSessionPart`.
 
 Candidate commands from `app/codegeist/cli`:
 
 ```bash
-task test TEST=WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistFileToolsTest,SessionStoreServiceTest
+task test TEST=WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,SessionStoreServiceTest
 ```
+
+## Implementation Result
+
+- Added `CodegeistLocalTools` under `ai.codegeist.app.tool` as the stable Spring AI
+  callback assembler for Codegeist-owned local tools, currently including
+  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
+  `codegeist_write`.
+- Split local file tool behavior into package-private Spring-managed per-tool
+  components plus `CodegeistFileToolSupport` for shared JSON parsing, schema, path,
+  configured-charset text reading, binary, and glob helpers.
+- Added `CodegeistFileEncoding` so local file read, grep, and write paths use the
+  global `workspace.encoding` charset, falling back to UTF-8 when it is unset.
+- `CodegeistLocalTools` receives the per-tool components as a
+  `List<CodegeistLocalTool>` and does not know individual tool names or tool domains;
+  callback order is not part of the runtime contract because tools are selected by
+  name.
+- `CodegeistLocalTool.execute(...)` receives `CodegeistToolInput`, which wraps the raw
+  Spring AI JSON payload and normalizes missing or blank input to `{}`.
+- Added `CodegeistLocalToolCallback` to convert handled local tool success and
+  failure paths into bounded model-visible strings and matching `ToolSessionPart`
+  records.
+- Added the minimal `CodegeistToolResult` and local input records needed by this
+  slice without adding provider chat wiring, MCP callbacks, patch/edit, shell,
+  ignored-file filtering, or parent-directory creation.
+- Added `CodegeistLocalToolsTest` with temp-directory fixtures for the five local
+  callbacks, focused failures, bounded previews, and recorded tool parts.
+
+## Verification
+
+- 2026-06-19: `task test TEST=WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,SessionStoreServiceTest`
+  passed from `app/codegeist/cli` with 40 tests, 0 failures, 0 errors, and 0 skips.
+- 2026-06-19: `task test` passed from `app/codegeist/cli` with 106 tests, 0
+  failures, 0 errors, and 6 skips.
+- 2026-06-20: `task test TEST=WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,SessionStoreServiceTest`
+  passed from `app/codegeist/cli` with 40 tests, 0 failures, 0 errors, and 0 skips
+  after the generic `CodegeistLocalTool`/`CodegeistLocalTools` rename, typed
+  `CodegeistToolInput`, and injected `CodegeistToolJsonMapper` updates.
+- 2026-06-20: `task test` passed from `app/codegeist/cli` with 106 tests, 0
+  failures, 0 errors, and 6 skips.
+- 2026-06-20: `task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,SessionStoreServiceTest`
+  passed from `app/codegeist/cli` with 48 tests, 0 failures, 0 errors, and 0 skips
+  after adding global `workspace.encoding` support through `CodegeistFileEncoding`
+  and storing the parsed config value as a `Charset`.
+- 2026-06-20: `task test` passed from `app/codegeist/cli` with 110 tests, 0
+  failures, 0 errors, and 6 skips.
+- 2026-06-20: `task final-smoke-suite` passed from `app/codegeist/cli` after the
+  Windows-safe YAML quoting fix in `WorkspaceResolverTest`, with Linux and Windows
+  jar/native statuses all `passed`, `linux platform smoke total: 96.305s`, and
+  `windows platform smoke total: 233.946s`.

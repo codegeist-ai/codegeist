@@ -46,8 +46,8 @@ class WorkspaceResolverTest {
         Path workspace = tempDir.resolve("absolute-workspace").toAbsolutePath().normalize();
         WorkspaceResolver resolver = resolver(configWithWorkspace("""
             workspace:
-              directory: "%s"
-            """.formatted(workspace)));
+              directory: %s
+            """.formatted(yamlSingleQuoted(workspace.toString()))));
 
         assertThat(resolver.currentWorkspace()).isEqualTo(workspace);
     }
@@ -67,8 +67,8 @@ class WorkspaceResolverTest {
         Path filesystemRoot = processWorkingDirectory().getRoot();
         WorkspaceResolver resolver = resolver(configWithWorkspace("""
             workspace:
-              directory: "%s"
-            """.formatted(filesystemRoot)));
+              directory: %s
+            """.formatted(yamlSingleQuoted(filesystemRoot.toString()))));
 
         assertThat(resolver.currentWorkspace()).isEqualTo(filesystemRoot.toAbsolutePath().normalize());
     }
@@ -97,6 +97,10 @@ class WorkspaceResolverTest {
         CodegeistConfig config = new CodegeistConfig();
         addRootElement(config, parseWorkspace(yaml));
         return config;
+    }
+
+    private String yamlSingleQuoted(String value) {
+        return "'" + value.replace("'", "''") + "'";
     }
 
     @SuppressWarnings("unchecked")
