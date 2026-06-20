@@ -199,7 +199,7 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   focused task needs them. Do not add a database, server runtime, remote sync,
   API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or subagents inside T007
   unless the task is explicitly rescoped again.
-- For `T007_05`, use
+- For `T007_06`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md` as
   the source-backed OpenCode TUI element inventory and JLine implementation mapping.
 - For the first provider-backed workflow in the replacement epic, use an externally

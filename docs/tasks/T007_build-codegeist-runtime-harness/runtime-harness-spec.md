@@ -882,5 +882,6 @@ Keep this specification synchronized with the active child task:
 - `T007_02` should refine sections 1, 2.1, 2.2, 2.3, and 2.4.
 - `T007_03` should refine sections 3.1, 3.2, 3.3, and 4.1.
 - `T007_04` should refine sections 4.2 and 4.3.
-- `T007_05` should refine sections 5.1 through 5.6.
-- `T007_06` should reconcile all diagrams with the implemented source.
+- `T007_05` should add the Codegeist-owned model/tool/model loop contract.
+- `T007_06` should refine sections 5.1 through 5.6.
+- `T007_07` should reconcile all diagrams with the implemented source.

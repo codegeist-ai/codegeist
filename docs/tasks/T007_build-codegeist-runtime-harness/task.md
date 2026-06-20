@@ -9,10 +9,12 @@ Implement a resumable Codegeist chat harness centered on a portable
 `-c/--continue` support that appends to the latest stored session, while plain
 `ask` creates a new stored session for the turn.
 
-T007 now targets a practical local coding-agent loop: one directory-local session
-store with multiple chat sessions, optional MCP, Codegeist tools, patch/edit,
-shell, TUI, and file-based storage. Do not add a database or server runtime for
-this task.
+T007 targets a practical local coding-agent loop: one directory-local session store
+with multiple chat sessions, optional MCP, Codegeist tools, patch/edit, shell, TUI,
+and file-based storage. This target is not complete yet. The current implemented
+tool-aware chat harness exposes prompt-scoped callbacks to one provider call, but
+Codegeist does not yet own an OpenCode-style iterative model/tool/model control loop.
+Do not add a database or server runtime for this task.
 
 ## Current Codegeist Baseline
 
@@ -140,15 +142,18 @@ environment, timeout, or enablement only when implementation tests need them.
   `.codegeist/session.json` and `ask -c/--continue` behavior.
 - `T007_03_add-mcp-and-read-write-tools/task.md` - finish MCP callbacks and the
   first read/list/glob/grep/write tool path through focused child tasks; the
-  minimal `mcp:` config root is already implemented. Its planning docs include
-  `mcp-and-readwrite-tools-spec.md`, `mcp-and-readwrite-tools-research.md`,
-  `mcp-and-readwrite-tools-implementation-plan.md`, and
+  minimal `mcp:` config root, local file callbacks, and tool-aware chat harness are
+  already implemented. Its planning docs include `mcp-and-readwrite-tools-spec.md`,
+  `mcp-and-readwrite-tools-research.md`, `mcp-and-readwrite-tools-implementation-plan.md`, and
   `coding-agent-harness-implementations.md`.
 - `T007_04_add-patch-edit-and-shell-tools.md` - add bounded patch/edit and shell
   tools that persist tool activity into `.codegeist/session.json`.
-- `T007_05_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,
-  renders, updates, and saves the same session store.
-- `T007_06_verify-chat-file-tool-harness.md` - run focused and broad verification,
+- `T007_05_add-agent-control-loop.md` - add the first Codegeist-owned
+  model/tool/model control loop so tool results can drive model continuation instead
+  of relying only on a single provider call with prompt-scoped callbacks.
+- `T007_06_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,
+  renders, updates, and saves the same session store on top of the agent loop.
+- `T007_07_verify-chat-file-tool-harness.md` - run focused and broad verification,
   update architecture docs, and ensure the parent acceptance criteria hold.
 
 ## Parent Acceptance Criteria
@@ -164,10 +169,13 @@ environment, timeout, or enablement only when implementation tests need them.
 - Codegeist-owned tools include read/list/glob/grep/write plus patch/edit and shell.
 - Tool calls and results are persisted in the active `.codegeist/session.json` with
   bounded output.
+- Codegeist owns an iterative model/tool/model control loop for coding-agent turns;
+  the current `T007_03_04` one-turn tool-aware harness is only the callback and
+  persistence foundation for that loop.
 - A terminal TUI uses `.codegeist/session.json` as its state source and does not
   create a second persistence model.
 - `docs/developer/architecture/architecture.md` documents the implemented session
-  store, MCP, tools, patch/edit, shell, and TUI behavior.
+  store, MCP, tools, patch/edit, shell, agent loop, and TUI behavior.
 
 ## Non-Goals
 

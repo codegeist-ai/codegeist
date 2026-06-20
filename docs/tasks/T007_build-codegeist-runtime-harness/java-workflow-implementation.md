@@ -564,7 +564,15 @@ Implement:
 
 Do not claim sandboxing beyond tested path and cwd guards.
 
-### T007_05 Terminal TUI
+### T007_05 Agent Control Loop
+
+Implement:
+
+- A synchronous model/tool/model loop owned by Codegeist.
+- Fake-model and fake-tool tests proving tool results feed model continuation.
+- Integration through `ChatHarnessService` without changing command stdout behavior.
+
+### T007_06 Terminal TUI
 
 Implement:
 
@@ -572,7 +580,8 @@ Implement:
 - Deterministic line renderer first.
 - Runtime provider/model/MCP/tool status projection that does not write status to
   `chat.json`.
-- Prompt submission through the same `ChatHarnessService` used by `ask --chat`.
+- Prompt submission through the same agent-loop-backed `ChatHarnessService` used by
+  `ask --chat`.
 
 ## Test Strategy
 

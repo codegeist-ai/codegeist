@@ -87,10 +87,9 @@ interface CodegeistToolService {
     CodegeistToolRun openRun(CodegeistConfig config, Path workingDirectory);
 }
 
-interface CodegeistToolRun extends AutoCloseable {
+interface CodegeistToolRun {
     CodegeistChatExecutionContext executionContext();
     List<ToolSessionPart> completedToolParts();
-    @Override void close();
 }
 
 record CodegeistChatExecutionContext(
@@ -322,7 +321,8 @@ Codegeist answer:
 - Keep T007_03 to direct `codegeist.yml` stdio clients with `type`, `command`, and
   `args`.
 - Build Spring AI MCP callbacks lazily during a chat run.
-- Close stdio clients through `CodegeistToolRun.close()`.
+- Close stdio clients through the MCP-specific resource scope when the MCP adapter is
+  implemented; the current local-only `CodegeistToolRun` is not closeable.
 - Prefix/sanitize MCP callback names if Spring AI does not already guarantee unique
   names. Prefer `<mcp-id>_<tool-name>` for MCP tools and `codegeist_*` for local
   tools.
@@ -390,7 +390,7 @@ Codegeist answer:
 
 - Persist tool parts inside the assistant message before the final assistant text.
 - Keep T007_03 statuses to `completed` and `failed` unless the harness needs
-  `running` for immediate TUI rendering. Since T007_05 owns TUI, `running` can be
+  `running` for immediate TUI rendering. Since T007_06 owns TUI, `running` can be
   deferred.
 - Include enough fields for future replay and UI rendering:
   `callId`, `tool`, `status`, `input`, `outputPreview`, `truncated`,
@@ -588,8 +588,8 @@ Recommended implementation test order:
 4. `CodegeistMcpAdapterTest`
    - Prove Codegeist stdio config maps to the adapter and unsupported types fail.
 5. `CodegeistToolServiceTest`
-   - Prove local callbacks plus fake MCP callbacks are exposed for a run and that
-     `CodegeistToolRun.close()` closes resources.
+    - Prove local callbacks plus fake MCP callbacks are exposed for a run and that
+      any MCP-specific resource scope closes resources once MCP is implemented.
 6. `SessionStoreServiceTest`
    - Prove `ToolSessionPart` JSON round-trip and bounded persistence.
 7. `ChatHarnessServiceTest` or `AskCommandsSessionStoreTest`

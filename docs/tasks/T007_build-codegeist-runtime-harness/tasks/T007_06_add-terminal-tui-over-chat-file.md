@@ -1,4 +1,4 @@
-# T007_05 Add Terminal TUI Over Session Store
+# T007_06 Add Terminal TUI Over Session Store
 
 Parent: `T007_build-codegeist-runtime-harness`
 
@@ -13,6 +13,11 @@ The TUI should be the first minimum usable local coding-agent interface while
 preserving the single persistence contract: open the directory-local session store,
 render it, submit prompts, show tool activity, review file and shell effects, and
 save the same file.
+
+## Dependencies
+
+- Depends on `T007_05_add-agent-control-loop.md` so prompt submission can drive the
+  Codegeist-owned model/tool/model loop instead of only a one-turn provider call.
 
 ## Scope
 

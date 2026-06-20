@@ -7,20 +7,22 @@ tool callbacks under `ai.codegeist.app.tool`.
 
 This document describes the implemented local read/list/glob/grep/write tool slice.
 It covers callback assembly, workspace path handling, bounded output, persisted tool
-part recording, and focused tests.
+part recording, scoped local tool runs, and focused tests.
 
-This document does not describe provider chat wiring, MCP callbacks, patch/edit,
-shell execution, permission prompts, ignored-file filtering, session-store write
-protection, or workspace sandboxing. Those behaviors are deferred to later focused
-tasks.
+This document does not describe provider-specific model internals, MCP callbacks,
+patch/edit, shell execution, permission prompts, ignored-file filtering,
+session-store write protection, or workspace sandboxing. Those behaviors are deferred
+to later focused tasks. It also does not describe a full OpenCode-style coding-agent
+loop; the current harness only makes local callbacks available to one provider call.
 
 ## Current Status
 
-Codegeist has source-level local file tools, but `ask` does not pass them to a
-provider call yet. `CodegeistLocalTools.callbacks(...)` can create Spring AI
-`ToolCallback` instances for a caller that supplies a `ToolSessionPart` recorder.
-Each callback returns bounded model-visible text and records the same bounded preview
-as a completed or failed `ToolSessionPart`.
+Codegeist now exposes local file tools to `ask` through `ChatHarnessService` and
+`CodegeistToolService`. `CodegeistToolService.openRun(...)` creates one
+`CodegeistToolRun` per prompt turn, asks `CodegeistLocalTools.callbacks(...)` for
+Spring AI `ToolCallback` values, and gives the callbacks one ordered
+`ToolSessionPart` recorder. Each callback returns bounded model-visible text and
+records the same bounded preview as a completed or failed `ToolSessionPart`.
 
 Implemented callback names:
 
@@ -50,14 +52,18 @@ Implemented callback names:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistGrepFileTool.java` | Package-private Spring component implementing `codegeist_grep`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistWriteFileTool.java` | Package-private Spring component implementing `codegeist_write`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalToolCallback.java` | Package-private Spring AI `ToolCallback` wrapper that records completed or failed `ToolSessionPart` values and returns bounded preview text. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolService.java` | Spring service that opens prompt-scoped local tool runs and builds the `CodegeistChatExecutionContext` used by provider calls. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolRun.java` | Public per-turn tool scope exposed to `ChatHarnessService`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/DefaultCodegeistToolRun.java` | Package-private first tool-run implementation for local callbacks and recorded-part snapshots. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolResult.java` | Package-private minimal result record carrying the bounded output preview. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolException.java` | Package-private handled tool failure exception. Callback wrappers convert it into failed tool parts instead of throwing it into the provider call. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/session/ToolSessionPart.java` | Persisted session part for bounded completed or failed tool activity. Current fields are `tool`, `status`, and `outputPreview`. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistLocalToolsTest.java` | Contract tests for callback names, schemas, success paths, focused failures, bounded previews, and recorded tool parts. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistToolServiceTest.java` | Contract tests for prompt-scoped local tool runs, context callback exposure, recording, and defensive completed-part copies. |
 
 ## Component Model
 
-`CodegeistLocalTools`, `WorkspaceResolver`, `ToolOutputBounds`,
+`CodegeistToolService`, `CodegeistLocalTools`, `WorkspaceResolver`, `ToolOutputBounds`,
 `CodegeistFileToolSupport`, and the five individual file tools are Spring
 components. The file tool classes stay package-private because no other package
 should depend on their concrete types. Each concrete tool owns its callback name in a
@@ -66,10 +72,26 @@ class-local `TOOL_NAME` constant and builds its own `ToolDefinition`.
 semantic meaning to callback order; tools are selected by callback name. File tools
 that need workspace paths get the active workspace through `CodegeistFileToolSupport`
 instead of through the generic local-tool execute contract.
+`CodegeistToolService` is the public service boundary used by the chat harness; it
+keeps callback recording scoped to one prompt turn and returns defensive completed
+part copies through `CodegeistToolRun`.
 
 ```mermaid
-classDiagram
+    classDiagram
     direction LR
+
+    class CodegeistToolService {
+      <<Service>>
+      <<RequiredArgsConstructor>>
+      CodegeistLocalTools localTools
+      openRun(Path workingDirectory) CodegeistToolRun
+    }
+
+    class CodegeistToolRun {
+      <<interface>>
+      executionContext() CodegeistChatExecutionContext
+      completedToolParts() List~ToolSessionPart~
+    }
 
     class CodegeistLocalTools {
       <<Component>>
@@ -159,6 +181,9 @@ classDiagram
       CodegeistFileToolSupport support
     }
 
+    CodegeistToolService --> CodegeistLocalTools
+    CodegeistToolService --> CodegeistToolRun
+    CodegeistToolRun --> ToolSessionPart
     CodegeistLocalTools --> ToolOutputBounds
     CodegeistLocalTools --> CodegeistLocalToolCallback
     CodegeistLocalTool --> CodegeistToolInput
@@ -181,12 +206,13 @@ classDiagram
 
 ## Callback Assembly Flow
 
-`CodegeistLocalTools.callbacks(...)` is intentionally the only public entrypoint for
-Codegeist-owned local callback creation.
+`CodegeistToolService.openRun(...)` is the chat-harness entrypoint. Inside that
+scope, `CodegeistLocalTools.callbacks(...)` remains the local callback assembly seam
+and receives the run's ordered `ToolSessionPart` recorder.
 
 ```mermaid
 sequenceDiagram
-    participant Caller as Tool-aware caller
+    participant Caller as CodegeistToolService
     participant LocalTools as CodegeistLocalTools
     participant Tool as Injected CodegeistLocalTool
     participant Callback as CodegeistLocalToolCallback
@@ -410,9 +436,9 @@ Examples of handled failures:
 | Write parent missing | `Parent directory does not exist: missing/child.txt` |
 
 Unexpected programming errors are intentionally not caught by
-`CodegeistLocalToolCallback`. A later tool-aware chat harness may decide whether to
-wrap broader failures at the run boundary, but this local callback layer currently
-keeps defects visible to tests.
+`CodegeistLocalToolCallback`. The current tool-aware chat harness lets those defects
+surface through the provider call path so tests expose programming errors instead of
+persisting misleading failed tool parts.
 
 ## Test Coverage
 
@@ -437,13 +463,17 @@ Related tests:
 
 - `WorkspaceResolverTest` proves active workspace resolution rules.
 - `ToolOutputBoundsTest` proves output, line, result, read, and error bounds.
+- `CodegeistToolServiceTest` proves scoped local callback exposure, recording, and
+  defensive completed-part copies.
 - `SessionStoreServiceTest` proves `ToolSessionPart` JSON round-trip and assistant
   message ordering when tool parts are saved with a chat exchange.
+- `ChatHarnessServiceTest` proves recorded local tool parts are saved before the
+  assistant text when a chat turn uses tool callbacks.
 
 Recommended focused verification after changing this subsystem:
 
 ```bash
-task test TEST=CodegeistLocalToolsTest,WorkspaceResolverTest,ToolOutputBoundsTest,SessionStoreServiceTest
+task test TEST=CodegeistLocalToolsTest,CodegeistToolServiceTest,WorkspaceResolverTest,ToolOutputBoundsTest,SessionStoreServiceTest,ChatHarnessServiceTest
 ```
 
 Run the broad JVM suite when the change touches Spring wiring, session persistence,

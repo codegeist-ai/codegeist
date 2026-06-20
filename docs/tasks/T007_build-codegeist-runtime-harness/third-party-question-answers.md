@@ -877,7 +877,8 @@ Recommended Codegeist tests:
   boundaries and bounds.
 - `T007_04`: patch/edit path escape, exact edit errors, shell timeout, exit code,
   stderr/stdout bounds.
-- `T007_05`: deterministic TUI rendering from representative `chat.json`.
+- `T007_05`: fake model/tool loop proving tool results feed model continuation.
+- `T007_06`: deterministic TUI rendering from representative `chat.json`.
 
 ### A13. Integrating While Keeping `CodegeistChatRequest` Focused
 

@@ -201,9 +201,10 @@ CodegeistChatResponse chat(
         CodegeistChatExecutionContext context)
 ```
 
-`CodegeistChatModel` can keep the existing `call(CodegeistChatRequest)` method and
-add a default context-aware method that delegates to it. Provider models that support
-tools, starting with `OllamaChatModel`, should override the context-aware method.
+`CodegeistChatModel` should treat the context-aware call method as the provider
+implementation contract. Keep no-tool compatibility at `CodegeistChatService` by
+having its request-only overload supply an empty execution context before invoking the
+model.
 
 For Spring AI direct `ChatModel` calls, use runtime tool options rather than global
 provider configuration. Spring AI `2.0.0-M6` supports tool callbacks through chat

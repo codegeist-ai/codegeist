@@ -89,7 +89,7 @@ OpenCode analysis first because the current workspace may not have
 
 /ask-project spring-ai-agent-utils "Analyze error handling patterns in Agent Utils for tools, provider calls, MCP failures, and invalid input. Recommend how Codegeist should persist failed tool activity in chat.json."
 
-/ask-project spring-ai-agent-utils "Identify Agent Utils test patterns for Spring Boot integration tests involving chat models, tool callbacks, file tools, shell tools, and MCP. Recommend focused tests for T007_02 through T007_06."
+/ask-project spring-ai-agent-utils "Identify Agent Utils test patterns for Spring Boot integration tests involving chat models, tool callbacks, file tools, shell tools, MCP, agent loops, and TUI rendering. Recommend focused tests for T007_02 through T007_07."
 
 /ask-project spring-ai-agent-utils "How should Codegeist integrate Agent Utils while keeping CodegeistChatRequest focused on model and prompt and keeping chat.json separate from provider configuration?"
 
@@ -121,5 +121,6 @@ OpenCode analysis first because the current workspace may not have
 3. Research `T007_02`: chat file and `ask --chat` behavior.
 4. Research `T007_03`: MCP config and read/write tools.
 5. Research `T007_04`: patch/edit and shell tools.
-6. Research `T007_05`: terminal TUI over `chat.json`.
-7. Research tests and architecture documentation before `T007_06` verification.
+6. Research `T007_05`: Codegeist-owned model/tool/model agent control loop.
+7. Research `T007_06`: terminal TUI over `chat.json`.
+8. Research tests and architecture documentation before `T007_07` verification.

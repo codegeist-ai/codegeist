@@ -158,13 +158,11 @@ classDiagram
     class CodegeistChatModel {
       <<abstract>>
       #ProviderConfig providerConfig
-      +call(CodegeistChatRequest request) ChatResponse
       +call(CodegeistChatRequest request, CodegeistChatExecutionContext context) ChatResponse
     }
 
     class OllamaChatModel {
       -OllamaChatModel delegate
-      +call(CodegeistChatRequest request) ChatResponse
       +call(CodegeistChatRequest request, CodegeistChatExecutionContext context) ChatResponse
     }
 
@@ -176,7 +174,6 @@ classDiagram
       <<interface>>
       +executionContext() CodegeistChatExecutionContext
       +completedToolParts() List ToolSessionPart
-      +close() void
     }
 
     class SessionStoreService {
@@ -218,7 +215,6 @@ classDiagram
       <<interface>>
       +executionContext() CodegeistChatExecutionContext
       +completedToolParts() List ToolSessionPart
-      +close() void
     }
 
     class DefaultCodegeistToolRun {
@@ -228,7 +224,6 @@ classDiagram
       -CodegeistMcpRun mcpRun
       +executionContext() CodegeistChatExecutionContext
       +completedToolParts() List ToolSessionPart
-      +close() void
     }
 
     class CodegeistLocalTools {
@@ -259,15 +254,9 @@ classDiagram
       <<interface>>
     }
 
-    class AutoCloseable {
-      <<interface>>
-      +close() void
-    }
-
     CodegeistToolService --> CodegeistLocalTools
     CodegeistToolService --> CodegeistMcpAdapter
     CodegeistToolService --> CodegeistToolRun
-    AutoCloseable <|.. CodegeistToolRun
     CodegeistToolRun <|.. DefaultCodegeistToolRun
     DefaultCodegeistToolRun --> CodegeistMcpRun
     DefaultCodegeistToolRun --> ToolSessionPart
@@ -711,23 +700,17 @@ Implementation:
 
 ### `CodegeistChatModel<T extends ProviderConfig>`
 
-Keep existing abstract method:
+Use the context-aware method as the provider implementation contract:
 
 ```java
-public abstract ChatResponse call(CodegeistChatRequest request);
-```
-
-Add default context-aware method:
-
-```java
-public ChatResponse call(
+public abstract ChatResponse call(
         @NonNull CodegeistChatRequest request,
-        @NonNull CodegeistChatExecutionContext context) {
-    return call(request);
-}
+        @NonNull CodegeistChatExecutionContext context);
 ```
 
-This keeps providers without tool support source-compatible.
+This avoids silently dropping a caller-supplied context. Keep no-tool compatibility at
+`CodegeistChatService` by having its request-only overload supply an empty execution
+context before invoking the selected model.
 
 ### `OllamaChatModel`
 
@@ -796,7 +779,6 @@ Algorithm:
 5. Return a `CodegeistToolRun` containing:
    - immutable callback list for `CodegeistChatExecutionContext`
    - ordered recorded parts
-   - closeable MCP resources
 
 Rules:
 
@@ -813,13 +795,10 @@ Location: `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolRu
 Shape:
 
 ```java
-public interface CodegeistToolRun extends AutoCloseable {
+public interface CodegeistToolRun {
     CodegeistChatExecutionContext executionContext();
 
     List<ToolSessionPart> completedToolParts();
-
-    @Override
-    void close();
 }
 ```
 
@@ -827,8 +806,8 @@ Implementation rules:
 
 - The first implementation can use a package-private `DefaultCodegeistToolRun`.
 - `completedToolParts()` returns a defensive immutable copy in call order.
-- `close()` closes MCP resources and must be idempotent enough for normal
-  try-with-resources cleanup.
+- Keep the local-only run non-closeable until the MCP slice introduces an actual
+  resource-owning run or delegates cleanup through `CodegeistMcpRun`.
 
 ### `WorkspaceRootElement` And `WorkspaceConfig`
 
@@ -1496,7 +1475,8 @@ Prove:
 - fake MCP callbacks are included when configured
 - MCP callbacks are wrapped with recording behavior
 - completed tool parts are returned in call order
-- `CodegeistToolRun.close()` closes MCP resources
+- MCP resource cleanup is covered by `CodegeistMcpRun` or a later resource-owning
+  tool-run boundary when the MCP implementation introduces real resources
 
 ### `SessionStoreServiceTest`
 

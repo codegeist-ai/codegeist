@@ -22,9 +22,12 @@ public final class OllamaChatModel extends CodegeistChatModel<OllamaProviderConf
     }
 
     @Override
-    public ChatResponse call(@NonNull CodegeistChatRequest request) {
+    public ChatResponse call(
+            @NonNull CodegeistChatRequest request,
+            @NonNull CodegeistChatExecutionContext context) {
         OllamaChatOptions options = OllamaChatOptions.builder()
                 .model(request.model())
+                .toolCallbacks(context.toolCallbackArray())
                 .build();
         return delegate.call(new Prompt(request.prompt(), options));
     }

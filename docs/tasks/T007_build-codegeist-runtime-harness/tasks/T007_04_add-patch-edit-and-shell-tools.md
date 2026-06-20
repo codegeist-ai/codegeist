@@ -37,7 +37,7 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 - Do not implement arbitrary unbounded shell execution.
 - Do not implement network tools, MCP server management, plugins, LSP, subagents, or
   background process persistence.
-- Do not add a patch review TUI unless `T007_05` implements the needed rendering.
+- Do not add a patch review TUI unless `T007_06` implements the needed rendering.
 
 ## Suggested Tests
 

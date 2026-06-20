@@ -6,7 +6,7 @@ or Spring Shell/JLine equivalents for Codegeist T007.
 ## Purpose
 
 Use this document when implementing
-`tasks/T007_05_add-terminal-tui-over-chat-file.md`. It identifies the OpenCode TUI
+`tasks/T007_06_add-terminal-tui-over-chat-file.md`. It identifies the OpenCode TUI
 elements that matter for a minimum usable local coding-agent TUI and maps each one
 to Java/JLine primitives that fit Codegeist's current Spring Shell CLI.
 

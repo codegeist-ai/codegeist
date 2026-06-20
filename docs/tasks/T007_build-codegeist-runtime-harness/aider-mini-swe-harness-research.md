@@ -263,7 +263,8 @@ the one already specified by OpenCode/Spring research:
 - Build only `stdio` clients for T007_03.
 - Convert clients to Spring AI `ToolCallback` values inside `CodegeistMcpAdapter`.
 - Fail before the provider call if configured MCP setup fails.
-- Close all created resources through `CodegeistToolRun.close()`.
+- Close all created resources through the MCP-specific resource scope introduced by
+  the MCP adapter; the current local-only `CodegeistToolRun` is not closeable.
 - Do not persist MCP client definitions, statuses, resources, prompts, or enabled
   tool registry snapshots in `.codegeist/session.json`.
 

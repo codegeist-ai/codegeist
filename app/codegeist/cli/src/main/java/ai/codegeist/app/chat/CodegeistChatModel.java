@@ -14,5 +14,7 @@ public abstract class CodegeistChatModel<T extends ProviderConfig> {
     @NonNull
     private final T providerConfig;
 
-    public abstract ChatResponse call(CodegeistChatRequest request);
+    public abstract ChatResponse call(
+            @NonNull CodegeistChatRequest request,
+            @NonNull CodegeistChatExecutionContext context);
 }

@@ -52,8 +52,9 @@ sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or subagents.
 | `T007_02` | Versioned `.codegeist/session.json` model, file save/load, and `ask -c/--continue`. | TUI, patch/edit, shell, database. |
 | `T007_03` | Codegeist MCP config plus read/list/glob/grep/write tool path. | Patch/edit, shell, TUI, custom MCP transports. |
 | `T007_04` | Bounded patch/edit and shell tools recorded into `.codegeist/session.json`. | Unbounded shell, server runtime, database. |
-| `T007_05` | Minimum usable terminal coding-agent TUI over the same `.codegeist/session.json`. | Second persistence model, server, Vaadin, desktop. |
-| `T007_06` | Focused and broad verification plus architecture docs. | New feature scope beyond T007. |
+| `T007_05` | Codegeist-owned model/tool/model agent control loop. | TUI, streaming UI events, permission prompts, subagents. |
+| `T007_06` | Minimum usable terminal coding-agent TUI over the same `.codegeist/session.json`. | Second persistence model, server, Vaadin, desktop. |
+| `T007_07` | Focused and broad verification plus architecture docs. | New feature scope beyond T007. |
 
 ## Component Direction
 

@@ -50,6 +50,13 @@ tools for resumable chats.
   read/list/glob/grep/write Spring AI callbacks with active workspace resolution,
   configured workspace encoding, bounded model-visible output, and matching bounded
   `ToolSessionPart` recording.
+- `T007_03_04` is implemented and verified. `ChatHarnessService` now owns the
+  one-turn `ask` orchestration, `CodegeistChatExecutionContext` carries prompt-scoped
+  local tool callbacks beside unchanged `CodegeistChatRequest(model, prompt)`,
+  `CodegeistToolService` opens local callback runs and records tool parts, and
+  `AskCommands` is a thin output adapter. This is not yet an OpenCode-style
+  coding-agent loop; Codegeist now exposes callbacks to one provider call but does
+  not own an iterative model/tool/model control loop.
 - The detailed accepted contract lives in
   `docs/tasks/T007_build-codegeist-runtime-harness/mcp-and-readwrite-tools-spec.md`.
 - The implementation handoff lives in
@@ -72,8 +79,8 @@ tools for resumable chats.
   `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`.
   It confirms that neither project is an MCP lifecycle reference, but both support
   the narrow `ChatHarnessService` plus scoped `CodegeistToolRun` boundary.
-- Remaining work still includes the tool-aware chat harness, Spring AI MCP
-  client/callback setup, and final docs plus broad verification.
+- Remaining work still includes Spring AI MCP client/callback setup and final docs
+  plus broad T007_03 verification.
 
 ## Child Tasks
 
@@ -86,9 +93,9 @@ tools for resumable chats.
 - `tasks/T007_03_03_add-local-file-tools.md` - completed; added Codegeist-owned
   `read`/`list`/`glob`/`grep`/`write` local file callbacks with bounded persisted
   results.
-- `tasks/T007_03_04_add-tool-aware-chat-harness.md` - add the reusable one-turn
-  `ChatHarnessService`, tool-aware chat context, tool run, and `AskCommands`
-  refactor.
+- `tasks/T007_03_04_add-tool-aware-chat-harness.md` - completed; added the reusable
+  one-turn `ChatHarnessService`, tool-aware chat context, local tool run, and
+  `AskCommands` refactor.
 - `tasks/T007_03_05_add-mcp-callback-adapter.md` - add Spring AI MCP dependency,
   stdio-only adapter, and MCP callback integration with the tool run.
 - `tasks/T007_03_06_finalize-tool-docs-and-verification.md` - update current-state

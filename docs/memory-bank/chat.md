@@ -45,14 +45,20 @@
   marker.
 - `app/codegeist/cli` implements `ask` as a Spring Shell prompt command in
   `ai.codegeist.app.chat.AskCommands`. Plain `ask <prompt>` accepts a single
-  positional prompt parameter, uses optional `CodegeistConfig.defaultProvider()` to
-  select the first provider configured in the active config, fails at the command
-  boundary when none exists, uses that provider config's `defaultModel()` runtime
-  fallback, calls `CodegeistChatService`, prints only the provider response text,
-  and saves the turn through `SessionStoreService`. Plain `ask` creates a new
-  session. `ask -c/--continue <prompt>` appends to the newest existing session when
-  one exists, creates a new session for missing or empty stores, and refuses corrupt
-  JSON stores instead of overwriting them.
+  positional prompt parameter, delegates the turn to `ChatHarnessService`, prints
+  only the provider response text, and keeps the Spring Shell boundary thin.
+  `ChatHarnessService` selects the first provider configured in the active config
+  through optional `CodegeistConfig.defaultProvider()`, fails at the command boundary
+  when none exists, uses that provider config's `defaultModel()` runtime fallback,
+  opens a scoped local tool run, calls `CodegeistChatService` with runtime tool
+  context, and saves prompt, bounded tool parts, and assistant response through
+  `SessionStoreService`. Plain `ask` creates a new session. `ask -c/--continue
+  <prompt>` appends to the newest existing session when one exists, creates a new
+  session for missing or empty stores, and refuses corrupt JSON stores instead of
+  overwriting them. This is not yet an OpenCode-style coding-agent loop: Codegeist
+  now exposes prompt-scoped callbacks to one provider call, but it does not own a
+  repeated model/tool/model controller, streaming event loop, permission loop, or
+  multi-step agent driver.
 - `application.yaml` sets `spring.shell.interactive.enabled=false` so Spring
   Shell's noninteractive runner handles `--version` by default without a custom
   runner class. Interactive shell behavior is deferred. Codegeist-owned
@@ -94,10 +100,15 @@
   `defaultModel()` before creating the request. The service asks the selected
   provider config to create the matching
   `CodegeistChatModel<T extends ProviderConfig>` without storing the runtime model,
-  and the model is applied when the selected prompt is called.
+  and the model is applied when the selected prompt is called. Tool-aware calls pass
+  `CodegeistChatExecutionContext` beside the request, keeping callbacks out of
+  `CodegeistChatRequest` and `.codegeist/session.json`. The context-aware
+  `CodegeistChatModel` method is the only provider implementation contract; the older
+  service-level request-only path supplies an empty context before invoking the model.
   `OllamaChatModel` is the first concrete provider model. It maps
   `OllamaProviderConfig` into Spring AI `OllamaApi`, then maps the request model to
-  `OllamaChatOptions` at call time before delegating to the Spring AI Ollama model.
+  `OllamaChatOptions` plus prompt-scoped tool callbacks at call time before
+  delegating to the Spring AI Ollama model.
 - Local session-store runtime code lives under `ai.codegeist.app.session`.
   `SessionStoreService` owns `.codegeist/session.json` paths, JSON I/O, and clock
   input. `SessionStore` owns in-memory store changes: creating a store, adding a
@@ -144,9 +155,16 @@
   Local file-tool multi-line output joins with `CodegeistFileToolSupport.LINE_SEPARATOR`,
   a shared constant backed by `System.lineSeparator()`, instead of inline newline
   literals.
+  `CodegeistToolService` opens one `CodegeistToolRun` per chat turn, exposes local
+  callbacks through `CodegeistChatExecutionContext`, and returns defensive copies of
+  recorded `ToolSessionPart` values for session persistence. The first local-only run
+  is intentionally not closeable because MCP resources are not wired yet.
   `docs/developer/architecture/local-file-tools.md` is the detailed current-state
-  source-code guide for this subsystem. They are not wired into provider chat calls
-  yet.
+  source-code guide for this subsystem.
+- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_05_add-agent-control-loop.md`
+  is the planned follow-up for the actual OpenCode-style loop translation. It should
+  add Codegeist-owned model/tool/model continuation on top of the current one-turn
+  callback harness instead of reopening `T007_03_04`.
 - `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper
   used by the config service for direct `codegeist.yml` parsing, empty-safe source
   tree loading, list-backed keyed element rendering, and direct YAML output.
@@ -218,10 +236,11 @@
   empty config. The Windows guest reaches host Ollama at `http://10.0.2.2:11434`
   by default. Smoke scripts now emit stable `Duration: <label>: <seconds>s` lines
   for Maven, package, jar, native compile, archive smoke, platform total, SSH, and
-  QEMU wrapper timings. The latest full `task test` passed with 110 tests, 0
+  QEMU wrapper timings. The latest full `task test` passed with 115 tests, 0
   failures, 0 errors, and 6 skips. The latest `task final-smoke-suite` passed with
-  `linux native ask smoke: 0.681s`, `windows jar ask smoke: 5.421s`, and
-  `windows native ask smoke: 0.750s`.
+  `linux platform smoke total: 89.644s`, `windows qemu smoke total: 212.295s`,
+  `linux native ask smoke: 1.303s`, `windows jar ask smoke: 5.131s`, and
+  `windows native ask smoke: 1.223s`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
@@ -440,12 +459,14 @@
   The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
   implemented and tested. `T007_03_02` is completed with workspace config parsing,
   active workspace resolution, output-bound helpers, focused tests, and native
-  reflection metadata. MCP callbacks, read/write tools, and session-store
-  tool-result persistence remain open implementation work. Remaining children are
+  reflection metadata. The local file callbacks and one-turn tool-aware chat harness
+  are implemented, while MCP callbacks, patch/edit, shell, the Codegeist-owned agent
+  control loop, TUI, and final verification remain open. Remaining children are
   `T007_03_add-mcp-and-read-write-tools/task.md`,
   `T007_04_add-patch-edit-and-shell-tools.md`,
-  `T007_05_add-terminal-tui-over-chat-file.md`, and
-  `T007_06_verify-chat-file-tool-harness.md`. T007 still avoids a database, server
+  `T007_05_add-agent-control-loop.md`,
+  `T007_06_add-terminal-tui-over-chat-file.md`, and
+  `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database, server
   runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, and
   subagents.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`

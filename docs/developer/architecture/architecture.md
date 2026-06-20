@@ -38,17 +38,19 @@ Codegeist currently contains one Java/Spring Boot CLI application under
 startup, typed access-only provider config loading and validation, trusted local
 SpEL preprocessing for explicit `codegeist.yml` files, direct workspace config
 loading and active workspace resolution, provider-neutral one-turn chat execution
-through a lazily created Codegeist chat model that wraps Spring AI Ollama and uses
-the runtime model name from the request, a Spring Shell `--version` command that
-prints the build version, and a Spring Shell `--show-config` command that prints the
-current Codegeist config as direct `codegeist.yml` YAML with configured values
-unchanged. A Spring Shell `ask` command sends one prompt to the first configured
-provider with that provider config's default runtime model; with `-c/--continue`, it
-appends the prompt and provider response to the newest session in
+through a narrow `ChatHarnessService`, a lazily created Codegeist chat model that
+wraps Spring AI Ollama and uses the runtime model name from the request, a Spring
+Shell `--version` command that prints the build version, and a Spring Shell
+`--show-config` command that prints the current Codegeist config as direct
+`codegeist.yml` YAML with configured values unchanged. A Spring Shell `ask` command
+sends one prompt to the first configured provider with that provider config's
+default runtime model; with `-c/--continue`, it appends the prompt, bounded local
+tool activity, and provider response to the newest session in
 `.codegeist/session.json`. Codegeist-owned local read/list/glob/grep/write file
-callbacks now exist with workspace resolution, bounded model-visible output, and
-bounded `ToolSessionPart` recording, but they are not wired into the provider chat
-path yet.
+callbacks now reach provider calls through prompt-scoped Spring AI tool callbacks.
+This is not yet an OpenCode-style coding-agent loop: Codegeist does not own a
+repeated model/tool/model controller, streaming event loop, permission loop, or
+multi-step agent driver.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -106,10 +108,10 @@ Implemented Java package:
 | Package | Current responsibility |
 | --- | --- |
 | `ai.codegeist.app` | Spring Boot application entrypoint, version command, and shared command exception mapping |
-| `ai.codegeist.app.chat` | Provider-neutral one-turn chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, the local Ollama chat model, and the `ask` Spring Shell command with optional session continuation |
+| `ai.codegeist.app.chat` | Provider-neutral one-turn chat harness, runtime chat execution context, chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, the local Ollama chat model, and the `ask` Spring Shell command with optional session continuation |
 | `ai.codegeist.app.config` | Top-level config root models, the central root parser, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
 | `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
-| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, and Codegeist-owned local read/list/glob/grep/write Spring AI callbacks that record bounded tool parts. MCP callbacks are not implemented yet. |
+| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, and Codegeist-owned local read/list/glob/grep/write Spring AI callbacks that record bounded tool parts. MCP callbacks are not implemented yet. |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
@@ -181,21 +183,40 @@ Current behavior:
   names, create Spring AI clients, or call providers.
 - `CodegeistChatRequest` and `CodegeistChatResponse` are provider-neutral records
   for one runtime model name, prompt, and text response. `CodegeistChatRequest` does
-  not carry the selected provider; callers pass the validated `ProviderConfig`
-  separately to `CodegeistChatService`. Model names, generation options,
-  enablement, and completion-path routing are not part of `ProviderConfig`.
+  not carry the selected provider, selected tools, or session state; callers pass the
+  validated `ProviderConfig` separately to `CodegeistChatService`, and prompt-scoped
+  tools travel through `CodegeistChatExecutionContext`. Model names, generation
+  options, enablement, and completion-path routing are not part of `ProviderConfig`.
+- `ChatHarnessService` is a Spring `@Service` that owns one non-streaming prompt
+  turn for `ask` and future UI callers. It selects the default provider and
+  provider-owned default model from `CodegeistConfig`, resolves the active workspace,
+  opens a scoped `CodegeistToolRun`, calls `CodegeistChatService` with the runtime
+  context, saves prompt, recorded tool parts, and assistant text through
+  `SessionStoreService`, then returns the `CodegeistChatResponse` for the command
+  layer to print. It does not reconstruct provider-facing context from stored
+  sessions, and it does not implement an OpenCode-style iterative coding-agent loop;
+  any tool-use continuation inside the provider call is delegated to Spring AI's
+  chat-model tool-calling behavior for the current prompt.
+- `CodegeistChatExecutionContext` is a runtime-only record with the active working
+  directory and prompt-scoped Spring AI `ToolCallback` values. It defensively copies
+  callback lists and provides an array helper for Spring AI APIs. It is never stored
+  in `.codegeist/session.json`.
 - `CodegeistChatService` is a Spring `@Service` that validates one request, finds a
   `CodegeistChatModel` by asking the selected `ProviderConfig` to
   `createChatModel()`, calls it with the runtime model and prompt from
-  `CodegeistChatRequest`, and returns the first response text.
+  `CodegeistChatRequest` plus an optional `CodegeistChatExecutionContext`, and
+  returns the first response text.
 - `CodegeistChatModel<T extends ProviderConfig>` is the abstract Codegeist provider
   model base. It stores the typed provider config only; runtime model selection
-  arrives at call time through `CodegeistChatRequest`.
+  arrives at call time through `CodegeistChatRequest`. The context-aware call method
+  is the only provider implementation contract. Older no-tool callers use the
+  no-context `CodegeistChatService` overload, which supplies an empty
+  `CodegeistChatExecutionContext` before invoking the model.
 - `OllamaChatModel` is the first concrete provider model. It receives
   `OllamaProviderConfig`, builds `OllamaApi` from `base-url`, builds
-  `OllamaChatOptions` from the runtime model when a request is called, and delegates
-  to Spring AI's Ollama chat model. Ollama-specific Spring AI imports stay isolated
-  in this class.
+  `OllamaChatOptions` from the runtime model and prompt-scoped tool callbacks when a
+  request is called, and delegates to Spring AI's Ollama chat model.
+  Ollama-specific Spring AI imports stay isolated in this class.
 - `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper for
   direct `codegeist.yml` parsing and rendering. It owns helper methods for reading
   empty-safe config source trees, rendering list-backed keyed config elements as
@@ -278,8 +299,13 @@ Current behavior:
   using the configured workspace encoding without creating parent directories.
   `CodegeistLocalToolCallback` is the
   package-local wrapper that translates handled local tool failures into bounded
-  failed tool parts. These callbacks are available as source code now, but `ask`
-  does not pass them to provider calls until the next tool-aware chat harness slice.
+  failed tool parts.
+- `CodegeistToolService` is a Spring `@Service` under `ai.codegeist.app.tool`. It
+  opens one `CodegeistToolRun` per chat turn, asks `CodegeistLocalTools` for local
+  callbacks, and shares one ordered recorder list with those callbacks. The returned
+  `DefaultCodegeistToolRun` exposes a `CodegeistChatExecutionContext` and defensive
+  copies of recorded `ToolSessionPart` values. It is intentionally not closeable
+  until the MCP slice adds real resources to clean up.
 - `--show-config` is implemented as a Spring Shell command in
   `CodegeistConfigService`. The service resolves the current global config policy,
   renders YAML, and writes only that YAML through `CommandOutputService`.
@@ -298,16 +324,16 @@ Current behavior:
   a user-facing `ExitStatus` description. Corrupt existing session-store JSON maps
   to the user-facing message `No session to continue`.
 - `ask` is implemented as a Spring Shell command in `AskCommands`. It accepts one
-  positional prompt parameter plus optional `-c/--continue`. Plain `ask <prompt>`
-  selects the first configured provider through optional
-  `CodegeistConfig.defaultProvider()`, fails at the command boundary when none
-  exists, uses `ProviderConfig.defaultModel()`, calls `CodegeistChatService`, writes
-  only the model response to stdout through `CommandOutputService`, and saves the
-  turn through `SessionStoreService`. Without `-c/--continue`, the service creates a
-  new session. With `-c/--continue`, it appends to the newest existing session when
-  one exists, creates a session for missing or empty stores, and refuses corrupt JSON
-  stores instead of overwriting them. The current Ollama provider default is
-  `llama3.2:1b`.
+  positional prompt parameter plus optional `-c/--continue`, delegates the prompt turn
+  to `ChatHarnessService`, and writes only the returned model response to stdout
+  through `CommandOutputService`. The harness selects the first configured provider
+  through optional `CodegeistConfig.defaultProvider()`, fails at the command boundary
+  when none exists, uses `ProviderConfig.defaultModel()`, opens local tool callbacks,
+  calls `CodegeistChatService`, and saves the turn through `SessionStoreService`.
+  Without `-c/--continue`, the service creates a new session. With `-c/--continue`,
+  it appends to the newest existing session when one exists, creates a session for
+  missing or empty stores, and refuses corrupt JSON stores instead of overwriting
+  them. The current Ollama provider default is `llama3.2:1b`.
 - `SessionStoreService` owns session-store file paths, JSON I/O, and clock input;
   `SessionStore` owns in-memory store changes such as creating a store, adding a
   session, selecting the latest session, and appending a prompt/response exchange.
@@ -419,12 +445,22 @@ missing/empty store session creation, corrupt-store failure, compaction part plu
 parent-linked summary message round-tripping, and absence of representative runtime
 config and secret fields in serialized `.codegeist/session.json`.
 
-`AskCommandsSessionStoreTest` is the focused provider-free command/session test. It
-injects a stub `CodegeistChatService`, calls `AskCommands` directly for plain and
-continued `ask` paths, verifies plain `ask` creates a new session store, verifies
-continued `ask` appends prompt/response text parts or creates a missing session,
-and checks Spring Shell parsing for both `ask -c "prompt"` and
-`ask --continue "prompt"`.
+`AskCommandsSessionStoreTest` is the focused provider-free command-adapter test. It
+injects a stub `ChatHarnessService`, calls `AskCommands` directly for plain and
+continued `ask` paths, verifies stdout remains the returned response text only,
+checks the continue flag delegation, and checks Spring Shell parsing for both
+`ask -c "prompt"` and `ask --continue "prompt"`.
+
+`ChatHarnessServiceTest` is the focused provider-free harness test. It uses
+hand-written fakes for provider config, chat service, tool run, and workspace
+resolution plus a real `SessionStoreService` with a temp directory and fixed clock to
+prove tool callbacks reach the chat path and recorded `ToolSessionPart` values are
+saved before the assistant text.
+
+`CodegeistChatServiceTest` proves the context-aware chat overload passes
+`CodegeistChatExecutionContext` to the selected provider model, the no-context
+service overload uses an empty execution context, and `CodegeistChatRequest` still has
+exactly `model` and `prompt` record components.
 
 `WorkspaceResolverTest` proves active workspace fallback, absolute overrides,
 relative overrides, filesystem root support, and traversal-segment normalization
@@ -438,6 +474,10 @@ callbacks expose stable names and schemas, resolve relative paths from the activ
 workspace, return bounded model-visible text, record the same bounded preview in
 `ToolSessionPart`, and handle focused read/list/glob/grep/write success and failure
 paths without provider calls.
+
+`CodegeistToolServiceTest` proves one prompt-scoped tool run exposes local callbacks
+through `CodegeistChatExecutionContext`, records completed tool parts in call order,
+and returns defensive copies of completed tool parts.
 
 ```mermaid
 sequenceDiagram

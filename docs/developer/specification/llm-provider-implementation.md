@@ -34,7 +34,7 @@ sequenceDiagram
     Caller->>Service: chat(providerConfig, request)
     Service->>Config: providerConfig.createChatModel()
     Config->>Model: Instantiate concrete CodegeistChatModel
-    Service->>Model: call(request)
+    Service->>Model: call(request, context)
     Model->>Model: Build provider Prompt options from runtime model
     Model->>Provider: Execute one selected-provider request
     Provider-->>Model: Provider response
@@ -67,19 +67,19 @@ classDiagram
     class CodegeistChatModel {
       <<abstract>>
       T providerConfig
-      +call(CodegeistChatRequest request) ChatResponse
+      +call(CodegeistChatRequest request, CodegeistChatExecutionContext context) ChatResponse
     }
 
     class OllamaChatModel {
       <<concrete>>
       +OllamaChatModel(OllamaProviderConfig providerConfig)
-      +call(CodegeistChatRequest request) ChatResponse
+      +call(CodegeistChatRequest request, CodegeistChatExecutionContext context) ChatResponse
     }
 
     class FutureProviderChatModel {
       <<example>>
       +FutureProviderChatModel(FutureProviderConfig providerConfig)
-      +call(CodegeistChatRequest request) ChatResponse
+      +call(CodegeistChatRequest request, CodegeistChatExecutionContext context) ChatResponse
     }
 
     class CodegeistConfig {
@@ -278,9 +278,16 @@ Planned shape:
 public class CodegeistChatService {
 
     public CodegeistChatResponse chat(ProviderConfig providerConfig, CodegeistChatRequest request) {
+        return chat(providerConfig, request, CodegeistChatExecutionContext.empty(Path.of(".")));
+    }
+
+    public CodegeistChatResponse chat(
+            ProviderConfig providerConfig,
+            CodegeistChatRequest request,
+            CodegeistChatExecutionContext context) {
         CodegeistChatModel<?> chatModel = providerConfig.createChatModel();
 
-        String content = chatModel.call(request)
+        String content = chatModel.call(request, context)
                 .getResult()
                 .getOutput()
                 .getText();
@@ -302,7 +309,8 @@ Rules:
 
 `CodegeistChatModel<T extends ProviderConfig>` is the abstract provider model seam.
 It is generic so each provider implementation receives its concrete
-`ProviderConfig` type.
+`ProviderConfig` type. The context-aware call is the provider implementation
+contract; no-tool compatibility belongs at `CodegeistChatService`, not on the model.
 
 Planned shape:
 
@@ -313,7 +321,9 @@ public abstract class CodegeistChatModel<T extends ProviderConfig> {
         // Store validated providerConfig only.
     }
 
-    public abstract ChatResponse call(CodegeistChatRequest request);
+    public abstract ChatResponse call(
+            CodegeistChatRequest request,
+            CodegeistChatExecutionContext context);
 }
 ```
 
@@ -330,7 +340,8 @@ Rules:
 - Each concrete chat model receives only its typed provider config from its
   provider config.
 - Runtime model selection stays in `CodegeistChatRequest` and is passed at call
-  time through `CodegeistChatModel.call(CodegeistChatRequest request)`.
+  time through `CodegeistChatModel.call(...)`; prompt-scoped tools travel beside the
+  request through `CodegeistChatExecutionContext`.
 - Concrete chat models own provider-specific option mapping and
   dependency-specific builder calls.
 - Concrete chat models must not call every configured provider, mutate global
