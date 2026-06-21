@@ -692,10 +692,10 @@ Related tests:
   the Spring Boot `ask` path can pass MCP callbacks to local Ollama and persist the
   completed remote MCP `ToolSessionPart`.
 
-Recommended focused verification after changing this subsystem:
+Recommended focused verification for the completed T007_03 tool slice:
 
 ```bash
-task test TEST=CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,WorkspaceResolverTest,ToolOutputBoundsTest,SessionStoreServiceTest,ChatHarnessServiceTest
+task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
 ```
 
 Run the Docker-backed remote MCP smoke separately when changing real MCP transport

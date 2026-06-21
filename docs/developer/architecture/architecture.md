@@ -46,11 +46,12 @@ a Spring Shell `--version` command that prints the build version, and a Spring S
 sends one prompt to the first configured provider with that provider config's
 default runtime model; with `-c/--continue`, it appends the prompt, bounded local or
 MCP tool activity, and provider response to the newest session in
-`.codegeist/session.json`. Codegeist-owned local read/list/glob/grep/write file
-callbacks and lazily opened MCP callbacks now reach provider calls through
-prompt-scoped Spring AI tool callbacks. This is not yet an OpenCode-style
-coding-agent loop: Codegeist does not own a repeated model/tool/model controller,
-streaming event loop, permission loop, or multi-step agent driver.
+`.codegeist/session.json`. The completed first tool slice exposes Codegeist-owned
+local read/list/glob/grep/write file callbacks and lazily opened MCP callbacks to
+provider calls through prompt-scoped Spring AI tool callbacks. This is not yet an
+OpenCode-style coding-agent loop: Codegeist does not own a repeated
+model/tool/model controller, streaming event loop, permission loop, or multi-step
+agent driver.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start

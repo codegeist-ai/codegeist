@@ -2,7 +2,7 @@
 
 Parent: `T007_03_add-mcp-and-read-write-tools`
 
-Status: open
+Status: completed
 
 ## Goal
 
@@ -42,6 +42,16 @@ the completed T007_03 MCP and local read/write tool slice.
 - Do not run native or Windows smoke tests unless the implementation changed native,
   packaging, or command startup behavior beyond additive reflection metadata.
 
+## Completion Notes
+
+- Confirmed that current architecture docs describe the implemented T007_03 state:
+  direct `mcp:` config, `stdio` and `streamable_http` callback setup, local
+  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
+  `codegeist_write` tools, bounded `ToolSessionPart` recording, prompt-scoped MCP
+  cleanup, and the focused test surface.
+- Marked the aggregate `T007_03` task complete while keeping `T007_04` patch/edit
+  and shell tools, `T007_05` agent control loop, and `T007_06` TUI work open.
+
 ## Suggested Tests
 
 Candidate focused command from `app/codegeist/cli`:
@@ -55,3 +65,19 @@ Final JVM command from `app/codegeist/cli`:
 ```bash
 task test
 ```
+
+Docker-backed MCP smoke from `app/codegeist/cli`:
+
+```bash
+task mcp-remote-smoke
+```
+
+## Verification
+
+- 2026-06-21: `task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest`
+  passed from `app/codegeist/cli` with 63 tests, 0 failures, 0 errors, and 0 skips.
+- 2026-06-21: `task test` passed from `app/codegeist/cli` with 129 tests, 0
+  failures, 0 errors, and 6 skips.
+- 2026-06-21: `task mcp-remote-smoke` passed from `app/codegeist/cli`; the smoke
+  reported `MCP remote smoke status: passed` and `mcp remote smoke total: 12.056s`.
+- 2026-06-21: `git --no-pager diff --check` passed.

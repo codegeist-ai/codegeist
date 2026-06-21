@@ -172,7 +172,11 @@
   Lombok `@Accessors` for this path. `docs/developer/architecture/local-file-tools.md`
   is the detailed current-state source-code guide for this subsystem and includes the
   first-provider-call to `McpSyncClient.callTool(...)` sequence.
-- `T007_03_05_add-mcp-callback-adapter.md` is implemented. The remote MCP path is
+- `T007_03_add-mcp-and-read-write-tools` is completed. The slice includes direct
+  `mcp:` config, `stdio` and `streamable_http` MCP callbacks, local
+  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
+  `codegeist_write` tools, bounded `ToolSessionPart` recording, prompt-scoped MCP
+  cleanup, and final focused plus broad JVM verification. The remote MCP path is
   verified by explicit `task mcp-remote-smoke`, which packages a deterministic local
   MCP server fixture, runs it in Docker, proves the real `streamable_http` callback
   path directly, then starts local Ollama and proves Spring Boot `ask` can make the

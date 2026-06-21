@@ -31,9 +31,10 @@ Do not add a database or server runtime for this task.
   `OllamaChatModel`.
 - Direct `codegeist.yml` loading can parse the top-level `mcp:` client catalog as a
   YAML object keyed by client id. `stdio` clients use `type`, `command`, and `args`;
-  `streamable_http` clients use `type`, `url`, and optional `endpoint`. MCP callbacks
-  and local read/list/glob/grep/write tools are available to the one-turn chat
-  harness, but Codegeist still does not own an iterative model/tool/model loop.
+  `streamable_http` clients use `type`, `url`, and optional `endpoint`. The completed
+  `T007_03` slice makes MCP callbacks and local read/list/glob/grep/write tools
+  available to the one-turn chat harness, but Codegeist still does not own an
+  iterative model/tool/model loop.
 - `task test` from `app/codegeist/cli` is the implementation verification entrypoint
   and starts the fixed local Ollama container with `OLLAMA_ENTER=false` before
   Maven.
@@ -148,10 +149,11 @@ implementation tests need them.
   session-store contract.
 - `T007_02_add-session-store-and-continue-option.md` - add
   `.codegeist/session.json` and `ask -c/--continue` behavior.
-- `T007_03_add-mcp-and-read-write-tools/task.md` - finish the first MCP and
+- `T007_03_add-mcp-and-read-write-tools/task.md` - completed the first MCP and
   read/list/glob/grep/write tool path through focused child tasks; the minimal
-  `mcp:` config root, local file callbacks, tool-aware chat harness, MCP adapter, and
-  Docker remote MCP smoke are already implemented. Its planning docs include
+  `mcp:` config root, local file callbacks, tool-aware chat harness, MCP adapter,
+  Docker remote MCP smoke, final docs, and broad JVM verification are complete. Its
+  planning docs include
   `mcp-and-readwrite-tools-spec.md`, `mcp-and-readwrite-tools-research.md`,
   `mcp-and-readwrite-tools-implementation-plan.md`, and
   `coding-agent-harness-implementations.md`.

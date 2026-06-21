@@ -2,7 +2,7 @@
 
 Parent: `T007_build-codegeist-runtime-harness`
 
-Status: open
+Status: completed
 
 ## Goal
 
@@ -89,7 +89,9 @@ tools for resumable chats.
   run with bounded recording, MCP resources close with the run, and
   `task mcp-remote-smoke` verifies the real `streamable_http` path against a local
   Docker fixture.
-- Remaining work for the aggregate is final docs plus broad T007_03 verification.
+- Final docs and broad T007_03 verification are complete. Remaining runtime work for
+  the parent T007 harness now moves to `T007_04` patch/edit and shell tools,
+  `T007_05` agent control loop, and `T007_06` terminal TUI.
 
 ## Child Tasks
 
@@ -108,8 +110,8 @@ tools for resumable chats.
 - `tasks/T007_03_05_add-mcp-callback-adapter.md` - completed; added the Spring AI MCP
   dependency, `stdio` and `streamable_http` adapter support, Docker-backed remote MCP
   smoke, and MCP callback integration with the tool run.
-- `tasks/T007_03_06_finalize-tool-docs-and-verification.md` - update current-state
-  docs, refresh task state, and run focused plus broad verification.
+- `tasks/T007_03_06_finalize-tool-docs-and-verification.md` - completed; refreshed
+  current-state docs, task state, memory, and focused plus broad verification.
 
 ## Dependency Order
 
@@ -186,3 +188,13 @@ task test TEST=<focused-t007-03-test-selector>
 task mcp-remote-smoke
 task test
 ```
+
+## Verification
+
+- 2026-06-21: `task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest`
+  passed from `app/codegeist/cli` with 63 tests, 0 failures, 0 errors, and 0 skips.
+- 2026-06-21: `task test` passed from `app/codegeist/cli` with 129 tests, 0
+  failures, 0 errors, and 6 skips.
+- 2026-06-21: `task mcp-remote-smoke` passed from `app/codegeist/cli`; the smoke
+  reported `MCP remote smoke status: passed` and `mcp remote smoke total: 12.056s`.
+- 2026-06-21: `git --no-pager diff --check` passed.
