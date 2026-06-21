@@ -492,7 +492,14 @@
   `opencode-shell-tool-comparison.md` is the focused OpenCode shell evidence. Use
   the T007_04 research before implementing patch/edit and shell tools; the local
   task-specification rule records the same T007_04 implementation boundaries.
-  Remaining children are `T007_04_add-patch-edit-and-shell-tools/task.md`,
+  T007_04 now has focused implementation children for the working-directory guard,
+  exact edit, structured patch, shell, and final documentation/verification slices.
+  The working-directory guard child has a concrete implementation plan at
+  `T007_04_add-patch-edit-and-shell-tools/working-directory-guard-implementation-plan.md`:
+  add a package-private `CodegeistWorkingDirectoryGuard`, wire it into
+  `codegeist_write` before mutation, keep read/list/glob/grep permissive, and shape
+  the guard for later shell cwd checks before `ProcessBuilder.start()`.
+  Remaining parent-level T007 children are `T007_04_add-patch-edit-and-shell-tools/task.md`,
   `T007_05_add-agent-control-loop.md`, `T007_06_add-terminal-tui-over-chat-file.md`,
   and `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
   server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory,

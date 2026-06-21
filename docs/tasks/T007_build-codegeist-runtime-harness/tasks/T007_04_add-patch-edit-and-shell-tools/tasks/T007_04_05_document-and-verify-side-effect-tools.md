@@ -1,0 +1,55 @@
+# T007_04_05 Document And Verify Side Effect Tools
+
+Parent: `T007_04_add-patch-edit-and-shell-tools`
+
+Status: open
+
+## Goal
+
+Close the T007_04 side-effecting tool slice with synchronized architecture docs and
+focused verification.
+
+## Scope
+
+- Update architecture docs to describe the implemented working-directory guard,
+  exact edit tool, structured patch tool, and shell tool behavior.
+- Verify the parent T007_04 acceptance criteria after implementation children are
+  complete.
+- Preserve the documented non-goals: no sandbox claim beyond path/cwd/timeout
+  checks, no permission loop, no TUI patch review, no background shell, no plugin
+  hooks, and no git automation.
+- Update `docs/memory-bank/chat.md` if the completed implementation changes future
+  session context.
+
+## Acceptance Criteria
+
+- `docs/developer/architecture/architecture.md` and focused architecture docs describe
+  current implemented patch/edit and shell behavior.
+- Focused tests for the guard, edit, patch, shell, and session persistence pass.
+- A broad JVM verification command is run or a blocker is documented.
+- Parent `T007_04_add-patch-edit-and-shell-tools/task.md` accurately reflects the
+  implementation state.
+
+## File Targets
+
+- `docs/developer/architecture/architecture.md`
+- `docs/developer/architecture/local-file-tools.md`
+- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/task.md`
+- `docs/memory-bank/chat.md`
+
+## Verification
+
+Run from `app/codegeist/cli` after focused checks:
+
+```bash
+task test
+```
+
+## Source Notes
+
+- Depends on `T007_04_01_add-working-directory-guard.md`,
+  `T007_04_02_add-exact-edit-tool.md`,
+  `T007_04_03_add-structured-patch-tool.md`, and
+  `T007_04_04_add-shell-tool.md`.
+- Keep final docs current-state only; move future permission, TUI, background shell,
+  and plugin plans to later tasks if needed.

@@ -39,6 +39,20 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
   background process persistence.
 - Do not add a patch review TUI unless `T007_06` implements the needed rendering.
 
+## Child Tasks
+
+- `tasks/T007_04_01_add-working-directory-guard.md` - add the shared path/cwd
+  containment guard needed before file mutation or shell process startup.
+- `tasks/T007_04_02_add-exact-edit-tool.md` - add `codegeist_edit` for bounded
+  exact replacements while keeping `codegeist_write` focused on create/overwrite.
+- `tasks/T007_04_03_add-structured-patch-tool.md` - add `codegeist_patch` for
+  parse-before-write structured patches that are not applied through shell.
+- `tasks/T007_04_04_add-shell-tool.md` - add `codegeist_shell` as one bounded local
+  process execution per tool call with cwd, timeout, exit code, stdout, and stderr
+  summaries.
+- `tasks/T007_04_05_document-and-verify-side-effect-tools.md` - update current-state
+  architecture docs and verify the parent acceptance criteria after implementation.
+
 ## Suggested Tests
 
 - Temporary working-directory fixtures for patch/edit.
