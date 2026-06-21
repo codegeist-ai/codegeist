@@ -46,6 +46,21 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 - Timeout and output-bound checks.
 - Session-store persistence checks for side-effecting tool results.
 
+## Source Notes
+
+- `ask-project-question-catalog.md` is the source-backed research question catalog
+  to run before implementing this task. It targets Aider, OpenCode, Pi,
+  mini-SWE-agent, and Spring AI Agent Utils through the local `/ask-project`
+  workflow.
+- `ask-project-research.md` answers that catalog and records the accepted evidence,
+  recommended Codegeist translation, test seams, deferred work, and open decisions
+  for the implementation pass.
+- `opencode-shell-tool-comparison.md` documents the source-backed OpenCode shell
+  tool implementation and compares it with the proposed first Codegeist shell tool
+  shape.
+- Keep future research answers in this directory so the patch/edit and shell-tool
+  implementation handoff stays local to `T007_04`.
+
 Candidate commands from `app/codegeist/cli`:
 
 ```bash

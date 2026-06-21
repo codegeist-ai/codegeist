@@ -1,0 +1,28 @@
+flowchart LR
+    User[Developer in terminal]
+    Host[Host project workspace]
+    PiCLI[pi coding-agent CLI]
+    AgentSession[AgentSession runtime]
+    AgentCore[pi-agent-core Agent and loop]
+    PiAI[pi-ai provider API]
+    Provider[LLM provider or OAuth subscription]
+    Tools[Local read bash edit write grep find ls tools]
+    Extensions[Extensions skills prompts themes packages]
+    Sessions[JSONL session store]
+    TUI[pi-tui interactive renderer]
+    RPC[JSON or RPC integrations]
+    Sandbox[Optional container VM micro-VM or OpenShell]
+
+    User --> PiCLI
+    PiCLI --> AgentSession
+    AgentSession --> AgentCore
+    AgentCore --> PiAI
+    PiAI --> Provider
+    AgentCore --> Tools
+    Tools --> Host
+    AgentSession --> Sessions
+    AgentSession --> Extensions
+    PiCLI --> TUI
+    PiCLI --> RPC
+    Sandbox -. optional isolation .- PiCLI
+    Sandbox -. optional tool routing .- Tools

@@ -1,0 +1,29 @@
+flowchart TB
+    Root[pi monorepo]
+    Scripts[scripts]
+    Workflows[.github workflows]
+    LocalPi[.pi prompts skills extensions]
+
+    subgraph Packages[packages]
+        AI[pi-ai]
+        Agent[pi-agent-core]
+        Coding[pi-coding-agent]
+        TUI[pi-tui]
+    end
+
+    Root --> Packages
+    Root --> Scripts
+    Root --> Workflows
+    Root --> LocalPi
+
+    Coding --> Agent
+    Coding --> AI
+    Coding --> TUI
+    Agent --> AI
+
+    AI --> Providers[Provider transports OAuth model registry]
+    Agent --> Loop[Agent AgentLoop AgentHarness sessions]
+    Coding --> Modes[Interactive print JSON RPC modes]
+    Coding --> Resources[Settings auth resources extensions package manager]
+    Coding --> Builtins[Built-in coding tools]
+    TUI --> Components[Terminal components overlays editor rendering]

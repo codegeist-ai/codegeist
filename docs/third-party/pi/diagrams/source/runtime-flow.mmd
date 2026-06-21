@@ -1,0 +1,32 @@
+sequenceDiagram
+    participant User as User
+    participant CLI as pi CLI main
+    participant Runtime as AgentSessionRuntime
+    participant Session as AgentSession
+    participant Agent as Agent
+    participant Loop as agentLoop
+    participant AI as pi-ai streamSimple
+    participant Provider as LLM provider
+    participant Tool as Built-in or extension tool
+    participant Store as JSONL session store
+    participant UI as TUI JSON or RPC mode
+
+    User->>CLI: pi prompt or interactive input
+    CLI->>Runtime: create cwd-bound services and session
+    Runtime->>Session: bind mode and extensions
+    Session->>Agent: prompt with expanded resources
+    Agent->>Loop: run prompt with current state and queues
+    Loop->>Store: emit user message events through session subscribers
+    Loop->>AI: streamSimple(model, context, options)
+    AI->>Provider: provider request and streaming response
+    Provider-->>AI: text thinking tool-call events
+    AI-->>Loop: assistant event stream
+    Loop-->>UI: message_update events
+    Loop->>Tool: execute validated tool calls
+    Tool-->>Loop: tool result or error
+    Loop->>Store: append assistant and tool-result entries
+    Loop->>Session: turn_end and prepare next turn
+    Session-->>UI: render or forward events
+    Loop-->>Agent: agent_end when no queued work remains
+    Agent-->>Session: settled state
+    Session-->>User: visible response or protocol events

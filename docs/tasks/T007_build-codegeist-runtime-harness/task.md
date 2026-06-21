@@ -157,8 +157,10 @@ implementation tests need them.
   `mcp-and-readwrite-tools-spec.md`, `mcp-and-readwrite-tools-research.md`,
   `mcp-and-readwrite-tools-implementation-plan.md`, and
   `coding-agent-harness-implementations.md`.
-- `T007_04_add-patch-edit-and-shell-tools.md` - add bounded patch/edit and shell
-  tools that persist tool activity into `.codegeist/session.json`.
+- `T007_04_add-patch-edit-and-shell-tools/task.md` - add bounded patch/edit and
+  shell tools that persist tool activity into `.codegeist/session.json`. Its
+  research docs live in the same directory, including
+  `ask-project-question-catalog.md` and `opencode-shell-tool-comparison.md`.
 - `T007_05_add-agent-control-loop.md` - add the first Codegeist-owned
   model/tool/model control loop so tool results can drive model continuation instead
   of relying only on a single provider call with prompt-scoped callbacks.

@@ -203,6 +203,16 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   focused task needs them. Do not add a database, server runtime, remote sync,
   API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or subagents inside T007
   unless the task is explicitly rescoped again.
+- For `T007_04`, use
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/ask-project-research.md`
+  before implementation. Keep `write`, `edit`, `patch`, and `shell` separate;
+  keep existing `codegeist_write` create/overwrite behavior; implement Codegeist-owned
+  side-effecting tools instead of directly exposing Spring AI Agent Utils file or
+  shell tools; reject mutating file paths and shell cwd escapes before side effects;
+  keep shell execution one process per tool call with no stdin, persistent shell,
+  background process, or sandbox claim beyond explicit cwd/path/timeout checks; and
+  keep `ToolSessionPart(tool,status,outputPreview)` unchanged unless focused tests
+  require typed fields.
 - For `T007_06`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md` as
   the source-backed OpenCode TUI element inventory and JLine implementation mapping.

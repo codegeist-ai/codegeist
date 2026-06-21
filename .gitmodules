@@ -19,3 +19,6 @@
 [submodule "docs/third-party/mini-swe-agent/source"]
 	path = docs/third-party/mini-swe-agent/source
 	url = https://github.com/SWE-agent/mini-swe-agent.git
+[submodule "docs/third-party/pi/source"]
+	path = docs/third-party/pi/source
+	url = https://github.com/earendil-works/pi.git

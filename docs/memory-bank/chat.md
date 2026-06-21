@@ -481,19 +481,22 @@
   `T007_03_add-mcp-and-read-write-tools/tasks/`, not as one large runtime change.
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
-  The minimal direct `codegeist.yml` `mcp:` config root from `T007_03` is already
-  implemented and tested. `T007_03_02` is completed with workspace config parsing,
-  active workspace resolution, output-bound helpers, focused tests, and native
-  reflection metadata. The local file callbacks and one-turn tool-aware chat harness
-  are implemented, while MCP callbacks, patch/edit, shell, the Codegeist-owned agent
-  control loop, TUI, and final verification remain open. Remaining children are
-  `T007_03_add-mcp-and-read-write-tools/task.md`,
-  `T007_04_add-patch-edit-and-shell-tools.md`,
-  `T007_05_add-agent-control-loop.md`,
-  `T007_06_add-terminal-tui-over-chat-file.md`, and
-  `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database, server
-  runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, and
-  subagents.
+  `T007_03_add-mcp-and-read-write-tools/task.md` is completed: direct `mcp:` config,
+  workspace resolution, local read/list/glob/grep/write callbacks, the one-turn
+  `ChatHarnessService`, MCP callback integration, Docker-backed remote MCP smoke,
+  and final docs/verification are done. `T007_04_add-patch-edit-and-shell-tools/`
+  is now a task directory. Its `task.md` is the canonical task file,
+  `ask-project-question-catalog.md` is the source-backed question catalog for
+  Aider, OpenCode, Pi, mini-SWE-agent, and Spring AI Agent Utils,
+  `ask-project-research.md` answers that catalog with implementation guidance, and
+  `opencode-shell-tool-comparison.md` is the focused OpenCode shell evidence. Use
+  the T007_04 research before implementing patch/edit and shell tools; the local
+  task-specification rule records the same T007_04 implementation boundaries.
+  Remaining children are `T007_04_add-patch-edit-and-shell-tools/task.md`,
+  `T007_05_add-agent-control-loop.md`, `T007_06_add-terminal-tui-over-chat-file.md`,
+  and `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
+  server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory,
+  and subagents.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.

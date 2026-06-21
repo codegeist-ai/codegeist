@@ -1,0 +1,67 @@
+sequenceDiagram
+    autonumber
+    participant User as User or RPC client
+    participant Main as coding-agent main.ts
+    participant Runtime as AgentSessionRuntime
+    participant Session as AgentSession
+    participant Ext as ExtensionRunner
+    participant Agent as Agent
+    participant AgentLoop as agent-loop.ts
+    participant AI as pi-ai streamSimple
+    participant Provider as LLM provider
+    participant Tool as Built-in or extension tool
+    participant Store as SessionManager JSONL
+    participant Mode as TUI print JSON RPC mode
+
+    User->>Main: Start pi with flags input files stdin or RPC
+    Main->>Main: Parse args select mode resolve cwd/session/resources/model
+    Main->>Runtime: createAgentSessionRuntime(factory, sessionManager)
+    Runtime->>Session: createAgentSessionFromServices(...)
+    Session->>Ext: bind core APIs and load extension runtime
+    Session->>Session: create built-in tools and active system prompt
+    Main->>Mode: Run interactive print JSON or RPC mode
+    Mode->>Session: prompt(text, images, source, streamingBehavior)
+    Session->>Ext: extension command and input handlers
+    Ext-->>Session: handled transformed input or continue
+    Session->>Session: expand skill/template check model/auth compact if needed
+    Session->>Ext: before_agent_start(prompt, images, systemPrompt)
+    Ext-->>Session: optional custom messages and system prompt override
+    Session->>Agent: prompt(AgentMessage[])
+    Agent->>AgentLoop: runAgentLoop(messages, context snapshot, loop config)
+    AgentLoop->>Session: emit user message_start/message_end
+    Session->>Ext: mirror message lifecycle
+    Session->>Mode: forward/render event
+    Session->>Store: appendMessage(user)
+    AgentLoop->>Ext: context handlers through transformContext
+    AgentLoop->>AI: streamSimple(model, context, auth/options)
+    AI->>Ext: before_provider_request payload hook
+    AI->>Provider: Provider streaming request
+    Provider-->>AI: text thinking tool-call events
+    AI-->>AgentLoop: assistant stream events and final result
+    AgentLoop->>Session: message_update events during streaming
+    Session->>Ext: message_update handlers
+    Session->>Mode: render or emit updates
+    AgentLoop->>Session: assistant message_end
+    Session->>Ext: message_end handlers may replace same-role message
+    Session->>Store: appendMessage(assistant)
+    alt Assistant requested tools
+        AgentLoop->>Session: tool_execution_start
+        Session->>Ext: tool_execution_start and tool_call hook
+        Ext-->>Session: allow or block tool call
+        alt Tool allowed
+            AgentLoop->>Tool: execute(toolCallId, args, signal, update)
+            Tool-->>AgentLoop: result or thrown error
+            AgentLoop->>Session: tool_execution_update/end
+            Session->>Ext: tool_result hook
+            Ext-->>Session: optional result mutation
+        else Tool blocked or invalid
+            AgentLoop->>AgentLoop: create error tool result
+        end
+        AgentLoop->>Session: toolResult message_start/message_end
+        Session->>Store: appendMessage(toolResult)
+        AgentLoop->>AI: Next provider call with tool result context
+    end
+    AgentLoop->>Agent: agent_end when no tool calls or queued messages remain
+    Agent->>Session: awaited event listeners settle and run becomes idle
+    Session->>Session: post-run retry compaction or extension-queued continuation
+    Session-->>Mode: final response or protocol events
