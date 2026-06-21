@@ -26,6 +26,10 @@ Test guidance for Codegeist contributors and coding agents.
   `local` when local provider-call methods should run.
 - Hosted provider calls require explicit `remote_free` or `remote_paid` category
   selection. API-key presence alone never enables hosted provider calls.
+- `task mcp-remote-smoke` is the separate Docker-backed MCP `streamable_http` smoke.
+  It builds and runs a local fixture container, checks the direct MCP callback path,
+  then checks the `ask` plus local Ollama path. It is intentionally not part of
+  `task test`.
 - Report command duration when a check is slow, platform-specific, or part of a
   smoke-test workflow.
 - Keep smoke scripts non-interactive and make their status plus duration easy to
@@ -37,13 +41,15 @@ Test guidance for Codegeist contributors and coding agents.
   guidance for config-only, local, `remote_free`, and paid-capable provider checks.
 - `codegeist-test-guidelines.md` - Java, Spring, provider, and task-verification
   test conventions.
-- `smoke-tests.md` - Linux and Windows smoke-test status and duration-output
-  contract.
+- `smoke-tests.md` - Linux, Windows, and MCP remote smoke-test status and
+  duration-output contract.
 
 ## Related Files
 
 - `app/codegeist/cli/Taskfile.yml`
 - `scripts/tests/native-smoke.sh`
+- `scripts/tests/mcp-remote-smoke.sh`
+- `scripts/tests/fixtures/mcp-remote-server/`
 - `scripts/tests/local-linux-smoke.sh`
 - `scripts/tests/qemu-windows-vm.sh`
 - `scripts/tests/qemu-windows-smoke.sh`

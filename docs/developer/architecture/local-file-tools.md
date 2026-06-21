@@ -1,28 +1,32 @@
-# Local File Tools Architecture
+# Tool Callback Architecture
 
 Current-state source-code documentation for the implemented Codegeist local file
-tool callbacks under `ai.codegeist.app.tool`.
+tool callbacks and MCP callback bridge under `ai.codegeist.app.tool` and
+`ai.codegeist.app.mcp`.
 
 ## Scope
 
-This document describes the implemented local read/list/glob/grep/write tool slice.
-It covers callback assembly, workspace path handling, bounded output, persisted tool
-part recording, scoped local tool runs, and focused tests.
+This document describes the implemented local read/list/glob/grep/write tool slice
+plus the lazy MCP callback bridge for `stdio` and `streamable_http` clients. It
+covers callback assembly, workspace path handling, bounded output, persisted tool
+part recording, scoped tool runs, MCP cleanup, and focused tests.
 
-This document does not describe provider-specific model internals, MCP callbacks,
-patch/edit, shell execution, permission prompts, ignored-file filtering,
-session-store write protection, or workspace sandboxing. Those behaviors are deferred
-to later focused tasks. It also does not describe a full OpenCode-style coding-agent
-loop; the current harness only makes local callbacks available to one provider call.
+This document does not describe provider-specific model internals, patch/edit, shell
+execution, permission prompts, ignored-file filtering, session-store write
+protection, or workspace sandboxing. Those behaviors are deferred to later focused
+tasks. It also does not describe a full OpenCode-style coding-agent loop; the current
+harness only makes prompt-scoped callbacks available to one provider call.
 
 ## Current Status
 
-Codegeist now exposes local file tools to `ask` through `ChatHarnessService` and
-`CodegeistToolService`. `CodegeistToolService.openRun(...)` creates one
-`CodegeistToolRun` per prompt turn, asks `CodegeistLocalTools.callbacks(...)` for
-Spring AI `ToolCallback` values, and gives the callbacks one ordered
-`ToolSessionPart` recorder. Each callback returns bounded model-visible text and
-records the same bounded preview as a completed or failed `ToolSessionPart`.
+Codegeist now exposes local file tools and configured MCP tools to `ask` through
+`ChatHarnessService` and `CodegeistToolService`. `CodegeistToolService.openRun(...)`
+creates one closeable `CodegeistToolRun` per prompt turn, asks
+`CodegeistLocalTools.callbacks(...)` for local Spring AI `ToolCallback` values, opens
+`CodegeistMcpAdapter` for configured MCP callbacks, and gives both callback sources
+one ordered `ToolSessionPart` recorder. Each callback returns bounded model-visible
+text and records the same bounded preview as a completed or failed
+`ToolSessionPart`.
 
 Implemented callback names:
 
@@ -33,6 +37,10 @@ Implemented callback names:
 | `codegeist_glob` | `CodegeistGlobFileTool` | Walks under a base directory and matches files or directories with Java NIO glob semantics. |
 | `codegeist_grep` | `CodegeistGrepFileTool` | Searches text files with a Java regular expression and optional include glob. |
 | `codegeist_write` | `CodegeistWriteFileTool` | Creates or overwrites one regular text file using the configured workspace encoding when the parent directory already exists. |
+
+MCP callback names come from the configured MCP server through Spring AI's MCP
+callback provider. Codegeist does not rename them, store their definitions in the
+session store, or add MCP-specific command/status fields to `.codegeist/session.json`.
 
 ## Source Map
 
@@ -52,18 +60,28 @@ Implemented callback names:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistGrepFileTool.java` | Package-private Spring component implementing `codegeist_grep`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistWriteFileTool.java` | Package-private Spring component implementing `codegeist_write`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalToolCallback.java` | Package-private Spring AI `ToolCallback` wrapper that records completed or failed `ToolSessionPart` values and returns bounded preview text. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolService.java` | Spring service that opens prompt-scoped local tool runs and builds the `CodegeistChatExecutionContext` used by provider calls. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolRun.java` | Public per-turn tool scope exposed to `ChatHarnessService`. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/DefaultCodegeistToolRun.java` | Package-private first tool-run implementation for local callbacks and recorded-part snapshots. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/RecordingToolCallback.java` | Package-private wrapper for externally supplied callbacks such as MCP tools. It preserves delegate definition/metadata, bounds output, and records completed or failed `ToolSessionPart` values. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolService.java` | Spring service that opens prompt-scoped local plus MCP tool runs and builds the `CodegeistChatExecutionContext` used by provider calls. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolRun.java` | Public closeable per-turn tool scope exposed to `ChatHarnessService`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/DefaultCodegeistToolRun.java` | Package-private tool-run implementation for callback context, recorded-part snapshots, and MCP cleanup. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolResult.java` | Package-private minimal result record carrying the bounded output preview. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolException.java` | Package-private handled tool failure exception. Callback wrappers convert it into failed tool parts instead of throwing it into the provider call. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/mcp/CodegeistMcpAdapter.java` | Spring service that lazily reads already parsed direct `mcp:` config, opens configured MCP clients, and returns one prompt-scoped `CodegeistMcpRun`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/mcp/CodegeistMcpRun.java` | Public closeable MCP run handle exposing Spring AI callbacks only. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/mcp/DefaultCodegeistMcpRun.java` | Package-private run implementation that exposes prompt callbacks and closes MCP resources in reverse creation order. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/mcp/CodegeistMcpClientFactory.java` | Package-private factory seam used by tests to avoid launching real MCP processes or containers. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/mcp/SpringAiMcpClientFactory.java` | Package-private Spring component that builds real MCP Java SDK transports for `stdio` and `streamable_http`, initializes clients, and discovers Spring AI callbacks. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/mcp/CodegeistMcpClientHandle.java` | Package-private record keeping callbacks and the closeable resource opened for one configured MCP client together. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/session/ToolSessionPart.java` | Persisted session part for bounded completed or failed tool activity. Current fields are `tool`, `status`, and `outputPreview`. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistLocalToolsTest.java` | Contract tests for callback names, schemas, success paths, focused failures, bounded previews, and recorded tool parts. |
-| `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistToolServiceTest.java` | Contract tests for prompt-scoped local tool runs, context callback exposure, recording, and defensive completed-part copies. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistToolServiceTest.java` | Contract tests for prompt-scoped local plus MCP tool runs, context callback exposure, MCP recording, cleanup, and defensive completed-part copies. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/mcp/CodegeistMcpAdapterTest.java` | Unit tests for lazy config handling, fake client mapping, callback exposure, and resource cleanup. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/mcp/CodegeistMcpRemoteSmokeIT.java` | Docker-smoke integration test for the real `streamable_http` transport and deterministic remote callback invocation. |
 
 ## Component Model
 
-`CodegeistToolService`, `CodegeistLocalTools`, `WorkspaceResolver`, `ToolOutputBounds`,
+`CodegeistToolService`, `CodegeistLocalTools`, `CodegeistMcpAdapter`,
+`SpringAiMcpClientFactory`, `WorkspaceResolver`, `ToolOutputBounds`,
 `CodegeistFileToolSupport`, and the five individual file tools are Spring
 components. The file tool classes stay package-private because no other package
 should depend on their concrete types. Each concrete tool owns its callback name in a
@@ -72,9 +90,10 @@ class-local `TOOL_NAME` constant and builds its own `ToolDefinition`.
 semantic meaning to callback order; tools are selected by callback name. File tools
 that need workspace paths get the active workspace through `CodegeistFileToolSupport`
 instead of through the generic local-tool execute contract.
-`CodegeistToolService` is the public service boundary used by the chat harness; it
-keeps callback recording scoped to one prompt turn and returns defensive completed
-part copies through `CodegeistToolRun`.
+`CodegeistMcpAdapter` keeps MCP clients lazy and prompt-scoped. `CodegeistToolService`
+is the public service boundary used by the chat harness; it keeps callback recording
+scoped to one prompt turn, returns defensive completed-part copies through
+`CodegeistToolRun`, and closes the MCP run when the chat turn ends.
 
 ```mermaid
     classDiagram
@@ -84,13 +103,41 @@ part copies through `CodegeistToolRun`.
       <<Service>>
       <<RequiredArgsConstructor>>
       CodegeistLocalTools localTools
-      openRun(Path workingDirectory) CodegeistToolRun
+      ToolOutputBounds outputBounds
+      CodegeistMcpAdapter mcpAdapter
+      openRun(CodegeistConfig config, Path workingDirectory) CodegeistToolRun
     }
 
     class CodegeistToolRun {
       <<interface>>
       executionContext() CodegeistChatExecutionContext
       completedToolParts() List~ToolSessionPart~
+      close() void
+    }
+
+    class CodegeistMcpAdapter {
+      <<Service>>
+      CodegeistMcpClientFactory clientFactory
+      openRun(CodegeistConfig config) CodegeistMcpRun
+    }
+
+    class CodegeistMcpRun {
+      <<interface>>
+      getToolCallbacks() List~ToolCallback~
+      close() void
+    }
+
+    class SpringAiMcpClientFactory {
+      <<Component>>
+      openClient(McpClientConfig clientConfig) CodegeistMcpClientHandle
+    }
+
+    class RecordingToolCallback {
+      <<ToolCallback>>
+      ToolCallback delegate
+      ToolOutputBounds outputBounds
+      Consumer~ToolSessionPart~ recorder
+      call(String toolInput) String
     }
 
     class CodegeistLocalTools {
@@ -182,8 +229,15 @@ part copies through `CodegeistToolRun`.
     }
 
     CodegeistToolService --> CodegeistLocalTools
+    CodegeistToolService --> CodegeistMcpAdapter
+    CodegeistToolService --> RecordingToolCallback
     CodegeistToolService --> CodegeistToolRun
     CodegeistToolRun --> ToolSessionPart
+    CodegeistToolRun --> CodegeistMcpRun
+    CodegeistMcpAdapter --> SpringAiMcpClientFactory
+    CodegeistMcpAdapter --> CodegeistMcpRun
+    SpringAiMcpClientFactory --> CodegeistMcpClientHandle
+    RecordingToolCallback --> ToolSessionPart
     CodegeistLocalTools --> ToolOutputBounds
     CodegeistLocalTools --> CodegeistLocalToolCallback
     CodegeistLocalTool --> CodegeistToolInput
@@ -208,26 +262,148 @@ part copies through `CodegeistToolRun`.
 
 `CodegeistToolService.openRun(...)` is the chat-harness entrypoint. Inside that
 scope, `CodegeistLocalTools.callbacks(...)` remains the local callback assembly seam
-and receives the run's ordered `ToolSessionPart` recorder.
+and receives the run's ordered `ToolSessionPart` recorder. The same scope opens
+`CodegeistMcpAdapter` with the active `CodegeistConfig`, wraps returned MCP callbacks
+with `RecordingToolCallback`, and stores the MCP run for cleanup.
 
 ```mermaid
 sequenceDiagram
     participant Caller as CodegeistToolService
     participant LocalTools as CodegeistLocalTools
+    participant Adapter as CodegeistMcpAdapter
+    participant McpRun as CodegeistMcpRun
     participant Tool as Injected CodegeistLocalTool
     participant Callback as CodegeistLocalToolCallback
+    participant Recording as RecordingToolCallback
 
     Caller->>LocalTools: callbacks(recorder)
     LocalTools->>Tool: iterate injected CodegeistLocalTool components
     LocalTools->>Callback: wrap definition + execute(input)
     LocalTools-->>Caller: one ToolCallback per discovered tool
+    Caller->>Adapter: openRun(config)
+    Adapter-->>Caller: CodegeistMcpRun
+    Caller->>McpRun: getToolCallbacks()
+    Caller->>Recording: wrap each MCP callback with recorder
 ```
 
 The returned callbacks are selected by their `ToolDefinition.name()` values. Their
 relative list order is not part of the runtime contract.
 
-Every callback uses `ToolMetadata.builder().returnDirect(false).build()`. The current
-tools are meant to be model-callable, not immediate command-output shortcuts.
+Every local callback uses `ToolMetadata.builder().returnDirect(false).build()`. MCP
+callback metadata is supplied by Spring AI and preserved by `RecordingToolCallback`.
+The current tools are meant to be model-callable, not immediate command-output
+shortcuts.
+
+## End-To-End MCP Tool Invocation Flow
+
+This is the current path from the first provider call to the point where the MCP Java
+SDK client invokes the remote or stdio MCP server. Codegeist does not call MCP server
+tools directly from the chat harness. It assembles Spring AI callbacks, gives those
+callbacks to the provider adapter, and then Spring AI's MCP callback delegates the
+selected tool invocation to the `McpSyncClient` opened for the configured client.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Harness as ChatHarnessService
+    participant ToolService as CodegeistToolService
+    participant Adapter as CodegeistMcpAdapter
+    participant Factory as SpringAiMcpClientFactory
+    participant Client as McpSyncClient
+    participant Provider as SyncMcpToolCallbackProvider
+    participant McpRun as CodegeistMcpRun
+    participant Run as CodegeistToolRun
+    participant ChatService as CodegeistChatService
+    participant Model as CodegeistChatModel
+    participant SpringModel as Spring AI ChatModel
+    participant LLM as Provider LLM
+    participant Recording as RecordingToolCallback
+    participant McpCallback as SyncMcpToolCallback
+    participant Server as MCP server
+    participant Store as SessionStoreService
+
+    Harness->>ToolService: openRun(config, workingDirectory)
+    ToolService->>Adapter: openRun(config)
+    Adapter->>Factory: openClient(McpClientConfig)
+    Factory->>Client: create transport and initialize()
+    Factory->>Provider: syncToolCallbacks(List.of(client))
+    Provider->>Client: listTools()
+    Provider-->>Factory: ToolCallback values wrapping client tools
+    Factory-->>Adapter: CodegeistMcpClientHandle(callbacks, client)
+    Adapter-->>ToolService: CodegeistMcpRun
+    ToolService->>McpRun: getToolCallbacks()
+    ToolService->>ToolService: wrap callbacks in RecordingToolCallback
+    ToolService-->>Harness: CodegeistToolRun
+
+    Harness->>Run: executionContext()
+    Harness->>ChatService: chat(providerConfig, request, context)
+    ChatService->>ChatService: providerConfig.createChatModel()
+    ChatService->>Model: call(request, context)
+    Model->>SpringModel: delegate.call(Prompt with context.toolCallbackArray())
+    SpringModel->>LLM: first provider request with tool definitions
+    LLM-->>SpringModel: tool-call request with tool name and JSON arguments
+    SpringModel->>Recording: call(toolInputJson)
+    Recording->>McpCallback: call(toolInputJson)
+    McpCallback->>McpCallback: parse JSON and build CallToolRequest
+    McpCallback->>Client: callTool(request)
+    Client->>Server: invoke MCP tool over stdio or streamable_http
+    Server-->>Client: CallToolResult
+    Client-->>McpCallback: CallToolResult
+    McpCallback-->>Recording: JSON string for MCP content
+    Recording->>Recording: bound output and record ToolSessionPart
+    Recording-->>SpringModel: bounded output preview
+    SpringModel-->>Model: ChatResponse
+    Model-->>ChatService: ChatResponse
+    ChatService-->>Harness: CodegeistChatResponse
+    Harness->>Run: completedToolParts()
+    Harness->>Store: saveExchangeToCurrentSession(prompt, response, toolParts)
+    Harness->>Run: close()
+    Run->>McpRun: close()
+    McpRun->>Client: close()
+```
+
+The setup half of the flow is lazy and prompt-scoped:
+
+| Step | Owner | Current behavior |
+| --- | --- | --- |
+| MCP config lookup | `CodegeistMcpAdapter` | Reads the already parsed direct `mcp:` root when a chat turn opens tools. Config parsing, `--show-config`, and Spring startup do not open MCP transports. |
+| Transport creation | `SpringAiMcpClientFactory` | Creates either `StdioClientTransport` from `command` plus `args` or `HttpClientStreamableHttpTransport` from base `url` plus optional `endpoint`. |
+| MCP initialization | `McpSyncClient` | `initialize()` runs before callbacks are exposed. A failure closes the client immediately and propagates. |
+| Tool discovery | `SyncMcpToolCallbackProvider` | Calls `listTools()` on the initialized client and maps each MCP tool to a Spring AI `SyncMcpToolCallback`. |
+| Codegeist wrapping | `CodegeistToolService` | Wraps each MCP callback in `RecordingToolCallback` so output bounds and session-part recording are consistent with local tools. |
+
+The execute half starts only if the model selects one of those callback names during
+the provider call. In the current Ollama adapter, `OllamaChatModel.call(...)` builds
+`OllamaChatOptions` with `context.toolCallbackArray()` and then delegates to Spring
+AI. If Spring AI receives a tool-call request from the provider, it calls the selected
+`ToolCallback`. For MCP tools, the selected callback chain is:
+
+```text
+RecordingToolCallback.call(toolInputJson)
+  -> SyncMcpToolCallback.call(toolInputJson)
+  -> McpSyncClient.callTool(CallToolRequest)
+  -> configured MCP server
+```
+
+`SyncMcpToolCallback` is Spring AI's MCP bridge. It parses the model-supplied JSON
+arguments into a map, builds an MCP `CallToolRequest` with the original MCP tool name,
+and invokes `McpSyncClient.callTool(request)`. It returns the MCP content as a JSON
+string. If the SDK call throws or the MCP response is marked as an error, Spring AI
+raises a tool execution exception; `RecordingToolCallback` catches runtime failures,
+returns a bounded error preview to the model, and records a failed `ToolSessionPart`.
+
+Important current constraints:
+
+- Codegeist currently owns only one non-streaming `ChatHarnessService.ask(...)` turn.
+- Codegeist does not yet implement an OpenCode-style model/tool/model controller or
+  explicit multi-step agent loop.
+- Any provider-side tool-calling behavior inside that one `delegate.call(...)` is
+  managed by Spring AI and the selected provider adapter.
+- The session store records bounded tool activity only after the provider call returns;
+  it does not persist raw MCP arguments, MCP tool definitions, transport config,
+  remote server status, or full MCP results.
+- MCP clients are closed with the prompt-scoped `CodegeistToolRun` after the chat
+  turn, so callbacks must not be reused outside that scope.
 
 ## Execution And Recording Flow
 
@@ -263,6 +439,34 @@ sequenceDiagram
     end
 ```
 
+`RecordingToolCallback` is the equivalent boundary for MCP callbacks that come from
+Spring AI rather than Codegeist-owned local tool classes. It preserves the delegate
+tool definition and metadata, records bounded success output, and converts delegate
+runtime failures into bounded failed tool parts so a remote tool failure can be shown
+to the model without tearing down the whole provider call.
+
+```mermaid
+sequenceDiagram
+    participant Model as Spring AI model/tool caller
+    participant Recording as RecordingToolCallback
+    participant Delegate as MCP ToolCallback
+    participant Recorder as ToolSessionPart recorder
+
+    Model->>Recording: call(toolInputJson)
+    Recording->>Delegate: call(toolInputJson)
+    Delegate-->>Recording: raw output
+    Recording->>Recording: outputBounds.preview(output)
+    Recording->>Recorder: completed ToolSessionPart
+    Recording-->>Model: bounded output preview
+
+    alt delegate runtime failure
+        Delegate--xRecording: RuntimeException
+        Recording->>Recording: outputBounds.errorPreview(message)
+        Recording->>Recorder: failed ToolSessionPart
+        Recording-->>Model: bounded failure preview
+    end
+```
+
 The persisted `ToolSessionPart` currently stores only:
 
 | Field | Source |
@@ -272,8 +476,9 @@ The persisted `ToolSessionPart` currently stores only:
 | `status` | `completed` or `failed`. |
 | `outputPreview` | The same bounded string returned to the model. |
 
-The local file tool slice does not persist raw input, full file content, affected
-paths, timing, tool metadata, or server state.
+The tool callback slice does not persist raw input, full file content, affected
+paths, timing, tool metadata, MCP command/args, remote server status, resources,
+prompts, or server state.
 
 ## Workspace And Path Semantics
 
@@ -416,6 +621,8 @@ All tool outputs are bounded before they reach the model or session store.
 `CodegeistLocalToolCallback` calls `outputBounds.preview(...)` on successful
 `CodegeistToolResult.outputPreview()` before recording and returning it. Failed tool
 messages are normalized through `outputBounds.errorPreview(...)`.
+`RecordingToolCallback` applies the same preview and error bounds to MCP delegate
+callbacks before model-visible output or persisted session parts are produced.
 
 ## Error Behavior
 
@@ -440,6 +647,12 @@ Unexpected programming errors are intentionally not caught by
 surface through the provider call path so tests expose programming errors instead of
 persisting misleading failed tool parts.
 
+MCP callbacks are externally supplied, so `RecordingToolCallback` catches delegate
+`RuntimeException` values, records a failed `ToolSessionPart`, and returns bounded
+failure text to the model. Startup, validation, and client-initialization failures
+still happen before the provider call when `CodegeistMcpAdapter.openRun(...)` opens
+the prompt-scoped MCP run.
+
 ## Test Coverage
 
 `CodegeistLocalToolsTest` is the main contract test. It uses JUnit `@TempDir`, a
@@ -463,17 +676,33 @@ Related tests:
 
 - `WorkspaceResolverTest` proves active workspace resolution rules.
 - `ToolOutputBoundsTest` proves output, line, result, read, and error bounds.
-- `CodegeistToolServiceTest` proves scoped local callback exposure, recording, and
-  defensive completed-part copies.
+- `CodegeistMcpAdapterTest` proves lazy absent/empty config behavior, fake `stdio`
+  and `streamable_http` client mapping, callback exposure, and resource cleanup.
+- `CodegeistToolServiceTest` proves scoped local callback exposure, configured MCP
+  callback exposure, MCP success/failure recording, MCP run cleanup, and defensive
+  completed-part copies.
 - `SessionStoreServiceTest` proves `ToolSessionPart` JSON round-trip and assistant
   message ordering when tool parts are saved with a chat exchange.
 - `ChatHarnessServiceTest` proves recorded local tool parts are saved before the
-  assistant text when a chat turn uses tool callbacks.
+  assistant text when a chat turn uses tool callbacks and that the tool run closes
+  after the prompt turn.
+- `CodegeistMcpRemoteSmokeIT`, run only through `task mcp-remote-smoke`, proves the
+  real `streamable_http` MCP callback path against a local Docker fixture.
+- `AskCommandsMcpRemoteSmokeIT`, also run only through `task mcp-remote-smoke`, proves
+  the Spring Boot `ask` path can pass MCP callbacks to local Ollama and persist the
+  completed remote MCP `ToolSessionPart`.
 
 Recommended focused verification after changing this subsystem:
 
 ```bash
-task test TEST=CodegeistLocalToolsTest,CodegeistToolServiceTest,WorkspaceResolverTest,ToolOutputBoundsTest,SessionStoreServiceTest,ChatHarnessServiceTest
+task test TEST=CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,WorkspaceResolverTest,ToolOutputBoundsTest,SessionStoreServiceTest,ChatHarnessServiceTest
+```
+
+Run the Docker-backed remote MCP smoke separately when changing real MCP transport
+code or the fixture:
+
+```bash
+task mcp-remote-smoke
 ```
 
 Run the broad JVM suite when the change touches Spring wiring, session persistence,
@@ -557,8 +786,14 @@ final class CodegeistStatFileTool implements CodegeistLocalTool {
 
 ## Sharp Edges
 
-- The local file tools are implemented source code, but provider-backed `ask` does not
-  use them yet. The tool-aware chat harness is a later T007_03 child task.
+- Provider-backed `ask` receives local and MCP callbacks for one prompt turn, but
+  Codegeist still does not own an iterative model/tool/model controller.
+- MCP clients are opened only inside `CodegeistMcpAdapter.openRun(...)`; configured
+  `stdio` clients may start processes and configured `streamable_http` clients may
+  connect to their configured local or remote URL only when a tool run opens.
+- `task mcp-remote-smoke` uses a local Docker fixture and local Ollama, then stays
+  outside `task test` so routine JVM tests do not build/run a container or depend on
+  model tool-selection behavior.
 - Workspace resolution is intentionally permissive. Do not assume it protects the
   repository, home directory, session store, or symlink targets.
 - `ObjectMapper` input parsing ignores unknown JSON fields. The Spring AI schema says

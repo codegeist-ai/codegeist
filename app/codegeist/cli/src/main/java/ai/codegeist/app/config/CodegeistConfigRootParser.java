@@ -23,9 +23,9 @@ import org.springframework.util.StringUtils;
  * user-chosen ids, while their runtime payloads are list-backed
  * {@link CodegeistConfigKeyedListElement} instances. {@code workspace:} is a single
  * object root and therefore maps directly into a {@link WorkspaceConfig}. Provider
- * entries additionally dispatch on their inner {@code type} field because the YAML
- * key is only an id, not the implementation selector. MCP entries use the YAML key as
- * {@link McpClientConfig#getId()} and keep {@code type} as the transport kind.
+ * and MCP entries both dispatch on their inner {@code type} field because the YAML
+ * key is only an id, not the implementation or transport selector. MCP entries also
+ * copy the YAML key into {@link McpClientConfig#getId()}.
  *
  * <p>Adding a new top-level direct YAML root should start here: choose whether the
  * root is a single object, a keyed list with key-copy semantics, or a typed keyed
@@ -39,11 +39,13 @@ public class CodegeistConfigRootParser {
     static final String UNSUPPORTED_ROOT_ELEMENT_PREFIX = "Unsupported Codegeist config root element: ";
     static final String WORKSPACE_MAPPING_ERROR_PREFIX = "Invalid workspace root element";
 
-    private static final String TYPE_FIELD = "type";
-    // Keep provider dispatch explicit so native images do not need runtime scanning.
+    // Keep typed dispatch explicit so native images do not need runtime scanning.
     private static final Map<String, Class<? extends ProviderConfig>> PROVIDER_CLASSES = Map.of(
             OllamaProviderConfig.PROVIDER_TYPE, OllamaProviderConfig.class,
             OpenAiProviderConfig.PROVIDER_TYPE, OpenAiProviderConfig.class);
+    private static final Map<McpClientConfig.Type, Class<? extends McpClientConfig>> MCP_CLIENT_CLASSES = Map.of(
+            McpClientConfig.Type.stdio, StdioMcpClientConfig.class,
+            McpClientConfig.Type.streamable_http, StreamableHttpMcpClientConfig.class);
 
     private final CodegeistConfigYamlMapper yamlMapper;
 
@@ -89,8 +91,8 @@ public class CodegeistConfigRootParser {
      *
      * <p>The MCP YAML key is client identity, so the parsed client receives it through
      * {@link McpClientConfig#setId(String)} after Jackson maps the entry body. The
-     * inner {@code type} field remains a transport value and is not used for Java class
-     * dispatch in this slice.
+     * inner {@code type} field selects the concrete transport config class before
+     * mapping.
      */
     private McpClientsRootElement parseMcpClients(JsonNode source) {
         McpClientsConfig config = new McpClientsConfig();
@@ -165,14 +167,15 @@ public class CodegeistConfigRootParser {
 
     /**
      * Parses one MCP client entry and copies the YAML key into {@link McpClientConfig}.
+     *
+     * <p>MCP transport types dispatch to concrete config classes so transport-specific
+     * required fields can use direct Bean Validation constraints instead of conditional
+     * validation methods on one wide config class.
      */
     private McpClientConfig parseMcpClient(String id, JsonNode source) {
-        if (source == null || source.isNull()) {
-            return null;
-        }
-
-        McpClientConfig client = yamlMapper.convertValue(
-                requireEntryObject(source, McpClientsRootElement.ROOT_NAME), McpClientConfig.class);
+        ObjectNode objectNode = requireEntryObject(source, McpClientsRootElement.ROOT_NAME);
+        McpClientConfig.Type type = mcpClientType(requiredType(McpClientsRootElement.ROOT_NAME, objectNode));
+        McpClientConfig client = yamlMapper.convertValue(objectNode, mcpClientClass(type));
         client.setId(id);
         return client;
     }
@@ -186,7 +189,7 @@ public class CodegeistConfigRootParser {
      * misspell the dispatch field.
      */
     private String requiredType(String rootName, ObjectNode source) {
-        JsonNode typeNode = source.get(TYPE_FIELD);
+        JsonNode typeNode = source.get(CodegeistTypedConfigElement.TYPE_PROPERTY);
         if (typeNode == null || !typeNode.isTextual() || !StringUtils.hasText(typeNode.asText())) {
             throw new CodegeistConfigValidationException(rootName + " entry type is required");
         }
@@ -229,5 +232,25 @@ public class CodegeistConfigRootParser {
                     "Unsupported " + ProvidersRootElement.ROOT_NAME + " entry type: " + type);
         }
         return providerClass;
+    }
+
+    private McpClientConfig.Type mcpClientType(String type) {
+        try {
+            return McpClientConfig.Type.valueOf(type);
+        }
+        catch (IllegalArgumentException exception) {
+            throw new CodegeistConfigValidationException(
+                    "Unsupported " + McpClientsRootElement.ROOT_NAME + " entry type: " + type,
+                    exception);
+        }
+    }
+
+    private Class<? extends McpClientConfig> mcpClientClass(McpClientConfig.Type type) {
+        Class<? extends McpClientConfig> clientClass = MCP_CLIENT_CLASSES.get(type);
+        if (clientClass == null) {
+            throw new CodegeistConfigValidationException(
+                    "Unsupported " + McpClientsRootElement.ROOT_NAME + " entry type: " + type);
+        }
+        return clientClass;
     }
 }

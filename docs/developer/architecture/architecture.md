@@ -29,28 +29,28 @@ docs:
 - `provider-configuration.md` - provider configuration source map, Spring binding,
   direct YAML loading, validation flow, tests, and sharp edges.
 - `local-file-tools.md` - local read/list/glob/grep/write callback architecture,
-  source map, tool contracts, recording behavior, and extension guidance.
+  MCP callback bridge, source map, recording behavior, and extension guidance.
 
 ## Current System State
 
 Codegeist currently contains one Java/Spring Boot CLI application under
 `app/codegeist/cli`. Implemented runtime behavior is Spring Boot application
 startup, typed access-only provider config loading and validation, trusted local
-SpEL preprocessing for explicit `codegeist.yml` files, direct workspace config
-loading and active workspace resolution, provider-neutral one-turn chat execution
-through a narrow `ChatHarnessService`, a lazily created Codegeist chat model that
-wraps Spring AI Ollama and uses the runtime model name from the request, a Spring
-Shell `--version` command that prints the build version, and a Spring Shell
+SpEL preprocessing for explicit `codegeist.yml` files, direct workspace and MCP
+config loading, active workspace resolution, provider-neutral one-turn chat
+execution through a narrow `ChatHarnessService`, a lazily created Codegeist chat
+model that wraps Spring AI Ollama and uses the runtime model name from the request,
+a Spring Shell `--version` command that prints the build version, and a Spring Shell
 `--show-config` command that prints the current Codegeist config as direct
 `codegeist.yml` YAML with configured values unchanged. A Spring Shell `ask` command
 sends one prompt to the first configured provider with that provider config's
-default runtime model; with `-c/--continue`, it appends the prompt, bounded local
-tool activity, and provider response to the newest session in
+default runtime model; with `-c/--continue`, it appends the prompt, bounded local or
+MCP tool activity, and provider response to the newest session in
 `.codegeist/session.json`. Codegeist-owned local read/list/glob/grep/write file
-callbacks now reach provider calls through prompt-scoped Spring AI tool callbacks.
-This is not yet an OpenCode-style coding-agent loop: Codegeist does not own a
-repeated model/tool/model controller, streaming event loop, permission loop, or
-multi-step agent driver.
+callbacks and lazily opened MCP callbacks now reach provider calls through
+prompt-scoped Spring AI tool callbacks. This is not yet an OpenCode-style
+coding-agent loop: Codegeist does not own a repeated model/tool/model controller,
+streaming event loop, permission loop, or multi-step agent driver.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -70,12 +70,12 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | Spring Shell | BOM `4.0.2`, dependency `spring-shell-starter` |
 | Jackson | `jackson-databind` plus `jackson-dataformat-yaml` for direct YAML-to-POJO config mapping |
 | Lombok | `1.18.46`, configured as an explicit annotation processor for Java 25 |
-| Spring AI | BOM `2.0.0-M6` imported for dependency management; `spring-ai-ollama` is present for programmatic local Ollama `ChatModel` creation |
+| Spring AI | BOM `2.0.0-M6` imported for dependency management; `spring-ai-ollama` is present for programmatic local Ollama `ChatModel` creation, and `spring-ai-starter-mcp-client` is present for prompt-scoped MCP callbacks |
 | Spring AI Agent Utils | BOM and core artifact `0.7.0` |
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace config/resolver/output-bound/local-file-tool tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, native version/config/ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace config/resolver/output-bound/local-file-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama provider dependency is
 used programmatically instead of through global Spring AI auto-configuration.
@@ -92,6 +92,7 @@ app/codegeist/cli/
   Taskfile.yml
   src/...
 scripts/tests/
+  mcp-remote-smoke.sh
   native-smoke.sh
   local-linux-smoke.sh
   qemu-windows-vm.sh
@@ -101,6 +102,11 @@ scripts/tests/
   windows-qemu/
     autounattend.xml
     setup.ps1
+  fixtures/
+    mcp-remote-server/
+      Dockerfile
+      pom.xml
+      src/...
 ```
 
 Implemented Java package:
@@ -110,8 +116,9 @@ Implemented Java package:
 | `ai.codegeist.app` | Spring Boot application entrypoint, version command, and shared command exception mapping |
 | `ai.codegeist.app.chat` | Provider-neutral one-turn chat harness, runtime chat execution context, chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, the local Ollama chat model, and the `ask` Spring Shell command with optional session continuation |
 | `ai.codegeist.app.config` | Top-level config root models, the central root parser, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
+| `ai.codegeist.app.mcp` | Lazy MCP adapter, prompt-scoped MCP run handle, Spring AI/MCP client factory, and closeable client handle for configured `stdio` and `streamable_http` clients |
 | `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
-| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, and Codegeist-owned local read/list/glob/grep/write Spring AI callbacks that record bounded tool parts. MCP callbacks are not implemented yet. |
+| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
@@ -164,8 +171,13 @@ Current behavior:
   object shape.
 - `CodegeistConfigElement` is the abstract base class for every config payload shape,
   including single objects, typed entries, and list-backed keyed objects.
-  `CodegeistTypedConfigElement` owns the shared validated `type` field and Lombok
-  getter/setter for entries that have a dispatch or transport type.
+  `CodegeistTypedConfigElement<T>` owns the shared required nested YAML `type`
+  discriminator, the central `type` property constant, and Lombok getter/setter for
+  entries that have a dispatch or transport type. Provider entries use `T = String`
+  as pre-mapping dispatch input, then expose runtime type through concrete constants.
+  MCP client entries use `T = McpClientConfig.Type`; `CodegeistConfigRootParser`
+  dispatches them to concrete `StdioMcpClientConfig` or
+  `StreamableHttpMcpClientConfig` classes.
   `CodegeistConfigKeyedListElement<T>` owns the shared
   list state and transient YAML-object rendering for roots such as `provider:` and
   `mcp:`.
@@ -229,7 +241,8 @@ Current behavior:
   roots. It receives `CodegeistConfigYamlMapper`, owns unsupported-root errors, and
   now uses explicit parser methods for `provider:`, `mcp:`, and `workspace:` instead
   of generic root-shape helpers. Provider entries dispatch through a compact explicit
-  registry; MCP entries copy the YAML key into `McpClientConfig.id`.
+  registry; MCP entries dispatch through an explicit transport config registry and
+  copy the YAML key into `McpClientConfig.id`.
 - `CodegeistConfigService` receives the root parser, config mapper, SpEL evaluator,
   validator, and command output service as final collaborators
   through Lombok `@RequiredArgsConstructor`. Its `configPath` remains a non-final
@@ -300,12 +313,31 @@ Current behavior:
   `CodegeistLocalToolCallback` is the
   package-local wrapper that translates handled local tool failures into bounded
   failed tool parts.
+- `CodegeistMcpAdapter` is a Spring `@Service` under `ai.codegeist.app.mcp`. It is
+  intentionally lazy: config parsing, transport-type validation, Spring context
+  startup, and `--show-config` do not open MCP clients. `openRun(CodegeistConfig)`
+  reads the already parsed optional direct `mcp:` root, opens configured clients
+  through `SpringAiMcpClientFactory`, and returns one prompt-scoped
+  `CodegeistMcpRun`.
+  Supported types are currently `stdio`, using `command` and `args`, and
+  `streamable_http`, using base server `url` plus optional MCP path `endpoint`. When
+  `endpoint` is absent or blank, the factory skips the builder setter and lets the
+  MCP Java SDK use its own endpoint default.
+  The production factory localizes Spring AI MCP and MCP Java SDK imports,
+  initializes each `McpSyncClient`, discovers Spring AI `ToolCallback` values through
+  `SyncMcpToolCallbackProvider`, and closes each client after the chat turn. SSE,
+  OAuth, public timeout config, resources, prompts, server discovery, and server
+  management are not implemented. The detailed first-provider-call to
+  `McpSyncClient.callTool(...)` sequence is documented in
+  `docs/developer/architecture/local-file-tools.md`.
 - `CodegeistToolService` is a Spring `@Service` under `ai.codegeist.app.tool`. It
   opens one `CodegeistToolRun` per chat turn, asks `CodegeistLocalTools` for local
-  callbacks, and shares one ordered recorder list with those callbacks. The returned
-  `DefaultCodegeistToolRun` exposes a `CodegeistChatExecutionContext` and defensive
-  copies of recorded `ToolSessionPart` values. It is intentionally not closeable
-  until the MCP slice adds real resources to clean up.
+  callbacks, opens `CodegeistMcpAdapter` with the active `CodegeistConfig`, wraps MCP
+  callbacks with `RecordingToolCallback`, and shares one ordered recorder list with
+  both callback sources. The returned `DefaultCodegeistToolRun` exposes a
+  `CodegeistChatExecutionContext`, returns defensive copies of recorded
+  `ToolSessionPart` values, and closes the prompt-scoped `CodegeistMcpRun` when the
+  harness leaves the turn scope.
 - `--show-config` is implemented as a Spring Shell command in
   `CodegeistConfigService`. The service resolves the current global config policy,
   renders YAML, and writes only that YAML through `CommandOutputService`.
@@ -328,8 +360,9 @@ Current behavior:
   to `ChatHarnessService`, and writes only the returned model response to stdout
   through `CommandOutputService`. The harness selects the first configured provider
   through optional `CodegeistConfig.defaultProvider()`, fails at the command boundary
-  when none exists, uses `ProviderConfig.defaultModel()`, opens local tool callbacks,
-  calls `CodegeistChatService`, and saves the turn through `SessionStoreService`.
+  when none exists, uses `ProviderConfig.defaultModel()`, opens local and MCP tool
+  callbacks, calls `CodegeistChatService`, and saves the turn through
+  `SessionStoreService`.
   Without `-c/--continue`, the service creates a new session. With `-c/--continue`,
   it appends to the newest existing session when one exists, creates a session for
   missing or empty stores, and refuses corrupt JSON stores instead of overwriting
@@ -343,9 +376,9 @@ Current behavior:
   part types are `TextSessionPart`, `CompactionSessionPart`, and the additive
   `ToolSessionPart` for bounded completed or failed tool activity. Tool parts persist
   only the tool name, nested `ToolSessionPart.ToolSessionPartStatus`, and bounded
-  `outputPreview`. Local file callbacks can now record these bounded parts; MCP
-  callbacks, provider tool wiring, patch/edit, shell, reasoning, and step parts are
-  deferred until focused tool tasks add the matching execution paths. `SessionStore`
+  `outputPreview`. Local file callbacks and wrapped MCP callbacks can now record
+  these bounded parts; patch/edit, shell, reasoning, and step parts are deferred
+  until focused tool tasks add the matching execution paths. `SessionStore`
   is a Lombok getter/setter/builder class with a default empty session list;
   session, message, and existing part model entries stay records or Jackson-bound
   classes as implemented. The JSON mapper registers Java time support, emits ISO
@@ -366,10 +399,9 @@ Current behavior:
 - There is no implemented provider-facing model-context reconstruction from stored
   sessions yet. Continuing a session currently persists the new turn but still sends
   the current prompt as a one-turn `CodegeistChatRequest`.
-- There are no implemented streaming output, provider flags, model flags, provider
-  chat tool wiring, MCP callbacks, permission prompts, workspace or file-access
-  policies beyond active workspace resolution, server endpoints, Vaadin views, PF4J
-  plugins, or JBang execution paths.
+- There are no implemented streaming output, provider flags, model flags, permission
+  prompts, workspace or file-access policies beyond active workspace resolution,
+  server endpoints, Vaadin views, PF4J plugins, or JBang execution paths.
 
 ## Test Architecture
 
@@ -476,8 +508,23 @@ workspace, return bounded model-visible text, record the same bounded preview in
 paths without provider calls.
 
 `CodegeistToolServiceTest` proves one prompt-scoped tool run exposes local callbacks
-through `CodegeistChatExecutionContext`, records completed tool parts in call order,
-and returns defensive copies of completed tool parts.
+through `CodegeistChatExecutionContext`, includes configured MCP callbacks, records
+completed or failed MCP tool parts through `RecordingToolCallback`, closes the
+prompt-scoped MCP run, and returns defensive copies of completed tool parts.
+
+`CodegeistMcpAdapterTest` uses hand-written fakes to prove absent and empty MCP
+config do not open clients, `stdio` and `streamable_http` configs map into the
+client-creation seam, callbacks are exposed, and resources close with the MCP run.
+
+`CodegeistMcpRemoteSmokeIT` is only driven by `task mcp-remote-smoke`. It connects to
+the local Docker fixture through the real `streamable_http` transport, discovers the
+deterministic `remote_echo` MCP callback, and calls it directly without an LLM
+provider call.
+
+`AskCommandsMcpRemoteSmokeIT` is also driven only by `task mcp-remote-smoke`. It starts
+the Spring Boot `ask` command with direct `provider.ollama` and `mcp.remote-smoke`
+config, lets local Ollama select the remote MCP tool, and asserts that the session
+store contains a completed `ToolSessionPart` for `remote_echo`.
 
 ```mermaid
 sequenceDiagram
@@ -541,6 +588,13 @@ the smoke log to `target/smoke-test/codegeist.log`.
 verifies the packaged Linux native archive `--version`, `--show-config`, and `ask`
 output when `native-image` is available.
 
+`scripts/tests/mcp-remote-smoke.sh` packages the local MCP fixture jar, builds the
+`codegeist-mcp-remote-smoke:local` Docker image, starts a temporary container on a
+localhost-only port, runs `CodegeistMcpRemoteSmokeIT` with the discovered URL, starts
+local Ollama, runs `AskCommandsMcpRemoteSmokeIT` with the same URL, and removes the
+container through a trap. The fixture source lives under
+`scripts/tests/fixtures/mcp-remote-server/`; its Maven `target/` output is ignored.
+
 `scripts/tests/qemu-windows-vm.sh` is the host-side Windows VM automation
 entrypoint. It downloads the official Windows Server Evaluation ISO when no local
 ISO exists, creates or starts the local Windows QEMU VM, generates answer media,
@@ -566,6 +620,7 @@ download or VM prerequisites.
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
 | `task native-smoke` | Builds native, then sources `scripts/tests/native-smoke.sh` and calls `run-native-smoke-tests` | Linux native archive unpacks in a temp directory, packaged `--version` output equals generated build version, packaged `--show-config` output equals `{}` for the empty default config, packaged `ask` reaches host Ollama, and native smoke log file works |
 | `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.sh` | Local Linux jar smoke, Maven tests, real Ollama-backed jar `ask`, and native smoke when native-image is available |
+| `task mcp-remote-smoke` | Runs `scripts/tests/mcp-remote-smoke.sh` | Docker-backed local MCP server fixture, real `streamable_http` MCP callback discovery, direct deterministic callback invocation, local Ollama-backed `ask` invocation of the remote MCP tool, session `ToolSessionPart` persistence, and container cleanup outside the default test path |
 | `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, starts host Ollama through `task ollama-start`, and runs Windows jar/native smoke over SSH |
 | `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.sh` | Local Linux and Windows smoke suite; both platforms must pass by default |
 | `task ollama-start` | Starts or reuses the local `ollama/ollama` container, waits for `/api/version`, and ensures the selected model is present | External local Ollama prerequisite for focused live provider tests and Linux/Windows `ask` smokes |
@@ -626,7 +681,7 @@ Java source:
 - Runtime orchestration.
 - Event models beyond persisted session messages and parts.
 - Context loading.
-- Provider-wired tool execution, MCP callback execution, and a broader tool registry.
+- Agent-owned iterative tool orchestration and a broader tool registry.
 - Permission approval flow.
 - Workspace and file-access policy beyond active workspace resolution and the stored
   session `workingDir` value.

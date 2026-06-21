@@ -119,21 +119,23 @@ class CodegeistConfigServiceTest {
         CodegeistConfig config = service.loadConfig(configFile.toString());
         McpClientsRootElement mcp = mcp(config);
         McpClientConfig client = mcp.getConfig().getElements().getFirst();
+        StdioMcpClientConfig stdio = (StdioMcpClientConfig) client;
         Map<?, ?> rendered = renderedYaml(config);
         Map<?, ?> clients = (Map<?, ?>) rendered.get("mcp");
         Map<?, ?> filesystem = (Map<?, ?>) clients.get("filesystem");
 
         assertThat(mcp.getConfig().getElements()).hasSize(1);
+        assertThat(client).isInstanceOf(StdioMcpClientConfig.class);
         assertThat(client.getId()).isEqualTo("filesystem");
-        assertThat(client.getType()).isEqualTo("stdio");
-        assertThat(client.getCommand()).isEqualTo("npx");
-        assertThat(client.getArgs()).containsExactly("-y", "@modelcontextprotocol/server-filesystem", ".");
+        assertThat(client.getType()).isEqualTo(McpClientConfig.Type.stdio);
+        assertThat(stdio.getCommand()).isEqualTo("npx");
+        assertThat(stdio.getArgs()).containsExactly("-y", "@modelcontextprotocol/server-filesystem", ".");
         assertThat(clients.keySet().stream().map(Object::toString).toList()).containsOnly("filesystem");
         assertThat(filesystem.containsKey("id")).isFalse();
         assertThat(filesystem.get("type")).isEqualTo("stdio");
         assertThat(filesystem.get("command")).isEqualTo("npx");
         assertThat(filesystem.get("args"))
-                .isEqualTo(client.getArgs());
+                .isEqualTo(stdio.getArgs());
     }
 
     @Test
@@ -164,6 +166,109 @@ class CodegeistConfigServiceTest {
         assertThat(git.containsKey("id")).isFalse();
         assertThat(git.get("type")).isEqualTo("stdio");
         assertThat(git.get("command")).isEqualTo("uvx");
+    }
+
+    @Test
+    void loadsStreamableHttpMcpClientFromYamlPath() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            mcp:
+              remote-smoke:
+                type: streamable_http
+                url: http://127.0.0.1:3000
+                endpoint: /mcp
+            """);
+
+        CodegeistConfig config = service.loadConfig(configFile.toString());
+        McpClientConfig client = mcp(config).getConfig().getElements().getFirst();
+        StreamableHttpMcpClientConfig remoteConfig = (StreamableHttpMcpClientConfig) client;
+        Map<?, ?> rendered = renderedYaml(config);
+        Map<?, ?> clients = (Map<?, ?>) rendered.get("mcp");
+        Map<?, ?> remote = (Map<?, ?>) clients.get("remote-smoke");
+
+        assertThat(client).isInstanceOf(StreamableHttpMcpClientConfig.class);
+        assertThat(client.getId()).isEqualTo("remote-smoke");
+        assertThat(client.getType()).isEqualTo(McpClientConfig.Type.streamable_http);
+        assertThat(remoteConfig.getUrl()).isEqualTo("http://127.0.0.1:3000");
+        assertThat(remoteConfig.getEndpoint()).isEqualTo("/mcp");
+        assertThat(remote.get("type")).isEqualTo("streamable_http");
+        assertThat(remote.get("url")).isEqualTo("http://127.0.0.1:3000");
+        assertThat(remote.get("endpoint")).isEqualTo("/mcp");
+        assertThat(remote.containsKey("id")).isFalse();
+    }
+
+    @Test
+    void rejectsStdioMcpClientWithoutCommand() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            mcp:
+              filesystem:
+                type: stdio
+            """);
+
+        assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessageContaining(CodegeistConfigService.VALIDATION_ERROR_PREFIX)
+                .hasMessageContaining("command")
+                .hasMessageContaining("must not be blank");
+    }
+
+    @Test
+    void rejectsMcpClientWithoutType() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            mcp:
+              filesystem:
+                command: npx
+            """);
+
+        assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessageContaining("mcp entry type is required");
+    }
+
+    @Test
+    void rejectsNullMcpClientEntry() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            mcp:
+              filesystem:
+            """);
+
+        assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessageContaining("mcp entry must be a YAML object");
+    }
+
+    @Test
+    void rejectsStreamableHttpMcpClientWithoutUrl() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            mcp:
+              remote:
+                type: streamable_http
+            """);
+
+        assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessageContaining(CodegeistConfigService.VALIDATION_ERROR_PREFIX)
+                .hasMessageContaining("url")
+                .hasMessageContaining("must not be blank");
+    }
+
+    @Test
+    void rejectsUnsupportedMcpClientType() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            mcp:
+              legacy:
+                type: sse
+                url: http://127.0.0.1:3000
+            """);
+
+        assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessageContaining("Unsupported mcp entry type: sse");
     }
 
     @Test

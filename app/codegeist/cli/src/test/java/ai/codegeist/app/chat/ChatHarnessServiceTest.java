@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import ai.codegeist.app.CodegeistSpringAppProperties;
 import ai.codegeist.app.config.CodegeistConfig;
 import ai.codegeist.app.config.ProviderConfig;
+import ai.codegeist.app.mcp.TestMcpAdapters;
 import ai.codegeist.app.session.SessionMessage;
 import ai.codegeist.app.session.SessionMessageRole;
 import ai.codegeist.app.session.SessionPart;
@@ -96,6 +97,7 @@ class ChatHarnessServiceTest {
         assertThat(savedToolPart.getStatus()).isEqualTo(ToolSessionPartStatus.completed);
         assertThat(savedToolPart.getOutputPreview()).isEqualTo(TOOL_OUTPUT);
         assertThat(((TextSessionPart) assistantMessage.parts().get(1)).getText()).isEqualTo(RESPONSE);
+        assertThat(toolService.run.closed).isTrue();
     }
 
     private static final class StubCodegeistConfig extends CodegeistConfig {
@@ -146,11 +148,11 @@ class ChatHarnessServiceTest {
         private StubCodegeistToolRun run;
 
         private StubCodegeistToolService() {
-            super(null);
+            super(null, null, TestMcpAdapters.empty());
         }
 
         @Override
-        public CodegeistToolRun openRun(Path workingDirectory) {
+        public CodegeistToolRun openRun(CodegeistConfig config, Path workingDirectory) {
             run = new StubCodegeistToolRun(workingDirectory);
             return run;
         }
@@ -160,6 +162,7 @@ class ChatHarnessServiceTest {
 
         private final List<ToolSessionPart> completedToolParts = new ArrayList<>();
         private final CodegeistChatExecutionContext executionContext;
+        private boolean closed;
 
         private StubCodegeistToolRun(Path workingDirectory) {
             executionContext = new CodegeistChatExecutionContext(
@@ -175,6 +178,11 @@ class ChatHarnessServiceTest {
         @Override
         public List<ToolSessionPart> completedToolParts() {
             return List.copyOf(completedToolParts);
+        }
+
+        @Override
+        public void close() {
+            closed = true;
         }
     }
 

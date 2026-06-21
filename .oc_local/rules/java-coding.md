@@ -240,6 +240,10 @@ Use this rule when adding or changing Java source in Codegeist.
   wrappers in the same task. Update all production and test call sites immediately.
   Keep a compatibility overload only when a concrete external API, framework binding,
   serialization contract, or shipped consumer requires it.
+- Do not add compact constructors to records only to make defensive copies such as
+  `List.copyOf(...)` by default. Keep record construction direct unless an immutable
+  snapshot is part of a current API, persistence, concurrency, or test-visible
+  contract.
 - If two methods have the same signature and behavior and differ only by name, keep
   the one that callers should use and remove the other instead of adding a wrapper.
 - Add a helper only when it centralizes non-trivial behavior, improves repeated

@@ -19,6 +19,9 @@ tools for resumable chats.
   `codegeist.yml` under the top-level `mcp:` map.
 - Start with `stdio` MCP clients using the YAML key as client id plus `type`,
   `command`, and `args` fields.
+- Add `streamable_http` MCP clients using the YAML key as client id plus `type`,
+  `url`, and optional `endpoint` fields so a Docker-hosted MCP server can simulate a
+  remote server in smoke tests.
 - Map Codegeist MCP config into Spring AI MCP client/tool callback setup where
   needed. Spring AI's `spring.ai.mcp.client.*` properties are not the public
   Codegeist config contract.
@@ -74,13 +77,19 @@ tools for resumable chats.
   `docs/tasks/T007_build-codegeist-runtime-harness/coding-agent-harness-implementations.md`.
   The T007_03 research now also analyzes Aider, SWE-agent, and mini-SWE-agent as
   smaller harness references that argue against adding repo-map, git automation,
-  benchmark trajectory, Docker, or shell-first runtime features to this child.
+  benchmark trajectory, production Docker execution, or shell-first runtime features
+  to this child. The only Docker scope now accepted here is a deterministic remote
+  MCP smoke fixture.
 - A focused local Aider and mini-SWE-agent expansion lives in
   `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`.
   It confirms that neither project is an MCP lifecycle reference, but both support
   the narrow `ChatHarnessService` plus scoped `CodegeistToolRun` boundary.
-- Remaining work still includes Spring AI MCP client/callback setup and final docs
-  plus broad T007_03 verification.
+- `T007_03_05` is implemented and verified. Spring AI MCP client/callback setup now
+  supports `stdio` and `streamable_http`, MCP callbacks join the prompt-scoped tool
+  run with bounded recording, MCP resources close with the run, and
+  `task mcp-remote-smoke` verifies the real `streamable_http` path against a local
+  Docker fixture.
+- Remaining work for the aggregate is final docs plus broad T007_03 verification.
 
 ## Child Tasks
 
@@ -96,8 +105,9 @@ tools for resumable chats.
 - `tasks/T007_03_04_add-tool-aware-chat-harness.md` - completed; added the reusable
   one-turn `ChatHarnessService`, tool-aware chat context, local tool run, and
   `AskCommands` refactor.
-- `tasks/T007_03_05_add-mcp-callback-adapter.md` - add Spring AI MCP dependency,
-  stdio-only adapter, and MCP callback integration with the tool run.
+- `tasks/T007_03_05_add-mcp-callback-adapter.md` - completed; added the Spring AI MCP
+  dependency, `stdio` and `streamable_http` adapter support, Docker-backed remote MCP
+  smoke, and MCP callback integration with the tool run.
 - `tasks/T007_03_06_finalize-tool-docs-and-verification.md` - update current-state
   docs, refresh task state, and run focused plus broad verification.
 
@@ -157,13 +167,14 @@ focused child tasks once the implementation pass starts.
 ## Non-Goals
 
 - Do not implement patch/edit or shell in this child.
-- Do not implement custom MCP transports, MCP OAuth, MCP server discovery, MCP server
-  management, or hosted provider calls.
+- Do not implement custom MCP transports beyond `stdio` and `streamable_http`, MCP
+  OAuth, MCP server discovery, MCP server management, or hosted provider calls.
 - Do not add broad future tool descriptors before tests need them.
 
 ## Suggested Tests
 
-- Config test for one `stdio` MCP client.
+- Config test for one `stdio` MCP client and one `streamable_http` MCP client.
+- Docker-backed remote MCP smoke for the real `streamable_http` callback path.
 - Chat service or model test with a fake or test `ToolCallbackProvider`.
 - Temporary working-directory fixtures for read/list/glob/grep/write.
 - Session-store assertions for bounded tool result persistence.
@@ -172,5 +183,6 @@ Candidate commands from `app/codegeist/cli`:
 
 ```bash
 task test TEST=<focused-t007-03-test-selector>
+task mcp-remote-smoke
 task test
 ```

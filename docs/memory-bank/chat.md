@@ -70,8 +70,9 @@
   `CodegeistConfigRootElement<? extends CodegeistConfigElement>` instances instead
   of a class with one field per top-level YAML root. `CodegeistConfigElement` is the
   common base for single-object config, typed entries, and keyed list config;
-  `CodegeistTypedConfigElement` owns a shared validated `type` field with Lombok
-  getter/setter, and `ProviderConfig` and `McpClientConfig` extend it.
+  `CodegeistTypedConfigElement<T>` owns a shared validated `type` field, the central
+  `type` property constant, and Lombok getter/setter; `ProviderConfig` and
+  `McpClientConfig` extend it.
   `CodegeistConfigService` iterates top-level direct `codegeist.yml` fields and
   delegates root parsing to the central `CodegeistConfigRootParser` Spring service.
   Root element subclasses are plain model objects, not Spring components.
@@ -79,20 +80,25 @@
   for typed root entries. The provider root is
   `provider:`; there is no `providers:` alias. `CodegeistConfigRootParser` supplies
   the explicit provider class registry plus provider type constants to select
-  concrete access-only provider config classes. `provider:` and `mcp:` roots now
-  store `ProvidersConfig` and `McpClientsConfig`, both list-backed
+  concrete access-only provider config classes. MCP entries dispatch through an
+  explicit transport config registry to `StdioMcpClientConfig` or
+  `StreamableHttpMcpClientConfig`. `provider:` and `mcp:` roots now store
+  `ProvidersConfig` and `McpClientsConfig`, both list-backed
   `CodegeistConfigKeyedListElement` implementations that render provider-style YAML
   objects. The first MCP catalog root is `mcp:` and maps as a YAML object keyed by
-  client id with `type`, `command`, and `args`; multiple clients can share the same
-  transport type such as `stdio`. The optional
-  `workspace:` root maps to `WorkspaceRootElement`, which stores `WorkspaceConfig` in
-  the inherited generic `CodegeistConfigRootElement<T>` config slot with only a
-  nullable `directory` field. Provider dispatch does not branch on JVM versus
-  native-image runtime; `reflect-config.json` includes root element, MCP, workspace,
-  and provider config POJOs for native images. Supported config-only provider classes
-  are currently only `ollama` and `openai`; each concrete provider config owns a
-  provider-specific `defaultModel()` without adding YAML model fields. The broader
-  provider matrix and OpenCode-only provider types remain unsupported in this slice.
+  client id; `stdio` clients use required `command` plus optional `args`, while
+  `streamable_http` clients use required base server `url` plus optional MCP path
+  `endpoint`. Missing `streamable_http` endpoints rely on the MCP Java SDK builder
+  default. Multiple clients can share the same transport type such as `stdio`. The
+  optional `workspace:` root maps to `WorkspaceRootElement`, which stores
+  `WorkspaceConfig` in the inherited generic `CodegeistConfigRootElement<T>` config
+  slot with only a nullable `directory` field. Provider dispatch does not branch on
+  JVM versus native-image runtime; `reflect-config.json` includes root element, MCP,
+  workspace, and provider config POJOs for native images. Supported config-only
+  provider classes are currently only `ollama` and `openai`; each concrete provider
+  config owns a provider-specific `defaultModel()` without adding YAML model fields.
+  The broader provider matrix and OpenCode-only provider types remain unsupported in
+  this slice.
 - Provider-neutral chat runtime code lives under `ai.codegeist.app.chat`.
   `CodegeistChatService` accepts a caller-selected `ProviderConfig` separately from
   `CodegeistChatRequest`; the request now carries only runtime model and prompt.
@@ -154,13 +160,25 @@
   from optional direct `codegeist.yml` `workspace.encoding`, defaulting to UTF-8.
   Local file-tool multi-line output joins with `CodegeistFileToolSupport.LINE_SEPARATOR`,
   a shared constant backed by `System.lineSeparator()`, instead of inline newline
-  literals.
-  `CodegeistToolService` opens one `CodegeistToolRun` per chat turn, exposes local
-  callbacks through `CodegeistChatExecutionContext`, and returns defensive copies of
-  recorded `ToolSessionPart` values for session persistence. The first local-only run
-  is intentionally not closeable because MCP resources are not wired yet.
-  `docs/developer/architecture/local-file-tools.md` is the detailed current-state
-  source-code guide for this subsystem.
+  literals. `CodegeistToolService` opens one closeable `CodegeistToolRun` per chat
+  turn, exposes local and MCP callbacks through `CodegeistChatExecutionContext`, wraps
+  MCP callbacks with `RecordingToolCallback`, and returns defensive copies of
+  recorded `ToolSessionPart` values for session persistence. The MCP runtime lives
+  under `ai.codegeist.app.mcp`: `CodegeistMcpAdapter` lazily maps direct `mcp:` config
+  into prompt-scoped Spring AI callbacks for `stdio` and `streamable_http`, and
+  `SpringAiMcpClientFactory` owns the Spring AI/MCP Java SDK transport details. MCP
+  resources close when the tool run closes. `CodegeistMcpRun` exposes MCP callbacks
+  through the Lombok-backed JavaBean accessor `getToolCallbacks()`; do not use
+  Lombok `@Accessors` for this path. `docs/developer/architecture/local-file-tools.md`
+  is the detailed current-state source-code guide for this subsystem and includes the
+  first-provider-call to `McpSyncClient.callTool(...)` sequence.
+- `T007_03_05_add-mcp-callback-adapter.md` is implemented. The remote MCP path is
+  verified by explicit `task mcp-remote-smoke`, which packages a deterministic local
+  MCP server fixture, runs it in Docker, proves the real `streamable_http` callback
+  path directly, then starts local Ollama and proves Spring Boot `ask` can make the
+  model invoke the remote MCP tool and persist a completed `ToolSessionPart`. SSE,
+  OAuth, server management, resources, prompts, public timeout config, and
+  external-network-dependent MCP tests remain out of scope.
 - `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_05_add-agent-control-loop.md`
   is the planned follow-up for the actual OpenCode-style loop translation. It should
   add Codegeist-owned model/tool/model continuation on top of the current one-turn
@@ -211,7 +229,7 @@
   enable them with
   `logging.level.root=DEBUG` or `LOGGING_LEVEL_ROOT=DEBUG`.
 - `app/codegeist/cli/Taskfile.yml` provides `test`, `build`, `run`, `native`,
-  `native-smoke`, `local-linux-smoke`, `qemu-windows-smoke`,
+  `native-smoke`, `local-linux-smoke`, `mcp-remote-smoke`, `qemu-windows-smoke`,
   `final-smoke-suite`, and `ollama-start`. Local smoke scripts live under
   `scripts/tests/`. `task test` delegates to Maven and accepts a focused selector
   as `task test TEST=<test-selector>`; new implementation tasks should document
@@ -232,11 +250,14 @@
   `./codegeist --show-config` prints exactly `{}`, verifies packaged
   `./codegeist -Dcodegeist.config=<smoke-yml> ask <prompt>`, and writes
   `target/smoke-test/codegeist.log`. Linux jar and Windows QEMU smokes also run
-  real Ollama-backed `ask`; Windows native archive `--show-config` expects `{}` for
+  real Ollama-backed `ask`; `mcp-remote-smoke` builds the local MCP fixture Docker
+  image, verifies the direct `streamable_http` callback path, then verifies an
+  Ollama-backed `ask` call that invokes the remote MCP tool; Windows native archive
+  `--show-config` expects `{}` for
   empty config. The Windows guest reaches host Ollama at `http://10.0.2.2:11434`
   by default. Smoke scripts now emit stable `Duration: <label>: <seconds>s` lines
   for Maven, package, jar, native compile, archive smoke, platform total, SSH, and
-  QEMU wrapper timings. The latest full `task test` passed with 115 tests, 0
+  QEMU wrapper timings. The latest full `task test` passed with 129 tests, 0
   failures, 0 errors, and 6 skips. The latest `task final-smoke-suite` passed with
   `linux platform smoke total: 89.644s`, `windows qemu smoke total: 212.295s`,
   `linux native ask smoke: 1.303s`, `windows jar ask smoke: 5.131s`, and

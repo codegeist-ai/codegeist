@@ -13,6 +13,9 @@ Current smoke entrypoints:
   Ollama through `task ollama-start`, and smoke the extracted native archive.
 - `task local-linux-smoke` - run JVM tests, build the jar, smoke the jar including
   real Ollama-backed `ask`, and run native checks when required or available.
+- `task mcp-remote-smoke` - build a local Docker MCP server fixture, start it on a
+  localhost-only port, and verify Codegeist's real `streamable_http` MCP callback
+  path directly and through `ask` with local Ollama.
 - `task qemu-windows-smoke` - sync the repo into the Windows QEMU VM, run Windows
   JVM tests, build the jar, smoke the jar including real Ollama-backed `ask`, build
   Windows native, package it, and smoke the extracted native archive. The host
@@ -31,6 +34,7 @@ Platform: linux|windows-x64
 Jar status: passed|failed|skipped
 Native status: passed|failed|skipped
 Native reason: none|<reason>
+MCP remote smoke status: passed|failed
 ```
 
 Smoke output must also include duration lines for every meaningful subcheck. Use
@@ -53,6 +57,13 @@ Labels should be stable and specific, for example:
 - `linux native show-config smoke`
 - `linux native ask smoke`
 - `linux platform smoke total`
+- `mcp remote fixture package`
+- `mcp remote docker build`
+- `mcp remote container start`
+- `mcp remote streamable_http test`
+- `mcp remote ollama start`
+- `mcp remote ask ollama test`
+- `mcp remote smoke total`
 - `windows maven tests`
 - `windows jar package`
 - `windows ollama reachability`
@@ -85,6 +96,11 @@ Labels should be stable and specific, for example:
   the extracted `codegeist.exe` binary, including `ask` with a generated smoke config.
 - Linux and Windows native archive smokes both check `--show-config`; empty direct
   `codegeist.yml` config must render exactly `{}`.
+- MCP remote smoke packages the fixture jar under
+  `scripts/tests/fixtures/mcp-remote-server/target/`, builds the local Docker image
+  `codegeist-mcp-remote-smoke:local`, starts a temporary container, starts or reuses
+  local Ollama, verifies the direct remote callback path, verifies the `ask` command
+  can make Ollama invoke `remote_echo`, and removes the fixture container on exit.
 - Smoke logs stay under `app/codegeist/cli/target/smoke-test`.
 - Generated smoke artifacts remain ignored build output unless a task explicitly
   asks for a handoff snapshot.

@@ -624,7 +624,8 @@ Do not add these while implementing this Java workflow:
 - Agent Utils `TaskTool`, `SkillsTool`, subagents, A2A, memory tools, or web tools.
 - Raw Agent Utils file or shell tools without Codegeist wrappers.
 - OpenCode SDK sync, plugin model, OpenTUI/Solid structure, or SQLite schema.
-- Remote MCP, OAuth MCP, prompt/resource MCP browsing, or dynamic server management.
+- Remote MCP beyond the accepted `streamable_http` smoke path, OAuth MCP,
+  prompt/resource MCP browsing, or dynamic server management.
 - Provider catalog, model selection flags, token/cost accounting, or hosted provider
   calls outside the focused task.
 

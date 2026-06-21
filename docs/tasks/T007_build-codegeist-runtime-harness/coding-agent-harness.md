@@ -292,7 +292,7 @@ T007 should implement a local, file-backed subset of the full coding agent harne
 | Workspace tools | Read/list/glob/grep/write under the chat working directory. | Broad permission systems, remote workspaces. |
 | Mutation tools | Patch/edit with bounded summaries and path checks. | Advanced review workflows, LSP diagnostics, background formatters. |
 | Shell | Bounded local command execution with cwd, timeout, exit code, stdout/stderr previews. | Long-running daemons, job scheduler, remote execution fleet. |
-| MCP | Codegeist-owned top-level `mcp:` config mapped into Spring AI MCP support. | OAuth, remote transports, dynamic MCP management. |
+| MCP | Codegeist-owned top-level `mcp:` config mapped into Spring AI MCP support, starting with `stdio` plus a focused `streamable_http` path for Docker remote-smoke coverage. | OAuth, SSE, additional remote transports, dynamic MCP management. |
 | Context management | Persist structured chat and bounded tool output. | General memory, skills, subagents, advanced compaction. |
 | UI | Terminal TUI renders and updates the same `chat.json`. | Vaadin, desktop UI, API/SDK clients. |
 | Verification | Focused tests and broad `task test` for implementation slices. | Release or platform smoke checks unless affected behavior requires them. |

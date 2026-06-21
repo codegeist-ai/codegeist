@@ -144,6 +144,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   Smoke scripts must keep scan-friendly status lines and emit stable
   `Duration: <label>: <seconds>s` lines for meaningful Maven, package, jar,
   native compile, archive smoke, platform total, SSH, and QEMU wrapper checks.
+  `task mcp-remote-smoke` is the opt-in Docker/Ollama MCP verification path: it
+  proves both the direct `streamable_http` callback path and a Spring Boot `ask`
+  turn where local Ollama invokes the remote MCP tool and persists the
+  `ToolSessionPart`.
 - In Codegeist tests, assert only meaningful behavior and contracts. Do not add or
   keep negative assertions for absent fields, options, helpers, or implementation
   details unless their absence is a deliberate user-visible contract or protects a

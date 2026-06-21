@@ -237,7 +237,7 @@ T007_03 impact:
 | Output bounds | `packages/opencode/src/tool/truncate.ts`, `read.ts`, `glob.ts`, `grep.ts` | Global output truncation plus tool-specific caps. | Add `ToolOutputBounds`; persist previews and truncation metadata only. |
 | Permissions | `packages/opencode/src/permission/index.ts` | Rules default to `ask`; `deny` fails; `allow` proceeds; disabled tools are filtered before model exposure. | Defer interactive permission UI, but centralize side-effect classification and path policy so future permission checks have one place to plug in. |
 | Workspace boundary | `packages/opencode/src/project/instance-context.ts`, `packages/opencode/src/tool/external-directory.ts` | Current directory and worktree are local; outside paths require `external_directory` permission. | Add `WorkspacePolicy` with real-path checks and no external-directory allowance in first slice unless user config later adds it. |
-| MCP | `packages/core/src/v1/config/mcp.ts`, `packages/opencode/src/mcp/index.ts` | Local/remote/OAuth MCP config, status, clients, resources, prompts, tools, and sanitized names. | Support Codegeist `stdio` only in T007_03; defer remote, OAuth, resources, prompts, and management commands. |
+| MCP | `packages/core/src/v1/config/mcp.ts`, `packages/opencode/src/mcp/index.ts` | Local/remote/OAuth MCP config, status, clients, resources, prompts, tools, and sanitized names. | Support Codegeist `stdio` plus the focused `streamable_http` remote transport selected for Docker smoke coverage in T007_03; defer OAuth, resources, prompts, status persistence, and dynamic management commands. |
 
 ### Prompt-To-Tool Call Flow
 
@@ -318,11 +318,12 @@ Relevant source paths:
 
 Codegeist answer:
 
-- Keep T007_03 to direct `codegeist.yml` stdio clients with `type`, `command`, and
-  `args`.
+- Keep T007_03 to direct `codegeist.yml` MCP clients: `stdio` uses `type`, `command`,
+  and `args`, while the accepted remote smoke path uses `streamable_http` with `url`
+  and optional `endpoint`.
 - Build Spring AI MCP callbacks lazily during a chat run.
-- Close stdio clients through the MCP-specific resource scope when the MCP adapter is
-  implemented; the current local-only `CodegeistToolRun` is not closeable.
+- Close MCP clients through the prompt-scoped MCP resource scope; `T007_03_05` made
+  `CodegeistToolRun` closeable for that cleanup.
 - Prefix/sanitize MCP callback names if Spring AI does not already guarantee unique
   names. Prefer `<mcp-id>_<tool-name>` for MCP tools and `codegeist_*` for local
   tools.
@@ -619,7 +620,9 @@ decisions:
   slice, not direct Agent Utils runtime tools.
 - Keep Agent Utils as source inspiration and optional private delegate only after
   Codegeist policy and persistence wrappers exist.
-- Keep MCP stdio-only in T007_03, mapped privately into Spring AI MCP callbacks.
+- Keep MCP mapped privately into Spring AI MCP callbacks. The original narrow
+  recommendation was `stdio` only, but the accepted T007_03_05 scope now also includes
+  `streamable_http` so a Docker-hosted smoke fixture can simulate a remote MCP server.
 - Keep write parent-directory creation out of T007_03 unless the user explicitly
   wants OpenCode-compatible parent creation.
 - Keep live tool states, timing fields, attachments, metadata, and output spill
@@ -636,8 +639,9 @@ This research answers the catalog at the category level:
   file-tool reuse decisions, MCP callback evidence, bounds/errors, and tests.
 - Harness design questions: answered with the narrow `ChatHarnessService` plus
   `CodegeistToolRun` recommendation.
-- MCP-specific questions: answered with stdio-only Codegeist mapping and deferred
-  remote/OAuth/resources/prompts/status persistence.
+- MCP-specific questions: answered with Codegeist-owned `stdio` mapping plus the
+  accepted `streamable_http` remote smoke extension; OAuth, resources, prompts,
+  status persistence, and dynamic management stay deferred.
 - File tool contract questions: answered with recommended input/output contracts.
 - Session persistence questions: answered with `ToolSessionPart` mapping.
 - Test and verification questions: answered with a concrete test order and focused

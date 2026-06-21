@@ -22,9 +22,12 @@ vision:
 - Spring Shell commands for `--version`, direct `codegeist.yml` `--show-config`,
   and one-shot `ask`
 - direct `codegeist.yml` parsing for typed `provider:` entries and the first
-  minimal `mcp:` client catalog shape
+  `mcp:` client catalog shape
+- prompt-scoped local read/list/glob/grep/write callbacks plus lazy MCP callback
+  bridging for configured `stdio` and `streamable_http` clients
 - a GraalVM native-image Maven profile and local native smoke check
-- local Linux and Windows smoke scripts under `scripts/tests/`
+- local Linux, Windows, and Docker-backed MCP remote smoke scripts under
+  `scripts/tests/`
 - a GitHub Actions release workflow for branch validation, pre-tag validation,
   tag-triggered published releases, checksums, and Linux/Windows/macOS native
   smokes
@@ -51,7 +54,7 @@ Key properties:
 
 - `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
 - `app/codegeist/cli/` - Spring Boot CLI bootstrap application, Maven project files, and local `Taskfile.yml`
-- `scripts/tests/` - local Linux, Windows QEMU, native, and final smoke-suite scripts
+- `scripts/tests/` - local Linux, Windows QEMU, native, MCP remote, and final smoke-suite scripts
 - `docs/memory-bank/chat.md` - lightweight project memory for the repository
 - `README.md` - project overview
 
@@ -111,6 +114,12 @@ Run the local Linux smoke from the repository root:
 scripts/tests/local-linux-smoke.sh
 ```
 
+Run the Docker-backed MCP `streamable_http` smoke from `app/codegeist/cli`:
+
+```bash
+task mcp-remote-smoke
+```
+
 Run the final local smoke suite:
 
 ```bash
@@ -130,6 +139,11 @@ scripts/tests/final-smoke-suite.sh --allow-skips
 The Windows smoke path uses a local Windows QEMU VM over SSH. See
 `docs/developer/release/windows-qemu-smoke.md` for the detailed VM lifecycle,
 ISO, toolchain, artifact, and troubleshooting guide.
+
+The MCP remote smoke starts a deterministic local Docker fixture, verifies the real
+`streamable_http` callback path directly, then starts local Ollama and verifies that
+`ask` can make the model invoke the remote MCP tool. It stays outside the default
+`task test` path.
 
 Native release downloads are planned as platform archives, not true single-file
 executables. See `docs/developer/release/native-distribution-packaging.md` for the
@@ -209,6 +223,6 @@ If an older checkout is missing nested submodules, initialize them with
 ## Status
 
 The repository is still early, but it now has a real application entrypoint, an
-end-to-end local build/run workflow in the devcontainer, local Linux and Windows
-smoke-test entrypoints, and GitHub-hosted release automation for the current
-`--version` artifact contract.
+end-to-end local build/run workflow in the devcontainer, prompt-scoped chat tool
+callbacks, local Linux/Windows/MCP smoke-test entrypoints, and GitHub-hosted
+release automation for the current artifact family.

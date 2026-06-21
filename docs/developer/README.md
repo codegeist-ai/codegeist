@@ -8,6 +8,11 @@ constraints here.
 ## Architecture Documents
 
 - `architecture/architecture.md` - current implemented system state.
+- `architecture/provider-configuration.md` - current direct `codegeist.yml`
+  provider, MCP, workspace, SpEL, validation, and native-reflection config map.
+- `architecture/local-file-tools.md` - current local file-tool and MCP callback
+  bridge architecture, including the first-provider-call to MCP client invocation
+  sequence.
 
 ## Release Documents
 

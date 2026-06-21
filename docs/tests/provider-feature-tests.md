@@ -83,6 +83,7 @@ because they do not call local services or hosted APIs.
 | `OpenAiProviderTest` | Runs config binding and missing-API-key validation. | `remote_free` for model listing; `remote_paid` for image generation, text-to-speech, and speech-to-text. |
 | `OllamaProviderTest` | Runs config binding and missing-base-url validation. | `local` for one local Ollama chat call. |
 | `AskCommandsTest` | Skips the whole class. | `local` at class level for one Spring Boot command test backed by local Ollama. |
+| `AskCommandsMcpRemoteSmokeIT` | Not included by the default Surefire test name patterns; run only by `task mcp-remote-smoke`. | `local` at class level for one Spring Boot `ask` command test backed by local Ollama plus the Docker MCP fixture. |
 | `LocalOllamaProviderIT` | Not included by the default Surefire test name patterns; run only by explicit selector. | No category gate; it is an explicit live integration test. |
 
 ## Why These Tests Exist
@@ -174,6 +175,22 @@ starts `CodegeistApplication` through a manual Spring application builder, loads
 temporary `codegeist.yml`, and calls `CodegeistChatService` with a selected
 `ProviderConfig` plus runtime model and prompt. It is intentionally selector-only
 and not part of broad `task test`.
+
+### Ask Plus Remote MCP Smoke
+
+Use this when the task changes MCP callback wiring, local Ollama tool-calling, or the
+`ask` command path that combines both. Run it through the smoke entrypoint so the
+Docker MCP fixture URL and local Ollama startup are prepared together:
+
+```bash
+task mcp-remote-smoke
+```
+
+Why: this first proves the direct `streamable_http` MCP callback path, then runs
+`AskCommandsMcpRemoteSmokeIT` with `CODEGEIST_TEST_PROVIDER_CATEGORY=local`. The test
+starts the Spring Boot `ask` command with direct `codegeist.yml` containing both
+`provider.ollama` and `mcp.remote-smoke`, asks the model to call `remote_echo`, and
+asserts that the session store contains a completed MCP `ToolSessionPart`.
 
 ### Hosted Remote-Free Provider Checks
 
@@ -365,6 +382,7 @@ Use this checklist when adding future provider feature tests:
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/OllamaProviderTest.java` | Config checks and local Ollama provider feature test. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/OpenAiProviderTest.java` | Config checks and hosted OpenAI provider feature tests. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/AskCommandsTest.java` | Spring Boot command test gated as a local provider-call class. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/AskCommandsMcpRemoteSmokeIT.java` | Explicit local Ollama plus Docker MCP fixture command smoke driven by `task mcp-remote-smoke`. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/chat/LocalOllamaProviderIT.java` | Explicit local provider-neutral integration seam test. |
 | `docs/developer/architecture/provider-configuration.md` | Current-state provider config architecture. |
 | `docs/developer/specification/llm-provider-implementation.md` | Provider runtime and future provider implementation guidance. |

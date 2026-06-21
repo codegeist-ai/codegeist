@@ -29,9 +29,11 @@ Do not add a database or server runtime for this task.
 - Provider config currently supports typed config-only `ollama` and `openai`
   entries. Runtime provider calls are implemented only for local Ollama through
   `OllamaChatModel`.
-- Direct `codegeist.yml` loading can parse the first minimal top-level `mcp:` client
-  catalog as a YAML object keyed by client id with `type`, `command`, and `args`;
-  MCP callbacks and chat tools are not implemented yet.
+- Direct `codegeist.yml` loading can parse the top-level `mcp:` client catalog as a
+  YAML object keyed by client id. `stdio` clients use `type`, `command`, and `args`;
+  `streamable_http` clients use `type`, `url`, and optional `endpoint`. MCP callbacks
+  and local read/list/glob/grep/write tools are available to the one-turn chat
+  harness, but Codegeist still does not own an iterative model/tool/model loop.
 - `task test` from `app/codegeist/cli` is the implementation verification entrypoint
   and starts the fixed local Ollama container with `OLLAMA_ENTER=false` before
   Maven.
@@ -127,11 +129,17 @@ mcp:
       - -y
       - "@modelcontextprotocol/server-filesystem"
       - .
+  remote-smoke:
+    type: streamable_http
+    url: http://127.0.0.1:3000
+    endpoint: /mcp
 ```
 
-The first implementation should support only `stdio` clients unless a focused test
-requires another transport. Keep client ids as map keys. Add fields such as
-environment, timeout, or enablement only when implementation tests need them.
+The first implementation should support `stdio` clients and `streamable_http`
+clients. Keep client ids as map keys. Use Docker only for the deterministic remote
+MCP smoke fixture that exercises the `streamable_http` path. Add fields such as
+environment, timeout, enablement, SSE, OAuth, or server management only when later
+implementation tests need them.
 
 ## Child Tasks
 
@@ -140,11 +148,12 @@ environment, timeout, or enablement only when implementation tests need them.
   session-store contract.
 - `T007_02_add-session-store-and-continue-option.md` - add
   `.codegeist/session.json` and `ask -c/--continue` behavior.
-- `T007_03_add-mcp-and-read-write-tools/task.md` - finish MCP callbacks and the
-  first read/list/glob/grep/write tool path through focused child tasks; the
-  minimal `mcp:` config root, local file callbacks, and tool-aware chat harness are
-  already implemented. Its planning docs include `mcp-and-readwrite-tools-spec.md`,
-  `mcp-and-readwrite-tools-research.md`, `mcp-and-readwrite-tools-implementation-plan.md`, and
+- `T007_03_add-mcp-and-read-write-tools/task.md` - finish the first MCP and
+  read/list/glob/grep/write tool path through focused child tasks; the minimal
+  `mcp:` config root, local file callbacks, tool-aware chat harness, MCP adapter, and
+  Docker remote MCP smoke are already implemented. Its planning docs include
+  `mcp-and-readwrite-tools-spec.md`, `mcp-and-readwrite-tools-research.md`,
+  `mcp-and-readwrite-tools-implementation-plan.md`, and
   `coding-agent-harness-implementations.md`.
 - `T007_04_add-patch-edit-and-shell-tools.md` - add bounded patch/edit and shell
   tools that persist tool activity into `.codegeist/session.json`.

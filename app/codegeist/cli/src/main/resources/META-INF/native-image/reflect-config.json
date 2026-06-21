@@ -1,5 +1,10 @@
 [
   {
+    "name": "ai.codegeist.app.config.CodegeistTypedConfigElement",
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
     "name": "ai.codegeist.app.config.ProviderConfig",
     "allDeclaredFields": true,
     "allPublicMethods": true
@@ -30,6 +35,18 @@
   },
   {
     "name": "ai.codegeist.app.config.McpClientConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.StdioMcpClientConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.config.StreamableHttpMcpClientConfig",
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,
     "allPublicMethods": true

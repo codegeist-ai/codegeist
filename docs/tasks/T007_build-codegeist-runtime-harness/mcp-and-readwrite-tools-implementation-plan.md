@@ -66,8 +66,9 @@ After implementation:
 - No shell tool.
 - No terminal TUI.
 - No provider-facing reconstruction from stored history.
-- No remote, SSE, HTTP, OAuth, environment-variable, or server-management MCP
-  config fields.
+- No SSE, OAuth, environment-variable, public timeout, enablement, or
+  server-management MCP config fields. `streamable_http` is in scope only as the
+  first remote MCP transport and is covered by an explicit Docker smoke fixture.
 - No broad tool registry, plugin system, permission prompt UI, repo map, git
   automation, lint/test loop, database, server runtime, API/SDK, Vaadin, PF4J,
   JBang, LSP, skills, memory, or subagents.
@@ -79,9 +80,9 @@ After implementation:
 | `ai.codegeist.app.chat` | `ChatHarnessService`, `CodegeistChatExecutionContext`, `AskCommands`, `CodegeistChatService`, `CodegeistChatModel`, `OllamaChatModel` | One-turn chat orchestration and provider chat calls with runtime tool callbacks. |
 | `ai.codegeist.app.config` | `WorkspaceRootElement`, `WorkspaceConfig` | Direct `codegeist.yml` `workspace.directory` parsing. |
 | `ai.codegeist.app.tool` | `CodegeistToolService`, `CodegeistToolRun`, `DefaultCodegeistToolRun`, `CodegeistLocalTools`, `WorkspaceResolver`, `ToolOutputBounds`, `CodegeistLocalToolCallback`, `RecordingToolCallback`, `CodegeistToolResult` | Local file tools, workspace resolution, output bounds, callback assembly, and tool-result recording. |
-| `ai.codegeist.app.mcp` | `CodegeistMcpAdapter`, `CodegeistMcpRun`, `DefaultCodegeistMcpRun` | Lazy mapping from Codegeist `mcp:` config to Spring AI MCP callbacks and closeable resources. |
+| `ai.codegeist.app.mcp` | `CodegeistMcpAdapter`, `CodegeistMcpRun`, `DefaultCodegeistMcpRun`, `CodegeistMcpClientFactory`, `SpringAiMcpClientFactory`, `CodegeistMcpClientHandle` | Lazy mapping from Codegeist `mcp:` config to Spring AI MCP callbacks and closeable `stdio` or `streamable_http` resources, with a package-private fakeable seam for unit tests. |
 | `ai.codegeist.app.session` | `ToolSessionPart`, `SessionPart`, `SessionStoreService` | Persist bounded tool activity in the existing session store model. |
-| `app/codegeist/cli` build/resources | `pom.xml`, `reflect-config.json` | Add Spring AI MCP dependency and native reflection metadata. |
+| `app/codegeist/cli` build/resources | `pom.xml`, `Taskfile.yml`, remote MCP smoke fixture, `reflect-config.json` | Add Spring AI MCP dependency, the explicit Docker-backed remote MCP smoke entrypoint, and native reflection metadata. |
 
 Use package-private helper records/classes where possible. Add public classes only
 when another package or a test needs the contract.
@@ -97,7 +98,7 @@ Implement this plan through the focused child tasks under
 | `T007_03_02_add-workspace-resolution-and-output-bounds.md` | `WorkspaceRootElement`, `WorkspaceConfig`, `WorkspaceResolver`, and `ToolOutputBounds`. | `T007_02` |
 | `T007_03_03_add-local-file-tools.md` | `CodegeistLocalTools`, `CodegeistLocalToolCallback`, `CodegeistToolResult`, and `codegeist_read`/`list`/`glob`/`grep`/`write`. | `T007_03_01`, `T007_03_02` |
 | `T007_03_04_add-tool-aware-chat-harness.md` | `ChatHarnessService`, `CodegeistChatExecutionContext`, tool-aware chat/model overloads, `CodegeistToolService`, `CodegeistToolRun`, and `AskCommands` refactor. | `T007_03_03` |
-| `T007_03_05_add-mcp-callback-adapter.md` | Spring AI MCP dependency, `CodegeistMcpAdapter`, `CodegeistMcpRun`, stdio-only mapping, and MCP callback recording integration. | `T007_03_04` |
+| `T007_03_05_add-mcp-callback-adapter.md` | Spring AI MCP dependency, `CodegeistMcpAdapter`, `CodegeistMcpRun`, `stdio` and `streamable_http` mapping, Docker-backed remote MCP smoke, and MCP callback recording integration. | `T007_03_04` |
 | `T007_03_06_finalize-tool-docs-and-verification.md` | Architecture docs, task progress updates, optional memory refresh, focused verification, and broad `task test`. | `T007_03_05` |
 
 This split supersedes the earlier monolithic checklist. Keep the class contracts
@@ -208,7 +209,7 @@ classDiagram
       <<RequiredArgsConstructor>>
       -CodegeistLocalTools localTools
       -CodegeistMcpAdapter mcpAdapter
-      +openRun(CodegeistConfig config, Path workingDirectory, Path sessionStorePath) CodegeistToolRun
+      +openRun(CodegeistConfig config, Path workingDirectory) CodegeistToolRun
     }
 
     class CodegeistToolRun {
@@ -238,7 +239,7 @@ classDiagram
 
     class CodegeistMcpRun {
       <<interface>>
-      +toolCallbacks() List ToolCallback
+      +getToolCallbacks() List ToolCallback
       +close() void
     }
 
@@ -404,8 +405,10 @@ classDiagram
 
 ### MCP Adapter View
 
-This view shows only the new MCP runtime adapter and the existing config inputs it
-consumes.
+This view shows only the new MCP runtime adapter, its package-private test seam, and
+the existing config inputs it consumes. The factory seam keeps unit tests away from
+real processes and Docker while the production factory owns the milestone Spring AI
+MCP API details for `stdio` and `streamable_http`.
 
 ```mermaid
 classDiagram
@@ -414,12 +417,32 @@ classDiagram
     class CodegeistMcpAdapter {
       <<Service>>
       <<Slf4j>>
+      -CodegeistMcpClientFactory clientFactory
       +openRun(CodegeistConfig config) CodegeistMcpRun
+    }
+
+    class CodegeistMcpClientFactory {
+      <<interface>>
+      <<packagePrivate>>
+      +openClient(McpClientConfig config) CodegeistMcpClientHandle
+    }
+
+    class SpringAiMcpClientFactory {
+      <<Component>>
+      <<packagePrivate>>
+      +openClient(McpClientConfig config) CodegeistMcpClientHandle
+    }
+
+    class CodegeistMcpClientHandle {
+      <<record>>
+      <<packagePrivate>>
+      List ToolCallback toolCallbacks
+      AutoCloseable closeable
     }
 
     class CodegeistMcpRun {
       <<interface>>
-      +toolCallbacks() List ToolCallback
+      +getToolCallbacks() List ToolCallback
       +close() void
     }
 
@@ -427,7 +450,7 @@ classDiagram
       <<packagePrivate>>
       -List ToolCallback toolCallbacks
       -List AutoCloseable closeables
-      +toolCallbacks() List ToolCallback
+      +getToolCallbacks() List ToolCallback
       +close() void
     }
 
@@ -451,6 +474,8 @@ classDiagram
       String type
       String command
       List args
+      String url
+      String endpoint
     }
 
     class ToolCallback {
@@ -467,10 +492,14 @@ classDiagram
     McpClientsRootElement --> McpClientsConfig
     McpClientsConfig --> McpClientConfig
     CodegeistMcpAdapter --> CodegeistMcpRun
+    CodegeistMcpAdapter --> CodegeistMcpClientFactory
+    CodegeistMcpClientFactory <|.. SpringAiMcpClientFactory
+    CodegeistMcpClientFactory --> CodegeistMcpClientHandle
     CodegeistMcpRun <|.. DefaultCodegeistMcpRun
     AutoCloseable <|.. CodegeistMcpRun
     DefaultCodegeistMcpRun --> ToolCallback
     DefaultCodegeistMcpRun --> AutoCloseable
+    DefaultCodegeistMcpRun --> CodegeistMcpClientHandle
 ```
 
 ### Session Persistence View
@@ -560,6 +589,9 @@ Rules:
 - Do not require users to configure `spring.ai.mcp.client.*`.
 - Do not let config parsing, `--show-config`, or Spring context startup spawn MCP
   processes. MCP client creation belongs only inside `CodegeistToolRun`.
+- If the pinned Spring AI `2.0.0-M6` artifacts require a separate streamable HTTP
+  transport dependency beyond `spring-ai-starter-mcp-client`, add only the smallest
+  matching Spring AI MCP transport artifact needed to compile the adapter.
 
 ## Chat Package Contracts
 
@@ -598,9 +630,8 @@ ProviderConfig providerConfig = config.defaultProvider()
         .orElseThrow(() -> new IllegalStateException(CodegeistConfig.NO_PROVIDER_MESSAGE));
 String model = providerConfig.defaultModel();
 Path workingDirectory = workspaceResolver.currentWorkspace();
-Path sessionStorePath = sessionStoreService.currentStorePath();
 
-try (CodegeistToolRun toolRun = toolService.openRun(config, workingDirectory, sessionStorePath)) {
+try (CodegeistToolRun toolRun = toolService.openRun(config, workingDirectory)) {
     CodegeistChatResponse response = chatService.chat(
             providerConfig,
             new CodegeistChatRequest(model, prompt),
@@ -764,15 +795,13 @@ Public method:
 ```java
 public CodegeistToolRun openRun(
         @NonNull CodegeistConfig config,
-        @NonNull Path workingDirectory,
-        @NonNull Path sessionStorePath)
+        @NonNull Path workingDirectory)
 ```
 
 Algorithm:
 
 1. Create a mutable ordered `List<ToolSessionPart>` recorder list.
-2. Build local file callbacks for the run using `workingDirectory`,
-   `sessionStorePath`, and the recorder.
+2. Build local file callbacks for the run using `workingDirectory` and the recorder.
 3. Open MCP callbacks through `CodegeistMcpAdapter.openRun(config)`.
 4. Wrap MCP callbacks with `RecordingToolCallback` so MCP outputs and failures are
    bounded and persisted.
@@ -1177,8 +1206,11 @@ Algorithm:
 1. Read `config.rootElement(McpClientsRootElement.class)`.
 2. If absent or empty, return an empty `CodegeistMcpRun`.
 3. For each configured client:
-   - require `type` equal to `stdio`
-   - build Spring AI MCP stdio transport from `command` and `args`
+   - if `type` is `stdio`, require `command` and build Spring AI MCP stdio transport
+     from `command` and `args`
+    - if `type` is `streamable_http`, require `url`, default blank `endpoint` to
+     `/mcp`, and build the Spring AI streamable HTTP client transport
+   - reject every other `type` before provider execution
    - create a synchronous MCP client
    - initialize it
 4. Convert created clients to `ToolCallback` values through
@@ -1191,6 +1223,7 @@ Expected Spring AI API names from `2.0.0-M6` docs:
 - `io.modelcontextprotocol.client.McpSyncClient`
 - `io.modelcontextprotocol.client.transport.ServerParameters`
 - `io.modelcontextprotocol.client.transport.StdioClientTransport`
+- `org.springframework.ai.mcp.client.webflux.transport.WebClientStreamableHttpTransport`
 - `org.springframework.ai.mcp.SyncMcpToolCallbackProvider`
 - `org.springframework.ai.tool.ToolCallback`
 
@@ -1199,12 +1232,14 @@ adjust package names only for actual Spring AI `2.0.0-M6` artifacts.
 
 Rules:
 
-- Only `stdio` is supported.
+- Only `stdio` and `streamable_http` are supported.
 - Unsupported MCP `type` fails before the provider call.
-- Do not add environment, timeout, enablement, SSE, HTTP, OAuth, discovery, or
+- Do not add environment, public timeout, enablement, SSE, OAuth, discovery, or
   server lifecycle management fields.
 - Do not persist MCP command, args, status, resources, prompts, or tool definitions
   in `.codegeist/session.json`.
+- Keep Docker out of runtime adapter code. The Docker container belongs only to the
+  explicit remote MCP smoke entrypoint.
 
 ### `CodegeistMcpRun`
 
@@ -1214,7 +1249,7 @@ Shape:
 
 ```java
 public interface CodegeistMcpRun extends AutoCloseable {
-    List<ToolCallback> toolCallbacks();
+    List<ToolCallback> getToolCallbacks();
 
     @Override
     void close();
@@ -1375,7 +1410,7 @@ sequenceDiagram
     participant Store as SessionStoreService
 
     Command->>Harness: ask(continueSession, prompt)
-    Harness->>Tools: openRun(config, workingDir, sessionStorePath)
+    Harness->>Tools: openRun(config, workingDir)
     Tools->>MCP: openRun(config)
     MCP-->>Tools: MCP callbacks and closeables
     Tools-->>Harness: CodegeistToolRun
@@ -1459,6 +1494,8 @@ Prove:
 - unsupported MCP `type` fails clearly before provider call
 - one `stdio` config maps into the client creation path without exposing Spring AI
   properties as public config
+- one `streamable_http` config maps into the remote client creation path without
+  exposing Spring AI properties as public config
 - returned MCP callbacks are exposed from the run
 - `close()` closes created resources
 
@@ -1477,6 +1514,23 @@ Prove:
 - completed tool parts are returned in call order
 - MCP resource cleanup is covered by `CodegeistMcpRun` or a later resource-owning
   tool-run boundary when the MCP implementation introduces real resources
+
+### `CodegeistMcpRemoteSmokeIT`
+
+Run through `task mcp-remote-smoke`, not through the default `task test` path.
+
+Prove:
+
+- a Docker container can host a deterministic MCP server reachable as a remote
+  `streamable_http` endpoint
+- Codegeist direct `mcp:` config with `type: streamable_http` can open the remote
+  run and expose at least one callback
+- a deterministic callback such as `remote_echo` can be invoked directly through
+  the adapter or tool-run path without involving Ollama or another provider
+- bounded callback output is recorded through the same MCP recording wrapper used by
+  normal tool runs
+- the smoke script stops and removes the container through a trap even when the test
+  fails
 
 ### `SessionStoreServiceTest`
 
@@ -1503,7 +1557,7 @@ Use hand-written fakes.
 Prove:
 
 - harness selects default provider and default model
-- harness opens a tool run with resolved workspace and session store path
+- harness opens a tool run with resolved workspace
 - harness passes tool callbacks to the chat service through
   `CodegeistChatExecutionContext`
 - harness saves prompt, recorded tool parts, and assistant text
@@ -1547,6 +1601,15 @@ Broad JVM verification:
 ```bash
 task test
 ```
+
+Remote MCP smoke verification:
+
+```bash
+task mcp-remote-smoke
+```
+
+Keep this command separate from broad JVM verification because it builds and starts a
+Docker container.
 
 Documentation-only verification while this file is only a plan:
 

@@ -260,11 +260,12 @@ Neither comparison project proves MCP behavior. The Codegeist MCP path should st
 the one already specified by OpenCode/Spring research:
 
 - Read direct `codegeist.yml` `mcp:` config through `McpClientConfig`.
-- Build only `stdio` clients for T007_03.
+- Build `stdio` clients plus the accepted `streamable_http` remote client path for
+  the Docker-backed T007_03_05 smoke fixture.
 - Convert clients to Spring AI `ToolCallback` values inside `CodegeistMcpAdapter`.
 - Fail before the provider call if configured MCP setup fails.
 - Close all created resources through the MCP-specific resource scope introduced by
-  the MCP adapter; the current local-only `CodegeistToolRun` is not closeable.
+  the MCP adapter; `T007_03_05` made `CodegeistToolRun` closeable for that cleanup.
 - Do not persist MCP client definitions, statuses, resources, prompts, or enabled
   tool registry snapshots in `.codegeist/session.json`.
 

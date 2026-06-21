@@ -105,6 +105,10 @@ mcp:
       - -y
       - "@modelcontextprotocol/server-filesystem"
       - .
+  remote-smoke:
+    type: streamable_http
+    url: http://127.0.0.1:3000
+    endpoint: /mcp
 ```
 
 Rules:
@@ -112,13 +116,15 @@ Rules:
 - `mcp` is a top-level map keyed by client id.
 - Client ids are durable Codegeist config ids. They are not stored in the session
   store.
-- The first supported client `type` is `stdio`.
-- `command` is required and must be non-blank.
-- `args` is optional and defaults to an empty list.
+- The first supported client `type` values are `stdio` and `streamable_http`.
+- `stdio` clients require a non-blank `command`; `args` is optional and defaults to
+  an empty list.
+- `streamable_http` clients require a non-blank `url`; `endpoint` is optional and
+  defaults to `/mcp`.
 - Unsupported client types must fail with a clear Codegeist config or MCP adapter
   error before a provider call attempts to use them.
 - Do not add public config fields for environment variables, timeout, enablement,
-  SSE, HTTP, OAuth, server discovery, or server lifecycle management in this slice.
+  SSE, OAuth, server discovery, or server lifecycle management in this slice.
 - A fixed internal request timeout may be used by the MCP adapter, but it is not a
   public `codegeist.yml` field in `T007_03`.
 
@@ -255,6 +261,8 @@ Spring AI APIs identified for the implementation:
 
 - `McpClient.sync(...)` for a synchronous MCP client.
 - `StdioClientTransport` with `ServerParameters` for first `stdio` clients.
+- Spring AI streamable HTTP client transport, such as
+  `WebClientStreamableHttpTransport`, for `streamable_http` clients.
 - `SyncMcpToolCallbackProvider` to turn MCP clients into Spring AI
   `ToolCallback` values.
 - `ToolCallbackProvider` as a test seam for fake MCP callback availability.
@@ -269,6 +277,10 @@ MCP rules:
 - Use a fake `ToolCallbackProvider` test before adding process-level MCP tests.
 - If real stdio setup is unit-tested, use a lightweight local process fixture only
   when it is deterministic and does not require network access.
+- Add a separate Docker-backed remote MCP smoke path for `streamable_http`. It must
+  start a deterministic local container, call an MCP callback through the adapter or
+  tool-run path, and clean the container up with a trap. Keep it outside the default
+  `task test` path.
 
 ## Local File Tool Names
 
@@ -532,6 +544,8 @@ Use the Taskfile from `app/codegeist/cli` for all implementation verification.
 ### Config Tests
 
 - Keep the existing config test proving a direct `mcp:` map loads one `stdio` client.
+- Add a config test proving a direct `mcp:` map loads one `streamable_http` client
+  with `url` and optional `endpoint`.
 - Add or update a focused test proving unsupported MCP `type` fails clearly if the
   validation is added in this slice.
 
@@ -539,9 +553,14 @@ Use the Taskfile from `app/codegeist/cli` for all implementation verification.
 
 - `CodegeistMcpAdapterTest`: maps a `stdio` `McpClientConfig` into the adapter's
   client-creation path without exposing Spring AI properties as public config.
+- `CodegeistMcpAdapterTest`: maps a `streamable_http` `McpClientConfig` into the
+  remote client-creation path without exposing Spring AI properties as public config.
 - `CodegeistToolServiceTest`: uses a fake `ToolCallbackProvider` to prove configured
   MCP callbacks are included in the chat-run callback list.
-- No network-dependent MCP tests in the first implementation.
+- `CodegeistMcpRemoteSmokeIT` plus `task mcp-remote-smoke`: starts a local Docker
+  container that simulates a remote MCP server and verifies a deterministic callback
+  without using a provider or hosted network dependency.
+- No external-network-dependent MCP tests in the first implementation.
 
 ### Local Tool Tests
 
@@ -596,19 +615,22 @@ Recommended order after this specification is accepted:
 4. Add chat-run context and tool-aware `CodegeistChatService`/`CodegeistChatModel`
    overloads while keeping `CodegeistChatRequest` unchanged.
 5. Add `CodegeistToolService` to assemble local callbacks.
-6. Add the Spring AI MCP starter dependency and a minimal MCP adapter.
+6. Add the Spring AI MCP starter dependency and a minimal MCP adapter for `stdio`
+   plus `streamable_http`.
 7. Add fake MCP callback availability tests.
-8. Update `AskCommands` to use the tool run and save recorded tool parts.
-9. Update current-state architecture docs after runtime behavior is implemented.
+8. Add the Docker-backed remote MCP smoke test for the `streamable_http` path.
+9. Update `AskCommands` to use the tool run and save recorded tool parts.
+10. Update current-state architecture docs after runtime behavior is implemented.
 
 ## Non-Goals
 
 - No patch/edit tools.
 - No shell command tools.
 - No terminal TUI.
-- No custom MCP transports beyond `stdio`.
+- No custom MCP transports beyond `stdio` and `streamable_http`.
 - No MCP OAuth.
 - No MCP server discovery or server management commands.
+- No SSE in this slice.
 - No hosted provider calls.
 - No broad tool registry, permission prompt UI, path-safety engine, or filesystem
   allow/deny rules.

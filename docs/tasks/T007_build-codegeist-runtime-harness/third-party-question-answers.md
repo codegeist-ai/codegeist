@@ -348,11 +348,16 @@ mcp:
       - -y
       - "@modelcontextprotocol/server-filesystem"
       - .
+  remote-smoke:
+    type: streamable_http
+    url: http://127.0.0.1:3000
+    endpoint: /mcp
 ```
 
 Map this config privately into Spring AI MCP client support. Do not expose
-`spring.ai.mcp.client.*`, OAuth, remote transports, dynamic discovery, prompt
-listing, or resource listing until a focused task requires them.
+`spring.ai.mcp.client.*`, OAuth, remote transports beyond the accepted
+`streamable_http` Docker-smoke path, dynamic discovery, prompt listing, or resource
+listing until a focused task requires them.
 
 ### O7. Read/List/Glob/Grep
 

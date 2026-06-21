@@ -42,16 +42,17 @@ public class ChatHarnessService {
         String model = providerConfig.defaultModel();
         Path workingDirectory = workspaceResolver.currentWorkspace();
         log.debug("Asking provider type {} with default model {} and tools", providerConfig.getType(), model);
-        CodegeistToolRun toolRun = toolService.openRun(workingDirectory);
-        CodegeistChatResponse response = chatService.chat(
-                providerConfig,
-                new CodegeistChatRequest(model, prompt),
-                toolRun.executionContext());
-        sessionStoreService.saveExchangeToCurrentSession(
-                continueSession,
-                prompt,
-                response.content(),
-                toolRun.completedToolParts());
-        return response;
+        try (CodegeistToolRun toolRun = toolService.openRun(config, workingDirectory)) {
+            CodegeistChatResponse response = chatService.chat(
+                    providerConfig,
+                    new CodegeistChatRequest(model, prompt),
+                    toolRun.executionContext());
+            sessionStoreService.saveExchangeToCurrentSession(
+                    continueSession,
+                    prompt,
+                    response.content(),
+                    toolRun.completedToolParts());
+            return response;
+        }
     }
 }

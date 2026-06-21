@@ -269,10 +269,10 @@ classDiagram
 - `CodegeistToolService` is the tool-run factory for this slice. It assembles local
   file tool callbacks from `CodegeistLocalTools`, gives them one ordered recorder for
   `ToolSessionPart` values, and returns a `CodegeistToolRun`. MCP callback assembly
-  remains deferred to `T007_03_05`.
+  is handled by the later `T007_03_05` slice.
 - `CodegeistToolRun` is the per-turn tool scope. It exposes the chat execution
-  context and a defensive copy of the recorded tool parts. It is not closeable until
-  a later MCP slice introduces real resources to clean up.
+  context and a defensive copy of the recorded tool parts. `T007_03_05` later made
+  this scope closeable for MCP cleanup.
 - `DefaultCodegeistToolRun` is the package-private first implementation. It stores
   the immutable execution context, the mutable internal recorded-part list, and
   returns immutable copies to callers.
@@ -326,8 +326,8 @@ task test TEST=ChatHarnessServiceTest,CodegeistChatServiceTest,CodegeistToolServ
   `DefaultCodegeistToolRun` under `ai.codegeist.app.tool`. The first tool run
   assembles local read/list/glob/grep/write callbacks, records bounded
   `ToolSessionPart` values in call order, and returns defensive completed-part
-  copies. It is intentionally not closeable until MCP adds real resources in
-  `T007_03_05`.
+  copies. `T007_03_05` later added closeable MCP resources to the same tool-run
+  boundary.
 - Added context-aware overloads to `CodegeistChatService` and made the context-aware
   `CodegeistChatModel` call the provider implementation contract. The existing
   service-level no-context path remains available for current callers by supplying an
