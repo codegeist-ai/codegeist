@@ -65,11 +65,11 @@ The Windows smoke path validates these observable contracts inside Windows:
 | File or task | Role |
 | --- | --- |
 | `scripts/tests/qemu-windows-vm.sh` | High-level VM lifecycle, ISO download, answer ISO generation, QEMU startup, repo sync, and smoke dispatch. |
-| `scripts/tests/qemu-windows-smoke.sh` | Lower-level SSH wrapper for an already reachable Windows VM. |
+| `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH smoke entrypoint for an already reachable Windows VM. |
 | `scripts/tests/windows-smoke.ps1` | Windows-side Maven, jar version, native build, native version, native config output, and status checks. |
 | `scripts/tests/windows-qemu/autounattend.xml` | Windows Setup answer-file template used during unattended installation. |
 | `scripts/tests/windows-qemu/setup.ps1` | First-logon guest provisioning for OpenSSH, authorized keys, GraalVM, Maven, MSVC, and readiness marker. |
-| `scripts/tests/final-smoke-suite.sh` | Final local Linux and Windows suite. Windows is required by default. |
+| `scripts/tests/final-smoke-suite.ps1` | Final local Linux and Windows suite. Windows is required by default. |
 | `task qemu-windows-smoke` | Taskfile wrapper around `scripts/tests/qemu-windows-vm.sh smoke`. |
 | `task final-smoke-suite` | Taskfile wrapper around Linux and Windows final smoke checks. |
 
@@ -79,11 +79,11 @@ The Windows smoke path validates these observable contracts inside Windows:
 flowchart LR
     Developer[Developer or agent]
     Taskfile[app/codegeist/cli/Taskfile.yml]
-    FinalSuite[scripts/tests/final-smoke-suite.sh]
+    FinalSuite[scripts/tests/final-smoke-suite.ps1]
     VmScript[scripts/tests/qemu-windows-vm.sh]
     State[(.local/windows-qemu)]
     Qemu[QEMU Windows VM]
-    SshSmoke[scripts/tests/qemu-windows-smoke.sh]
+    SshSmoke[scripts/tests/qemu-windows-smoke.ps1]
     WinSmoke[scripts/tests/windows-smoke.ps1]
     BuildTools[GraalVM, Maven, MSVC]
     Artifacts[target/codegeist.jar and target/dist/codegeist-windows-x64.zip]
@@ -142,7 +142,7 @@ flowchart TD
 sequenceDiagram
     participant Host as Host shell
     participant VM as qemu-windows-vm.sh
-    participant SSH as qemu-windows-smoke.sh
+    participant SSH as qemu-windows-smoke.ps1
     participant PS as windows-smoke.ps1
     participant Maven as Maven and native-image
 
@@ -152,13 +152,11 @@ sequenceDiagram
     VM->>VM: tar app/codegeist/cli and scripts/tests
     VM->>SSH: pass SSH target, key, port, repo dir
     SSH->>PS: powershell windows-smoke.ps1
-    PS->>Maven: mvn test
-    PS->>Maven: mvn -DskipTests clean package
-    PS->>PS: java -jar target/codegeist.jar --version
-    PS->>Maven: activate MSVC and run native:compile
-    PS->>PS: package target/dist zip
-    PS->>PS: expand zip to temp and run codegeist.exe --version
-    PS->>PS: run extracted codegeist.exe --show-config
+    PS->>Maven: activate MSVC and run native:compile with -DskipTests
+    PS->>PS: artifact-smoke.ps1 packages target/dist zip
+    PS->>PS: artifact-smoke.ps1 expands zip to temp and runs codegeist.exe --version
+    PS->>PS: artifact-smoke.ps1 runs extracted codegeist.exe --show-config
+    PS->>PS: artifact-smoke.ps1 runs deterministic native file-edit ask smoke
     PS-->>SSH: platform status
     SSH-->>VM: SSH exit and status
     VM-->>Host: passed, skipped, or failed
@@ -298,10 +296,8 @@ Important files include:
 - `C:\codegeist\app\codegeist\cli\target\codegeist.exe`
 - `C:\codegeist\app\codegeist\cli\target\dist\codegeist-windows-x64.zip`
 - Native support DLLs in the same `target` directory, such as `awt.dll`, `java.dll`, and `jvm.dll`.
-- `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-jar.log`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native.log`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native-show-config.log`
-- `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-jar.out`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native.out`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native-show-config.out`
 
@@ -387,7 +383,7 @@ suite intentionally fails on skipped Windows validation.
 ## Current Verification
 
 The `T005_01` local build-smoke task is solved. The acceptance path passed locally
-with `task final-smoke-suite`, and the run reported Linux and Windows jar/native
+with `task final-smoke-suite`, and the run reported Linux and Windows native
 statuses as `passed`.
 
 Use `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/tasks/T005_01_add-local-linux-windows-build-smoke.md`

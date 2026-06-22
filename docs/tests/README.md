@@ -47,11 +47,15 @@ Test guidance for Codegeist contributors and coding agents.
 ## Related Files
 
 - `app/codegeist/cli/Taskfile.yml`
-- `scripts/tests/native-smoke.sh`
-- `scripts/tests/mcp-remote-smoke.sh`
+- `scripts/tests/artifact-smoke.ps1`
+- `scripts/tests/file-edit-ask-smoke.ps1`
+- `scripts/tests/native-smoke.ps1`
+- `scripts/tests/smoke-common.ps1`
+- `scripts/tests/mcp-remote-smoke.ps1`
 - `scripts/tests/fixtures/mcp-remote-server/`
-- `scripts/tests/local-linux-smoke.sh`
+- `scripts/tests/local-linux-smoke.ps1`
 - `scripts/tests/qemu-windows-vm.sh`
-- `scripts/tests/qemu-windows-smoke.sh`
+- `scripts/tests/qemu-windows-smoke.ps1`
 - `scripts/tests/windows-smoke.ps1`
+- `scripts/tests/final-smoke-suite.ps1`
 - `docs/developer/specification/testing-strategy-and-agent-rules.md`

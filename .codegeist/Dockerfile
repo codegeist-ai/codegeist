@@ -1,15 +1,18 @@
-# Dockerfile - project-local devcontainer extension for NVIDIA GPU tooling
+# Dockerfile - project-local devcontainer extension for smoke and GPU tooling
 #
 # Why this exists:
 # - `.devcontainer/initialize.sh` appends this file to the shared kit Dockerfile
 #   when it writes `.devcontainer/Dockerfile.merged.gen`.
-# - The devcontainer can then run Docker GPU workloads such as Ollama from its
-#   inner Docker daemon while keeping the shared devcontainer kit unchanged.
+# - The devcontainer can then run shared PowerShell smoke scripts and Docker GPU
+#   workloads such as Ollama from its inner Docker daemon while keeping the shared
+#   devcontainer kit unchanged.
 # - The NVIDIA user-space driver package version should match the host driver;
 #   the kernel driver still runs on the host and GPU devices are exposed at
 #   runtime through `.codegeist/compose.local.yml`.
 #
 # Inputs:
+# - Microsoft Debian package feed for PowerShell 7, used by cross-platform smoke
+#   scripts under `scripts/tests/`.
 # - NVIDIA_DRIVER_VERSION defaults to the currently validated host driver package
 #   version for this workstation.
 # - NVIDIA_CONTAINER_TOOLKIT_VERSION selects the inner Docker GPU runtime support.
@@ -23,6 +26,16 @@ USER root
 
 ARG NVIDIA_DRIVER_VERSION=595.71.05-1
 ARG NVIDIA_CONTAINER_TOOLKIT_VERSION=1.19.1-1
+
+RUN set -eux; \
+    curl -fsSL \
+      https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb \
+      -o /tmp/packages-microsoft-prod.deb; \
+    dpkg -i /tmp/packages-microsoft-prod.deb; \
+    rm -f /tmp/packages-microsoft-prod.deb; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends powershell; \
+    rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
     curl -fsSL \

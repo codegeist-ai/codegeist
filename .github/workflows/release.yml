@@ -39,8 +39,8 @@ concurrency:
 env:
   JAVA_VERSION: "25"
   GRAALVM_DISTRIBUTION: graalvm-community
-  JAR_SMOKE_TIMEOUT_SECONDS: "15"
   NATIVE_SMOKE_TIMEOUT_SECONDS: "5"
+  FILE_EDIT_SMOKE_TIMEOUT_SECONDS: "90"
 
 jobs:
   metadata:
@@ -106,7 +106,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   build-jvm:
-    name: Build and smoke JVM jar
+    name: Build JVM jar
     runs-on: ubuntu-latest
     needs: metadata
     env:
@@ -133,30 +133,14 @@ jobs:
         shell: bash
         run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -DskipTests clean package
 
-      - name: Smoke version command and stage jar asset
+      - name: Stage JVM jar asset
         working-directory: app/codegeist/cli
         shell: bash
         run: |
           set -euo pipefail
 
-          mkdir -p target/dist target/smoke-test
-          jar_asset="target/dist/codegeist-jvm.jar"
-          cp -p target/codegeist.jar "$jar_asset"
-
-          log_file="$PWD/target/smoke-test/codegeist-jvm.log"
-          actual="$(LOG_FILE="$log_file" timeout "${JAR_SMOKE_TIMEOUT_SECONDS}s" java -jar "$jar_asset" --version 2>&1)"
-
-          if [ "$actual" != "$RELEASE_VERSION" ]; then
-            printf 'Expected jar version %s, got %s\n' "$RELEASE_VERSION" "$actual" >&2
-            exit 1
-          fi
-
-          if [ ! -s "$log_file" ]; then
-            printf 'Expected non-empty jar smoke log: %s\n' "$log_file" >&2
-            exit 1
-          fi
-
-          printf 'JVM jar smoke passed: %s\n' "$jar_asset"
+          mkdir -p target/dist
+          cp -p target/codegeist.jar target/dist/codegeist-jvm.jar
 
       - name: Upload JVM jar artifact
         uses: actions/upload-artifact@v4
@@ -232,174 +216,16 @@ jobs:
           }
 
       - name: Package and smoke native archive
-        if: runner.os != 'Windows'
-        working-directory: app/codegeist/cli
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          platform="${{ matrix.platform }}"
-          package_name="codegeist-$platform"
-          dist_dir="$PWD/target/dist"
-          package_dir="$dist_dir/$package_name"
-          archive="$dist_dir/$package_name.tar.gz"
-          smoke_dir="$PWD/target/smoke-test"
-
-          if [ ! -x target/codegeist ]; then
-            printf 'Native executable is missing or not executable: target/codegeist\n' >&2
-            exit 1
-          fi
-
-          rm -rf "$package_dir" "$archive" "$smoke_dir"
-          mkdir -p "$package_dir" "$smoke_dir"
-          cp -p target/codegeist "$package_dir/codegeist"
-
-          shopt -s nullglob
-          if [ "$platform" = "linux-x64" ]; then
-            sidecars=(target/lib*.so)
-          else
-            sidecars=(target/*.dylib)
-          fi
-          shopt -u nullglob
-
-          if [ "${#sidecars[@]}" -gt 0 ]; then
-            cp -p "${sidecars[@]}" "$package_dir/"
-          fi
-
-          tar -C "$dist_dir" -czf "$archive" "$package_name"
-
-          temp_dir="$(mktemp -d)"
-          trap 'rm -rf "$temp_dir"' EXIT
-          tar -xzf "$archive" -C "$temp_dir"
-
-          python3 - "$temp_dir/$package_name" "$smoke_dir/codegeist-$platform-native.log" "$NATIVE_SMOKE_TIMEOUT_SECONDS" "$RELEASE_VERSION" <<'PY'
-          import os
-          import subprocess
-          import sys
-
-          package_dir, log_file, timeout_seconds, expected = sys.argv[1:5]
-          env = os.environ.copy()
-          env["LOG_FILE"] = log_file
-
-          def run_smoke(label, args, expected_output):
-              try:
-                  completed = subprocess.run(
-                      ["./codegeist", *args],
-                      cwd=package_dir,
-                      env=env,
-                      text=True,
-                      capture_output=True,
-                      timeout=int(timeout_seconds),
-                  )
-              except subprocess.TimeoutExpired:
-                  print(f"{label} timed out after {timeout_seconds}s", file=sys.stderr)
-                  sys.exit(1)
-
-              actual = (completed.stdout + completed.stderr).rstrip("\r\n")
-              if completed.returncode != 0:
-                  print(f"{label} failed with exit code {completed.returncode}: {actual}", file=sys.stderr)
-                  sys.exit(completed.returncode)
-
-              if actual != expected_output:
-                  print(f"Expected {label} output {expected_output}, got {actual}", file=sys.stderr)
-                  sys.exit(1)
-
-          run_smoke("Native version smoke", ["--version"], expected)
-          run_smoke("Native show-config smoke", ["--show-config"], "{}")
-
-          if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
-              print(f"Expected non-empty native smoke log: {log_file}", file=sys.stderr)
-              sys.exit(1)
-          PY
-
-          printf 'Native archive smoke passed: %s\n' "$archive"
-
-      - name: Package and smoke Windows native archive
-        if: runner.os == 'Windows'
         working-directory: app/codegeist/cli
         shell: pwsh
         run: |
-          $cliDir = (Get-Location).Path
-          $distDir = Join-Path $cliDir "target/dist"
-          $smokeDir = Join-Path $cliDir "target/smoke-test"
-          $packageName = "codegeist-windows-x64"
-          $packageDir = Join-Path $distDir $packageName
-          $archive = Join-Path $distDir "$packageName.zip"
-          $nativeExe = Join-Path $cliDir "target/codegeist.exe"
-
-          if (-not (Test-Path -LiteralPath $nativeExe)) {
-              throw "Native executable was not written: $nativeExe"
-          }
-
-          Remove-Item -Recurse -Force -LiteralPath $packageDir -ErrorAction SilentlyContinue
-          Remove-Item -Force -LiteralPath $archive -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force -LiteralPath $smokeDir -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
-          New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
-
-          Copy-Item -LiteralPath $nativeExe -Destination (Join-Path $packageDir "codegeist.exe") -Force
-          Get-ChildItem -LiteralPath (Join-Path $cliDir "target") -Filter "*.dll" -File -ErrorAction SilentlyContinue |
-              ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $packageDir -Force }
-
-          Compress-Archive -Path $packageDir -DestinationPath $archive -Force
-
-          $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("codegeist-smoke-" + [guid]::NewGuid().ToString("N"))
-          New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
-
-          try {
-              Expand-Archive -LiteralPath $archive -DestinationPath $tempRoot -Force
-              $runDir = Join-Path $tempRoot $packageName
-              $packageExe = Join-Path $runDir "codegeist.exe"
-              if (-not (Test-Path -LiteralPath $packageExe)) {
-                  throw "Packaged native executable was not found after unzip: $packageExe"
-              }
-
-              function Invoke-NativeCommandSmoke {
-                  param(
-                      [string]$Label,
-                      [string[]]$ArgumentList,
-                      [string]$Expected,
-                      [string]$OutputPrefix
-                  )
-
-                  $stdoutFile = Join-Path $smokeDir "$OutputPrefix.out"
-                  $stderrFile = Join-Path $smokeDir "$OutputPrefix.err"
-                  $logFile = Join-Path $smokeDir "$OutputPrefix.log"
-                  Remove-Item -Force -LiteralPath $stdoutFile, $stderrFile, $logFile -ErrorAction SilentlyContinue
-
-                  $env:LOG_FILE = $logFile
-                  $process = Start-Process -FilePath $packageExe -ArgumentList $ArgumentList -WorkingDirectory $runDir -NoNewWindow -PassThru -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
-                  if (-not $process.WaitForExit([int]$env:NATIVE_SMOKE_TIMEOUT_SECONDS * 1000)) {
-                      $process.Kill()
-                      $process.WaitForExit()
-                      throw "$Label timed out after $env:NATIVE_SMOKE_TIMEOUT_SECONDS seconds"
-                  }
-
-                  $stdout = if (Test-Path -LiteralPath $stdoutFile) { Get-Content -LiteralPath $stdoutFile -Raw } else { "" }
-                  $stderr = if (Test-Path -LiteralPath $stderrFile) { Get-Content -LiteralPath $stderrFile -Raw } else { "" }
-                  $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
-
-                  if ($process.ExitCode -ne 0) {
-                      throw "$Label failed with exit code $($process.ExitCode): $actual"
-                  }
-
-                  if ($actual -ne $Expected) {
-                      throw "Expected $Label output $Expected, got $actual"
-                  }
-
-                  if (-not (Test-Path -LiteralPath $logFile) -or (Get-Item -LiteralPath $logFile).Length -eq 0) {
-                      throw "Expected non-empty native smoke log: $logFile"
-                  }
-              }
-
-              Invoke-NativeCommandSmoke "Native version smoke" @("--version") $env:RELEASE_VERSION "codegeist-windows-native"
-              Invoke-NativeCommandSmoke "Native show-config smoke" @("--show-config") "{}" "codegeist-windows-native-show-config"
-          }
-          finally {
-              Remove-Item -Recurse -Force -LiteralPath $tempRoot -ErrorAction SilentlyContinue
-          }
-
-          Write-Host "Native archive smoke passed: $archive"
+          ../../../scripts/tests/artifact-smoke.ps1 `
+            -Platform "${{ matrix.platform }}" `
+            -CliDir (Get-Location).Path `
+            -ExpectedVersion $env:RELEASE_VERSION `
+            -SmokeRoot (Join-Path (Get-Location).Path "target/smoke-test") `
+            -NativeTimeoutSeconds ([int]$env:NATIVE_SMOKE_TIMEOUT_SECONDS) `
+            -FileEditTimeoutSeconds ([int]$env:FILE_EDIT_SMOKE_TIMEOUT_SECONDS)
 
       - name: Upload native artifact
         uses: actions/upload-artifact@v4
@@ -513,8 +339,8 @@ jobs:
           Validation completed in this workflow run before upload:
 
           - Maven test suite passed before packaging.
-          - JVM jar was packaged and smoke-tested with --version.
-          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version and --show-config.
+          - JVM jar was packaged as a release asset without artifact smoke.
+          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version, --show-config, and ask-driven file-edit side effects.
           - The SHA-256 checksum file was generated and verified before upload.
 
           This release intentionally excludes installers, signing, notarization, SBOM, and SLSA provenance.

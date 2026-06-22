@@ -36,8 +36,8 @@
 # Related files:
 # - scripts/tests/windows-qemu/autounattend.xml
 # - scripts/tests/windows-qemu/setup.ps1
-# - scripts/tests/qemu-windows-smoke.sh
-# - scripts/tests/final-smoke-suite.sh
+# - scripts/tests/qemu-windows-smoke.ps1
+# - scripts/tests/final-smoke-suite.ps1
 
 set -euo pipefail
 
@@ -250,6 +250,7 @@ build_answer_iso() {
     printf '$CodegeistReadyFile = %s\n' "$(ps_single_quote "$ready_file")"
     printf '$CodegeistGraalVmUrl = %s\n' "$(ps_single_quote "${CODEGEIST_WINDOWS_GRAALVM_URL:-https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-25.0.2/graalvm-community-jdk-25.0.2_windows-x64_bin.zip}")"
     printf '$CodegeistMavenUrl = %s\n' "$(ps_single_quote "${CODEGEIST_WINDOWS_MAVEN_URL:-https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.zip}")"
+    printf '$CodegeistPowerShellUrl = %s\n' "$(ps_single_quote "${CODEGEIST_WINDOWS_POWERSHELL_URL:-https://github.com/PowerShell/PowerShell/releases/download/v7.6.2/PowerShell-7.6.2-win-x64.msi}")"
     printf '$CodegeistVsBuildToolsUrl = %s\n' "$(ps_single_quote "${CODEGEIST_WINDOWS_VS_BUILDTOOLS_URL:-https://aka.ms/vs/17/release/vs_BuildTools.exe}")"
   } > "$config_file"
 
@@ -429,7 +430,7 @@ smoke_vm() {
   CODEGEIST_WINDOWS_NATIVE_MODE="${CODEGEIST_WINDOWS_NATIVE_MODE:-required}" \
   CODEGEIST_WINDOWS_ALLOW_SKIP="$allow_skip" \
   CODEGEIST_SMOKE_STATUS_FILE="$status_file" \
-    "$script_dir/qemu-windows-smoke.sh"
+    pwsh -NoProfile -File "$script_dir/qemu-windows-smoke.ps1"
   codegeist_print_duration 'windows qemu smoke total' "$smoke_start"
 }
 

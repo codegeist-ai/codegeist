@@ -44,7 +44,7 @@ user instruction changes the scope.
 | --- | --- | --- |
 | Tool split | Keep `write`, `edit`, `patch`, and `shell` as separate concepts. Existing `codegeist_write` remains create/overwrite; T007_04 adds precise edit/patch and shell. | OpenCode separates `write`, `edit`, `apply_patch`, and `bash`; Pi separates `write`, `edit`, and `bash`; Aider supports several edit formats but keeps command execution distinct. |
 | Patch/edit contract | Implement a Codegeist-owned exact edit and/or structured patch tool, not shell-only mutation. Parse/validate before writing and reject ambiguous changes. | OpenCode `edit` and `apply_patch`; Pi exact multi-edit with diff/patch details; Aider parse/dry-run/edit pipeline; mini-SWE-agent shows the risks of shell-only mutation. |
-| Workspace guard | Add a hard Codegeist working-directory guard for mutating file paths and shell cwd. Resolve/normalize paths and reject traversal/symlink escape before side effects. | OpenCode asks permission for external directories but Codegeist lacks a permission loop; Pi accepts broader paths; Aider's repo boundary is git-specific; Agent Utils lacks containment. |
+| Path/cwd checks | Do not add a standalone containment component. Keep path and cwd rejection local to each side-effecting tool that needs it, before the side effect runs. | OpenCode asks permission for external directories but Codegeist lacks a permission loop; Pi accepts broader paths; Aider's repo boundary is git-specific; Agent Utils lacks containment. |
 | Shell process model | Execute one local process per tool call. No stdin, persistent shell, background process registry, or command streaming in T007_04. | OpenCode and Pi shell tools are one-shot child processes; mini-SWE-agent local environment runs one command; Agent Utils background shell support is too broad. |
 | Shell result status | Treat non-zero exit as a completed shell result with exit code in the bounded summary. Treat invalid input, cwd escape, missing cwd, and startup failures as failed tool calls. Timeout should be recorded explicitly; prefer completed shell result with `Timed out: true` unless tests require `failed`. | OpenCode and Agent Utils return non-zero exit as shell output; mini-SWE-agent returns timeout as command result; current Codegeist has only completed/failed status. |
 | Output bounds | Store bounded text summaries only. Do not persist raw full stdout/stderr, unbounded diffs, process ids, environment variables, or side-file paths unless a future artifact lifecycle exists. | OpenCode truncates and can write side files; Pi tail-truncates and can save full logs; Aider lacks sufficient hard command-output bounds; mini-SWE-agent raw trajectory output can bloat. |
@@ -508,19 +508,18 @@ Defer or drop:
 | Exact edit | Dedicated `edit` tool | `edit` with `edits[]` | Search/replace edit format | None | `FileSystemTools.Edit` | Implement Codegeist-owned exact edit. |
 | Patch | Dedicated `apply_patch` grammar | No separate patch tool; edit returns patch details | Structured patch and unified diff formats | None | None | Implement only if needed after exact edit, or add focused structured patch with parse-first validation. |
 | Write boundary | Whole-file create/overwrite | Whole-file create/overwrite | Whole-file format exists | Shell writes only | `Write` creates/overwrites | Keep existing `codegeist_write`; do not merge edit/patch into it. |
-| Safety gate | Permission prompts plus external directory checks | No hard workspace evidence | Git/repo admission | Environment boundary only | No containment | Hard Codegeist working-dir guard before side effects. |
+| Safety gate | Permission prompts plus external directory checks | No hard workspace evidence | Git/repo admission | Environment boundary only | No containment | Per-tool path/cwd checks before side effects. |
 | Diff summary | Tool output/metadata | Diff and patch details | Git/diff-heavy summaries | None | Simple strings | Bounded text diff/summary in `outputPreview`. |
 | What to avoid | Full permission DB/TUI now | Extension hooks now | Git auto-commit/repo map now | Shell-only mutation | Direct reuse | Keep T007_04 minimal and test-shaped. |
 
 Recommended implementation order:
 
-1. Add reusable working-directory guard for mutating paths and shell cwd.
-2. Add exact edit tool with deterministic failures and bounded diff summary.
-3. Add shell tool with timeout, separate stdout/stderr capture, and bounded preview.
-4. Add patch tool only if the active T007_04 implementation slice explicitly needs
+1. Add exact edit tool with deterministic failures and bounded diff summary.
+2. Add shell tool with timeout, separate stdout/stderr capture, and bounded preview.
+3. Add patch tool only if the active T007_04 implementation slice explicitly needs
    multi-file patch support; otherwise record it as a follow-up under the same task
    directory.
-5. Keep session persistence through the existing local tool callback recorder.
+4. Keep session persistence through the existing local tool callback recorder.
 
 ## Cross-Project Shell Synthesis
 
@@ -659,8 +658,7 @@ Resolve these before writing Java source:
 - [ ] Decide timeout field name and units.
 - [ ] Decide exact edit only versus exact edit plus structured patch in the first
   implementation pass.
-- [ ] Add or reuse a working-directory guard for mutating file paths and shell cwd.
-- [ ] Write focused tests for path/cwd escape before side effects.
+- [ ] Write focused tests for path/cwd escape inside the relevant side-effecting tool.
 - [ ] Write focused tests for bounded edit/patch and shell output summaries.
 - [ ] Keep `ToolSessionPart` schema unchanged unless a focused test proves a field
   is needed now.

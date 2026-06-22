@@ -37,9 +37,10 @@ GitHub-hosted release workflow.
 No artifact signing, notarization, installer generation, SBOM, SLSA provenance, or
 package-manager publishing exists yet.
 
-The current local smoke suite lives under `scripts/tests/` and verifies the
-implemented `--version` behavior on local Linux artifacts and, when configured, a
-Windows QEMU VM over SSH.
+The current local smoke suite lives under `scripts/tests/` and uses the shared
+`artifact-smoke.ps1` harness to verify implemented `--version`, native
+`--show-config`, file-edit encoding, command logs, and optional Ollama-backed
+`ask` behavior on local Linux artifacts and, when configured, a Windows QEMU VM
 
 ## Release Target
 
@@ -84,7 +85,7 @@ The JVM jar and native distribution archives have separate responsibilities.
 
 | Artifact | Example name | Built from | Verification posture |
 | --- | --- | --- | --- |
-| JVM jar | `codegeist-jvm.jar` | Maven package on Ubuntu | Release-blocking for the current `--version` artifact contract. |
+| JVM jar | `codegeist-jvm.jar` | Maven package on Ubuntu | Release asset only; not smoke-tested. |
 | Linux native archive | `codegeist-linux-x64.tar.gz` | Native compile and package on Linux x64 | Release-blocking in the implemented workflow. |
 | Windows native archive | `codegeist-windows-x64.zip` | Native compile and package on Windows x64 | Release-blocking in the implemented workflow. |
 | macOS Intel native archive | `codegeist-macos-x64.tar.gz` | Native compile and package on macOS x64 | Release-blocking in the implemented workflow. |
@@ -117,19 +118,22 @@ unsafe.
    detailed squash-candidate commit.
 2. Tests: run the normal Maven test lifecycle through `task test` from
    `app/codegeist/cli`.
-3. JVM package: run `task build` and stage the jar under a release name.
-4. JVM startup smoke: run the packaged jar with Spring Shell interactivity disabled
-   and a bounded timeout.
-5. Native compile: run `task native` on each supported native runner when the
+3. JVM package: run `task build` and stage the jar under a release name without
+   artifact smoke.
+4. Native compile: run `task native` on each supported native runner when the
    toolchain is available.
-6. Native archive package: collect the executable and required sidecar libraries
-   into the platform archive.
-7. Native package smoke: unpack the archive into a clean temporary directory and
-   run the packaged executable on its own platform with the same bounded startup
-   policy.
+5. Native artifact smoke: run the same `scripts/tests/artifact-smoke.ps1` harness
+   for each native platform. It collects the executable and required sidecar
+   libraries into the platform archive, unpacks the archive into a clean temporary
+   directory, runs `--version` and `--show-config`, verifies logs, and delegates
+   deterministic ask-driven file editing to the file-edit sub-harness.
+6. Native file-edit encoding smoke: verify each extracted native package through
+   the shared artifact harness on the target runner.
+7. Native package shape: leave only the release archive under
+   `target/dist/codegeist-<platform>.<extension>` for upload.
 8. Artifact integrity: generate checksums and verify every checksum before upload.
 9. Main promotion: after candidate branch validation, advance `main` by
-   fast-forward only from the candidate commit.
+    fast-forward only from the candidate commit.
 10. Release publication: on `v*` tag runs only, create or update a published GitHub
     Release and attach all artifacts and checksums.
 11. Post-release verification: download the published assets and verify
@@ -139,8 +143,9 @@ unsafe.
     update the `latest` GitHub Release with those same verified downloaded assets.
     Do not run another build for `latest`.
 
-The JVM jar is a release-blocking artifact. Linux x64, Windows x64, and macOS x64
-native archives are release-blocking in the implemented GitHub workflow. Missing
+The JVM jar is a release-blocking asset because it must build and upload, but it is
+not an artifact-smoke target. Linux x64, Windows x64, and macOS x64 native archives
+are the release-blocking smoke targets in the implemented GitHub workflow. Missing
 native checks must be recorded as `skipped`, not left implicit.
 
 ## Binary Smoke Scenarios
@@ -155,6 +160,17 @@ Required smoke checks once the corresponding CLI behavior exists:
   `0` with bounded output.
 - Version output: run `--version`, which is the current implemented no-side-effect
   command.
+- Native artifact smoke: run `scripts/tests/artifact-smoke.ps1` against native build
+  output. This PowerShell 7 harness owns native packaging, archive unpacking,
+  `--version`, native `--show-config`, command-log assertions, and file-edit
+  delegation across Linux, Windows, macOS, local wrappers, and release CI.
+- File-edit encoding smoke: `artifact-smoke.ps1` delegates to
+  `scripts/tests/file-edit-ask-smoke.ps1`. The sub-harness starts a local
+  deterministic Ollama-compatible fixture provider, runs the real `ask` command,
+  verifies that Spring AI executes `codegeist_edit`, then asserts final bytes and a
+  completed persisted `ToolSessionPart`. It covers BOM, multibyte text, LF/CRLF,
+  final-newline, and configured-charset behavior without relying on
+  nondeterministic model choice.
 - Noninteractive startup: run the default no-side-effect command path and require
   the process to exit or report readiness within the timeout defined by the
   release task.
@@ -168,29 +184,19 @@ Required smoke checks once the corresponding CLI behavior exists:
 Implemented CI smoke command shapes:
 
 ```bash
-java -jar codegeist-jvm.jar --version
-tar -xzf codegeist-linux-x64.tar.gz -C /tmp/codegeist-smoke
-cd /tmp/codegeist-smoke/codegeist-linux-x64
-./codegeist --version
-./codegeist --show-config
-
-tar -xzf codegeist-macos-x64.tar.gz -C /tmp/codegeist-smoke
-cd /tmp/codegeist-smoke/codegeist-macos-x64
-./codegeist --version
-./codegeist --show-config
+pwsh -NoProfile -File scripts/tests/artifact-smoke.ps1 -Platform linux-x64 -CliDir app/codegeist/cli
+pwsh -NoProfile -File scripts/tests/artifact-smoke.ps1 -Platform macos-x64 -CliDir app/codegeist/cli
 ```
 
 ```powershell
-Expand-Archive -Force codegeist-windows-x64.zip $env:TEMP\codegeist-smoke
-Set-Location $env:TEMP\codegeist-smoke\codegeist-windows-x64
-.\codegeist.exe --version
-.\codegeist.exe --show-config
+pwsh -NoProfile -File scripts\tests\artifact-smoke.ps1 -Platform windows-x64 -CliDir app\codegeist\cli
 ```
 
-These examples reflect the implemented release workflow's `--version` and
-`--show-config` smoke shape. Do not report broader commands such as `--help` as
-executed until the CLI owns that behavior and the corresponding release job really
-runs it.
+These examples reflect the implemented release workflow's `--version`,
+`--show-config`, packaging, archive unpacking, and ask-driven file-edit smoke
+shape through the shared artifact harness. Do not report broader commands such as
+`--help` as executed until the CLI owns that behavior and the corresponding release
+job really runs it.
 
 ## Implemented Local Smoke Suite
 
@@ -199,11 +205,16 @@ Actions release jobs.
 
 | Script | Current behavior |
 | --- | --- |
-| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds `target/codegeist.jar`, verifies jar `--version`, and when `native-image` is available builds, packages, unpacks, and verifies native `--version` plus `--show-config` from `target/dist/codegeist-linux-x64.tar.gz`. |
+| `scripts/tests/smoke-common.ps1` | Shared PowerShell 7 helper layer for platform smoke status files, duration output, environment overrides, command steps, and readiness checks. |
+| `scripts/tests/artifact-smoke.ps1` | Shared native-only PowerShell 7 artifact harness used by release CI plus local Linux and Windows wrappers. It packages native artifacts, unpacks native archives, verifies `--version`, native `--show-config`, command logs, deterministic file-edit side effects, and optional real Ollama-backed `ask`. |
+| `scripts/tests/local-linux-smoke.ps1` | Runs Maven tests, builds `target/codegeist.jar` as a build gate, and when `native-image` is available delegates native build and archive checks to `native-smoke.ps1` and the shared artifact harness for `target/dist/codegeist-linux-x64.tar.gz`. |
 | `scripts/tests/qemu-windows-vm.sh` | Downloads the official Windows Server Evaluation ISO when needed, creates or starts the local Windows QEMU VM, syncs the repo subset, and runs Windows smoke through SSH. Download, ISO, or VM failures fail by default. |
-| `scripts/tests/qemu-windows-smoke.sh` | Lower-level SSH wrapper that runs `scripts/tests/windows-smoke.ps1` inside an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Runs Windows-side Maven tests, jar package, jar `--version`, and when GraalVM and MSVC Build Tools are available builds, packages, unpacks, and verifies native `--version` plus `--show-config` from `target/dist/codegeist-windows-x64.zip`. |
-| `scripts/tests/final-smoke-suite.sh` | Runs Linux and Windows local smoke checks. Default mode requires both platforms to pass; `--allow-skips` is developer-only. |
+| `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH wrapper that runs `scripts/tests/windows-smoke.ps1` inside an already reachable Windows VM. |
+| `scripts/tests/windows-smoke.ps1` | Runs Windows-side native compile and calls the shared artifact harness for `target/dist/codegeist-windows-x64.zip` when GraalVM and MSVC Build Tools are available. |
+| `scripts/tests/final-smoke-suite.ps1` | Runs Linux and Windows local smoke checks. Default mode requires both platforms to pass; `-AllowSkips` is developer-only. |
+
+Smoke orchestration logic lives in the PowerShell scripts; do not add shell
+compatibility wrappers around these workflows.
 
 The local suite is intentionally not a release publisher. It does not upload
 artifacts, generate checksums, create GitHub Releases, sign binaries, or replace
@@ -230,6 +241,7 @@ Initial provisional budgets until baseline measurements exist:
 | --- | --- | --- |
 | JVM jar non-interactive startup | 15 seconds | Conservative for Spring Boot startup in CI. Refine after measurements. |
 | Native non-interactive startup | 5 seconds | Native should start faster, but early GraalVM or runner variance may require adjustment. |
+| File-edit encoding smoke | 90 seconds | Runs the artifact's real `ask` command, deterministic fixture tool call, local tool callbacks, and byte-level fixture checks without remote provider calls. |
 | Help or version command | 5 seconds | Applies once the CLI owns those commands. |
 | Platform smoke suite | 60 seconds per artifact | Excludes native compilation time. |
 
@@ -318,9 +330,11 @@ Before publishing or approving a release candidate, verify:
 - `main` was advanced by fast-forward only; no merge commit, GitHub merge button,
   GitHub squash button, or force-push was used.
 - Maven tests passed from `app/codegeist/cli` with the selected `-Drevision`.
-- JVM jar was built, renamed for release, checksumed, and smoke tested.
+- JVM jar was built, renamed for release, checksumed, and smoke tested, including
+  UTF-8 and ISO-8859-1 file-edit encoding checks.
 - Each platform-native archive is either unpacked and smoke tested on its own
-  platform or recorded as `skipped` or `failed` with required details.
+  platform, including UTF-8 and ISO-8859-1 file-edit encoding checks, or recorded as
+  `skipped` or `failed` with required details.
 - Checksum verification passed before artifact upload.
 - Release notes list supported platforms and skipped or failed platform checks.
 - Published GitHub Release contains the expected artifacts and checksum files.

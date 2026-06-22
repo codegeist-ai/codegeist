@@ -53,6 +53,20 @@ class CodegeistWorkspaceConfigTest {
     }
 
     @Test
+    void loadsWorkspaceDirGuardDisabledFromDirectYaml() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            workspace:
+              dir-guard-disabled: true
+            """);
+
+        CodegeistConfig config = service.loadConfig(configFile.toString());
+
+        assertThat(workspace(config).getConfig().getDirGuardDisabled()).isTrue();
+        assertThat(service.toYaml(config)).contains("dir-guard-disabled: true");
+    }
+
+    @Test
     void omittedWorkspaceRootIsAllowed() throws IOException {
         Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
         Files.writeString(configFile, "{}\n");

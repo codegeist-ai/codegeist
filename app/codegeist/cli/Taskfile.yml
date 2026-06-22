@@ -22,35 +22,27 @@ tasks:
   native-smoke:
     desc: Build the native executable and smoke-test native commands
     cmds:
-      - |
-        bash -lc '
-          set -euo pipefail
-          source ../../../scripts/tests/native-smoke.sh
-          start="$(codegeist_now_ms)"
-          mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile
-          codegeist_print_duration "linux native compile" "$start"
-        '
-      - bash -lc 'source ../../../scripts/tests/native-smoke.sh; run-native-smoke-tests'
+      - pwsh -NoProfile -File ../../../scripts/tests/native-smoke.ps1 -BuildNative
 
   local-linux-smoke:
-    desc: Run local Linux jar and native smoke checks
+    desc: Run local Linux build gates and native smoke checks
     cmds:
-      - bash ../../../scripts/tests/local-linux-smoke.sh
+      - pwsh -NoProfile -File ../../../scripts/tests/local-linux-smoke.ps1
 
   mcp-remote-smoke:
     desc: Run Docker-backed remote MCP streamable HTTP smoke
     cmds:
-      - bash ../../../scripts/tests/mcp-remote-smoke.sh
+      - pwsh -NoProfile -File ../../../scripts/tests/mcp-remote-smoke.ps1
 
   qemu-windows-smoke:
-    desc: Create or start the Windows QEMU VM and run jar/native smoke checks
+    desc: Create or start the Windows QEMU VM and run native smoke checks
     cmds:
       - bash ../../../scripts/tests/qemu-windows-vm.sh smoke
 
   final-smoke-suite:
     desc: Run the local Linux and Windows final smoke suite
     cmds:
-      - bash ../../../scripts/tests/final-smoke-suite.sh
+      - pwsh -NoProfile -File ../../../scripts/tests/final-smoke-suite.ps1
 
   ollama-start:
     desc: Start a local Ollama server

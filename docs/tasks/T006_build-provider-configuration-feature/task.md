@@ -86,7 +86,7 @@ Current Codegeist state:
   path through Ollama, deterministic options, and narrow assertions.
 - `T006_06_add-provider-connection-smoke-harness.md` - add configurable
   provider-specific feature tests with method-level cost and safety policy, plus
-  the one-shot `ask` command and real Ollama-backed jar/native smoke coverage.
+  the one-shot `ask` command and real Ollama-backed native smoke coverage.
 
 Later provider-specific child tasks should be created from the matrix only after
 `T006_06` defines the shared smoke contract. Candidate providers include OpenAI,

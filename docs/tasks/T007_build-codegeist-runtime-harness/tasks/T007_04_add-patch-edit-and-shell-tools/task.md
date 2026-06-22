@@ -41,10 +41,10 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 
 ## Child Tasks
 
-- `tasks/T007_04_01_add-working-directory-guard.md` - add the shared path/cwd
-  containment guard needed before file mutation or shell process startup.
-- `tasks/T007_04_02_add-exact-edit-tool.md` - add `codegeist_edit` for bounded
-  exact replacements while keeping `codegeist_write` focused on create/overwrite.
+- `tasks/T007_04_02_add-exact-edit-tool.md` - solved: added `codegeist_edit` for
+  bounded exact replacements while keeping `codegeist_write` focused on
+  create/overwrite; compact diff preview limits are configurable through
+  `tools.codegeist-edit` direct config.
 - `tasks/T007_04_03_add-structured-patch-tool.md` - add `codegeist_patch` for
   parse-before-write structured patches that are not applied through shell.
 - `tasks/T007_04_04_add-shell-tool.md` - add `codegeist_shell` as one bounded local
@@ -72,6 +72,18 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 - `opencode-shell-tool-comparison.md` documents the source-backed OpenCode shell
   tool implementation and compares it with the proposed first Codegeist shell tool
   shape.
+- Reuse existing tool engines before building new internals. Spring AI Agent Utils
+  already documents `FileSystemTools` with read/write/edit plus allowed-directory
+  checks and `ShellTools` with timeout, stdout/stderr, exit-code, and background
+  process support; the MCP filesystem server already exposes `edit_file`,
+  `write_file`, search, and directory access control. Treat those as candidates for
+  adapters or implementation-source reuse before writing a parallel helper.
+- Keep the Codegeist-owned local callback facade even when a lower-level engine is
+  reused. `codegeist_*` names, workspace-relative input, Codegeist path/cwd policy,
+  `workspace.encoding`, output bounds, handled `CodegeistToolException` failures,
+  and `ToolSessionPart(tool,status,outputPreview)` persistence remain Codegeist
+  contracts. Do not directly expose broad third-party file or shell tool surfaces to
+  the model unless a focused task explicitly changes that product contract.
 - Keep future research answers in this directory so the patch/edit and shell-tool
   implementation handoff stays local to `T007_04`.
 

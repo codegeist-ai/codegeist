@@ -161,9 +161,8 @@ implementation tests need them.
   shell tools that persist tool activity into `.codegeist/session.json`. Its
   research docs live in the same directory, including
   `ask-project-question-catalog.md`, `ask-project-research.md`, and
-  `opencode-shell-tool-comparison.md`. Its child tasks split the work into the
-  shared working-directory guard, exact edit, structured patch, shell, and final
-  documentation/verification slices.
+  `opencode-shell-tool-comparison.md`. Its child tasks split the work into exact
+  edit, structured patch, shell, and final documentation/verification slices.
 - `T007_05_add-agent-control-loop.md` - add the first Codegeist-owned
   model/tool/model control loop so tool results can drive model continuation instead
   of relying only on a single provider call with prompt-scoped callbacks.

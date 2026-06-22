@@ -111,11 +111,12 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - For GraalVM native-image work, remember that Spring AOT fixes conditional bean
   choices such as the Spring Shell runner during native compilation. Configure
   the intended mode before the native build and prove it with `task native-smoke`.
-- For Codegeist native smoke scripts, keep smoke artifacts under
-  `target/smoke-test`, delete and recreate that directory at the start of each
-  smoke run, route `LOG_FILE` to `target/smoke-test/codegeist.log`, and keep the
-  Taskfile path as a sourced function call such as
-  `source ../../../scripts/tests/native-smoke.sh; run-native-smoke-tests`.
+- For Codegeist artifact smoke scripts, keep smoke artifacts under
+  `target/smoke-test`, use `scripts/tests/artifact-smoke.ps1` as the shared
+  native-only package harness across Linux, Windows, macOS, local wrappers, and
+  release CI, and keep `scripts/tests/native-smoke.ps1` as the thin Linux wrapper
+  used by `task native-smoke`. Do not add jar artifact smoke back unless a future
+  task explicitly changes that release contract.
 - For Codegeist smoke scripts, treat expected devcontainer tools such as `timeout`
   and `curl` as part of the script contract and call them directly. Use
   command-existence checks only when the result drives real `passed`, `skipped`,
@@ -142,8 +143,12 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   local provider-call methods.
 - For Codegeist test or smoke-script work, read `docs/tests/README.md` first.
   Smoke scripts must keep scan-friendly status lines and emit stable
-  `Duration: <label>: <seconds>s` lines for meaningful Maven, package, jar,
+  `Duration: <label>: <seconds>s` lines for meaningful Maven, package,
   native compile, archive smoke, platform total, SSH, and QEMU wrapper checks.
+  Keep smoke orchestration logic in PowerShell entrypoints under `scripts/tests/`
+  and shared helpers such as `scripts/tests/smoke-common.ps1`; do not add shell
+  compatibility wrappers around these workflows. Keep Bash only for QEMU VM
+  lifecycle/provisioning where the host tooling is currently Bash-specific.
   `task mcp-remote-smoke` is the opt-in Docker/Ollama MCP verification path: it
   proves both the direct `streamable_http` callback path and a Spring Boot `ask`
   turn where local Ollama invokes the remote MCP tool and persists the
@@ -206,13 +211,23 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - For `T007_04`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/ask-project-research.md`
   before implementation. Keep `write`, `edit`, `patch`, and `shell` separate;
-  keep existing `codegeist_write` create/overwrite behavior; implement Codegeist-owned
-  side-effecting tools instead of directly exposing Spring AI Agent Utils file or
-  shell tools; reject mutating file paths and shell cwd escapes before side effects;
-  keep shell execution one process per tool call with no stdin, persistent shell,
-  background process, or sandbox claim beyond explicit cwd/path/timeout checks; and
-  keep `ToolSessionPart(tool,status,outputPreview)` unchanged unless focused tests
-  require typed fields.
+  keep existing `codegeist_write` create/overwrite behavior; and check reusable
+  engines before adding new internals. Spring AI Agent Utils `FileSystemTools` and
+  `ShellTools`, plus the MCP filesystem server, are candidates for adapters or
+  implementation-source reuse. Still implement Codegeist-owned side-effecting
+  callbacks instead of directly exposing broad third-party file or shell tool
+  surfaces; preserve `codegeist_*` names, workspace-relative input, Codegeist
+  path/cwd policy, `workspace.encoding`, bounded output, handled tool failures, and
+  `ToolSessionPart(tool,status,outputPreview)`. Reject mutating file paths and shell
+  cwd escapes before side effects; keep shell execution one process per tool call
+  with no stdin, persistent shell, background process, or sandbox claim beyond
+  explicit cwd/path/timeout checks; and keep `ToolSessionPart` unchanged unless
+  focused tests require typed fields. Keep `codegeist_edit` exact-only with `path`
+  plus Pi-style `edits[]` entries containing `oldText` and `newText`; do not add
+  fuzzy matching, replace-all behavior, legacy top-level fields, or stringified
+  `edits`. `workspace.dir-guard-disabled: true` disables only active-workspace
+  containment for side-effecting file targets; missing paths and non-regular files
+  still fail before mutation.
 - For `T007_06`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md` as
   the source-backed OpenCode TUI element inventory and JLine implementation mapping.

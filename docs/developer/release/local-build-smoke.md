@@ -1,15 +1,16 @@
 # Local Build Smoke
 
-Local Linux and Windows smoke checks verify the current Codegeist jar and native
-executable before GitHub release automation runs.
+Local Linux and Windows smoke checks verify the current Codegeist native executable
+before GitHub release automation runs. The jar is built as a release asset, but it
+is not smoke-tested.
 
 ## Scope
 
 This workflow covers the implemented Spring Boot CLI module under
-`app/codegeist/cli`. It proves the existing `--version` command on generated jar
-artifacts and proves both `--version` and the default `--show-config` output on
-packaged native artifacts. It does not create release uploads, installers,
-signing, notarization, or GitHub Actions release jobs.
+`app/codegeist/cli`. It proves `--version`, the default `--show-config` output,
+logs, and file-edit side effects on packaged native artifacts through the shared
+artifact smoke harness. It does not create release uploads, installers, signing,
+notarization, or GitHub Actions release jobs.
 
 All local test and smoke scripts live under `scripts/tests/`.
 
@@ -25,12 +26,17 @@ sidecar libraries next to the GraalVM executable.
 
 | Entrypoint | Purpose |
 | --- | --- |
-| `scripts/tests/local-linux-smoke.sh` | Runs Maven tests, builds the jar, verifies jar `--version`, then packages, unpacks, and smokes Linux native archive `--version` and `--show-config` when `native-image` is available. |
+| `scripts/tests/smoke-common.ps1` | Shared PowerShell helper layer for status files, duration output, environment overrides, TCP readiness checks, and command steps. |
+| `scripts/tests/artifact-smoke.ps1` | Shared native-only artifact smoke harness used by local Linux, Windows QEMU, macOS release CI, and GitHub release jobs. |
+| `scripts/tests/local-linux-smoke.ps1` | Runs Maven tests, builds the jar as a build gate, then calls `native-smoke.ps1` for optional Linux native archive checks. |
 | `scripts/tests/qemu-windows-vm.sh` | Creates or starts the local Windows QEMU VM, syncs the repo subset, and runs the Windows smoke helper. |
-| `scripts/tests/qemu-windows-smoke.sh` | Lower-level SSH wrapper for an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Runs inside the Windows VM to build and smoke the jar, then optionally package, unpack, and smoke Windows native zip `--version` and `--show-config`. |
-| `scripts/tests/final-smoke-suite.sh` | Runs Linux and Windows smoke entrypoints as the final local suite. |
-| `scripts/tests/native-smoke.sh` | Reusable Linux native archive `--version` and `--show-config` smoke helper used by Taskfile and Linux smoke runs. |
+| `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH wrapper for an already reachable Windows VM. |
+| `scripts/tests/windows-smoke.ps1` | Runs inside the Windows VM to build native and call `artifact-smoke.ps1` for optional Windows native zip checks. |
+| `scripts/tests/final-smoke-suite.ps1` | Runs Linux and Windows smoke entrypoints as the final local suite. |
+| `scripts/tests/native-smoke.ps1` | Thin Linux wrapper that starts local Ollama and calls `artifact-smoke.ps1` for native archive checks. |
+
+Smoke orchestration logic lives in the PowerShell entrypoints. Do not add shell
+compatibility wrappers around these workflows.
 
 The same checks are exposed through `app/codegeist/cli/Taskfile.yml`:
 
@@ -51,24 +57,24 @@ task -t app/codegeist/cli/Taskfile.yml final-smoke-suite
 Run directly from the repository root:
 
 ```bash
-scripts/tests/local-linux-smoke.sh
+pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1
 ```
 
 The Linux smoke command runs:
 
 - `mvn --batch-mode --no-transfer-progress test`
 - `mvn --batch-mode --no-transfer-progress -DskipTests clean package`
-- `java -jar target/codegeist.jar --version`
 - native compile, `target/dist/codegeist-linux-x64.tar.gz` packaging,
-  archive extraction into a fresh temp directory, `./codegeist --version`, and
-  `./codegeist --show-config` from the extracted package when `native-image` is
-  on `PATH`
+  archive extraction into a fresh temp directory, `./codegeist --version`,
+  `./codegeist --show-config`, command logs, deterministic file-edit side effects,
+  and real Ollama-backed `ask` from the extracted package when `native-image` is on
+  `PATH`
 
 If `native-image` is missing, the native subcheck is reported as `skipped` unless
 `CODEGEIST_SMOKE_REQUIRE_NATIVE=1` is set.
 
-Linux version and config smokes are bounded by `CODEGEIST_JAR_SMOKE_TIMEOUT`,
-default `15s`, and `CODEGEIST_NATIVE_SMOKE_TIMEOUT`, default `5s`.
+Linux native version and config smokes are bounded by
+`CODEGEIST_NATIVE_SMOKE_TIMEOUT`, default `5s`.
 
 ## Windows QEMU Smoke
 
@@ -152,7 +158,7 @@ export CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS='5'
 Run the Windows smoke command:
 
 ```bash
-scripts/tests/qemu-windows-smoke.sh
+pwsh -NoProfile -File scripts/tests/qemu-windows-smoke.ps1
 ```
 
 `CODEGEIST_WINDOWS_NATIVE_MODE` accepts:
@@ -167,7 +173,7 @@ scripts/tests/qemu-windows-smoke.sh
 Run the normal final local suite:
 
 ```bash
-scripts/tests/final-smoke-suite.sh
+pwsh -NoProfile -File scripts/tests/final-smoke-suite.ps1
 ```
 
 The final suite runs Linux and Windows entrypoints. Windows is required by
@@ -177,7 +183,7 @@ Windows smoke check fails the suite.
 Use developer-only skip mode when platform prerequisites are intentionally absent:
 
 ```bash
-scripts/tests/final-smoke-suite.sh --allow-skips
+pwsh -NoProfile -File scripts/tests/final-smoke-suite.ps1 -AllowSkips
 ```
 
 `--allow-skips` is not release-grade validation. It only keeps ordinary developer
@@ -190,7 +196,7 @@ Each platform reports a concise result:
 ```text
 Platform smoke status: passed
 Platform: linux
-Jar status: passed
+Jar status: skipped
 Native status: passed
 ```
 

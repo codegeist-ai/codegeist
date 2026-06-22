@@ -14,8 +14,7 @@ expressed as shell commands.
 - Add `codegeist_patch` as a separate concept from `codegeist_write`,
   `codegeist_edit`, and `codegeist_shell`.
 - Parse the full patch before writing files.
-- Validate every target path through the T007_04 working-directory guard before any
-  side effect runs.
+- Validate every target path inside the patch tool before any side effect runs.
 - Reject invalid or partial patches before mutation when feasible.
 - Summarize changed files and bounded hunks in `ToolSessionPart.outputPreview`.
 
@@ -46,8 +45,7 @@ task test TEST=<structured-patch-tool-test-selector>
 
 ## Source Notes
 
-- Depends on `T007_04_01_add-working-directory-guard.md`.
-- It may depend on `T007_04_02_add-exact-edit-tool.md` only if the implementation
+- May depend on `T007_04_02_add-exact-edit-tool.md` only if the implementation
   deliberately shares non-trivial diff or preview code.
 - Do not add patch side-file artifacts, TUI patch review, git auto-add, or git
   auto-commit in this child task.

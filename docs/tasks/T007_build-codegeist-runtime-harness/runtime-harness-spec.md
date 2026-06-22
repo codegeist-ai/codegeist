@@ -394,12 +394,6 @@ classDiagram
       +preview(String value) OutputPreview
     }
 
-    class WorkingDirectoryGuard {
-      <<planned>>
-      +requireInsideWorkingDir(Path workingDir, Path target) Path
-      +requireCommandCwd(Path workingDir, Path cwd) Path
-    }
-
     class ChatToolStatus {
       <<planned enum>>
     }
@@ -445,10 +439,6 @@ classDiagram
       <<planned interface>>
     }
 
-    class WorkingDirectoryGuard {
-      <<planned>>
-    }
-
     class ToolOutputBounds {
       <<planned>>
     }
@@ -477,10 +467,6 @@ classDiagram
     ReadFileTool ..|> CodegeistTool
     GlobFilesTool ..|> CodegeistTool
     GrepFilesTool ..|> CodegeistTool
-    ListFilesTool --> WorkingDirectoryGuard
-    ReadFileTool --> WorkingDirectoryGuard
-    GlobFilesTool --> WorkingDirectoryGuard
-    GrepFilesTool --> WorkingDirectoryGuard
     ReadFileTool --> ToolOutputBounds
     GrepFilesTool --> ToolOutputBounds
 ```
@@ -493,10 +479,6 @@ classDiagram
 
     class CodegeistTool {
       <<planned interface>>
-    }
-
-    class WorkingDirectoryGuard {
-      <<planned>>
     }
 
     class ToolOutputBounds {
@@ -521,9 +503,6 @@ classDiagram
     WriteFileTool ..|> CodegeistTool
     ApplyPatchTool ..|> CodegeistTool
     EditFileTool ..|> CodegeistTool
-    WriteFileTool --> WorkingDirectoryGuard
-    ApplyPatchTool --> WorkingDirectoryGuard
-    EditFileTool --> WorkingDirectoryGuard
     WriteFileTool --> ToolOutputBounds
     ApplyPatchTool --> ToolOutputBounds
     EditFileTool --> ToolOutputBounds
@@ -560,10 +539,6 @@ classDiagram
       <<planned interface>>
     }
 
-    class WorkingDirectoryGuard {
-      <<planned>>
-    }
-
     class ToolOutputBounds {
       <<planned>>
     }
@@ -573,7 +548,6 @@ classDiagram
     }
 
     ShellTool ..|> CodegeistTool
-    ShellTool --> WorkingDirectoryGuard
     ShellTool --> ToolOutputBounds
     ShellTool --> ShellCommandRequest
     ShellTool --> ShellCommandResult

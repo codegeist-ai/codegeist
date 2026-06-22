@@ -23,6 +23,8 @@ The current slice solves these problems:
 - Dispatch `provider.<id>.type` to concrete Java provider config classes.
 - Parse a first top-level `mcp:` client catalog root as a provider-style YAML object
   keyed by client id, backed by a Java list of concrete transport config objects.
+- Parse single-object `workspace:` and `tools:` roots for workspace behavior and
+  Codegeist-owned local tool settings.
 - Validate config locally with Bean Validation after mapping.
 - Render `--show-config` YAML directly, including configured sensitive values.
 - Keep provider config free of models, generation options, enablement, and
@@ -42,7 +44,7 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistTypedConfigElement.java` | Generic base class for entries that store a required nested YAML `type` discriminator with Lombok getter/setter, currently providers and MCP clients. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigKeyedListElement.java` | Shared list-backed config element that builds a transient provider-style YAML object from subclass-defined keys. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigRootElement.java` | Generic root element base class for naming one top-level YAML value and rendering its validated `T config` payload back to direct config YAML. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigRootParser.java` | Central Spring parser for all supported top-level direct YAML roots. It owns root dispatch, explicit `provider:`, `mcp:`, and `workspace:` parser methods, provider `type` dispatch, MCP YAML-key id copying, shape checks, and unsupported-root errors. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigRootParser.java` | Central Spring parser for all supported top-level direct YAML roots. It owns root dispatch, explicit `provider:`, `mcp:`, `workspace:`, and `tools:` parser methods, provider `type` dispatch, MCP YAML-key id copying, shape checks, and unsupported-root errors. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProvidersRootElement.java` | `provider:` root model that wraps `ProvidersConfig`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProvidersConfig.java` | List-backed provider config element that renders a provider-keyed YAML object and exposes optional first-provider lookup. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/McpClientsRootElement.java` | `mcp:` root model for the first MCP client catalog shape. It wraps `McpClientsConfig`. |
@@ -50,10 +52,15 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/McpClientConfig.java` | Abstract MCP client config base with internal `id` copied from the YAML key plus the shared transport `type` enum. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/StdioMcpClientConfig.java` | Concrete `stdio` MCP client config with required `command` and optional `args`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/StreamableHttpMcpClientConfig.java` | Concrete `streamable_http` MCP client config with required `url` and optional `endpoint`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/WorkspaceRootElement.java` | `workspace:` root model for direct workspace settings. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/WorkspaceConfig.java` | Direct workspace payload for directory, encoding, and the edit containment guard switch. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsRootElement.java` | `tools:` root model for Codegeist-owned local tool settings. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsConfig.java` | Direct tool settings payload currently containing `codegeist-edit`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistEditToolConfig.java` | `tools.codegeist-edit:` payload for edit diff preview line and character limits. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract base class for provider map values. Holds common access fields, exposes read-only output `type` through concrete constants, and declares provider-owned `defaultModel()` plus `createChatModel()`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Access config class for local Ollama settings, the `llama3.2:1b` default runtime model, and the concrete config-owned chat model seam. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Access config class for OpenAI settings and the `gpt-5-mini` default runtime model; chat-model creation is not implemented yet. |
-| `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-config.json` | GraalVM reflection metadata that lets Jackson instantiate config root, provider, MCP, and workspace POJOs in native images. |
+| `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-config.json` | GraalVM reflection metadata that lets Jackson instantiate config root, provider, MCP, workspace, and tools POJOs in native images. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigYamlMapper.java` | Spring service and Jackson mapper for direct `codegeist.yml` parsing, empty-safe source-tree loading, list-backed keyed element rendering, and direct YAML output. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlExpressionEvaluator.java` | Spring service that receives `CodegeistConfigYamlMapper` and evaluates SpEL in direct-YAML string scalar values only. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigService.java` | Spring service that receives `CodegeistConfigYamlMapper`, `CodegeistConfigRootParser`, the injected `codegeist.config` value, and the SpEL evaluator service; exposes the primary config bean parsed from `codegeist.config` when set, owns `--show-config`, loads explicit YAML, runs validation, and renders direct YAML. |
@@ -62,6 +69,8 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistProviderConfigTest.java` | Explicit provider registry dispatch, provider-specific default-model, and validation tests. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigSpelEvaluationTest.java` | Direct YAML SpEL preprocessing tests. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigCommandTest.java` | Spring command test for `--show-config` stdout shape and unmasked value rendering. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistWorkspaceConfigTest.java` | Direct `workspace:` root mapping and root-shape tests. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistToolsConfigTest.java` | Direct `tools.codegeist-edit:` root mapping and root-shape tests. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/ProviderCategory.java` | Class or method annotation for non-config provider feature categories. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/ProviderTestExtension.java` | JUnit condition that skips annotated provider classes or methods unless `CODEGEIST_TEST_PROVIDER_CATEGORY` allows their category. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/OpenAiProviderTest.java` | OpenAI config, model-list, image, text-to-speech, and speech-to-text checks guarded by method-level categories. |
@@ -142,6 +151,21 @@ The `mcp:` root is a YAML object keyed by client id, but `McpClientsConfig` stor
 clients as a list. `CodegeistConfigRootParser` copies the YAML key into the internal
 `McpClientConfig.id` field, so multiple MCP clients can share the same transport
 `type`, such as `stdio`, without overwriting one another.
+
+The `tools:` root is a single YAML object for Codegeist-owned local tool settings.
+It is not a user-keyed catalog, so callback-specific settings live under stable
+callback-derived keys. The first implemented tool settings are for `codegeist_edit`:
+
+```yaml
+tools:
+  codegeist-edit:
+    diff-preview-lines: 6
+    diff-preview-chars: 4000
+```
+
+`CodegeistEditToolSettings` applies defaults and caps at runtime. Non-positive or
+omitted values fall back to defaults, and configured values cannot exceed the
+global tool output caps.
 
 ## Typed Config Element Contract
 
@@ -365,6 +389,7 @@ classDiagram
       parseProviders(JsonNode source) ProvidersRootElement
       parseMcpClients(JsonNode source) McpClientsRootElement
       parseWorkspace(JsonNode source) WorkspaceRootElement
+      parseTools(JsonNode source) ToolsRootElement
     }
 
     class ProvidersRootElement {
@@ -386,6 +411,31 @@ classDiagram
     class McpClientsConfig {
       <<keyed list>>
       List~McpClientConfig~ clients
+    }
+
+    class WorkspaceRootElement {
+      <<root workspace>>
+      WorkspaceConfig config
+    }
+
+    class WorkspaceConfig {
+      String directory
+      Charset encoding
+      Boolean dirGuardDisabled
+    }
+
+    class ToolsRootElement {
+      <<root tools>>
+      ToolsConfig config
+    }
+
+    class ToolsConfig {
+      CodegeistEditToolConfig codegeistEdit
+    }
+
+    class CodegeistEditToolConfig {
+      Integer diffPreviewLines
+      Integer diffPreviewChars
     }
 
     class McpClientConfig {
@@ -436,8 +486,13 @@ classDiagram
     CodegeistConfigService --> CodegeistConfig : builds
     CodegeistConfig --> ProvidersRootElement : contains
     CodegeistConfig --> McpClientsRootElement : contains
+    CodegeistConfig --> WorkspaceRootElement : contains
+    CodegeistConfig --> ToolsRootElement : contains
     CodegeistConfigElement <|-- CodegeistTypedConfigElement
     CodegeistConfigElement <|-- CodegeistConfigKeyedListElement
+    CodegeistConfigElement <|-- WorkspaceConfig
+    CodegeistConfigElement <|-- ToolsConfig
+    CodegeistConfigElement <|-- CodegeistEditToolConfig
     CodegeistTypedConfigElement <|-- ProviderConfig
     CodegeistTypedConfigElement <|-- McpClientConfig
     McpClientConfig <|-- StdioMcpClientConfig
@@ -446,10 +501,15 @@ classDiagram
     CodegeistConfigKeyedListElement <|-- McpClientsConfig
     CodegeistConfigRootElement <|-- ProvidersRootElement
     CodegeistConfigRootElement <|-- McpClientsRootElement
+    CodegeistConfigRootElement <|-- WorkspaceRootElement
+    CodegeistConfigRootElement <|-- ToolsRootElement
     ProvidersRootElement --> ProvidersConfig : stores
     McpClientsRootElement --> McpClientsConfig : stores
+    WorkspaceRootElement --> WorkspaceConfig : stores
+    ToolsRootElement --> ToolsConfig : stores
     ProvidersConfig --> ProviderConfig : elements
     McpClientsConfig --> McpClientConfig : elements
+    ToolsConfig --> CodegeistEditToolConfig : stores
     CodegeistConfigRootParser ..> CodegeistConfigElement : converts entries
     ProviderConfig <|-- OllamaProviderConfig
     ProviderConfig <|-- OpenAiProviderConfig
@@ -579,13 +639,14 @@ runtime classpath scanning.
 
 Native-image metadata has two separate jobs. `resource-config.json` embeds runtime
 resources such as `logback.xml` and `META-INF/build-info.properties`.
-`reflect-config.json` grants Jackson reflective access to config root element and
-concrete provider config POJOs selected by the central root parser.
+`reflect-config.json` grants Jackson reflective access to config root element,
+workspace, tools, MCP, and concrete provider config POJOs selected by the central
+root parser.
 
 ```mermaid
 flowchart TD
     Registry[CodegeistConfigRootParser.PROVIDER_CLASSES]
-    ProviderClasses[Root elements, MCP config, OllamaProviderConfig, OpenAiProviderConfig]
+    ProviderClasses[Root elements, workspace/tools/MCP config, OllamaProviderConfig, OpenAiProviderConfig]
     Reflect[reflect-config.json]
     Jackson[Jackson treeToValue]
     Resources[resource-config.json]
@@ -700,7 +761,7 @@ lives in `docs/tests/provider-feature-tests.md`.
 Current verification commands:
 
 ```bash
-task test TEST=CodegeistConfigCommandTest,CodegeistConfigServiceTest
+task test TEST=CodegeistConfigCommandTest,CodegeistConfigServiceTest,CodegeistWorkspaceConfigTest,CodegeistToolsConfigTest
 task test TEST=CodegeistProviderConfigTest
 task test TEST=CodegeistConfigSpelEvaluationTest
 CODEGEIST_TEST_PROVIDER_CATEGORY=none task test TEST=OpenAiProviderTest,OllamaProviderTest
@@ -718,7 +779,7 @@ git --no-pager diff --check
 - `CodegeistConfigRootParser` owns shared map-entry parsing for type-dispatched root
   elements, while `CodegeistConfigRootElement` owns the generic validated `T config`
   slot for single-object roots. Do not reintroduce per-root fields such as
-  `provider`, `mcp`, or `workspace` on `CodegeistConfig`.
+  `provider`, `mcp`, `workspace`, or `tools` on `CodegeistConfig`.
 - Jackson mapping and IO failures are not wrapped by `CodegeistConfigService`;
   Lombok `@SneakyThrows` lets them surface directly.
 - Debug logging uses Lombok `@Slf4j` and remains file-only through current

@@ -12,9 +12,10 @@ import lombok.Setter;
 /**
  * Direct {@code workspace:} config root payload.
  *
- * <p>Both fields are optional. {@link ai.codegeist.app.tool.WorkspaceResolver}
- * decides how {@code directory} is resolved, while file tools use {@code encoding}
- * as their global text charset with a UTF-8 fallback.
+ * <p>All fields are optional. {@link ai.codegeist.app.tool.WorkspaceResolver}
+ * decides how {@code directory} is resolved, file tools use {@code encoding} as
+ * their global text charset with a UTF-8 fallback, and side-effecting tool guards
+ * are enabled unless {@code dir-guard-disabled} is explicitly true.
  */
 @Getter
 @Setter
@@ -25,10 +26,14 @@ public class WorkspaceConfig extends CodegeistConfigElement {
 
     public static final String DIRECTORY_PROPERTY = "directory";
     public static final String ENCODING_PROPERTY = "encoding";
+    public static final String DIR_GUARD_DISABLED_PROPERTY = "dir-guard-disabled";
 
     @JsonProperty(DIRECTORY_PROPERTY)
     private String directory;
 
     @JsonProperty(ENCODING_PROPERTY)
     private Charset encoding;
+
+    @JsonProperty(DIR_GUARD_DISABLED_PROPERTY)
+    private Boolean dirGuardDisabled;
 }

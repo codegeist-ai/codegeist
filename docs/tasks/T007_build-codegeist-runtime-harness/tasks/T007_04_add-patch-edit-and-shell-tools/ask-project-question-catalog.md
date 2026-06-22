@@ -250,7 +250,7 @@ T007_04 implementation shape before Java source changes begin.
 ```text
 /ask-project opencode "Compare path/cwd containment policies for OpenCode write/edit/patch/shell with Codegeist's T007_04 requirement: outside-workingDir mutation and cwd escape fail before side effects. What exact checks should Codegeist implement first?"
 
-/ask-project pi "Analyze Pi's path resolution and cwd rules for side-effecting tools. Does Pi rely on process cwd, session cwd, tool cwd, or workspace root? Recommend Codegeist working-directory guard behavior."
+/ask-project pi "Analyze Pi's path resolution and cwd rules for side-effecting tools. Does Pi rely on process cwd, session cwd, tool cwd, or workspace root? Recommend Codegeist path/cwd validation behavior."
 
 /ask-project aider "Analyze Aider's repository and file admission policy as a stronger but git-specific boundary. Which pieces can inform Codegeist working-directory checks without requiring git?"
 
@@ -300,7 +300,7 @@ T007_04 implementation shape before Java source changes begin.
 Run these after the project-specific answers exist.
 
 ```text
-/ask-project opencode "Produce a concise OpenCode-to-Codegeist T007_04 implementation readiness report. Include patch/edit contract, shell contract, workspace guard, output bounds, session persistence, tests, deferred behavior, and unresolved decisions."
+/ask-project opencode "Produce a concise OpenCode-to-Codegeist T007_04 implementation readiness report. Include patch/edit contract, shell contract, path/cwd validation, output bounds, session persistence, tests, deferred behavior, and unresolved decisions."
 
 /ask-project pi "Produce a concise Pi-to-Codegeist T007_04 implementation readiness report. Include AgentSession/tool lessons, extension behaviors to defer, JSONL persistence lessons, and test recommendations."
 

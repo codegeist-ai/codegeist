@@ -91,11 +91,13 @@
   `endpoint`. Missing `streamable_http` endpoints rely on the MCP Java SDK builder
   default. Multiple clients can share the same transport type such as `stdio`. The
   optional `workspace:` root maps to `WorkspaceRootElement`, which stores
-  `WorkspaceConfig` in the inherited generic `CodegeistConfigRootElement<T>` config
-  slot with only a nullable `directory` field. Provider dispatch does not branch on
-  JVM versus native-image runtime; `reflect-config.json` includes root element, MCP,
-  workspace, and provider config POJOs for native images. Supported config-only
-  provider classes are currently only `ollama` and `openai`; each concrete provider
+  `WorkspaceConfig` with nullable `directory`, `encoding`, and `dir-guard-disabled`
+  fields. The optional `tools:` root maps to `ToolsRootElement`; its first payload is
+  `tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars` for direct edit
+  diff preview tuning. Provider dispatch does not branch on JVM versus native-image
+  runtime; `reflect-config.json` includes root element, MCP, workspace, tools, and
+  provider config POJOs for native images. Supported config-only provider classes are
+  currently only `ollama` and `openai`; each concrete provider
   config owns a provider-specific `defaultModel()` without adding YAML model fields.
   The broader provider matrix and OpenCode-only provider types remain unsupported in
   this slice.
@@ -172,6 +174,17 @@
   Lombok `@Accessors` for this path. `docs/developer/architecture/local-file-tools.md`
   is the detailed current-state source-code guide for this subsystem and includes the
   first-provider-call to `McpSyncClient.callTool(...)` sequence.
+- Artifact smoke coverage is centralized in `scripts/tests/artifact-smoke.ps1`.
+  Local Linux, Windows QEMU, and GitHub release jobs use this one PowerShell 7
+  native-only harness for native package creation, archive unpacking, `--version`,
+  native `--show-config`, command-log assertions, and file-edit smoke delegation.
+  The focused `scripts/tests/file-edit-ask-smoke.ps1` sub-harness starts a
+  deterministic local Ollama-compatible fixture provider, runs the artifact's real
+  `ask` command, lets Spring AI call `codegeist_edit`, then asserts final bytes and
+  a completed persisted `ToolSessionPart`. Local Linux and Windows wrappers enable
+  the optional real Ollama-backed native `ask` smoke; release CI stays deterministic
+  and uses only the fixture-backed file-edit path. The JVM jar is built and uploaded
+  as a release asset, but it is not smoke-tested.
 - `T007_03_add-mcp-and-read-write-tools` is completed. The slice includes direct
   `mcp:` config, `stdio` and `streamable_http` MCP callbacks, local
   `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
@@ -246,26 +259,25 @@
   ensures the selected model, default `llama3.2:1b`, exists before reporting
   readiness. In an interactive terminal it enters the default model session; set
   `OLLAMA_ENTER=false` for non-interactive starts.
-  `native-smoke` sources
-  `scripts/tests/native-smoke.sh`; each native run recreates
-  `target/smoke-test`, packages `target/dist/codegeist-linux-x64.tar.gz`,
-  unpacks it into a fresh temp directory, starts host Ollama through
-  `task ollama-start`, runs packaged `./codegeist --version`, asserts packaged
-  `./codegeist --show-config` prints exactly `{}`, verifies packaged
-  `./codegeist -Dcodegeist.config=<smoke-yml> ask <prompt>`, and writes
-  `target/smoke-test/codegeist.log`. Linux jar and Windows QEMU smokes also run
-  real Ollama-backed `ask`; `mcp-remote-smoke` builds the local MCP fixture Docker
-  image, verifies the direct `streamable_http` callback path, then verifies an
-  Ollama-backed `ask` call that invokes the remote MCP tool; Windows native archive
-  `--show-config` expects `{}` for
-  empty config. The Windows guest reaches host Ollama at `http://10.0.2.2:11434`
-  by default. Smoke scripts now emit stable `Duration: <label>: <seconds>s` lines
-  for Maven, package, jar, native compile, archive smoke, platform total, SSH, and
-  QEMU wrapper timings. The latest full `task test` passed with 129 tests, 0
-  failures, 0 errors, and 6 skips. The latest `task final-smoke-suite` passed with
-  `linux platform smoke total: 89.644s`, `windows qemu smoke total: 212.295s`,
-  `linux native ask smoke: 1.303s`, `windows jar ask smoke: 5.131s`, and
-  `windows native ask smoke: 1.223s`.
+  `native-smoke` runs `scripts/tests/native-smoke.ps1`; that thin Linux wrapper
+  starts host Ollama through `task ollama-start` and delegates native archive checks
+  to `scripts/tests/artifact-smoke.ps1`. Linux native and Windows QEMU native
+  smokes use the same artifact harness and enable real Ollama-backed native `ask`;
+  release CI uses the same harness without the optional provider-backed ask smoke.
+  `codegeist_edit` native ask-smoke requires GraalVM reflection metadata for
+  `CodegeistEditFileTool$EditToolInput` and `$EditEntryInput`; without it, the
+  native binary records `Invalid tool input JSON` for object-valued Ollama tool
+  arguments. The current `task native-smoke` path passes after adding that metadata.
+  `mcp-remote-smoke` builds the local MCP fixture Docker image, verifies the direct
+  `streamable_http` callback path, then verifies an Ollama-backed `ask` call that
+  invokes the remote MCP tool. The Windows guest reaches host Ollama at
+  `http://10.0.2.2:11434` by default. Smoke scripts now emit stable
+  `Duration: <label>: <seconds>s` lines for Maven, package, native compile,
+  archive smoke, platform total, SSH, and QEMU wrapper timings. The latest full
+  `task test` passed with 154 tests, 0 failures, 0 errors, and 6 skips. The latest
+  strict `task final-smoke-suite` passed with `linux platform smoke total: 91.886s`,
+  `windows qemu smoke total: 216.449s`, `linux-x64 native ask smoke: 2.627s`, and
+  `windows-x64 native ask smoke: 1.257s`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
@@ -283,10 +295,11 @@
   also release directly from synchronized `main`; in that mode it infers SemVer
   from `last-tag..main`, skips validation-source and candidate branch creation, and
   starts at pre-tag validation.
-- The release workflow's native matrix packages Linux, Windows, and macOS native
-  archives, unpacks each archive into a fresh temp directory, and smoke-tests both
-  `--version` and the default `--show-config` output before upload. The JVM jar
-  smoke remains `--version` only.
+- The release workflow builds and uploads `codegeist-jvm.jar` without artifact
+  smoke. The native matrix calls `scripts/tests/artifact-smoke.ps1`; the harness
+  packages Linux, Windows, and macOS native archives, unpacks each native archive
+  into a fresh temp directory, smoke-tests `--version`, native `--show-config`, logs,
+  and deterministic file-edit side effects before upload.
 - Codegeist `v0.1.0` is published on GitHub Releases:
   `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0`. Pre-tag
   validation run `26537663964`, tag run `26538176834`, and downloaded asset
@@ -300,12 +313,19 @@
   `codegeist-linux-x64.tar.gz`, `codegeist-windows-x64.zip`,
   `codegeist-macos-x64.tar.gz`, and `SHA256SUMS.txt`. The already-published
   `v0.1.0` release used the older versioned asset names.
-- `scripts/tests/final-smoke-suite.sh` is the local final smoke entrypoint. It
-  runs Linux direct smoke and automated Windows QEMU/SSH smoke. Default mode
-  requires both platforms to pass; `--allow-skips` is developer-only. The suite
-  has passed locally with Linux and Windows jar/native statuses all `passed`; the
-  latest run reported `linux platform smoke total: 96.305s` and
-  `windows platform smoke total: 233.946s`.
+- Smoke orchestration logic now lives in PowerShell entrypoints under
+  `scripts/tests/`, sharing `scripts/tests/smoke-common.ps1` for status files,
+  duration output, environment overrides, command steps, and readiness checks.
+  `scripts/tests/final-smoke-suite.ps1` runs Linux direct smoke and automated
+  Windows QEMU/SSH smoke. Default mode requires both platforms to pass;
+  `-AllowSkips` is developer-only. Do not add shell compatibility wrappers for
+  these workflows. The latest PowerShell-only Linux path passed through
+  `task local-linux-smoke` with 154 Maven tests, 0 failures, 0 errors, 6 skips,
+  and `linux platform smoke total: 89.625s`. The latest PowerShell MCP path passed
+  through `task mcp-remote-smoke` with `mcp remote smoke total: 9.794s`. The final
+  Linux+Windows suite now passes locally in strict mode: both platforms report
+  `Jar status: skipped` and `Native status: passed`; latest totals were Linux
+  `91.886s` and Windows `214.295s`.
 - `scripts/tests/qemu-windows-vm.sh` downloads the official Windows Server 2025
   Evaluation ISO with `curl` when no local ISO exists, stores VM state under
   `.local/windows-qemu`, provisions OpenSSH/GraalVM/Maven/MSVC in the guest, syncs
@@ -404,7 +424,7 @@
   classes are data contracts only; all other provider types are deferred, and no
   Spring AI starters, provider clients, smoke commands, local model pulls, or
   remote calls were added. The implementation was verified with the full Maven
-  suite, Linux jar/native smokes, and Windows QEMU jar/native smokes. `T006_05`
+  suite, Linux native smokes, and Windows QEMU native smokes. `T006_05`
   now adds the provider-neutral chat seam, `spring-ai-ollama`, the local Ollama
   chat model, and `LocalOllamaProviderIT`. Ordinary startup was rechecked with
   `task test TEST=CodegeistApplicationTests`, and `OLLAMA_ENTER=false task
@@ -432,8 +452,8 @@
   `remote_paid` run is currently blocked by the configured API key returning
   `401 invalid_api_key`; rerun it only after `CODEGEIST_TEST_OPENAI_APIKEY` is
   valid for the account being tested. `ask` uses the first configured provider and
-  its provider-owned default model; Linux native smoke, Windows QEMU jar smoke, and
-  Windows QEMU native smoke now pass against real host Ollama. The final smoke suite
+  its provider-owned default model; Linux native smoke and Windows QEMU native smoke
+  now pass against real host Ollama. The final smoke suite
   passed after the provider-owned default-model change. The test defaults now use
   low-cost OpenAI models `gpt-image-1-mini`, `tts-1`, and
   `gpt-4o-mini-transcribe`; the speech-to-text test generates its default English
@@ -492,13 +512,27 @@
   `opencode-shell-tool-comparison.md` is the focused OpenCode shell evidence. Use
   the T007_04 research before implementing patch/edit and shell tools; the local
   task-specification rule records the same T007_04 implementation boundaries.
-  T007_04 now has focused implementation children for the working-directory guard,
-  exact edit, structured patch, shell, and final documentation/verification slices.
-  The working-directory guard child has a concrete implementation plan at
-  `T007_04_add-patch-edit-and-shell-tools/working-directory-guard-implementation-plan.md`:
-  add a package-private `CodegeistWorkingDirectoryGuard`, wire it into
-  `codegeist_write` before mutation, keep read/list/glob/grep permissive, and shape
-  the guard for later shell cwd checks before `ProcessBuilder.start()`.
+  `T007_04_02_add-exact-edit-tool.md` is solved with `CodegeistEditFileTool` and
+  `codegeist_edit`: model input uses `path` plus Pi-style `edits[]` entries with
+  `oldText` and `newText`, exact unique matches are validated against the original
+  LF-normalized file content, overlapping edits and outside-workspace paths fail
+  before mutation by default, BOM/CRLF style and stale-byte checks are preserved, and
+  `ToolSessionPart` still stores only the bounded text preview. The edit tool now uses
+  `CodegeistWorkingDirectoryGuard`; direct config `workspace.dir-guard-disabled: true`
+  disables only active-workspace containment for side-effecting file targets, while
+  missing paths and non-regular files still fail. Direct `codegeist.yml`
+  `tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars` tune only the
+  compact edit diff preview; final model-visible and persisted output remains capped
+  by `ToolOutputBounds`. `docs/developer/architecture/edit-tool.md` is the detailed
+  current-state developer documentation for `codegeist_edit`, including planning,
+  guard, normalization, stale-write, preview, and test contracts. T007_04 still has
+  focused implementation children for structured patch, shell, and final
+  documentation/verification slices; there is no separate workspace guard task or
+  implementation plan. Before implementing the remaining side-effecting tools, check
+  Spring AI Agent Utils `FileSystemTools`/`ShellTools` and the MCP filesystem server
+  for reusable internals. Reuse should sit behind Codegeist-owned `codegeist_*`
+  callbacks so workspace policy, encoding, bounded output, handled errors, and
+  `ToolSessionPart(tool,status,outputPreview)` remain Codegeist contracts.
   Remaining parent-level T007 children are `T007_04_add-patch-edit-and-shell-tools/task.md`,
   `T007_05_add-agent-control-loop.md`, `T007_06_add-terminal-tui-over-chat-file.md`,
   and `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,

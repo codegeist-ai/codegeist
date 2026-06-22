@@ -6,16 +6,21 @@ tool callbacks and MCP callback bridge under `ai.codegeist.app.tool` and
 
 ## Scope
 
-This document describes the implemented local read/list/glob/grep/write tool slice
+This document describes the implemented local read/list/glob/grep/write/edit tool slice
 plus the lazy MCP callback bridge for `stdio` and `streamable_http` clients. It
 covers callback assembly, workspace path handling, bounded output, persisted tool
 part recording, scoped tool runs, MCP cleanup, and focused tests.
 
-This document does not describe provider-specific model internals, patch/edit, shell
-execution, permission prompts, ignored-file filtering, session-store write
-protection, or workspace sandboxing. Those behaviors are deferred to later focused
-tasks. It also does not describe a full OpenCode-style coding-agent loop; the current
-harness only makes prompt-scoped callbacks available to one provider call.
+This document does not describe provider-specific model internals, structured patch,
+shell execution, permission prompts, ignored-file filtering, session-store write
+protection, or full workspace sandboxing. Those behaviors are deferred to later
+focused tasks. It also does not describe a full OpenCode-style coding-agent loop; the
+current harness only makes prompt-scoped callbacks available to one provider call.
+
+For detailed `codegeist_edit` implementation guidance, use `edit-tool.md`. It covers
+the exact-match planning algorithm, active-workspace containment guard, text
+normalization, stale-write check, preview settings, tests, and sharp edges in more
+detail than this subsystem overview.
 
 ## Current Status
 
@@ -37,6 +42,7 @@ Implemented callback names:
 | `codegeist_glob` | `CodegeistGlobFileTool` | Walks under a base directory and matches files or directories with Java NIO glob semantics. |
 | `codegeist_grep` | `CodegeistGrepFileTool` | Searches text files with a Java regular expression and optional include glob. |
 | `codegeist_write` | `CodegeistWriteFileTool` | Creates or overwrites one regular text file using the configured workspace encoding when the parent directory already exists. |
+| `codegeist_edit` | `CodegeistEditFileTool` | Applies one or more exact non-overlapping replacements to one existing workspace-contained text file, preserving BOM and line-ending style. |
 
 MCP callback names come from the configured MCP server through Spring AI's MCP
 callback provider. Codegeist does not rename them, store their definitions in the
@@ -54,11 +60,14 @@ session store, or add MCP-specific command/status fields to `.codegeist/session.
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolJsonMapper.java` | Package-private Spring component and Jackson mapper dedicated to model-supplied local tool input JSON. Unknown properties are ignored so schema hints remain model-facing guidance rather than a second parser policy. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistFileEncoding.java` | Package-private Spring component that resolves the global file-tool charset from `workspace.encoding`, defaulting to UTF-8 when unset. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistFileToolSupport.java` | Package-private Spring component for workspace lookup, JSON parsing through `CodegeistToolJsonMapper`, JSON schema assembly, path resolution, display paths, configured-charset readers, binary/NUL detection, glob matchers, and common validation errors. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistWorkingDirectoryGuard.java` | Package-private Spring component that keeps side-effecting local tool file targets inside the active workspace unless `workspace.dir-guard-disabled` is explicitly true. Existence and regular-file checks still run when the guard is disabled. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistEditToolSettings.java` | Package-private Spring component that resolves bounded `tools.codegeist-edit` diff preview line and character limits from direct `codegeist.yml`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistReadFileTool.java` | Package-private Spring component implementing `codegeist_read`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistListFileTool.java` | Package-private Spring component implementing `codegeist_list`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistGlobFileTool.java` | Package-private Spring component implementing `codegeist_glob`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistGrepFileTool.java` | Package-private Spring component implementing `codegeist_grep`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistWriteFileTool.java` | Package-private Spring component implementing `codegeist_write`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistEditFileTool.java` | Package-private Spring component implementing `codegeist_edit` exact multi-edit replacements with workspace containment, preflight validation, stale-byte checking, and configurable bounded diff summaries. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalToolCallback.java` | Package-private Spring AI `ToolCallback` wrapper that records completed or failed `ToolSessionPart` values and returns bounded preview text. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/RecordingToolCallback.java` | Package-private wrapper for externally supplied callbacks such as MCP tools. It preserves delegate definition/metadata, bounds output, and records completed or failed `ToolSessionPart` values. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistToolService.java` | Spring service that opens prompt-scoped local plus MCP tool runs and builds the `CodegeistChatExecutionContext` used by provider calls. |
@@ -74,6 +83,8 @@ session store, or add MCP-specific command/status fields to `.codegeist/session.
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/mcp/CodegeistMcpClientHandle.java` | Package-private record keeping callbacks and the closeable resource opened for one configured MCP client together. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/session/ToolSessionPart.java` | Persisted session part for bounded completed or failed tool activity. Current fields are `tool`, `status`, and `outputPreview`. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistLocalToolsTest.java` | Contract tests for callback names, schemas, success paths, focused failures, bounded previews, and recorded tool parts. |
+| `scripts/tests/artifact-smoke.ps1` | Shared native-only artifact smoke harness for release CI and local platform wrappers. It delegates edit-specific side-effect checks to `file-edit-ask-smoke.ps1`. |
+| `scripts/tests/file-edit-ask-smoke.ps1` | Focused artifact sub-harness for real `ask` plus deterministic fixture-provider tool calls, byte assertions, and persisted `ToolSessionPart` checks. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistToolServiceTest.java` | Contract tests for prompt-scoped local plus MCP tool runs, context callback exposure, MCP recording, cleanup, and defensive completed-part copies. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/mcp/CodegeistMcpAdapterTest.java` | Unit tests for lazy config handling, fake client mapping, callback exposure, and resource cleanup. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/mcp/CodegeistMcpRemoteSmokeIT.java` | Docker-smoke integration test for the real `streamable_http` transport and deterministic remote callback invocation. |
@@ -82,10 +93,11 @@ session store, or add MCP-specific command/status fields to `.codegeist/session.
 
 `CodegeistToolService`, `CodegeistLocalTools`, `CodegeistMcpAdapter`,
 `SpringAiMcpClientFactory`, `WorkspaceResolver`, `ToolOutputBounds`,
-`CodegeistFileToolSupport`, and the five individual file tools are Spring
-components. The file tool classes stay package-private because no other package
-should depend on their concrete types. Each concrete tool owns its callback name in a
-class-local `TOOL_NAME` constant and builds its own `ToolDefinition`.
+`CodegeistFileToolSupport`, `CodegeistWorkingDirectoryGuard`,
+`CodegeistEditToolSettings`, and the six individual file tools are Spring components.
+The file tool classes stay package-private because no other package should depend on
+their concrete types. Each concrete tool owns its callback name in a class-local
+`TOOL_NAME` constant and builds its own `ToolDefinition`.
 `CodegeistLocalTools` injects a `List<CodegeistLocalTool>` and does not assign
 semantic meaning to callback order; tools are selected by callback name. File tools
 that need workspace paths get the active workspace through `CodegeistFileToolSupport`
@@ -188,6 +200,12 @@ scoped to one prompt turn, returns defensive completed-part copies through
       schema(String properties, String... requiredFields) String
     }
 
+    class CodegeistWorkingDirectoryGuard {
+      <<Component>>
+      CodegeistConfig config
+      requireExistingRegularFile(Path workspace, Path candidate, String displayPath) Path
+    }
+
     class CodegeistFileEncoding {
       <<Component>>
       currentCharset() Charset
@@ -228,6 +246,20 @@ scoped to one prompt turn, returns defensive completed-part copies through
       CodegeistFileToolSupport support
     }
 
+    class CodegeistEditFileTool {
+      <<Component>>
+      CodegeistFileToolSupport support
+      CodegeistWorkingDirectoryGuard workingDirectoryGuard
+      CodegeistEditToolSettings settings
+    }
+
+    class CodegeistEditToolSettings {
+      <<Component>>
+      CodegeistConfig config
+      diffPreviewLines() int
+      diffPreviewChars() int
+    }
+
     CodegeistToolService --> CodegeistLocalTools
     CodegeistToolService --> CodegeistMcpAdapter
     CodegeistToolService --> RecordingToolCallback
@@ -246,15 +278,21 @@ scoped to one prompt turn, returns defensive completed-part copies through
     CodegeistLocalTool <|.. CodegeistGlobFileTool
     CodegeistLocalTool <|.. CodegeistGrepFileTool
     CodegeistLocalTool <|.. CodegeistWriteFileTool
+    CodegeistLocalTool <|.. CodegeistEditFileTool
     CodegeistFileToolSupport --> WorkspaceResolver
     CodegeistFileToolSupport --> ToolOutputBounds
     CodegeistFileToolSupport --> CodegeistToolJsonMapper
     CodegeistFileToolSupport --> CodegeistFileEncoding
+    CodegeistWorkingDirectoryGuard --> CodegeistConfig
+    CodegeistEditToolSettings --> CodegeistConfig
     CodegeistReadFileTool --> CodegeistFileToolSupport
     CodegeistListFileTool --> CodegeistFileToolSupport
     CodegeistGlobFileTool --> CodegeistFileToolSupport
     CodegeistGrepFileTool --> CodegeistFileToolSupport
     CodegeistWriteFileTool --> CodegeistFileToolSupport
+    CodegeistEditFileTool --> CodegeistFileToolSupport
+    CodegeistEditFileTool --> CodegeistWorkingDirectoryGuard
+    CodegeistEditFileTool --> CodegeistEditToolSettings
     CodegeistLocalToolCallback --> ToolSessionPart
 ```
 
@@ -498,6 +536,7 @@ Important constraints:
 | Ignored files | No `.gitignore`, generated-file, or hidden-file filtering exists. |
 | Session store | There is no special protection for `.codegeist/session.json` yet. |
 | Parent directories | `codegeist_write` does not create parents. |
+| Edit containment | `codegeist_edit` rejects normalized or resolved-real target paths outside the active workspace before reading or writing unless direct config sets `workspace.dir-guard-disabled: true`. The disabled mode still requires the target to exist and resolve to a regular file. |
 
 Future permission or workspace-policy work should add a dedicated policy boundary
 instead of hiding checks inside individual file tools.
@@ -606,6 +645,45 @@ Behavior:
 - Returns `Created file: <path>` or `Overwrote file: <path>` plus character count.
 - Does not mkdir, chmod, delete, rename, patch, insert, append, or partially edit.
 
+### `codegeist_edit`
+
+Input JSON fields:
+
+| Field | Required | Behavior |
+| --- | --- | --- |
+| `path` | yes | Existing regular file path under the active workspace. Relative values resolve against the active workspace; absolute values must still resolve inside it. |
+| `edits` | yes | Non-empty array of exact replacements. Each entry has required `oldText` and `newText` string fields. |
+
+Behavior:
+
+- Rejects missing paths, missing files, directories, non-regular files, binary files,
+  malformed text for the configured workspace encoding, and normalized or symlinked
+  paths that escape the active workspace unless `workspace.dir-guard-disabled` is
+  explicitly true.
+- Rejects missing `edits`, empty `edits`, null edit entries, missing `oldText`, empty
+  `oldText`, missing `newText`, and identical old/new text after line-ending
+  normalization. Empty `newText` is allowed for deletion.
+- Matches every edit against the original file content normalized to LF, not against
+  incrementally mutated content.
+- Requires each `oldText` to appear exactly once and rejects no-match or ambiguous
+  repeated-match inputs before writing.
+- Sorts validated matches by file position, rejects overlapping ranges, applies all
+  accepted edits in one write, and never leaves partial mutation when any edit fails.
+- Preserves a leading decoded BOM and restores CRLF line endings when the source file
+  used CRLF.
+- Re-reads the original bytes immediately before writing and fails with a stale-file
+  message if another process changed the file after the initial read.
+- Returns bounded stable headings: file, operation, replacement count, first changed
+  line, diff truncation flag, and a fenced diff preview. The same preview is stored
+  in `ToolSessionPart.outputPreview`.
+- Reads optional direct `codegeist.yml` settings from `tools.codegeist-edit` for
+  `diff-preview-lines` and `diff-preview-chars`. Defaults are 6 lines and half of
+  `ToolOutputBounds.MAX_PREVIEW_CHARS`; non-positive values fall back to defaults and
+  configured values are capped by the existing global output bounds.
+- Does not create files, accept legacy top-level old/new fields, accept stringified
+  `edits`, support `replaceAll`, fuzzy matching, structured patches, shell execution,
+  or typed edit session fields.
+
 ## Output Bounds
 
 All tool outputs are bounded before they reach the model or session store.
@@ -617,6 +695,8 @@ All tool outputs are bounded before they reach the model or session store.
 | `ToolOutputBounds.MAX_RESULTS` | `cappedResultLimit(...)` | List, glob, and grep result counts. |
 | `ToolOutputBounds.DEFAULT_READ_LINES` | `cappedReadLimit(...)` | Read line count when no valid limit is supplied. |
 | `ToolOutputBounds.MAX_LINE_CHARS` | `errorPreview(...)` | Failed tool messages after whitespace normalization. |
+| `tools.codegeist-edit.diff-preview-lines` | `CodegeistEditToolSettings.diffPreviewLines()` | Number of old/new lines shown per edit before `...`; defaults to 6 and is capped by `MAX_RESULTS`. |
+| `tools.codegeist-edit.diff-preview-chars` | `CodegeistEditToolSettings.diffPreviewChars()` | Raw edit diff preview characters before the final summary cap; defaults to half of `MAX_PREVIEW_CHARS` and is capped by `MAX_PREVIEW_CHARS`. |
 
 `CodegeistLocalToolCallback` calls `outputBounds.preview(...)` on successful
 `CodegeistToolResult.outputPreview()` before recording and returning it. Failed tool
@@ -641,6 +721,9 @@ Examples of handled failures:
 | Invalid glob | `Invalid glob: [` |
 | Invalid regex | `Invalid regex: Unclosed character class` |
 | Write parent missing | `Parent directory does not exist: missing/child.txt` |
+| Edit path escape | `Path escapes workspace: /tmp/outside.txt` |
+| Edit exact match missing | `Could not find edits[0] in notes.txt` |
+| Edit ambiguous match | `Found multiple exact matches for edits[0] in notes.txt` |
 
 Unexpected programming errors are intentionally not caught by
 `CodegeistLocalToolCallback`. The current tool-aware chat harness lets those defects
@@ -657,19 +740,20 @@ the prompt-scoped MCP run.
 
 `CodegeistLocalToolsTest` is the main contract test. It uses JUnit `@TempDir`, a
 `WorkspaceResolver` pointed at the temporary workspace, and a `CodegeistLocalTools`
-instance assembled from the five file-tool components.
+instance assembled from the six file-tool components.
 
 Current coverage:
 
 | Test focus | Behavior proved |
 | --- | --- |
-| Callback assembly | Callback names and Spring AI schemas for all five callbacks, independent of list order. |
+| Callback assembly | Callback names and Spring AI schemas for all six callbacks, independent of list order. |
 | Read success | Line-numbered bounded output and completed tool part recording. |
 | Read failures | Missing file, directory input, binary file, and failed tool part recording. |
 | List behavior | Stable direct entries, `[DIR]` and `[FILE]` markers, result limits, and file rejection. |
 | Glob behavior | Sorted workspace-relative matches, Java glob handling, and result limits. |
 | Grep behavior | Sorted line previews, include glob, invalid regex failure, and failed output persistence. |
 | Write behavior | Create, overwrite, reject directories, reject missing parents, and completed/failed recording. |
+| Edit behavior | Exact single and multi-edit replacements, absolute in-workspace paths, outside-workspace and symlink escape rejection, invalid edit inputs, no-match and ambiguous-match failures, no partial mutation, overlap rejection, deletion, BOM/CRLF preservation, stale-byte failure, bounded and configurable diff output, and binary/malformed file rejection. |
 | Bounds | Model-visible output and persisted `ToolSessionPart.outputPreview` are the same bounded string. |
 
 Related tests:
@@ -686,16 +770,22 @@ Related tests:
 - `ChatHarnessServiceTest` proves recorded local tool parts are saved before the
   assistant text when a chat turn uses tool callbacks and that the tool run closes
   after the prompt turn.
+- `scripts/tests/artifact-smoke.ps1` proves packaged native artifacts can run the
+  shared release-shaped smoke contract. It delegates to
+  `scripts/tests/file-edit-ask-smoke.ps1`, which runs the real `ask` command,
+  receives deterministic fixture-provider tool calls, executes `codegeist_edit`,
+  persists a completed `ToolSessionPart`, and preserves byte-level
+  UTF-8/BOM/CRLF/final-newline/ISO-8859-1 contracts.
 - `CodegeistMcpRemoteSmokeIT`, run only through `task mcp-remote-smoke`, proves the
   real `streamable_http` MCP callback path against a local Docker fixture.
 - `AskCommandsMcpRemoteSmokeIT`, also run only through `task mcp-remote-smoke`, proves
   the Spring Boot `ask` path can pass MCP callbacks to local Ollama and persist the
   completed remote MCP `ToolSessionPart`.
 
-Recommended focused verification for the completed T007_03 tool slice:
+Recommended focused verification for local tool callback changes:
 
 ```bash
-task test TEST=CodegeistWorkspaceConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
+task test TEST=CodegeistWorkspaceConfigTest,CodegeistToolsConfigTest,WorkspaceResolverTest,ToolOutputBoundsTest,CodegeistLocalToolsTest,CodegeistMcpAdapterTest,CodegeistToolServiceTest,SessionStoreServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest
 ```
 
 Run the Docker-backed remote MCP smoke separately when changing real MCP transport
@@ -727,6 +817,15 @@ When changing an existing local file tool:
 
 When adding a new local file tool:
 
+- Check reusable engines first, especially Spring AI Agent Utils file/shell tools and
+  MCP filesystem tools, before adding new low-level file, patch, or shell internals.
+  Reuse is acceptable behind an adapter when it preserves Codegeist's public tool
+  schema, workspace policy, encoding behavior, bounded output, handled failures, and
+  session-part persistence.
+- Do not directly register broad third-party toolkits as `codegeist_*` callbacks just
+  to avoid glue code. The local callback facade is the product contract; third-party
+  tools are implementation sources or optional MCP tools unless a focused task
+  intentionally changes the exposed surface.
 - Add a package-private `@Component` class implementing `CodegeistLocalTool`.
 - Put the callback name in that class as a `static final String TOOL_NAME`, for
   example `codegeist_stat`. Do not add a tool-name field to `CodegeistLocalTools`.
@@ -806,6 +905,21 @@ final class CodegeistStatFileTool implements CodegeistLocalTool {
 - `codegeist_write` writes the full supplied content to disk, but the model-visible
   and persisted output is only a bounded summary. This is intentional for the first
   write tool slice.
-- No native-image metadata was added for the package-private input records. Current
-  verification is JVM-focused; add targeted native metadata only if a future native
-  smoke exposes a reflection issue in tool input parsing.
+- `codegeist_edit` uses `CodegeistWorkingDirectoryGuard` because it is side-effecting
+  and scoped by `T007_04`; the shared `WorkspaceResolver` remains permissive and is
+  still not a general sandbox or permission system. The only opt-out is direct
+  config `workspace.dir-guard-disabled: true`, which disables containment but not
+  existence or regular-file checks.
+- `codegeist_edit` is exact-only: it has no fuzzy matching, no `replaceAll`, no
+  legacy top-level old/new compatibility, and no stringified `edits` compatibility.
+  Multi-edit inputs are validated against the original LF-normalized content and then
+  written once if all checks pass.
+- `codegeist_edit` preserves leading BOM and CRLF style but does not keep mixed
+  line-ending layouts exactly; any source file containing CRLF is restored with CRLF
+  after the LF-normalized edit pass.
+- `tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars` tune only the
+  compact diff preview inside the edit result. The final model-visible and persisted
+  output is still capped by `ToolOutputBounds.preview(...)`.
+- No native-image metadata was added for the package-private input records. Artifact
+  smokes now exercise edit input parsing in jar and native packages; add targeted
+  native metadata only if those smokes expose a reflection issue.

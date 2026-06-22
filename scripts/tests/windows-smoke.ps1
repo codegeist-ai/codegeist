@@ -1,11 +1,12 @@
-# windows-smoke.ps1 - Windows-side Codegeist jar and native smoke checks.
+# windows-smoke.ps1 - Windows-side Codegeist native smoke checks.
 #
 # Why this exists:
-# - Runs inside the pre-provisioned Windows QEMU VM so local Windows validation
-#   uses a real Windows toolchain and operating system.
+# - Runs inside the pre-provisioned Windows QEMU VM so local Windows native
+#   validation uses a real Windows toolchain and operating system.
 # - Keeps Windows command details out of the host-side SSH wrapper.
-# - Packages the Windows native executable with its DLL sidecars, unpacks the zip
-#   into a fresh temp directory, and smokes the packaged executable.
+# - Delegates jar and native artifact checks to the shared
+#   scripts/tests/artifact-smoke.ps1 harness so Windows, Linux, macOS, and release
+#   workflows verify the same artifact contract.
 #
 # Inputs:
 # - RepoDir: absolute path to the repository checkout inside the VM.
@@ -13,13 +14,13 @@
 # - MsvcCommand: optional command that activates MSVC Build Tools before native
 #   Maven compile. If omitted, the script uses the active shell environment when
 #   cl.exe is already available, then tries common Visual Studio Build Tools paths.
-# - JarTimeoutSeconds and NativeTimeoutSeconds bound command smoke execution.
+# - NativeTimeoutSeconds and FileEditTimeoutSeconds bound native command smoke
+#   execution.
 # - AskTimeoutSeconds bounds the real Ollama-backed `ask` smoke.
 # - OllamaBaseUrl points to the host Ollama service. With QEMU user networking,
 #   the Windows guest reaches the Linux host through `http://10.0.2.2:11434`.
 #
 # Side effects:
-# - Rebuilds app/codegeist/cli/target/codegeist.jar.
 # - May rebuild app/codegeist/cli/target/codegeist.exe and write
 #   app/codegeist/cli/target/dist/codegeist-windows-x64.zip.
 # - Writes smoke logs under app/codegeist/cli/target/smoke-test.
@@ -33,11 +34,11 @@ param(
 
     [string]$MsvcCommand = $env:CODEGEIST_WINDOWS_MSVC_CMD,
 
-    [int]$JarTimeoutSeconds = 15,
-
     [int]$NativeTimeoutSeconds = 5,
 
     [int]$AskTimeoutSeconds = 60,
+
+    [int]$FileEditTimeoutSeconds = 15,
 
     [string]$OllamaBaseUrl = $env:CODEGEIST_WINDOWS_OLLAMA_BASE_URL
 )
@@ -47,8 +48,6 @@ $ErrorActionPreference = "Stop"
 if (-not $OllamaBaseUrl) {
     $OllamaBaseUrl = "http://10.0.2.2:11434"
 }
-
-$askPrompt = "codegeist"
 
 $platformStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
@@ -128,273 +127,8 @@ function Find-MsvcCommand {
     return ""
 }
 
-function Join-ProcessArguments {
-    param([string[]]$Arguments)
-
-    $escaped = foreach ($argument in $Arguments) {
-        if ($argument -notmatch '[\s"]') {
-            $argument
-        }
-        else {
-            '"' + $argument.Replace('"', '\"') + '"'
-        }
-    }
-
-    return ($escaped -join " ")
-}
-
-function Invoke-CommandSmoke {
-    param(
-        [string]$Label,
-        [string]$FilePath,
-        [string[]]$ArgumentList,
-        [string]$Expected,
-        [string]$LogFile,
-        [int]$TimeoutSeconds,
-        [string]$OutputPrefix,
-        [string]$WorkingDirectory = (Get-Location).Path,
-        [string]$DurationLabel = $Label
-    )
-
-    $stdoutFile = Join-Path $smokeDir "$OutputPrefix.out"
-    $stderrFile = Join-Path $smokeDir "$OutputPrefix.err"
-    Remove-Item -LiteralPath $stdoutFile, $stderrFile, $LogFile -ErrorAction SilentlyContinue
-
-    $env:LOG_FILE = $LogFile
-    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $FilePath
-    $startInfo.Arguments = Join-ProcessArguments $ArgumentList
-    $startInfo.WorkingDirectory = $WorkingDirectory
-    $startInfo.UseShellExecute = $false
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.EnvironmentVariables["LOG_FILE"] = $LogFile
-
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $process = [System.Diagnostics.Process]::Start($startInfo)
-
-    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
-        $stopwatch.Stop()
-        $process.Kill()
-        $process.WaitForExit()
-        Fail-Smoke "$Label timed out after $TimeoutSeconds seconds"
-    }
-    $stopwatch.Stop()
-
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
-    $exitCode = $process.ExitCode
-    Set-Content -LiteralPath $stdoutFile -Value $stdout -NoNewline
-    Set-Content -LiteralPath $stderrFile -Value $stderr -NoNewline
-
-    if ($null -eq $exitCode) {
-        Fail-Smoke "$Label did not report an exit code"
-    }
-
-    if ($exitCode -ne 0) {
-        Fail-Smoke "$Label failed with exit code $exitCode"
-    }
-
-    $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
-    if ($actual -ne $Expected) {
-        Fail-Smoke "$Label expected $Expected but got $actual"
-    }
-
-    if (-not (Test-Path -LiteralPath $LogFile) -or (Get-Item -LiteralPath $LogFile).Length -eq 0) {
-        Fail-Smoke "$Label log was not written: $LogFile"
-    }
-
-    Write-SmokeDuration $DurationLabel $stopwatch.Elapsed
-}
-
-function Invoke-CommandContainsSmoke {
-    param(
-        [string]$Label,
-        [string]$FilePath,
-        [string[]]$ArgumentList,
-        [string]$ExpectedSubstring,
-        [string]$LogFile,
-        [int]$TimeoutSeconds,
-        [string]$OutputPrefix,
-        [string]$WorkingDirectory = (Get-Location).Path,
-        [string]$DurationLabel = $Label
-    )
-
-    $stdoutFile = Join-Path $smokeDir "$OutputPrefix.out"
-    $stderrFile = Join-Path $smokeDir "$OutputPrefix.err"
-    Remove-Item -LiteralPath $stdoutFile, $stderrFile, $LogFile -ErrorAction SilentlyContinue
-
-    $env:LOG_FILE = $LogFile
-    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $FilePath
-    $startInfo.Arguments = Join-ProcessArguments $ArgumentList
-    $startInfo.WorkingDirectory = $WorkingDirectory
-    $startInfo.UseShellExecute = $false
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.EnvironmentVariables["LOG_FILE"] = $LogFile
-
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $process = [System.Diagnostics.Process]::Start($startInfo)
-
-    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
-        $stopwatch.Stop()
-        $process.Kill()
-        $process.WaitForExit()
-        Fail-Smoke "$Label timed out after $TimeoutSeconds seconds"
-    }
-    $stopwatch.Stop()
-
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
-    $exitCode = $process.ExitCode
-    Set-Content -LiteralPath $stdoutFile -Value $stdout -NoNewline
-    Set-Content -LiteralPath $stderrFile -Value $stderr -NoNewline
-
-    if ($null -eq $exitCode) {
-        Fail-Smoke "$Label did not report an exit code"
-    }
-
-    if ($exitCode -ne 0) {
-        Fail-Smoke "$Label failed with exit code $exitCode"
-    }
-
-    $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
-    if (-not $actual.ToLowerInvariant().Contains($ExpectedSubstring.ToLowerInvariant())) {
-        Fail-Smoke "$Label expected output to contain $ExpectedSubstring but got $actual"
-    }
-
-    if (-not (Test-Path -LiteralPath $LogFile) -or (Get-Item -LiteralPath $LogFile).Length -eq 0) {
-        Fail-Smoke "$Label log was not written: $LogFile"
-    }
-
-    Write-SmokeDuration $DurationLabel $stopwatch.Elapsed
-}
-
-function Assert-OllamaReady {
-    param([string]$BaseUrl)
-
-    $versionUrl = $BaseUrl.TrimEnd("/") + "/api/version"
-    Write-Host "Command: Invoke-WebRequest $versionUrl"
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    try {
-        Invoke-WebRequest -Uri $versionUrl -UseBasicParsing -TimeoutSec 30 | Out-Null
-    }
-    catch {
-        Fail-Smoke "Host Ollama is not reachable from Windows guest at ${BaseUrl}: $($_.Exception.Message)"
-    }
-    finally {
-        $stopwatch.Stop()
-    }
-    Write-SmokeDuration "windows ollama reachability" $stopwatch.Elapsed
-}
-
-function Write-AskConfig {
-    param(
-        [string]$ConfigFile,
-        [string]$BaseUrl
-    )
-
-    Set-Content -LiteralPath $ConfigFile -Encoding ASCII -Value @"
-provider:
-  ollama:
-    type: ollama
-    base-url: $BaseUrl
-"@
-}
-
-function New-WindowsNativeArchive {
-    param(
-        [string]$CliDir
-    )
-
-    $distDir = Join-Path $CliDir "target/dist"
-    $packageName = "codegeist-windows-x64"
-    $packageDir = Join-Path $distDir $packageName
-    $archive = Join-Path $distDir "$packageName.zip"
-    $nativeExe = Join-Path $CliDir "target/codegeist.exe"
-
-    if (-not (Test-Path -LiteralPath $nativeExe)) {
-        Fail-Smoke "Native executable was not written: $nativeExe"
-    }
-
-    Remove-Item -Recurse -Force -LiteralPath $packageDir, $archive -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
-    Copy-Item -LiteralPath $nativeExe -Destination (Join-Path $packageDir "codegeist.exe") -Force
-
-    $dlls = Get-ChildItem -LiteralPath (Join-Path $CliDir "target") -Filter "*.dll" -File -ErrorAction SilentlyContinue
-    foreach ($dll in $dlls) {
-        Copy-Item -LiteralPath $dll.FullName -Destination $packageDir -Force
-    }
-
-    Compress-Archive -Path $packageDir -DestinationPath $archive -Force
-    return $archive
-}
-
-function Invoke-PackagedNativeSmoke {
-    param(
-        [string]$Archive,
-        [string]$PackageName,
-        [string]$Expected,
-        [int]$TimeoutSeconds,
-        [string]$AskConfig,
-        [string]$AskPrompt,
-        [int]$AskTimeoutSeconds
-    )
-
-    $archiveStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("codegeist-smoke-" + [guid]::NewGuid().ToString("N"))
-    New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
-
-    try {
-        Expand-Archive -LiteralPath $Archive -DestinationPath $tempRoot -Force
-        $packageDir = Join-Path $tempRoot $PackageName
-        $packageExe = Join-Path $packageDir "codegeist.exe"
-
-        if (-not (Test-Path -LiteralPath $packageExe)) {
-            Fail-Smoke "Packaged native executable was not found after unzip: $packageExe"
-        }
-
-        Invoke-CommandSmoke "Native archive version smoke" `
-            $packageExe `
-            @("--version") `
-            $Expected `
-            (Join-Path $smokeDir "codegeist-windows-native.log") `
-            $TimeoutSeconds `
-            "codegeist-windows-native" `
-            $packageDir `
-            "windows native version smoke"
-
-        # Keep aligned with CodegeistConfigService and docs/developer/architecture/provider-configuration.md.
-        Invoke-CommandSmoke "Native archive show-config smoke" `
-            $packageExe `
-            @("--show-config") `
-            "{}" `
-            (Join-Path $smokeDir "codegeist-windows-native-show-config.log") `
-            $TimeoutSeconds `
-            "codegeist-windows-native-show-config" `
-            $packageDir `
-            "windows native show-config smoke"
-
-        Invoke-CommandContainsSmoke "Native archive ask smoke" `
-            $packageExe `
-            @("-Dcodegeist.config=$AskConfig", "ask", $AskPrompt) `
-            "codegeist" `
-            (Join-Path $smokeDir "codegeist-windows-native-ask.log") `
-            $AskTimeoutSeconds `
-            "codegeist-windows-native-ask" `
-            $packageDir `
-            "windows native ask smoke"
-
-        $archiveStopwatch.Stop()
-        Write-SmokeDuration "windows native archive smoke" $archiveStopwatch.Elapsed
-    }
-    finally {
-        Remove-Item -Recurse -Force -LiteralPath $tempRoot -ErrorAction SilentlyContinue
-    }
-}
-
 $cliDir = Join-Path $RepoDir "app/codegeist/cli"
+$script:artifactSmokeScript = Join-Path $RepoDir "scripts/tests/artifact-smoke.ps1"
 
 if (-not (Test-Path -LiteralPath $cliDir)) {
     Fail-Smoke "CLI module directory not found: $cliDir"
@@ -403,45 +137,11 @@ if (-not (Test-Path -LiteralPath $cliDir)) {
 Set-Location -LiteralPath $cliDir
 
 Write-Host "Platform: windows-x64"
-Write-Host "Artifact: jar"
+Write-Host "Artifact: native"
 
-Invoke-Step "mvn --batch-mode --no-transfer-progress test" "windows maven tests" {
-    & mvn --batch-mode --no-transfer-progress test
-}
-
-Invoke-Step "mvn --batch-mode --no-transfer-progress -DskipTests clean package" "windows jar package" {
-    & mvn --batch-mode --no-transfer-progress -DskipTests clean package
-}
-
-$expected = Get-BuildVersion "target/classes/META-INF/build-info.properties"
 $smokeDir = Join-Path $cliDir "target/smoke-test"
+Remove-Item -Recurse -Force -LiteralPath $smokeDir -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
-$askConfig = Join-Path $smokeDir "codegeist-ask.yml"
-
-Assert-OllamaReady $OllamaBaseUrl
-Write-AskConfig $askConfig $OllamaBaseUrl
-
-Write-Host "Command: java -jar target/codegeist.jar --version"
-Invoke-CommandSmoke "Jar version smoke" `
-    "java" `
-    @("-jar", "target/codegeist.jar", "--version") `
-    $expected `
-    (Join-Path $smokeDir "codegeist-windows-jar.log") `
-    $JarTimeoutSeconds `
-    "codegeist-windows-jar" `
-    (Get-Location).Path `
-    "windows jar version smoke"
-
-Write-Host "Command: java -Dcodegeist.config=$askConfig -jar target/codegeist.jar ask <prompt>"
-Invoke-CommandContainsSmoke "Jar ask smoke" `
-    "java" `
-    @("-Dcodegeist.config=$askConfig", "-jar", "target/codegeist.jar", "ask", $askPrompt) `
-    "codegeist" `
-    (Join-Path $smokeDir "codegeist-windows-jar-ask.log") `
-    $AskTimeoutSeconds `
-    "codegeist-windows-jar-ask" `
-    (Get-Location).Path `
-    "windows jar ask smoke"
 
 $nativeStatus = "skipped"
 $nativeReason = "NativeMode is skip"
@@ -477,13 +177,20 @@ if ($NativeMode -ne "skip") {
                 }
             }
 
-            $packageName = "codegeist-windows-x64"
-            $nativeArchive = New-WindowsNativeArchive $cliDir
+            $expected = Get-BuildVersion "target/classes/META-INF/build-info.properties"
             New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
-            Write-AskConfig $askConfig $OllamaBaseUrl
 
-            Write-Host "Command: package target/dist/$packageName.zip and run extracted codegeist.exe --version, --show-config, and ask"
-            Invoke-PackagedNativeSmoke $nativeArchive $packageName $expected $NativeTimeoutSeconds $askConfig $askPrompt $AskTimeoutSeconds
+            Write-Host "Command: pwsh scripts/tests/artifact-smoke.ps1 -Platform windows-x64"
+            & $script:artifactSmokeScript `
+                -Platform windows-x64 `
+                -CliDir $cliDir `
+                -ExpectedVersion $expected `
+                -SmokeRoot $smokeDir `
+                -NativeTimeoutSeconds $NativeTimeoutSeconds `
+                -AskTimeoutSeconds $AskTimeoutSeconds `
+                -FileEditTimeoutSeconds $FileEditTimeoutSeconds `
+                -OllamaBaseUrl $OllamaBaseUrl `
+                -RunProviderAskSmoke
 
             $nativeStatus = "passed"
             $nativeReason = "none"
@@ -493,7 +200,7 @@ if ($NativeMode -ne "skip") {
 
 Write-Host "Platform smoke status: passed"
 Write-Host "Platform: windows-x64"
-Write-Host "Jar status: passed"
+Write-Host "Jar status: skipped"
 Write-Host "Native status: $nativeStatus"
 Write-Host "Native reason: $nativeReason"
 $platformStopwatch.Stop()

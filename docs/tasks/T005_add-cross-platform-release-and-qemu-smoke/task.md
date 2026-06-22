@@ -16,8 +16,8 @@ bootstrap.
 
 - `T005_01_add-local-linux-windows-build-smoke.md` - finalized local Linux and
   Windows build/smoke workflow using direct Linux execution and automated Windows
-  QEMU/SSH; verified by `task final-smoke-suite` with Linux and Windows
-  jar/native statuses all `passed`.
+  QEMU/SSH; verified by `task final-smoke-suite` with Linux and Windows native
+  statuses `passed`.
 - `T005_02_add-github-release-build.md` - finalized GitHub Actions release build,
   platform matrix, checksums, and GitHub Release upload; verified by passing
   branch validation, pre-tag validation on `main`, `v0.1.0` tag publication, and
@@ -74,7 +74,7 @@ git --no-pager diff --check
   vocabulary and smoke expectations.
 - Prefer minimal scripts that delegate to Maven, Taskfile, and platform-native
   shell commands instead of adding a large release framework.
-- Keep release workflow steps visible: tests, jar package, jar smoke, native build,
+- Keep release workflow steps visible: tests, jar package, native build,
   native smoke, checksum, artifact upload, and release creation.
 
 ## Finalization Notes

@@ -77,14 +77,14 @@ downloaded ISO files, and disk images stay under `.local/windows-qemu` by defaul
 
 ## Implementation Targets
 
-- `scripts/tests/native-smoke.sh`
-- `scripts/tests/local-linux-smoke.sh`
+- `scripts/tests/native-smoke.ps1`
+- `scripts/tests/local-linux-smoke.ps1`
 - `scripts/tests/qemu-windows-vm.sh`
-- `scripts/tests/qemu-windows-smoke.sh`
+- `scripts/tests/qemu-windows-smoke.ps1`
 - `scripts/tests/windows-smoke.ps1`
 - `scripts/tests/windows-qemu/autounattend.xml`
 - `scripts/tests/windows-qemu/setup.ps1`
-- `scripts/tests/final-smoke-suite.sh`
+- `scripts/tests/final-smoke-suite.ps1`
 - `app/codegeist/cli/Taskfile.yml`
 - `docs/developer/release/local-build-smoke.md`
 - `docs/developer/release/windows-qemu-smoke.md`
@@ -123,7 +123,7 @@ Expected final-suite check after both Linux native-image and the Windows ISO or
 existing VM are configured:
 
 ```bash
-scripts/tests/final-smoke-suite.sh
+pwsh -NoProfile -File scripts/tests/final-smoke-suite.ps1
 ```
 
 If a local platform smoke is skipped in developer-only mode, record `skipped` with
@@ -135,7 +135,8 @@ final suite must turn skipped platforms into a failed suite result.
 Executed locally after implementation:
 
 ```bash
-bash -n scripts/tests/native-smoke.sh scripts/tests/local-linux-smoke.sh scripts/tests/qemu-windows-smoke.sh scripts/tests/qemu-windows-vm.sh scripts/tests/final-smoke-suite.sh
+bash -n scripts/tests/qemu-windows-vm.sh
+pwsh -NoProfile -Command '"scripts/tests/local-linux-smoke.ps1", "scripts/tests/qemu-windows-smoke.ps1", "scripts/tests/final-smoke-suite.ps1" | ForEach-Object { $tokens = $null; $errors = $null; [System.Management.Automation.Language.Parser]::ParseFile($_, [ref]$tokens, [ref]$errors) > $null; if ($errors.Count -gt 0) { throw $errors[0] } }'
 task --list-all
 CODEGEIST_WINDOWS_ALLOW_SKIP=1 CODEGEIST_SMOKE_STATUS_FILE=app/codegeist/cli/target/smoke-test/qemu-windows-skip.status scripts/tests/qemu-windows-vm.sh smoke
 CODEGEIST_WINDOWS_VM_DIR=.local/codegeist-win-download-test/vm CODEGEIST_WINDOWS_ISO_URL=file://.../fake.iso scripts/tests/qemu-windows-vm.sh download
@@ -158,7 +159,8 @@ git --no-pager diff --check
 
 Results:
 
-- Shell syntax checks passed.
+- Shell syntax checks passed for the QEMU VM lifecycle script; PowerShell parser
+  checks cover the smoke entrypoints.
 - `task --list-all` showed `local-linux-smoke`, `qemu-windows-smoke`, and
   `final-smoke-suite`.
 - Maven tests passed: 2 tests, 0 failures.
@@ -191,10 +193,9 @@ Results:
   into a fresh temp directory, and the extracted `codegeist.exe --version` printed
   `0.1.0-SNAPSHOT`.
 - `task -t app/codegeist/cli/Taskfile.yml final-smoke-suite` passed in strict mode;
-  Linux and Windows jar/native statuses were all `passed`. In that final run,
-  Linux native-image completed in about 48 seconds and Windows native-image
-  completed in about 2 minutes 13 seconds before each archive was unpacked and
-  smoked.
+  Linux and Windows native statuses were `passed`. In that final run, Linux
+  native-image completed in about 48 seconds and Windows native-image completed in
+  about 2 minutes 13 seconds before each archive was unpacked and smoked.
 - `task qemu-windows-smoke` now goes through `scripts/tests/qemu-windows-vm.sh
   smoke` and fails by default unless the Windows VM can be created or started.
 - `git --no-pager diff --check` passed.
@@ -203,21 +204,20 @@ Results:
 
 ## Solve Notes
 
-- Moved native smoke assertions to `scripts/tests/native-smoke.sh` and updated
-  `task native-smoke` to source the new path.
-- Added `scripts/tests/local-linux-smoke.sh` for Linux Maven test, jar smoke, and
-  native archive smoke when `native-image` is available.
+- Moved native smoke assertions to `scripts/tests/native-smoke.ps1` and updated
+  `task native-smoke` to call the PowerShell wrapper.
+- Added `scripts/tests/local-linux-smoke.ps1` for Linux Maven test, jar build gate,
+  and native archive smoke when `native-image` is available.
 - Added `scripts/tests/qemu-windows-vm.sh` as the Windows QEMU VM automation
-  wrapper, `scripts/tests/qemu-windows-smoke.sh` as the lower-level SSH wrapper,
-  and `scripts/tests/windows-smoke.ps1` as the Windows-side Maven, jar, and native
-  smoke helper.
+  wrapper, `scripts/tests/qemu-windows-smoke.ps1` as the lower-level SSH wrapper,
+  and `scripts/tests/windows-smoke.ps1` as the Windows-side native smoke helper.
 - Added automatic official Windows Server Evaluation ISO download when no local ISO
   exists, with optional `CODEGEIST_WINDOWS_ISO`, `CODEGEIST_WINDOWS_ISO_URL`, and
   `CODEGEIST_WINDOWS_ISO_SHA256` overrides.
 - Added `scripts/tests/windows-qemu/autounattend.xml` and
   `scripts/tests/windows-qemu/setup.ps1` for unattended Windows VM provisioning.
-- Added `scripts/tests/final-smoke-suite.sh` to run Linux and Windows smoke checks
-  together. Default mode requires both platforms to pass; `--allow-skips` is
+- Added `scripts/tests/final-smoke-suite.ps1` to run Linux and Windows smoke checks
+  together. Default mode requires both platforms to pass; `-AllowSkips` is
   developer-only.
 - Added timeout controls for local version smoke execution:
   `CODEGEIST_JAR_SMOKE_TIMEOUT`, `CODEGEIST_NATIVE_SMOKE_TIMEOUT`,

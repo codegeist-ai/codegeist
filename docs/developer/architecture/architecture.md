@@ -28,16 +28,19 @@ docs:
   analysis, Spring interaction notes, diagrams, and task handoff value.
 - `provider-configuration.md` - provider configuration source map, Spring binding,
   direct YAML loading, validation flow, tests, and sharp edges.
-- `local-file-tools.md` - local read/list/glob/grep/write callback architecture,
+- `local-file-tools.md` - local read/list/glob/grep/write/edit callback architecture,
   MCP callback bridge, source map, recording behavior, and extension guidance.
+- `edit-tool.md` - detailed `codegeist_edit` contract, planning algorithm,
+  containment guard, text normalization, stale-write protection, preview settings,
+  tests, and sharp edges.
 
 ## Current System State
 
 Codegeist currently contains one Java/Spring Boot CLI application under
 `app/codegeist/cli`. Implemented runtime behavior is Spring Boot application
 startup, typed access-only provider config loading and validation, trusted local
-SpEL preprocessing for explicit `codegeist.yml` files, direct workspace and MCP
-config loading, active workspace resolution, provider-neutral one-turn chat
+SpEL preprocessing for explicit `codegeist.yml` files, direct workspace, tools, and
+MCP config loading, active workspace resolution, provider-neutral one-turn chat
 execution through a narrow `ChatHarnessService`, a lazily created Codegeist chat
 model that wraps Spring AI Ollama and uses the runtime model name from the request,
 a Spring Shell `--version` command that prints the build version, and a Spring Shell
@@ -46,8 +49,8 @@ a Spring Shell `--version` command that prints the build version, and a Spring S
 sends one prompt to the first configured provider with that provider config's
 default runtime model; with `-c/--continue`, it appends the prompt, bounded local or
 MCP tool activity, and provider response to the newest session in
-`.codegeist/session.json`. The completed first tool slice exposes Codegeist-owned
-local read/list/glob/grep/write file callbacks and lazily opened MCP callbacks to
+`.codegeist/session.json`. The current tool slice exposes Codegeist-owned local
+read/list/glob/grep/write/edit file callbacks and lazily opened MCP callbacks to
 provider calls through prompt-scoped Spring AI tool callbacks. This is not yet an
 OpenCode-style coding-agent loop: Codegeist does not own a repeated
 model/tool/model controller, streaming event loop, permission loop, or multi-step
@@ -76,7 +79,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace config/resolver/output-bound/local-file-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local-file-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama provider dependency is
 used programmatically instead of through global Spring AI auto-configuration.
@@ -93,13 +96,14 @@ app/codegeist/cli/
   Taskfile.yml
   src/...
 scripts/tests/
-  mcp-remote-smoke.sh
-  native-smoke.sh
-  local-linux-smoke.sh
+  smoke-common.ps1
+  mcp-remote-smoke.ps1
+  native-smoke.ps1
+  local-linux-smoke.ps1
   qemu-windows-vm.sh
-  qemu-windows-smoke.sh
+  qemu-windows-smoke.ps1
   windows-smoke.ps1
-  final-smoke-suite.sh
+  final-smoke-suite.ps1
   windows-qemu/
     autounattend.xml
     setup.ps1
@@ -119,7 +123,7 @@ Implemented Java package:
 | `ai.codegeist.app.config` | Top-level config root models, the central root parser, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
 | `ai.codegeist.app.mcp` | Lazy MCP adapter, prompt-scoped MCP run handle, Spring AI/MCP client factory, and closeable client handle for configured `stdio` and `streamable_http` clients |
 | `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
-| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
+| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write/edit Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
@@ -168,8 +172,9 @@ Current behavior:
   shared root-shape validation and `type` dispatch for typed root entries.
   `ProvidersRootElement` stores a `ProvidersConfig` list-backed element,
   `McpClientsRootElement` stores a `McpClientsConfig` list-backed element whose ids
-  come from YAML keys, and `WorkspaceRootElement` stores the direct `workspace:`
-  object shape.
+  come from YAML keys, `WorkspaceRootElement` stores the direct `workspace:` object
+  shape, and `ToolsRootElement` stores the direct `tools:` object shape for
+  Codegeist-owned local tool settings.
 - `CodegeistConfigElement` is the abstract base class for every config payload shape,
   including single objects, typed entries, and list-backed keyed objects.
   `CodegeistTypedConfigElement<T>` owns the shared required nested YAML `type`
@@ -240,10 +245,10 @@ Current behavior:
   values.
 - `CodegeistConfigRootParser` is the central Spring parser for top-level direct YAML
   roots. It receives `CodegeistConfigYamlMapper`, owns unsupported-root errors, and
-  now uses explicit parser methods for `provider:`, `mcp:`, and `workspace:` instead
-  of generic root-shape helpers. Provider entries dispatch through a compact explicit
-  registry; MCP entries dispatch through an explicit transport config registry and
-  copy the YAML key into `McpClientConfig.id`.
+  now uses explicit parser methods for `provider:`, `mcp:`, `workspace:`, and
+  `tools:` instead of generic root-shape helpers. Provider entries dispatch through a
+  compact explicit registry; MCP entries dispatch through an explicit transport config
+  registry and copy the YAML key into `McpClientConfig.id`.
 - `CodegeistConfigService` receives the root parser, config mapper, SpEL evaluator,
   validator, and command output service as final collaborators
   through Lombok `@RequiredArgsConstructor`. Its `configPath` remains a non-final
@@ -265,12 +270,22 @@ Current behavior:
   no synthetic roots for an empty config.
 - `WorkspaceRootElement` parses optional direct `codegeist.yml` `workspace:`
   objects into the inherited generic `CodegeistConfigRootElement<WorkspaceConfig>`
-  config slot. Implemented `WorkspaceConfig` fields are nullable `directory` and
-  `encoding`. Omitted or blank `directory` values let the resolver fall back to the
-  process working directory. Omitted or blank `encoding` values make local file tools
-  use UTF-8; configured values must be supported Java charset names. The root does
-  not define permission rules, path safety fields, ignored-file behavior, write
-  protection, or symlink rules.
+  config slot. Implemented `WorkspaceConfig` fields are nullable `directory`, nullable
+  `encoding`, and nullable `dirGuardDisabled` exposed as YAML
+  `dir-guard-disabled`. Omitted or blank `directory` values let the resolver fall
+  back to the process working directory. Omitted or blank `encoding` values make
+  local file tools use UTF-8; configured values must be supported Java charset names.
+  `dir-guard-disabled` defaults to `false`; when explicitly true, side-effecting file
+  tools can disable active-workspace containment while still requiring existing
+  regular file targets. The root does not define broader permission rules,
+  ignored-file behavior, write protection, or symlink policy beyond that tested guard
+  switch.
+- `ToolsRootElement` parses optional direct `codegeist.yml` `tools:` objects into
+  `ToolsConfig`. The first implemented nested payload is `codegeist-edit`, modeled by
+  `CodegeistEditToolConfig` with nullable `diff-preview-lines` and
+  `diff-preview-chars`. `CodegeistEditToolSettings` applies runtime defaults of 6
+  lines and half of `ToolOutputBounds.MAX_PREVIEW_CHARS`, falls back for non-positive
+  values, and caps configured values by existing global output bounds.
 - `WorkspaceResolver` is a Spring component under `ai.codegeist.app.tool`. It reads
   the active `CodegeistConfig`, uses `${user.dir}` as the process working directory,
   returns that directory when no workspace override is configured, normalizes
@@ -286,11 +301,12 @@ Current behavior:
   Bounds return strings or integer limits only; no truncation metadata object exists.
 - `CodegeistLocalTools` is a Spring component under `ai.codegeist.app.tool`. It is
   the generic callback assembler for Codegeist-owned local Spring AI callbacks,
-  including the five implemented file callbacks:
-  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
-  `codegeist_write`. Package-private Spring components `CodegeistReadFileTool`,
-  `CodegeistListFileTool`, `CodegeistGlobFileTool`, `CodegeistGrepFileTool`, and
-  `CodegeistWriteFileTool` own each operation and its callback name, while the
+  including the six implemented file callbacks:
+  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`,
+  `codegeist_write`, and `codegeist_edit`. Package-private Spring components
+  `CodegeistReadFileTool`, `CodegeistListFileTool`, `CodegeistGlobFileTool`,
+  `CodegeistGrepFileTool`, `CodegeistWriteFileTool`, and `CodegeistEditFileTool` own
+  each operation and its callback name, while the
   package-private Spring component `CodegeistFileToolSupport` owns shared JSON
   parsing, schema, active workspace lookup, path, configured-charset text readers,
   binary, and glob helpers.
@@ -310,7 +326,12 @@ Current behavior:
   non-recursive with `[DIR]` and `[FILE]` markers; glob uses Java NIO glob matching
   without shelling out; grep uses Java regex over text files and records invalid
   regex as a failed tool result; write creates or overwrites one regular text file
-  using the configured workspace encoding without creating parent directories.
+  using the configured workspace encoding without creating parent directories; edit
+  applies one or more exact non-overlapping replacements to one existing text file,
+  rejects outside-workspace targets before reading or writing by default, allows that
+  containment guard to be disabled only by `workspace.dir-guard-disabled: true`,
+  preserves BOM/CRLF style, and records a bounded diff summary whose compact diff
+  preview can be tuned through `tools.codegeist-edit` direct config.
   `CodegeistLocalToolCallback` is the
   package-local wrapper that translates handled local tool failures into bounded
   failed tool parts.
@@ -378,7 +399,7 @@ Current behavior:
   `ToolSessionPart` for bounded completed or failed tool activity. Tool parts persist
   only the tool name, nested `ToolSessionPart.ToolSessionPartStatus`, and bounded
   `outputPreview`. Local file callbacks and wrapped MCP callbacks can now record
-  these bounded parts; patch/edit, shell, reasoning, and step parts are deferred
+  these bounded parts; structured patch, shell, reasoning, and step parts are deferred
   until focused tool tasks add the matching execution paths. `SessionStore`
   is a Lombok getter/setter/builder class with a default empty session list;
   session, message, and existing part model entries stay records or Jackson-bound
@@ -434,6 +455,11 @@ provider names are rejected, while an omitted provider name remains valid.
 `workspace.directory`, accepts omitted and blank workspace configuration so the
 resolver can fall back later, and rejects a present non-object `workspace:` root with
 a focused validation message.
+
+`CodegeistToolsConfigTest` proves direct `codegeist.yml` can load optional
+`tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars`, allows an empty
+`tools:` root, and rejects a present non-object `tools:` root with a focused
+validation message.
 
 `CodegeistProviderConfigTest` proves the supported `ollama` and `openai` provider
 types map through the explicit Java registry to the
@@ -502,11 +528,15 @@ without treating those configured values as policy violations.
 `ToolOutputBoundsTest` proves deterministic preview capping, line capping, result
 limit capping, read-limit defaults and caps, and normalized bounded error previews.
 
-`CodegeistLocalToolsTest` uses temp-directory fixtures to prove the five local file
+`CodegeistLocalToolsTest` uses temp-directory fixtures to prove the six local file
 callbacks expose stable names and schemas, resolve relative paths from the active
 workspace, return bounded model-visible text, record the same bounded preview in
-`ToolSessionPart`, and handle focused read/list/glob/grep/write success and failure
-paths without provider calls.
+`ToolSessionPart`, and handle focused read/list/glob/grep/write/edit success and
+failure paths without provider calls. Edit coverage includes exact single and
+multi-edit replacement, no partial mutation, workspace and symlink escape rejection,
+invalid input failures, ambiguous or missing match failures, stale-byte checking,
+BOM/CRLF preservation, bounded diff previews, and configured edit diff line and
+character caps.
 
 `CodegeistToolServiceTest` proves one prompt-scoped tool run exposes local callbacks
 through `CodegeistChatExecutionContext`, includes configured MCP callbacks, records
@@ -575,43 +605,53 @@ sequenceDiagram
 `app/codegeist/cli/Taskfile.yml` provides the current developer and local smoke
 entrypoints. Test and smoke helper scripts live under `scripts/tests/`.
 
-`scripts/tests/native-smoke.sh` defines `run-native-smoke-tests`, which owns the
-Linux native archive smoke assertions used by `task native-smoke` and the Linux
-smoke entrypoint. The function writes
-`target/dist/codegeist-linux-x64.tar.gz`, unpacks it into a fresh temp directory,
-runs packaged `./codegeist --version`, `./codegeist --show-config`, and a real
-Ollama-backed `./codegeist -Dcodegeist.config=<smoke-yml> ask <prompt>`, then writes
-the smoke log to `target/smoke-test/codegeist.log`.
+`scripts/tests/artifact-smoke.ps1` is the shared native-only artifact smoke
+harness. It packages native artifacts into
+`target/dist/codegeist-<platform>.<extension>`, unpacks native archives into a
+fresh temp directory, runs `--version`, runs native `--show-config`, delegates
+deterministic ask-driven file-edit checks to `scripts/tests/file-edit-ask-smoke.ps1`,
+and can optionally run a real Ollama-backed native `ask` smoke.
 
-`scripts/tests/local-linux-smoke.sh` runs Maven tests, builds the jar, verifies
-`java -jar target/codegeist.jar --version`, starts host Ollama through
-`task ollama-start`, verifies jar `ask` with `-Dcodegeist.config=<smoke-yml>`, and
-verifies the packaged Linux native archive `--version`, `--show-config`, and `ask`
-output when `native-image` is available.
+`scripts/tests/native-smoke.ps1` is the Linux native smoke wrapper used by
+`task native-smoke` and the Linux smoke entrypoint. The wrapper starts host Ollama
+and calls `artifact-smoke.ps1 -Platform linux-x64` with provider-backed native `ask`
+enabled.
 
-`scripts/tests/mcp-remote-smoke.sh` packages the local MCP fixture jar, builds the
+`scripts/tests/smoke-common.ps1` is the shared helper layer for smoke status
+files, duration output, environment overrides, command steps, and readiness
+checks. The Linux, Windows SSH, MCP remote, and final-suite smoke entrypoints use
+this common PowerShell codebase; do not add shell compatibility wrappers for
+these workflows.
+
+`scripts/tests/local-linux-smoke.ps1` runs Maven tests, builds the jar as a build
+gate, then verifies the packaged Linux native archive through `native-smoke.ps1`
+and the shared artifact harness when `native-image` is available. The jar is not
+smoke-tested.
+
+`scripts/tests/mcp-remote-smoke.ps1` packages the local MCP fixture jar, builds the
 `codegeist-mcp-remote-smoke:local` Docker image, starts a temporary container on a
 localhost-only port, runs `CodegeistMcpRemoteSmokeIT` with the discovered URL, starts
 local Ollama, runs `AskCommandsMcpRemoteSmokeIT` with the same URL, and removes the
-container through a trap. The fixture source lives under
+container in a `finally` cleanup path. The fixture source lives under
 `scripts/tests/fixtures/mcp-remote-server/`; its Maven `target/` output is ignored.
 
 `scripts/tests/qemu-windows-vm.sh` is the host-side Windows VM automation
 entrypoint. It downloads the official Windows Server Evaluation ISO when no local
 ISO exists, creates or starts the local Windows QEMU VM, generates answer media,
 starts host Ollama through `task ollama-start`, syncs the repo subset needed by
-smoke checks, and delegates execution to `scripts/tests/qemu-windows-smoke.sh`.
+smoke checks, and delegates execution to `scripts/tests/qemu-windows-smoke.ps1`.
 
-`scripts/tests/qemu-windows-smoke.sh` is the lower-level SSH wrapper. It runs
+`scripts/tests/qemu-windows-smoke.ps1` is the lower-level SSH wrapper. It runs
 `scripts/tests/windows-smoke.ps1` in the Windows VM. The Windows-side script uses
 `http://10.0.2.2:11434` by default to reach the host Ollama service through QEMU
-user networking, then verifies jar/native `ask` with a guest-local smoke config.
+user networking, then calls the shared artifact harness for native `--version`,
+native `--show-config`, file-edit, logs, and provider-backed `ask`.
 Missing Windows VM configuration fails by default and can only be skipped when
 developer-only skip mode is explicitly enabled.
 
-`scripts/tests/final-smoke-suite.sh` runs the Linux and Windows smoke entrypoints.
+`scripts/tests/final-smoke-suite.ps1` runs the Linux and Windows smoke entrypoints.
 Default mode requires Linux and Windows to pass and makes native checks required
-by default. `--allow-skips` is the developer-only mode for machines without ISO
+by default. `-AllowSkips` is the developer-only mode for machines without ISO
 download or VM prerequisites.
 
 | Task | Command | Proves |
@@ -619,11 +659,11 @@ download or VM prerequisites.
 | `task test` | Runs `ollama-start` with `OLLAMA_ENTER=false`, then `mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test` | Taskfile-managed Ollama startup, Maven test lifecycle, Spring context-load test, version output test, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and optional focused selector such as `task test TEST=CodegeistApplicationTests` |
 | `task build` | `mvn --batch-mode --no-transfer-progress -DskipTests clean package` | Executable jar packaging |
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
-| `task native-smoke` | Builds native, then sources `scripts/tests/native-smoke.sh` and calls `run-native-smoke-tests` | Linux native archive unpacks in a temp directory, packaged `--version` output equals generated build version, packaged `--show-config` output equals `{}` for the empty default config, packaged `ask` reaches host Ollama, and native smoke log file works |
-| `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.sh` | Local Linux jar smoke, Maven tests, real Ollama-backed jar `ask`, and native smoke when native-image is available |
-| `task mcp-remote-smoke` | Runs `scripts/tests/mcp-remote-smoke.sh` | Docker-backed local MCP server fixture, real `streamable_http` MCP callback discovery, direct deterministic callback invocation, local Ollama-backed `ask` invocation of the remote MCP tool, session `ToolSessionPart` persistence, and container cleanup outside the default test path |
-| `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, starts host Ollama through `task ollama-start`, and runs Windows jar/native smoke over SSH |
-| `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.sh` | Local Linux and Windows smoke suite; both platforms must pass by default |
+| `task native-smoke` | Runs `scripts/tests/native-smoke.ps1 -BuildNative` | Linux native archive is checked through the shared artifact harness: package, unpack, packaged `--version`, packaged `--show-config`, command logs, ask-driven file-edit side effects, and real Ollama-backed native `ask` |
+| `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.ps1` | Local Linux Maven tests, jar packaging as a build gate, and shared artifact-harness native smoke when native-image is available |
+| `task mcp-remote-smoke` | Runs `scripts/tests/mcp-remote-smoke.ps1` | Docker-backed local MCP server fixture, real `streamable_http` MCP callback discovery, direct deterministic callback invocation, local Ollama-backed `ask` invocation of the remote MCP tool, session `ToolSessionPart` persistence, and container cleanup outside the default test path |
+| `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, starts host Ollama through `task ollama-start`, then runs native smoke over SSH including file-edit encoding checks |
+| `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.ps1` | Local Linux and Windows smoke suite; both platforms must pass by default |
 | `task ollama-start` | Starts or reuses the local `ollama/ollama` container, waits for `/api/version`, and ensures the selected model is present | External local Ollama prerequisite for focused live provider tests and Linux/Windows `ask` smokes |
 | `task run` | `java -jar target/codegeist.jar` after `build` | Starts the packaged Spring Boot application |
 
@@ -638,14 +678,16 @@ path. It accepts three trigger shapes:
 - push to `v*` tags for release-cycle automation and GitHub Release publication.
 
 The workflow resolves a non-SNAPSHOT SemVer release version, passes it to Maven as
-`-Drevision=<version>`, runs Maven tests before packaging, builds and smoke-tests a
-versioned JVM jar, then builds native archives on GitHub-hosted Linux x64, Windows
-x64, and macOS x64 runners. Native archive smoke runs `--version` and
-`--show-config` from the extracted package directory. The Windows native job
-activates the MSVC tools environment before running Maven native compilation. The
-checksum job generates and verifies `SHA256SUMS.txt`; the release job uploads the
-jar, native archives, and checksum file to a published GitHub Release only for
-matching `v*` tags.
+`-Drevision=<version>`, runs Maven tests before packaging, builds and stages a JVM
+jar release asset without artifact smoke, then builds native archives on
+GitHub-hosted Linux x64, Windows x64, and macOS x64 runners. Native artifact smoke
+runs `scripts/tests/artifact-smoke.ps1`, so release CI uses the same harness as
+local platform wrappers for native packaging, archive unpacking, `--version`,
+native `--show-config`, command-log assertions, and deterministic file-edit side
+effects. The Windows native job activates the MSVC tools environment before running
+Maven native compilation. The checksum job generates and verifies
+`SHA256SUMS.txt`; the release job uploads the jar, native archives, and checksum
+file to a published GitHub Release only for matching `v*` tags.
 
 Release workflow changes are promoted through `/codegeist-release --source
 <release-work-branch> --rc <n>` instead of merging a multi-commit work branch

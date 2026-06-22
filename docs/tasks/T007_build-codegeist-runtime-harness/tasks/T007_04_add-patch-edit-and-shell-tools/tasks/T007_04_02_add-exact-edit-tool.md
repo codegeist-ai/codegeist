@@ -2,7 +2,7 @@
 
 Parent: `T007_04_add-patch-edit-and-shell-tools`
 
-Status: open
+Status: solved
 
 ## Goal
 
@@ -30,6 +30,35 @@ the active workspace.
 - Existing read/list/glob/grep/write tools and plain no-continue `ask` behavior
   remain unaffected.
 
+## Result
+
+- Added `CodegeistEditFileTool` as the `codegeist_edit` local callback.
+- The public schema exposes only `path` and `edits[]` with `oldText` and `newText`.
+- The implementation rejects outside-workspace absolute, traversal, and symlink
+  targets before reading or writing by default.
+- Added `CodegeistWorkingDirectoryGuard`; `workspace.dir-guard-disabled: true` is the
+  only opt-out and disables active-workspace containment while keeping existence and
+  regular-file checks.
+- Multi-edit inputs are matched against the original LF-normalized file content,
+  require unique exact matches, reject overlaps, preserve leading BOM and CRLF style,
+  and write once only after all validation passes.
+- Stale file bytes are checked immediately before writing so a concurrent content
+  change fails instead of being overwritten.
+- `ToolSessionPart` remains unchanged; edit results persist only the bounded text
+  preview.
+- Direct `codegeist.yml` can tune the compact edit diff preview through
+  `tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars`; final output is
+  still capped by `ToolOutputBounds`.
+- Added native artifact smoke coverage through `scripts/tests/artifact-smoke.ps1`,
+  which delegates edit-specific checks to `scripts/tests/file-edit-ask-smoke.ps1`.
+  The sub-harness runs the real native `ask` command against a deterministic
+  Ollama-compatible fixture provider, exercises `codegeist_edit` through Spring AI
+  tool calls, and checks UTF-8 BOM/multibyte, LF/CRLF, final-newline, configured
+  ISO-8859-1 bytes, and persisted completed `ToolSessionPart` behavior.
+- Added `docs/developer/architecture/edit-tool.md` as the detailed developer guide
+  for the edit contract, planning algorithm, containment guard, normalization,
+  stale-write protection, preview settings, tests, and sharp edges.
+
 ## File Targets
 
 - `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/`
@@ -40,15 +69,21 @@ the active workspace.
 
 ## Verification
 
-Run from `app/codegeist/cli`:
+Focused verification passed from `app/codegeist/cli`:
 
 ```bash
-task test TEST=<exact-edit-tool-test-selector>
+task test TEST=CodegeistToolsConfigTest,CodegeistLocalToolsTest
 ```
+
+Result: focused tools-config and local-tools tests passed.
+
+Artifact smoke is now native-only. Jar smoke is intentionally not part of the
+current verification contract.
 
 ## Source Notes
 
-- Depends on `T007_04_01_add-working-directory-guard.md`.
+- The standalone working-directory guard child was removed before implementation;
+  this slice keeps containment local to `CodegeistEditFileTool`.
 - Use `../ask-project-research.md` for the accepted edit preview format and deferred
   behavior.
 - Do not add typed edit fields to `ToolSessionPart` unless a focused test requires

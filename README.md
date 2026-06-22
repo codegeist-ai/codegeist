@@ -106,12 +106,15 @@ Implementation notes:
 
 ## Local Smoke Tests
 
-Local smoke scripts live under `scripts/tests/`.
+Local smoke scripts live under `scripts/tests/`. The primary smoke logic is
+implemented in PowerShell 7 (`*.ps1`) so Linux, Windows, MCP, and final-suite
+orchestration use the same helper code. Matching `*.sh` files are compatibility
+wrappers for existing shell callers.
 
 Run the local Linux smoke from the repository root:
 
 ```bash
-scripts/tests/local-linux-smoke.sh
+pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1
 ```
 
 Run the Docker-backed MCP `streamable_http` smoke from `app/codegeist/cli`:
@@ -123,7 +126,7 @@ task mcp-remote-smoke
 Run the final local smoke suite:
 
 ```bash
-scripts/tests/final-smoke-suite.sh
+pwsh -NoProfile -File scripts/tests/final-smoke-suite.ps1
 ```
 
 The final suite requires Linux and Windows to pass by default. It downloads the
@@ -133,7 +136,7 @@ Windows QEMU VM, and fails if download, VM, or smoke prerequisites fail.
 For developer-only runs that may skip missing platform prerequisites, use:
 
 ```bash
-scripts/tests/final-smoke-suite.sh --allow-skips
+pwsh -NoProfile -File scripts/tests/final-smoke-suite.ps1 -AllowSkips
 ```
 
 The Windows smoke path uses a local Windows QEMU VM over SSH. See

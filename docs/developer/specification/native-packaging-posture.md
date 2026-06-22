@@ -53,10 +53,9 @@ files they changed.
 | Step | Command | Proves | Required when |
 | --- | --- | --- | --- |
 | Compile and tests | `task test` from `app/codegeist/cli` | Maven test lifecycle and current Spring context load. | Java, dependency, build, or runtime wiring changes. |
-| JVM package | `task build` from `app/codegeist/cli` | Executable Spring Boot jar is created as `target/codegeist.jar`. | Release candidates and build-layout changes. |
-| JVM startup smoke | `java -jar target/codegeist.jar --version` from `app/codegeist/cli` | Packaged jar can execute the default noninteractive command path. | First release packaging task and later CLI command packaging work. |
+| JVM package | `task build` from `app/codegeist/cli` | Executable Spring Boot jar is created as `target/codegeist.jar` for release upload. It is not smoke-tested. | Release candidates and build-layout changes. |
 | Native compile | `task native` from `app/codegeist/cli` | GraalVM native-image can compile the current dependency graph. | Native posture tasks when the toolchain is available and time budget allows. |
-| Native archive startup smoke | Package the native executable under `target/dist/`, unpack the archive into a fresh temp directory, then run packaged `./codegeist --version` and `./codegeist --show-config`. | The release-shaped native package starts with the same noninteractive baseline and keeps config output clean. | Release candidates after a successful native compile. |
+| Native archive artifact smoke | `scripts/tests/artifact-smoke.ps1 -Platform <platform>` | The shared harness packages the native executable under `target/dist/`, unpacks the archive into a fresh temp directory, runs packaged `--version` and `--show-config`, verifies logs, and runs deterministic file-edit side effects through `ask`. | Release candidates after a successful native compile. |
 | Diff hygiene | `git --no-pager diff --check` from the repository root | Markdown and source diffs have no whitespace errors. | Every task. |
 
 The current documentation-only task only requires `git --no-pager diff --check`.

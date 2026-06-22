@@ -64,10 +64,10 @@ immutable `v*` tag carry the version, so filenames intentionally omit it:
 
 | Asset | Source job | Smoke command |
 | --- | --- | --- |
-| `codegeist-jvm.jar` | Ubuntu JVM job | `java -jar codegeist-jvm.jar --version` |
-| `codegeist-linux-x64.tar.gz` | Ubuntu native job | unpack and run `./codegeist --version` and `./codegeist --show-config` |
-| `codegeist-windows-x64.zip` | Windows native job | unzip and run `codegeist.exe --version` and `codegeist.exe --show-config` |
-| `codegeist-macos-x64.tar.gz` | macOS native job | unpack and run `./codegeist --version` and `./codegeist --show-config` |
+| `codegeist-jvm.jar` | Ubuntu JVM job | none; build and upload only |
+| `codegeist-linux-x64.tar.gz` | Ubuntu native job | `scripts/tests/artifact-smoke.ps1 -Platform linux-x64` |
+| `codegeist-windows-x64.zip` | Windows native job | `scripts/tests/artifact-smoke.ps1 -Platform windows-x64` |
+| `codegeist-macos-x64.tar.gz` | macOS native job | `scripts/tests/artifact-smoke.ps1 -Platform macos-x64` |
 | `SHA256SUMS.txt` | Checksum job | `sha256sum -c` before upload |
 
 Native archives keep the executable and required GraalVM sidecar libraries in one
@@ -80,12 +80,13 @@ The implemented jobs run these gates in order:
 
 1. Resolve and validate the release version.
 2. Run the Maven test suite with `-Drevision=<version>`.
-3. Build the executable JVM jar and smoke `--version`.
+3. Build the executable JVM jar and stage it as `codegeist-jvm.jar` without smoke.
 4. Build native executables on GitHub-hosted Linux, Windows, and macOS runners.
 5. Activate the MSVC tools environment on Windows before Maven native compile.
 6. Package native archives with sidecar libraries.
-7. Unpack each native archive into a fresh temporary directory and smoke
-   `--version` plus `--show-config` from the extracted directory.
+7. Run `scripts/tests/artifact-smoke.ps1` for each native platform; it packages,
+   unpacks, verifies `--version`, verifies `--show-config`, checks logs, and runs
+   deterministic file-edit side effects.
 8. Generate and verify `SHA256SUMS.txt`.
 9. Upload all assets as workflow artifacts.
 10. On `v*` tag runs only, upload the same assets to a published GitHub Release.

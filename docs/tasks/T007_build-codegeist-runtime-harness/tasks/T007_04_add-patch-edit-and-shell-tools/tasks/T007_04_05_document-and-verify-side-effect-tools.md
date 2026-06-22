@@ -11,8 +11,10 @@ focused verification.
 
 ## Scope
 
-- Update architecture docs to describe the implemented working-directory guard,
-  exact edit tool, structured patch tool, and shell tool behavior.
+- Update architecture docs to describe the implemented exact edit tool, structured
+  patch tool, and shell tool behavior.
+- Keep smoke documentation aligned with artifact-level side-effect checks, including
+  the shared ask-driven file-edit harness used for native encoding validation.
 - Verify the parent T007_04 acceptance criteria after implementation children are
   complete.
 - Preserve the documented non-goals: no sandbox claim beyond path/cwd/timeout
@@ -25,7 +27,7 @@ focused verification.
 
 - `docs/developer/architecture/architecture.md` and focused architecture docs describe
   current implemented patch/edit and shell behavior.
-- Focused tests for the guard, edit, patch, shell, and session persistence pass.
+- Focused tests for edit, patch, shell, and session persistence pass.
 - A broad JVM verification command is run or a blocker is documented.
 - Parent `T007_04_add-patch-edit-and-shell-tools/task.md` accurately reflects the
   implementation state.
@@ -34,6 +36,9 @@ focused verification.
 
 - `docs/developer/architecture/architecture.md`
 - `docs/developer/architecture/local-file-tools.md`
+- `docs/developer/architecture/edit-tool.md`
+- `docs/tests/smoke-tests.md`
+- `docs/developer/specification/build-release-and-binary-smoke-strategy.md`
 - `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/task.md`
 - `docs/memory-bank/chat.md`
 
@@ -47,8 +52,7 @@ task test
 
 ## Source Notes
 
-- Depends on `T007_04_01_add-working-directory-guard.md`,
-  `T007_04_02_add-exact-edit-tool.md`,
+- Depends on `T007_04_02_add-exact-edit-tool.md`,
   `T007_04_03_add-structured-patch-tool.md`, and
   `T007_04_04_add-shell-tool.md`.
 - Keep final docs current-state only; move future permission, TUI, background shell,

@@ -21,11 +21,12 @@ import org.springframework.util.StringUtils;
  * <p>The parser keeps the user-facing YAML shape separate from the runtime model:
  * {@code provider:} and {@code mcp:} are both provider-style YAML objects keyed by
  * user-chosen ids, while their runtime payloads are list-backed
- * {@link CodegeistConfigKeyedListElement} instances. {@code workspace:} is a single
- * object root and therefore maps directly into a {@link WorkspaceConfig}. Provider
- * and MCP entries both dispatch on their inner {@code type} field because the YAML
- * key is only an id, not the implementation or transport selector. MCP entries also
- * copy the YAML key into {@link McpClientConfig#getId()}.
+ * {@link CodegeistConfigKeyedListElement} instances. {@code workspace:} and
+ * {@code tools:} are single object roots and therefore map directly into
+ * {@link WorkspaceConfig} and {@link ToolsConfig}. Provider and MCP entries both
+ * dispatch on their inner {@code type} field because the YAML key is only an id,
+ * not the implementation or transport selector. MCP entries also copy the YAML key
+ * into {@link McpClientConfig#getId()}.
  *
  * <p>Adding a new top-level direct YAML root should start here: choose whether the
  * root is a single object, a keyed list with key-copy semantics, or a typed keyed
@@ -38,6 +39,7 @@ public class CodegeistConfigRootParser {
 
     static final String UNSUPPORTED_ROOT_ELEMENT_PREFIX = "Unsupported Codegeist config root element: ";
     static final String WORKSPACE_MAPPING_ERROR_PREFIX = "Invalid workspace root element";
+    static final String TOOLS_MAPPING_ERROR_PREFIX = "Invalid tools root element";
 
     // Keep typed dispatch explicit so native images do not need runtime scanning.
     private static final Map<String, Class<? extends ProviderConfig>> PROVIDER_CLASSES = Map.of(
@@ -65,6 +67,7 @@ public class CodegeistConfigRootParser {
             case ProvidersRootElement.ROOT_NAME -> parseProviders(source);
             case McpClientsRootElement.ROOT_NAME -> parseMcpClients(source);
             case WorkspaceRootElement.ROOT_NAME -> parseWorkspace(source);
+            case ToolsRootElement.ROOT_NAME -> parseTools(source);
             default -> throw new CodegeistConfigValidationException(UNSUPPORTED_ROOT_ELEMENT_PREFIX + rootName);
         };
     }
@@ -117,6 +120,23 @@ public class CodegeistConfigRootParser {
         }
         catch (IllegalArgumentException exception) {
             throw new CodegeistConfigValidationException(WORKSPACE_MAPPING_ERROR_PREFIX, exception);
+        }
+    }
+
+    /**
+     * Parses the single-object {@code tools:} root.
+     *
+     * <p>Tool config is nested by Codegeist callback name, for example
+     * {@code tools.codegeist-edit}. The root stays a single object because it is not a
+     * user-keyed catalog like {@code provider:} or {@code mcp:}.
+     */
+    private ToolsRootElement parseTools(JsonNode source) {
+        ObjectNode toolsObject = requireRootObject(source, ToolsRootElement.ROOT_NAME);
+        try {
+            return new ToolsRootElement(yamlMapper.convertValue(toolsObject, ToolsConfig.class));
+        }
+        catch (IllegalArgumentException exception) {
+            throw new CodegeistConfigValidationException(TOOLS_MAPPING_ERROR_PREFIX, exception);
         }
     }
 

@@ -144,7 +144,7 @@ platform, artifact, command, and follow-up owner.
   the release version instead of `0.1.0-SNAPSHOT`.
 - Added CI-friendly Maven revision support in `app/codegeist/cli/pom.xml` while
   keeping the local default version `0.1.0-SNAPSHOT`.
-- The workflow builds and smokes `codegeist-jvm.jar`,
+- The workflow builds `codegeist-jvm.jar` as a release asset, smokes
   `codegeist-linux-x64.tar.gz`, `codegeist-windows-x64.zip`, and
   `codegeist-macos-x64.tar.gz`, then generates and verifies `SHA256SUMS.txt`.
 - GitHub Release upload is guarded to `v*` tag runs only and publishes the release
@@ -165,16 +165,16 @@ platform, artifact, command, and follow-up owner.
 ```bash
 mvn --batch-mode --no-transfer-progress test
 mvn --batch-mode --no-transfer-progress -Drevision=0.1.0 -DskipTests package
-java -jar target/codegeist.jar --version
+test -f target/codegeist.jar
 ```
 
-- The jar smoke printed `0.1.0`, proving the release workflow can override the
-  default `0.1.0-SNAPSHOT` project version with Maven `-Drevision=0.1.0`.
+- The generated jar used Maven `-Drevision=0.1.0`; jar artifact smoke is no longer
+  part of the current release workflow.
 - GitHub branch validation passed on
   `release/v0.1.0-github-release-build`:
   `https://github.com/codegeist-ai/codegeist/actions/runs/26534205715`.
 - The passing branch run validated metadata resolution, Maven tests,
-  JVM jar package and smoke, Linux x64 native package and smoke, Windows x64 native
+  JVM jar package, Linux x64 native package and smoke, Windows x64 native
   package and smoke, macOS x64 native package and smoke, checksum generation, and
   checksum verification.
 - The GitHub Release job was correctly skipped because the validation run was
@@ -217,7 +217,7 @@ java -jar target/codegeist.jar --version
 
 ## Planning Notes
 
-- Keep GitHub workflow steps visible: tests, jar package, jar smoke, native build,
+- Keep GitHub workflow steps visible: tests, jar package, native build,
   native archive packaging, unpacked native smoke, checksum, artifact upload, and
   release creation.
 - Follow `docs/developer/release/native-distribution-packaging.md`: do not try to

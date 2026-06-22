@@ -39,7 +39,7 @@ Ollama-backed Linux and Windows smokes. The current Ollama provider default is
 - Let `ask` use `ProviderConfig.defaultModel()` instead of a command-owned hardcoded
   model default.
 - Use the global `-Dcodegeist.config=<path>` policy for `ask` and `--show-config`.
-- Extend Linux jar/native and Windows QEMU jar/native smokes to write a temporary
+- Extend Linux and Windows QEMU native smokes to write a temporary
   Ollama config and run real `ask` calls.
 - Keep Windows QEMU on host Ollama through `http://10.0.2.2:11434`; do not start
   or install Ollama in the Windows guest.
@@ -123,7 +123,7 @@ gates.
 - `ask` uses the first provider in the active config and that provider config's
   default runtime model; it does not add `--provider`, `--model`, or `--config`
   options.
-- Linux jar/native and Windows QEMU jar/native smokes include stable `ask` duration
+- Linux and Windows QEMU native smokes include stable `ask` duration
   labels and pass against real host Ollama.
 - Provider config dispatch does not branch on JVM/native runtime state.
 
