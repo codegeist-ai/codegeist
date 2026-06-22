@@ -11,11 +11,17 @@ plus the lazy MCP callback bridge for `stdio` and `streamable_http` clients. It
 covers callback assembly, workspace path handling, bounded output, persisted tool
 part recording, scoped tool runs, MCP cleanup, and focused tests.
 
-This document does not describe provider-specific model internals, structured patch,
-shell execution, permission prompts, ignored-file filtering, session-store write
-protection, or full workspace sandboxing. Those behaviors are deferred to later
-focused tasks. It also does not describe a full OpenCode-style coding-agent loop; the
-current harness only makes prompt-scoped callbacks available to one provider call.
+This document does not describe provider-specific model internals, shell execution,
+permission prompts, ignored-file filtering, session-store write protection, or full
+workspace sandboxing. Those behaviors are deferred to later focused tasks. It also
+does not describe a full OpenCode-style coding-agent loop; the current harness only
+makes prompt-scoped callbacks available to one provider call.
+
+There is intentionally no `codegeist_patch` callback in the current implementation.
+T007_04 research compared OpenCode, Pi, Aider, mini-SWE-agent, and Spring AI Agent
+Utils, then deferred structured patch application. Codegeist follows the Pi-style
+exact edit direction for now: `codegeist_edit` is the primary precise mutation tool,
+while multi-file add/update/delete patch semantics remain future work.
 
 For detailed `codegeist_edit` implementation guidance, use `edit-tool.md`. It covers
 the exact-match planning algorithm, active-workspace containment guard, text
@@ -684,6 +690,25 @@ Behavior:
   `edits`, support `replaceAll`, fuzzy matching, structured patches, shell execution,
   or typed edit session fields.
 
+### Deferred `codegeist_patch`
+
+Codegeist does not currently expose a structured patch callback. The decision is
+intentional rather than missing wiring:
+
+- Pi is the closest match for the current Codegeist runtime: its edit tool accepts
+  `path` plus `edits[]` and returns diff/patch details without exposing a separate
+  patch tool.
+- OpenCode Core V2 and Aider show useful structured patch formats for
+  add/update/delete and multi-file changes, but they add parser complexity,
+  create/delete/move semantics, path-conflict handling, and partial-application
+  choices that are broader than the current one-turn harness needs.
+- mini-SWE-agent relies on shell commands for file mutation and uses patches only as
+  final benchmark submission output. Codegeist should keep safe file mutation in
+  explicit local tools rather than hiding it behind shell commands.
+- A future `codegeist_patch` should stay separate from `codegeist_edit` and
+  `codegeist_write`, parse the full patch before mutation, validate every target
+  before side effects, and keep output bounded inside `ToolSessionPart.outputPreview`.
+
 ## Output Bounds
 
 All tool outputs are bounded before they reach the model or session store.
@@ -754,6 +779,7 @@ Current coverage:
 | Grep behavior | Sorted line previews, include glob, invalid regex failure, and failed output persistence. |
 | Write behavior | Create, overwrite, reject directories, reject missing parents, and completed/failed recording. |
 | Edit behavior | Exact single and multi-edit replacements, absolute in-workspace paths, outside-workspace and symlink escape rejection, invalid edit inputs, no-match and ambiguous-match failures, no partial mutation, overlap rejection, deletion, BOM/CRLF preservation, stale-byte failure, bounded and configurable diff output, and binary/malformed file rejection. |
+| Deferred patch decision | No `codegeist_patch` callback is registered; structured patch remains future work rather than an overload of `codegeist_edit`. |
 | Bounds | Model-visible output and persisted `ToolSessionPart.outputPreview` are the same bounded string. |
 
 Related tests:

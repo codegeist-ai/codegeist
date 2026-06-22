@@ -42,8 +42,8 @@ user instruction changes the scope.
 
 | Decision | Recommendation | Evidence |
 | --- | --- | --- |
-| Tool split | Keep `write`, `edit`, `patch`, and `shell` as separate concepts. Existing `codegeist_write` remains create/overwrite; T007_04 adds precise edit/patch and shell. | OpenCode separates `write`, `edit`, `apply_patch`, and `bash`; Pi separates `write`, `edit`, and `bash`; Aider supports several edit formats but keeps command execution distinct. |
-| Patch/edit contract | Implement a Codegeist-owned exact edit and/or structured patch tool, not shell-only mutation. Parse/validate before writing and reject ambiguous changes. | OpenCode `edit` and `apply_patch`; Pi exact multi-edit with diff/patch details; Aider parse/dry-run/edit pipeline; mini-SWE-agent shows the risks of shell-only mutation. |
+| Tool split | Keep `write`, `edit`, and `shell` as separate current concepts. Keep `patch` as a future separate concept, not an overload of `codegeist_edit`, but do not implement `codegeist_patch` in this T007_04 slice. Existing `codegeist_write` remains create/overwrite. | OpenCode separates `write`, `edit`, `apply_patch`, and `bash`; Pi separates `write`, `edit`, and `bash` with no patch tool; Aider supports several edit formats but keeps command execution distinct. |
+| Patch/edit contract | Use the Pi-style exact edit direction for current Codegeist file mutation: `path` plus `edits[]`, parse/validate before writing, no partial mutation on validation failure, and bounded diff preview in `ToolSessionPart.outputPreview`. Defer a structured patch tool until multi-file add/update/delete semantics are required. | Pi's edit tool is the closest current fit; OpenCode `apply_patch` and Aider `PatchCoder` are useful but broader; mini-SWE-agent shows the risks of shell-only mutation and has no first-class patch/edit tool. |
 | Path/cwd checks | Do not add a standalone containment component. Keep path and cwd rejection local to each side-effecting tool that needs it, before the side effect runs. | OpenCode asks permission for external directories but Codegeist lacks a permission loop; Pi accepts broader paths; Aider's repo boundary is git-specific; Agent Utils lacks containment. |
 | Shell process model | Execute one local process per tool call. No stdin, persistent shell, background process registry, or command streaming in T007_04. | OpenCode and Pi shell tools are one-shot child processes; mini-SWE-agent local environment runs one command; Agent Utils background shell support is too broad. |
 | Shell result status | Treat non-zero exit as a completed shell result with exit code in the bounded summary. Treat invalid input, cwd escape, missing cwd, and startup failures as failed tool calls. Timeout should be recorded explicitly; prefer completed shell result with `Timed out: true` unless tests require `failed`. | OpenCode and Agent Utils return non-zero exit as shell output; mini-SWE-agent returns timeout as command result; current Codegeist has only completed/failed status. |
@@ -84,28 +84,45 @@ Evidence:
 
 ### Patch Tool
 
-Suggested first-slice behavior:
+Current T007_04 decision:
+
+- Do not implement `codegeist_patch` in this slice.
+- Keep patch as a future separate callback only if a later task needs multi-file
+  add/update/delete or high-level patch application that cannot be represented by
+  exact edit plus write.
+- Do not overload `codegeist_edit` with patch parsing, fuzzy matching, add/delete,
+  move, or replace-all behavior.
+
+Future structured patch behavior, if reopened:
 
 - Prefer a structured patch format only if tests need multi-file add/update/delete
-  in one call. Otherwise start with exact edit and keep patch as the next focused
-  child within T007_04.
-- If implemented now, parse the whole patch before mutation, validate every target
+  in one call.
+- Parse the whole patch before mutation, validate every target
   path under the working directory, reject invalid or partial patches before side
   effects when feasible, and summarize changed files plus bounded hunks.
 - Do not use shell commands as the patch application path.
 
 Evidence:
 
-- OpenCode `packages/opencode/src/tool/apply_patch.ts` plus
-  `packages/opencode/src/patch/index.ts` support `*** Begin Patch` actions for
-  add/update/delete/move, parse first, then apply changes.
-- Aider `aider/coders/patch_coder.py` supports a V4A-style patch format, while
-  `aider/coders/udiff_coder.py` and docs under `aider/website/docs/more/` show
-  model-specific edit format tradeoffs.
+- OpenCode Core V2 `packages/core/src/tool/apply-patch.ts` and
+  `packages/core/src/patch.ts` support `patchText` with a `*** Begin Patch`
+  envelope for add/update/delete, reject moves in the current Core path, preflight
+  target resolution and permissions before reading, then apply operations
+  sequentially. It reports partial application if a commit-time failure happens
+  after earlier mutations.
+- Aider `aider/coders/patch_coder.py` supports a V4A-style patch format with
+  add/update/delete and optional move, while `aider/coders/udiff_coder.py` plus
+  `aider/website/docs/unified-diffs.md` show that familiar text diff formats can
+  outperform structured JSON/function-call edit formats for some models. Aider's
+  patch path is a coder edit format, not a current tool callback contract, and the
+  inspected `PatchCoder` inherits the base no-op dry-run.
 - Pi does not expose a separate patch tool in the inspected runtime; its edit tool
-  returns patch details.
-- mini-SWE-agent has no first-class patch tool, which is a useful warning against
-  relying on shell-only file mutation.
+  returns display diff and unified patch details. This is the best current
+  Codegeist fit because `codegeist_edit` already owns exact multi-edit validation,
+  no-partial-write behavior, bounded output, and existing session recording.
+- mini-SWE-agent has no first-class patch tool; file mutation is shell-driven and
+  final SWE-bench submission is a `git diff` patch. This is a caution against
+  shell-only mutation, not a reason to expose patch application now.
 
 ### Shell Tool
 
@@ -179,7 +196,9 @@ Diff:
 <bounded diff preview>
 ```
 
-### Patch Preview
+### Future Patch Preview
+
+Use this only if a later task reopens structured patch behavior.
 
 ```text
 Operation: patch
@@ -506,7 +525,7 @@ Defer or drop:
 | Topic | OpenCode | Pi | Aider | mini-SWE-agent | Agent Utils | Codegeist T007_04 |
 | --- | --- | --- | --- | --- | --- | --- |
 | Exact edit | Dedicated `edit` tool | `edit` with `edits[]` | Search/replace edit format | None | `FileSystemTools.Edit` | Implement Codegeist-owned exact edit. |
-| Patch | Dedicated `apply_patch` grammar | No separate patch tool; edit returns patch details | Structured patch and unified diff formats | None | None | Implement only if needed after exact edit, or add focused structured patch with parse-first validation. |
+| Patch | Dedicated `apply_patch` grammar | No separate patch tool; edit returns patch details | Structured patch and unified diff formats | None | None | Defer `codegeist_patch`; keep it future-separate from `codegeist_edit` if add/update/delete becomes necessary. |
 | Write boundary | Whole-file create/overwrite | Whole-file create/overwrite | Whole-file format exists | Shell writes only | `Write` creates/overwrites | Keep existing `codegeist_write`; do not merge edit/patch into it. |
 | Safety gate | Permission prompts plus external directory checks | No hard workspace evidence | Git/repo admission | Environment boundary only | No containment | Per-tool path/cwd checks before side effects. |
 | Diff summary | Tool output/metadata | Diff and patch details | Git/diff-heavy summaries | None | Simple strings | Bounded text diff/summary in `outputPreview`. |
@@ -516,9 +535,8 @@ Recommended implementation order:
 
 1. Add exact edit tool with deterministic failures and bounded diff summary.
 2. Add shell tool with timeout, separate stdout/stderr capture, and bounded preview.
-3. Add patch tool only if the active T007_04 implementation slice explicitly needs
-   multi-file patch support; otherwise record it as a follow-up under the same task
-   directory.
+3. Keep structured patch deferred under `T007_04_03`; do not add Java patch source
+   or patch tests in the current implementation pass.
 4. Keep session persistence through the existing local tool callback recorder.
 
 ## Cross-Project Shell Synthesis
@@ -590,7 +608,7 @@ Create narrow Java tests before or alongside implementation. Suggested classes:
   - missing file and directory target failures;
   - outside-workingDir mutation fails before writing;
   - summary/diff is bounded.
-- `CodegeistPatchToolTest` if patch is implemented in this slice
+- `CodegeistPatchToolTest` only if a future task reopens structured patch
   - valid minimal add/update/delete patch;
   - invalid patch fails without mutation;
   - path escape in patch header fails before mutation;
@@ -643,8 +661,6 @@ Resolve these before writing Java source:
   `workdir` to align with OpenCode?
 - Should timeout input be `timeoutMillis` for fast tests and OpenCode parity, or a
   simpler duration/seconds field?
-- Should the first Java slice implement both exact edit and structured patch, or
-  exact edit first with patch as a follow-up under this task directory?
 - Should timeout be `completed` with `Timed out: true` or `failed` in
   `ToolSessionPart`? Current evidence prefers completed result text, but the
   existing Codegeist status model may make failed easier for command-boundary
@@ -656,10 +672,10 @@ Resolve these before writing Java source:
 
 - [ ] Decide shell `cwd` vs `workdir` name.
 - [ ] Decide timeout field name and units.
-- [ ] Decide exact edit only versus exact edit plus structured patch in the first
-  implementation pass.
+- [x] Decide exact edit only versus exact edit plus structured patch in the first
+  implementation pass: keep exact edit now and defer `codegeist_patch`.
 - [ ] Write focused tests for path/cwd escape inside the relevant side-effecting tool.
-- [ ] Write focused tests for bounded edit/patch and shell output summaries.
+- [ ] Write focused tests for bounded exact edit and shell output summaries.
 - [ ] Keep `ToolSessionPart` schema unchanged unless a focused test proves a field
   is needed now.
 - [ ] Update `docs/developer/architecture/architecture.md` and any focused

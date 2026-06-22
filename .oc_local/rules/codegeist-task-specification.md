@@ -210,13 +210,16 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   unless the task is explicitly rescoped again.
 - For `T007_04`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/ask-project-research.md`
-  before implementation. Keep `write`, `edit`, `patch`, and `shell` separate;
-  keep existing `codegeist_write` create/overwrite behavior; and check reusable
-  engines before adding new internals. Spring AI Agent Utils `FileSystemTools` and
-  `ShellTools`, plus the MCP filesystem server, are candidates for adapters or
-  implementation-source reuse. Still implement Codegeist-owned side-effecting
-  callbacks instead of directly exposing broad third-party file or shell tool
-  surfaces; preserve `codegeist_*` names, workspace-relative input, Codegeist
+  before implementation. Keep `codegeist_write` create/overwrite behavior and
+  keep `codegeist_edit` as the current precise mutation path. Do not implement
+  `codegeist_patch` in the current T007_04 slice; revisit a separate structured
+  patch callback only when multi-file add/update/delete semantics are required.
+  Check reusable engines before adding new internals. Spring AI Agent Utils
+  `FileSystemTools` and `ShellTools`, plus the MCP filesystem server, are
+  candidates for adapters or implementation-source reuse. Still implement
+  Codegeist-owned side-effecting callbacks instead of directly exposing broad
+  third-party file or shell tool surfaces; preserve `codegeist_*` names,
+  workspace-relative input, Codegeist
   path/cwd policy, `workspace.encoding`, bounded output, handled tool failures, and
   `ToolSessionPart(tool,status,outputPreview)`. Reject mutating file paths and shell
   cwd escapes before side effects; keep shell execution one process per tool call

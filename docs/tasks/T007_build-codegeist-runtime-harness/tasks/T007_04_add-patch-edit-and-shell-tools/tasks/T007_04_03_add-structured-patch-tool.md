@@ -1,33 +1,44 @@
-# T007_04_03 Add Structured Patch Tool
+# T007_04_03 Defer Structured Patch Tool
 
 Parent: `T007_04_add-patch-edit-and-shell-tools`
 
-Status: open
+Status: deferred
 
 ## Goal
 
-Add a separate structured patch tool for multi-file side effects that should not be
-expressed as shell commands.
+Record the decision not to add a separate structured patch tool in the current
+T007_04 implementation slice.
 
-## Scope
+## Deferred Scope
 
-- Add `codegeist_patch` as a separate concept from `codegeist_write`,
-  `codegeist_edit`, and `codegeist_shell`.
-- Parse the full patch before writing files.
-- Validate every target path inside the patch tool before any side effect runs.
-- Reject invalid or partial patches before mutation when feasible.
-- Summarize changed files and bounded hunks in `ToolSessionPart.outputPreview`.
+- Do not implement `codegeist_patch` in T007_04.
+- Keep `codegeist_write` focused on create/overwrite behavior.
+- Keep `codegeist_edit` as the primary Codegeist-owned file mutation contract:
+  one existing file, `edits[]` exact replacements, parse/validate before write,
+  no partial mutation on validation failure, and bounded `ToolSessionPart` output.
+- Keep shell mutation separate under the future `codegeist_shell` task; do not use
+  shell commands as the hidden implementation path for structured edits.
+- Revisit a separate patch tool only when Codegeist has a focused requirement for
+  add/update/delete or multi-file patch application that cannot be expressed safely
+  through exact edit plus write.
 
-## Acceptance Criteria
+## Decision Rationale
 
-- A focused test proves a valid patch changes the expected allowed file or files and
-  records a bounded completed `ToolSessionPart`.
-- A focused test proves an invalid patch fails without partial writes.
-- A focused test proves a patch targeting outside the workspace fails before any
-  side effect.
-- The patch tool does not shell out to apply patches.
+- Pi is the closest fit for current Codegeist: it has no separate patch tool; its
+  `edit` tool uses `path` plus `edits[]`, validates replacements before writing,
+  updates one existing file, and returns diff/patch details for review.
+- Codegeist already implements the useful subset of that shape in `codegeist_edit`,
+  while staying stricter than Pi by keeping exact-only matching and existing
+  `ToolSessionPart` persistence.
+- OpenCode's `apply_patch` and Aider's `PatchCoder` prove that structured patch
+  formats are useful for add/update/delete and multi-file changes, but they add a
+  parser, path-conflict rules, create/delete semantics, partial-application choices,
+  and broader review concerns that are not required by the current harness.
+- mini-SWE-agent is shell-first and has no first-class patch/edit tool, which is a
+  cautionary example rather than a Codegeist implementation model for safe file
+  mutation.
 
-## File Targets
+## Future File Targets
 
 - `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/`
 - `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/`
@@ -37,15 +48,15 @@ expressed as shell commands.
 
 ## Verification
 
-Run from `app/codegeist/cli`:
-
-```bash
-task test TEST=<structured-patch-tool-test-selector>
-```
+No Java verification is required for this deferred documentation decision. If a
+future task reopens `codegeist_patch`, use focused tests under
+`app/codegeist/cli/src/test/java/ai/codegeist/app/tool/` before implementation.
 
 ## Source Notes
 
-- May depend on `T007_04_02_add-exact-edit-tool.md` only if the implementation
-  deliberately shares non-trivial diff or preview code.
-- Do not add patch side-file artifacts, TUI patch review, git auto-add, or git
-  auto-commit in this child task.
+- `../ask-project-research.md` records the source-backed comparison across
+  OpenCode, Pi, Aider, mini-SWE-agent, and Spring AI Agent Utils.
+- If this task is reopened later, keep `codegeist_patch` separate from
+  `codegeist_edit` and `codegeist_write`, parse the full patch before mutation,
+  validate every target before side effects, and keep patch side-file artifacts,
+  TUI patch review, git auto-add, and git auto-commit out of the first patch slice.

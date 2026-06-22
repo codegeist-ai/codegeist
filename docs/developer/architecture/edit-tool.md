@@ -525,8 +525,10 @@ When adding future patch/edit variants:
 
 - Keep `codegeist_write` create/overwrite only.
 - Keep `codegeist_edit` exact-replacement only.
-- Add a separate callback such as `codegeist_patch` for structured patch behavior
-  instead of overloading `codegeist_edit` with patch parsing or fuzzy matching.
+- Treat structured patch behavior as deferred. If a future task proves that
+  Codegeist needs multi-file add/update/delete patches, add a separate callback such
+  as `codegeist_patch` instead of overloading `codegeist_edit` with patch parsing,
+  fuzzy matching, add/delete/move semantics, or replace-all behavior.
 - Check reusable engines first, especially Spring AI Agent Utils `FileSystemTools` and
   MCP filesystem tools, but keep the Codegeist-owned `codegeist_*` facade if reuse is
   adopted internally.

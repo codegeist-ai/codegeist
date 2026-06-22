@@ -6,12 +6,13 @@ Status: open
 
 ## Goal
 
-Add bounded side-effecting tools for patch/edit and shell execution in chats.
+Add bounded side-effecting tools for exact edit and shell execution in chats while
+keeping a separate structured patch tool deferred.
 
 ## Scope
 
-- Add patch/edit tools that mutate files under the chat working directory and record
-  reviewable summaries in `.codegeist/session.json`.
+- Add exact edit behavior that mutates files under the chat working directory and
+  records reviewable summaries in `.codegeist/session.json`.
 - Add shell tools that run local commands with explicit cwd, timeout, exit code, and
   bounded stdout/stderr summaries.
 - Keep tool output bounded before it reaches the model, TUI, or session store.
@@ -22,18 +23,22 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 
 ## Acceptance Criteria
 
-- A focused test proves patch/edit mutates only an allowed working-directory file and records
-  a bounded tool result in `.codegeist/session.json`.
+- A focused test proves exact edit mutates only an allowed working-directory file
+  and records a bounded tool result in `.codegeist/session.json`.
 - A focused test proves shell runs with bounded output, timeout behavior, exit code,
   and session-store persistence.
 - Outside-workingDir file mutation or cwd escape fails before the side effect runs.
 - Existing read/write tools and plain no-continue `ask` command behavior remain
   unaffected.
-- Architecture docs describe the implemented patch/edit and shell behavior.
+- Architecture docs describe the implemented exact edit, deferred patch, and shell
+  behavior.
 
 ## Non-Goals
 
 - Do not claim sandboxing beyond the explicit tested working-directory/cwd checks.
+- Do not implement `codegeist_patch` in this T007_04 slice; structured multi-file
+  patch application is deferred until a focused task needs add/update/delete or
+  multi-file patch semantics.
 - Do not implement arbitrary unbounded shell execution.
 - Do not implement network tools, MCP server management, plugins, LSP, subagents, or
   background process persistence.
@@ -45,8 +50,10 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
   bounded exact replacements while keeping `codegeist_write` focused on
   create/overwrite; compact diff preview limits are configurable through
   `tools.codegeist-edit` direct config.
-- `tasks/T007_04_03_add-structured-patch-tool.md` - add `codegeist_patch` for
-  parse-before-write structured patches that are not applied through shell.
+- `tasks/T007_04_03_add-structured-patch-tool.md` - deferred: do not add
+  `codegeist_patch` now; keep Pi-style exact edit as the primary file mutation
+  contract and revisit structured patch only when multi-file add/update/delete is
+  required.
 - `tasks/T007_04_04_add-shell-tool.md` - add `codegeist_shell` as one bounded local
   process execution per tool call with cwd, timeout, exit code, stdout, and stderr
   summaries.
@@ -55,7 +62,7 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 
 ## Suggested Tests
 
-- Temporary working-directory fixtures for patch/edit.
+- Temporary working-directory fixtures for exact edit and shell cwd behavior.
 - Simple cross-platform shell command or Java-level fake for shell behavior.
 - Timeout and output-bound checks.
 - Session-store persistence checks for side-effecting tool results.
@@ -69,6 +76,10 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 - `ask-project-research.md` answers that catalog and records the accepted evidence,
   recommended Codegeist translation, test seams, deferred work, and open decisions
   for the implementation pass.
+- Follow the recorded T007_04_03 decision: OpenCode and Aider show useful but
+  broader structured patch formats; Pi's exact edit shape is the better current
+  Codegeist fit; mini-SWE-agent's shell-only mutation is not the model for local
+  file edits.
 - `opencode-shell-tool-comparison.md` documents the source-backed OpenCode shell
   tool implementation and compares it with the proposed first Codegeist shell tool
   shape.
@@ -90,6 +101,6 @@ Add bounded side-effecting tools for patch/edit and shell execution in chats.
 Candidate commands from `app/codegeist/cli`:
 
 ```bash
-task test TEST=<patch-shell-tools-test-selector>
+task test TEST=<edit-shell-tools-test-selector>
 task test
 ```

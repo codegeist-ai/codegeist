@@ -152,14 +152,22 @@
   and limit caps for local and future MCP tool output: preview, line preview, result
   limits, read limits, and normalized error previews. `CodegeistLocalTools` assembles
   Codegeist-owned local Spring AI callbacks and currently discovers the file-backed
-  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
-  `codegeist_write` components through a `List<CodegeistLocalTool>`. Callback order
-  is non-semantic because tools are selected by name. `CodegeistToolInput` wraps raw
+  `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`,
+  `codegeist_write`, and `codegeist_edit` components through a
+  `List<CodegeistLocalTool>`. `codegeist_edit` owns exact multi-edit replacements for
+  one existing workspace-contained text file, with preflight validation, no partial
+  mutation, stale-byte protection, BOM/line-ending preservation, and bounded diff
+  previews. Callback order is non-semantic because tools are selected by name.
+  `CodegeistToolInput` wraps raw
   Spring AI JSON at the local-tool boundary. File tools use `CodegeistFileToolSupport`
   and the injected `CodegeistToolJsonMapper` to parse tool input, resolve the active
   workspace, return bounded model-visible text, and record the same bounded preview
   in `ToolSessionPart`. `CodegeistFileEncoding` resolves the global file-tool charset
   from optional direct `codegeist.yml` `workspace.encoding`, defaulting to UTF-8.
+  `codegeist_patch` is intentionally deferred after T007_04 research: Pi's
+  `path` plus `edits[]` shape best matches current Codegeist, OpenCode and Aider
+  patch formats are useful but broader, and mini-SWE-agent's shell-only mutation is
+  a cautionary non-model for safe local file edits.
   Local file-tool multi-line output joins with `CodegeistFileToolSupport.LINE_SEPARATOR`,
   a shared constant backed by `System.lineSeparator()`, instead of inline newline
   literals. `CodegeistToolService` opens one closeable `CodegeistToolRun` per chat
@@ -525,8 +533,10 @@
   compact edit diff preview; final model-visible and persisted output remains capped
   by `ToolOutputBounds`. `docs/developer/architecture/edit-tool.md` is the detailed
   current-state developer documentation for `codegeist_edit`, including planning,
-  guard, normalization, stale-write, preview, and test contracts. T007_04 still has
-  focused implementation children for structured patch, shell, and final
+  guard, normalization, stale-write, preview, and test contracts. `T007_04_03` is
+  deferred: do not add `codegeist_patch` in the current slice; revisit a separate
+  structured patch callback only when multi-file add/update/delete patch semantics
+  are required. T007_04 still has focused implementation children for shell and final
   documentation/verification slices; there is no separate workspace guard task or
   implementation plan. Before implementing the remaining side-effecting tools, check
   Spring AI Agent Utils `FileSystemTools`/`ShellTools` and the MCP filesystem server

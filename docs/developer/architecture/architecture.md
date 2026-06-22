@@ -399,8 +399,10 @@ Current behavior:
   `ToolSessionPart` for bounded completed or failed tool activity. Tool parts persist
   only the tool name, nested `ToolSessionPart.ToolSessionPartStatus`, and bounded
   `outputPreview`. Local file callbacks and wrapped MCP callbacks can now record
-  these bounded parts; structured patch, shell, reasoning, and step parts are deferred
-  until focused tool tasks add the matching execution paths. `SessionStore`
+  these bounded parts. Structured patch is intentionally deferred after T007_04
+  research selected the Pi-style exact edit path for current file mutation; shell,
+  reasoning, and step parts are deferred until focused tool tasks add the matching
+  execution paths. `SessionStore`
   is a Lombok getter/setter/builder class with a default empty session list;
   session, message, and existing part model entries stay records or Jackson-bound
   classes as implemented. The JSON mapper registers Java time support, emits ISO
