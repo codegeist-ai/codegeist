@@ -4,8 +4,8 @@
 # - Keeps native artifact smoke assertions in one PowerShell 7 script used by
 #   Linux, Windows, macOS, local Taskfile wrappers, and the GitHub release workflow.
 # - Packages native artifacts, unpacks the release-shaped archive, verifies command
-#   output and log side effects, then delegates file-edit side effects to the
-#   ask-driven harness in scripts/tests/file-edit-ask-smoke.ps1.
+#   output and log side effects, then delegates file-edit and shell side effects to
+#   ask-driven harnesses under scripts/tests/.
 #
 # Inputs:
 # - Platform: `linux-x64`, `windows-x64`, or `macos-x64`.
@@ -14,6 +14,7 @@
 #
 # Related files:
 # - scripts/tests/file-edit-ask-smoke.ps1
+# - scripts/tests/shell-ask-smoke.ps1
 # - scripts/tests/local-linux-smoke.ps1
 # - scripts/tests/native-smoke.ps1
 # - scripts/tests/windows-smoke.ps1
@@ -38,11 +39,15 @@ param(
 
     [string]$FileEditSmokeScript = "",
 
+    [string]$ShellAskSmokeScript = "",
+
     [int]$NativeTimeoutSeconds = 5,
 
     [int]$AskTimeoutSeconds = 60,
 
     [int]$FileEditTimeoutSeconds = 90,
+
+    [int]$ShellAskTimeoutSeconds = 90,
 
     [switch]$RunProviderAskSmoke,
 
@@ -234,6 +239,27 @@ function Invoke-FileEditAskSmoke {
         -WorkingDirectory $WorkingDirectory
 }
 
+function Invoke-ShellAskSmoke {
+    param(
+        [string]$Path,
+        [string]$Root,
+        [string]$LabelPrefix,
+        [string]$WorkingDirectory
+    )
+
+    if (-not (Test-Path -LiteralPath $ShellAskSmokeScript)) {
+        Fail-Smoke "Shell ask smoke script not found: $ShellAskSmokeScript"
+    }
+
+    Write-SmokeLog "Command: pwsh scripts/tests/shell-ask-smoke.ps1 -ArtifactPath $Path"
+    & $ShellAskSmokeScript `
+        -ArtifactPath $Path `
+        -SmokeRoot $Root `
+        -TimeoutSeconds $ShellAskTimeoutSeconds `
+        -LabelPrefix $LabelPrefix `
+        -WorkingDirectory $WorkingDirectory
+}
+
 function Get-NativeBinaryName {
     if ($Platform -eq "windows-x64") {
         return "codegeist.exe"
@@ -384,6 +410,12 @@ function Invoke-NativeArtifactSmoke {
             -LabelPrefix "$Platform native" `
             -WorkingDirectory $runDir
 
+        Invoke-ShellAskSmoke `
+            -Path $native `
+            -Root (Join-Path $SmokeRoot "native-shell-ask") `
+            -LabelPrefix "$Platform native" `
+            -WorkingDirectory $runDir
+
         if ($RunProviderAskSmoke) {
             Assert-OllamaReady $OllamaBaseUrl
             $askConfig = Join-Path $SmokeRoot "codegeist-$Platform-native-ask.yml"
@@ -433,6 +465,11 @@ if (-not $FileEditSmokeScript) {
     $FileEditSmokeScript = Join-Path $PSScriptRoot "file-edit-ask-smoke.ps1"
 }
 $FileEditSmokeScript = Resolve-SmokePath $FileEditSmokeScript
+
+if (-not $ShellAskSmokeScript) {
+    $ShellAskSmokeScript = Join-Path $PSScriptRoot "shell-ask-smoke.ps1"
+}
+$ShellAskSmokeScript = Resolve-SmokePath $ShellAskSmokeScript
 
 if (-not $ExpectedVersion) {
     $ExpectedVersion = Get-BuildVersion (Join-Path $CliDir "target/classes/META-INF/build-info.properties")

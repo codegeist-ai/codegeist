@@ -42,6 +42,8 @@ param(
 
     [string]$FileEditTimeoutSeconds = $env:CODEGEIST_WINDOWS_FILE_EDIT_TIMEOUT_SECONDS,
 
+    [string]$ShellAskTimeoutSeconds = $env:CODEGEIST_WINDOWS_SHELL_ASK_TIMEOUT_SECONDS,
+
     [string]$OllamaBaseUrl = $env:CODEGEIST_WINDOWS_OLLAMA_BASE_URL
 )
 
@@ -110,6 +112,7 @@ function Assert-IntegerText {
 Assert-IntegerText 'CODEGEIST_WINDOWS_NATIVE_TIMEOUT_SECONDS' $NativeTimeoutSeconds
 Assert-IntegerText 'CODEGEIST_WINDOWS_ASK_TIMEOUT_SECONDS' $AskTimeoutSeconds
 Assert-IntegerText 'CODEGEIST_WINDOWS_FILE_EDIT_TIMEOUT_SECONDS' $FileEditTimeoutSeconds
+Assert-IntegerText 'CODEGEIST_WINDOWS_SHELL_ASK_TIMEOUT_SECONDS' $ShellAskTimeoutSeconds
 
 if (-not $SshTarget) {
     Assert-WindowsPrerequisite 'CODEGEIST_WINDOWS_SSH_TARGET is not set'
@@ -147,6 +150,9 @@ if ($AskTimeoutSeconds) {
 }
 if ($FileEditTimeoutSeconds) {
     $remoteCommand += " -FileEditTimeoutSeconds $FileEditTimeoutSeconds"
+}
+if ($ShellAskTimeoutSeconds) {
+    $remoteCommand += " -ShellAskTimeoutSeconds $ShellAskTimeoutSeconds"
 }
 if ($OllamaBaseUrl) {
     $ollamaArg = ConvertTo-SmokePowerShellSingleQuotedString $OllamaBaseUrl

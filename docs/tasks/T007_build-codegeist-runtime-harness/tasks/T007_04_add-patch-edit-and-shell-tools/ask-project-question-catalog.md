@@ -7,6 +7,13 @@ Spring AI Agent Utils.
 
 Answered in: `ask-project-research.md`.
 
+Current implementation note: `T007_04` is now completed. `codegeist_edit` keeps
+workspace-contained file mutation, `codegeist_patch` remains deferred, and
+`codegeist_shell` uses one plain `ProcessBuilder` command with merged stdout/stderr,
+optional `timeoutSeconds`, no workspace cwd containment, and bounded completed shell
+summaries. Older questions in this catalog preserve the original research shape and
+should not be read as the final current contract.
+
 ## Purpose
 
 Use this catalog to gather evidence for these T007_04 decisions:
@@ -51,7 +58,7 @@ that project before treating an answer as durable implementation evidence. Do no
 answer source-level questions from memory when Repomix artifacts are available;
 `/ask-project` owns the Repomix subagent delegation.
 
-## Current Codegeist Baseline To Include In Questions
+## Codegeist Baseline At Research Time
 
 Use this context when asking the questions below:
 
@@ -62,10 +69,11 @@ Use this context when asking the questions below:
   and `outputPreview` only. Do not assume typed shell fields, patch hunks, timing,
   metadata maps, or attachments unless research proves a focused T007_04 test needs
   them.
-- T007_04 must add bounded side-effecting patch/edit and shell tools under the chat
+- T007_04 had to add bounded side-effecting patch/edit and shell tools under the chat
   working directory and record bounded summaries in `.codegeist/session.json`.
-- Outside-workingDir file mutation and shell cwd escape must fail before the side
-  effect runs.
+- Outside-workingDir file mutation had to fail before mutation. The draft shell
+  requirement also expected cwd escape rejection, but the implemented shell contract
+  later allowed absolute cwd values and documents that no cwd containment is claimed.
 - Codegeist must not claim sandboxing beyond explicit tested path/cwd checks.
 - Do not add network tools, MCP server management, plugins, LSP, subagents,
   background process persistence, or patch review TUI in T007_04.

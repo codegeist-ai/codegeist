@@ -29,16 +29,6 @@ ARG NVIDIA_CONTAINER_TOOLKIT_VERSION=1.19.1-1
 
 RUN set -eux; \
     curl -fsSL \
-      https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb \
-      -o /tmp/packages-microsoft-prod.deb; \
-    dpkg -i /tmp/packages-microsoft-prod.deb; \
-    rm -f /tmp/packages-microsoft-prod.deb; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends powershell; \
-    rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
-    curl -fsSL \
       https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/cuda-keyring_1.1-1_all.deb \
       -o /tmp/cuda-keyring.deb; \
     dpkg -i /tmp/cuda-keyring.deb; \

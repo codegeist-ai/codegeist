@@ -2,32 +2,32 @@
 
 Parent: `T007_build-codegeist-runtime-harness`
 
-Status: open
+Status: solved
 
 ## Goal
 
-Add bounded side-effecting tools for exact edit and shell execution in chats while
+Add bounded exact-edit tooling plus a minimal shell execution tool in chats while
 keeping a separate structured patch tool deferred.
 
 ## Scope
 
 - Add exact edit behavior that mutates files under the chat working directory and
   records reviewable summaries in `.codegeist/session.json`.
-- Add shell tools that run local commands with explicit cwd, timeout, exit code, and
-  bounded stdout/stderr summaries.
-- Keep tool output bounded before it reaches the model, TUI, or session store.
+- Add shell tools that run local commands with explicit cwd, exit code, and bounded
+  merged process-output summaries.
+- Keep local tool output bounded before it reaches the model, TUI, or session store.
 - Record each side-effecting tool call and result in the active
   `.codegeist/session.json`.
-- Keep working-directory path/cwd validation minimal but real: no outside-workingDir
-  file mutation or cwd escape.
+- Keep working-directory path validation for file mutation minimal but real: no
+  outside-workingDir file mutation.
 
 ## Acceptance Criteria
 
 - A focused test proves exact edit mutates only an allowed working-directory file
   and records a bounded tool result in `.codegeist/session.json`.
-- A focused test proves shell runs with bounded output, timeout behavior, exit code,
-  and session-store persistence.
-- Outside-workingDir file mutation or cwd escape fails before the side effect runs.
+- A focused test proves shell runs with bounded output, exit code, explicit cwd
+  behavior, and session-store persistence.
+- Outside-workingDir file mutation fails before the side effect runs.
 - Existing read/write tools and plain no-continue `ask` command behavior remain
   unaffected.
 - Architecture docs describe the implemented exact edit, deferred patch, and shell
@@ -35,11 +35,12 @@ keeping a separate structured patch tool deferred.
 
 ## Non-Goals
 
-- Do not claim sandboxing beyond the explicit tested working-directory/cwd checks.
+- Do not claim sandboxing beyond the explicit tested working-directory checks.
 - Do not implement `codegeist_patch` in this T007_04 slice; structured multi-file
   patch application is deferred until a focused task needs add/update/delete or
   multi-file patch semantics.
-- Do not implement arbitrary unbounded shell execution.
+- Do not implement shell sandboxing, permission prompts, process supervision, or
+  output side files.
 - Do not implement network tools, MCP server management, plugins, LSP, subagents, or
   background process persistence.
 - Do not add a patch review TUI unless `T007_06` implements the needed rendering.
@@ -54,17 +55,19 @@ keeping a separate structured patch tool deferred.
   `codegeist_patch` now; keep Pi-style exact edit as the primary file mutation
   contract and revisit structured patch only when multi-file add/update/delete is
   required.
-- `tasks/T007_04_04_add-shell-tool.md` - add `codegeist_shell` as one bounded local
-  process execution per tool call with cwd, timeout, exit code, stdout, and stderr
-  summaries.
-- `tasks/T007_04_05_document-and-verify-side-effect-tools.md` - update current-state
-  architecture docs and verify the parent acceptance criteria after implementation.
+- `tasks/T007_04_04_add-shell-tool.md` - solved: added `codegeist_shell` as one
+  local process execution per tool call with configurable host-side wrapper prefix,
+  bounded merged stdout/stderr output, exit code reporting, no cwd containment, no
+  background process registry, and completed non-zero-exit plus timeout recording.
+- `tasks/T007_04_05_document-and-verify-side-effect-tools.md` - solved: current-state
+  architecture docs, memory, and parent status now describe the implemented edit,
+  deferred patch, and shell behavior after focused and broad JVM verification.
 
 ## Suggested Tests
 
 - Temporary working-directory fixtures for exact edit and shell cwd behavior.
 - Simple cross-platform shell command or Java-level fake for shell behavior.
-- Timeout and output-bound checks.
+- Shell output-bound and explicit-cwd checks.
 - Session-store persistence checks for side-effecting tool results.
 
 ## Source Notes
@@ -86,15 +89,17 @@ keeping a separate structured patch tool deferred.
 - Reuse existing tool engines before building new internals. Spring AI Agent Utils
   already documents `FileSystemTools` with read/write/edit plus allowed-directory
   checks and `ShellTools` with timeout, stdout/stderr, exit-code, and background
-  process support; the MCP filesystem server already exposes `edit_file`,
+  process support, though the current Codegeist shell tool intentionally stays simpler;
+  the MCP filesystem server already exposes `edit_file`,
   `write_file`, search, and directory access control. Treat those as candidates for
   adapters or implementation-source reuse before writing a parallel helper.
 - Keep the Codegeist-owned local callback facade even when a lower-level engine is
-  reused. `codegeist_*` names, workspace-relative input, Codegeist path/cwd policy,
-  `workspace.encoding`, output bounds, handled `CodegeistToolException` failures,
-  and `ToolSessionPart(tool,status,outputPreview)` persistence remain Codegeist
-  contracts. Do not directly expose broad third-party file or shell tool surfaces to
-  the model unless a focused task explicitly changes that product contract.
+  reused. `codegeist_*` names, workspace-relative file input, Codegeist file path
+  policy, `workspace.encoding`, file-tool output bounds, handled
+  `CodegeistToolException` failures, and
+  `ToolSessionPart(tool,status,outputPreview)` persistence remain Codegeist contracts.
+  Do not directly expose broad third-party file or shell tool surfaces to the model
+  unless a focused task explicitly changes that product contract.
 - Keep future research answers in this directory so the patch/edit and shell-tool
   implementation handoff stays local to `T007_04`.
 

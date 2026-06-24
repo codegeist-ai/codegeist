@@ -55,7 +55,7 @@ files they changed.
 | Compile and tests | `task test` from `app/codegeist/cli` | Maven test lifecycle and current Spring context load. | Java, dependency, build, or runtime wiring changes. |
 | JVM package | `task build` from `app/codegeist/cli` | Executable Spring Boot jar is created as `target/codegeist.jar` for release upload. It is not smoke-tested. | Release candidates and build-layout changes. |
 | Native compile | `task native` from `app/codegeist/cli` | GraalVM native-image can compile the current dependency graph. | Native posture tasks when the toolchain is available and time budget allows. |
-| Native archive artifact smoke | `scripts/tests/artifact-smoke.ps1 -Platform <platform>` | The shared harness packages the native executable under `target/dist/`, unpacks the archive into a fresh temp directory, runs packaged `--version` and `--show-config`, verifies logs, and runs deterministic file-edit side effects through `ask`. | Release candidates after a successful native compile. |
+| Native archive artifact smoke | `scripts/tests/artifact-smoke.ps1 -Platform <platform>` | The shared harness packages the native executable under `target/dist/`, unpacks the archive into a fresh temp directory, runs packaged `--version` and `--show-config`, verifies logs, and runs deterministic file-edit plus shell side effects through `ask`. | Release candidates after a successful native compile. |
 | Diff hygiene | `git --no-pager diff --check` from the repository root | Markdown and source diffs have no whitespace errors. | Every task. |
 
 The current documentation-only task only requires `git --no-pager diff --check`.

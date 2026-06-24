@@ -11,7 +11,7 @@ Current smoke entrypoints:
 
 - `task native-smoke` - build Linux native executable, package it, start host
   Ollama through `task ollama-start`, and smoke the extracted native archive,
-  including ask-driven file-edit encoding checks.
+  including ask-driven file-edit encoding checks and ask-driven shell-tool checks.
 - `task local-linux-smoke` - run JVM tests, build the jar as a build gate, and run
   native checks when required or available. The jar is not smoke-tested.
 - `task mcp-remote-smoke` - build a local Docker MCP server fixture, start it on a
@@ -27,9 +27,12 @@ Current smoke entrypoints:
 `scripts/tests/artifact-smoke.ps1` is the shared native package smoke contract.
 Platform wrappers build artifacts, prepare VM or Ollama prerequisites, then call
 this one native-only harness so Linux, Windows, macOS, and release CI use the same
-`--version`, `--show-config`, file-edit, package, unpack, and log assertions.
+`--version`, `--show-config`, file-edit, shell-tool, package, unpack, and log
+assertions.
 `scripts/tests/file-edit-ask-smoke.ps1` remains the focused sub-harness used by
 `artifact-smoke.ps1` for deterministic ask-driven native file-edit side effects.
+`scripts/tests/shell-ask-smoke.ps1` is the focused sub-harness for deterministic
+ask-driven native shell-tool side effects through `codegeist_shell`.
 
 ## Output Contract
 
@@ -64,6 +67,7 @@ Labels should be stable and specific, for example:
 - `linux native file-edit ask utf8-bom-crlf smoke`
 - `linux native file-edit ask no-final-newline smoke`
 - `linux native file-edit ask latin1-crlf smoke`
+- `linux native shell ask smoke`
 - `linux native ask smoke`
 - `linux platform smoke total`
 - `mcp remote fixture package`
@@ -82,6 +86,7 @@ Labels should be stable and specific, for example:
 - `windows native file-edit ask utf8-bom-crlf smoke`
 - `windows native file-edit ask no-final-newline smoke`
 - `windows native file-edit ask latin1-crlf smoke`
+- `windows native shell ask smoke`
 - `windows native ask smoke`
 - `windows host ollama start`
 - `windows platform smoke total`
@@ -110,6 +115,13 @@ Labels should be stable and specific, for example:
   `ToolSessionPart(tool=codegeist_edit)`. Each native artifact path checks UTF-8 LF,
   UTF-8 BOM plus CRLF and multibyte text, no-final-newline preservation, and
   ISO-8859-1 `workspace.encoding` with CRLF.
+- Shell artifact smokes are invoked by `artifact-smoke.ps1` through
+  `scripts/tests/shell-ask-smoke.ps1`. The sub-harness starts the same style of
+  deterministic Ollama-compatible fixture provider, makes the artifact's real `ask`
+  command receive a `codegeist_shell` tool call, configures `pwsh -NoProfile
+  -NonInteractive -Command` as the cross-platform shell wrapper, then verifies the
+  created workspace file and a completed persisted
+  `ToolSessionPart(tool=codegeist_shell)` whose preview includes `Exit code: 0`.
 - Local Linux and Windows platform smokes pass `-RunProviderAskSmoke` to
   `artifact-smoke.ps1`, so those developer checks also verify a real
   Ollama-backed native `ask` turn. Release CI omits that provider smoke and relies

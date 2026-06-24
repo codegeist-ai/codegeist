@@ -49,6 +49,52 @@ class CodegeistToolsConfigTest {
         CodegeistConfig config = service.loadConfig(configFile.toString());
 
         assertThat(tools(config).getConfig().getCodegeistEdit()).isNull();
+        assertThat(tools(config).getConfig().getCodegeistShell()).isNull();
+    }
+
+    @Test
+    void loadsShellSettingsFromDirectYaml() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            tools:
+              codegeist-shell:
+                default-timeout-seconds: 90
+                command-prefix:
+                  - docker
+                  - run
+                  - --rm
+                  - ubuntu
+                  - bash
+                  - -lc
+            """);
+
+        CodegeistConfig config = service.loadConfig(configFile.toString());
+
+        CodegeistShellToolConfig shellToolConfig = tools(config).getConfig().getCodegeistShell();
+        assertThat(shellToolConfig.getDefaultTimeoutSeconds()).isEqualTo(90);
+        assertThat(shellToolConfig.getCommandPrefix()).containsExactly("docker", "run", "--rm", "ubuntu", "bash", "-lc");
+        assertThat(service.toYaml(config))
+                .contains("tools:", "codegeist-shell:", "default-timeout-seconds: 90", "command-prefix:",
+                        "- \"docker\"", "- \"run\"", "- \"-lc\"");
+    }
+
+    @Test
+    void invalidShellSettingsFailThroughBeanValidation() throws IOException {
+        Path configFile = tempDir.resolve(CONFIG_FILE_NAME);
+        Files.writeString(configFile, """
+            tools:
+              codegeist-shell:
+                default-timeout-seconds: 0
+                command-prefix:
+                  - ""
+            """);
+
+        assertThatThrownBy(() -> service.loadConfig(configFile.toString()))
+                .isInstanceOf(CodegeistConfigValidationException.class)
+                .hasMessageContaining("defaultTimeoutSeconds")
+                .hasMessageContaining("must be greater than 0")
+                .hasMessageContaining("commandPrefix")
+                .hasMessageContaining("must not be blank");
     }
 
     @Test

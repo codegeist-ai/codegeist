@@ -28,6 +28,8 @@ sidecar libraries next to the GraalVM executable.
 | --- | --- |
 | `scripts/tests/smoke-common.ps1` | Shared PowerShell helper layer for status files, duration output, environment overrides, TCP readiness checks, and command steps. |
 | `scripts/tests/artifact-smoke.ps1` | Shared native-only artifact smoke harness used by local Linux, Windows QEMU, macOS release CI, and GitHub release jobs. |
+| `scripts/tests/file-edit-ask-smoke.ps1` | Deterministic fixture-provider sub-harness for native `ask` plus `codegeist_edit` side effects. |
+| `scripts/tests/shell-ask-smoke.ps1` | Deterministic fixture-provider sub-harness for native `ask` plus `codegeist_shell` side effects through a cross-platform `pwsh` wrapper. |
 | `scripts/tests/local-linux-smoke.ps1` | Runs Maven tests, builds the jar as a build gate, then calls `native-smoke.ps1` for optional Linux native archive checks. |
 | `scripts/tests/qemu-windows-vm.sh` | Creates or starts the local Windows QEMU VM, syncs the repo subset, and runs the Windows smoke helper. |
 | `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH wrapper for an already reachable Windows VM. |

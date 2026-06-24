@@ -14,8 +14,8 @@
 # - MsvcCommand: optional command that activates MSVC Build Tools before native
 #   Maven compile. If omitted, the script uses the active shell environment when
 #   cl.exe is already available, then tries common Visual Studio Build Tools paths.
-# - NativeTimeoutSeconds and FileEditTimeoutSeconds bound native command smoke
-#   execution.
+# - NativeTimeoutSeconds, FileEditTimeoutSeconds, and ShellAskTimeoutSeconds bound
+#   native command smoke execution.
 # - AskTimeoutSeconds bounds the real Ollama-backed `ask` smoke.
 # - OllamaBaseUrl points to the host Ollama service. With QEMU user networking,
 #   the Windows guest reaches the Linux host through `http://10.0.2.2:11434`.
@@ -39,6 +39,8 @@ param(
     [int]$AskTimeoutSeconds = 60,
 
     [int]$FileEditTimeoutSeconds = 15,
+
+    [int]$ShellAskTimeoutSeconds = 90,
 
     [string]$OllamaBaseUrl = $env:CODEGEIST_WINDOWS_OLLAMA_BASE_URL
 )
@@ -189,6 +191,7 @@ if ($NativeMode -ne "skip") {
                 -NativeTimeoutSeconds $NativeTimeoutSeconds `
                 -AskTimeoutSeconds $AskTimeoutSeconds `
                 -FileEditTimeoutSeconds $FileEditTimeoutSeconds `
+                -ShellAskTimeoutSeconds $ShellAskTimeoutSeconds `
                 -OllamaBaseUrl $OllamaBaseUrl `
                 -RunProviderAskSmoke
 

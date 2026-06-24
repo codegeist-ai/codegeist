@@ -157,6 +157,7 @@ sequenceDiagram
     PS->>PS: artifact-smoke.ps1 expands zip to temp and runs codegeist.exe --version
     PS->>PS: artifact-smoke.ps1 runs extracted codegeist.exe --show-config
     PS->>PS: artifact-smoke.ps1 runs deterministic native file-edit ask smoke
+    PS->>PS: artifact-smoke.ps1 runs deterministic native shell ask smoke
     PS-->>SSH: platform status
     SSH-->>VM: SSH exit and status
     VM-->>Host: passed, skipped, or failed

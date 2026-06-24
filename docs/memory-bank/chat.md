@@ -92,9 +92,11 @@
   default. Multiple clients can share the same transport type such as `stdio`. The
   optional `workspace:` root maps to `WorkspaceRootElement`, which stores
   `WorkspaceConfig` with nullable `directory`, `encoding`, and `dir-guard-disabled`
-  fields. The optional `tools:` root maps to `ToolsRootElement`; its first payload is
-  `tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars` for direct edit
-  diff preview tuning. Provider dispatch does not branch on JVM versus native-image
+  fields. The optional `tools:` root maps to `ToolsRootElement`; implemented payloads
+  are `tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars` for direct
+  edit diff preview tuning, plus `tools.codegeist-shell.command-prefix` and positive
+  `default-timeout-seconds` for shell wrapper and timeout fallback. Provider dispatch
+  does not branch on JVM versus native-image
   runtime; `reflect-config.json` includes root element, MCP, workspace, tools, and
   provider config POJOs for native images. Supported config-only provider classes are
   currently only `ollama` and `openai`; each concrete provider
@@ -153,11 +155,25 @@
   limits, read limits, and normalized error previews. `CodegeistLocalTools` assembles
   Codegeist-owned local Spring AI callbacks and currently discovers the file-backed
   `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`,
-  `codegeist_write`, and `codegeist_edit` components through a
-  `List<CodegeistLocalTool>`. `codegeist_edit` owns exact multi-edit replacements for
-  one existing workspace-contained text file, with preflight validation, no partial
-  mutation, stale-byte protection, BOM/line-ending preservation, and bounded diff
-  previews. Callback order is non-semantic because tools are selected by name.
+  `codegeist_write`, `codegeist_edit`, plus shell-backed `codegeist_shell`
+  components through a `List<CodegeistLocalTool>`. `codegeist_edit` owns exact
+  multi-edit replacements for one existing workspace-contained text file, with
+  preflight validation, no partial mutation, stale-byte protection, BOM/line-ending
+  preservation, and bounded diff previews. `codegeist_shell` runs one local process
+  per tool call, resolves relative `cwd` values under the active workspace while
+  accepting absolute cwd values as caller-provided paths, uses optional
+  `tools.codegeist-shell.command-prefix` when configured and platform defaults
+  otherwise, closes stdin, merges stderr into stdout, and records the exit code plus
+  a bounded completed process-output summary in `ToolSessionPart.outputPreview`.
+  Non-zero exits and timeouts are completed shell results; `timeoutSeconds` falls back
+  to `tools.codegeist-shell.default-timeout-seconds`, which defaults to 120 seconds,
+  and direct child-process timeout cleanup uses a `Future`. Cwd containment, command
+  scanning, PTY, persistent shells, background registries,
+  automatic shell discovery, sandbox guarantees, process-tree cleanup, and full-output
+  side files remain deferred.
+  Configured shell wrappers are explicit host-side argv prefixes, not a
+  Codegeist-owned sandbox policy. Callback order is non-semantic because tools are
+  selected by name.
   `CodegeistToolInput` wraps raw
   Spring AI JSON at the local-tool boundary. File tools use `CodegeistFileToolSupport`
   and the injected `CodegeistToolJsonMapper` to parse tool input, resolve the active
@@ -180,19 +196,26 @@
   resources close when the tool run closes. `CodegeistMcpRun` exposes MCP callbacks
   through the Lombok-backed JavaBean accessor `getToolCallbacks()`; do not use
   Lombok `@Accessors` for this path. `docs/developer/architecture/local-file-tools.md`
-  is the detailed current-state source-code guide for this subsystem and includes the
-  first-provider-call to `McpSyncClient.callTool(...)` sequence.
+  is the current subsystem guide, while `docs/developer/architecture/shell-tool.md`
+  is the focused `codegeist_shell` developer guide for process lifecycle, timeout
+  behavior, native metadata, and ask-driven shell smoke details. The MCP guide still
+  includes the first-provider-call to `McpSyncClient.callTool(...)` sequence.
 - Artifact smoke coverage is centralized in `scripts/tests/artifact-smoke.ps1`.
   Local Linux, Windows QEMU, and GitHub release jobs use this one PowerShell 7
   native-only harness for native package creation, archive unpacking, `--version`,
-  native `--show-config`, command-log assertions, and file-edit smoke delegation.
+  native `--show-config`, command-log assertions, file-edit smoke delegation, and
+  shell-tool smoke delegation.
   The focused `scripts/tests/file-edit-ask-smoke.ps1` sub-harness starts a
   deterministic local Ollama-compatible fixture provider, runs the artifact's real
   `ask` command, lets Spring AI call `codegeist_edit`, then asserts final bytes and
-  a completed persisted `ToolSessionPart`. Local Linux and Windows wrappers enable
-  the optional real Ollama-backed native `ask` smoke; release CI stays deterministic
-  and uses only the fixture-backed file-edit path. The JVM jar is built and uploaded
-  as a release asset, but it is not smoke-tested.
+  a completed persisted `ToolSessionPart`. The focused
+  `scripts/tests/shell-ask-smoke.ps1` sub-harness uses the same deterministic
+  provider pattern to make Spring AI call `codegeist_shell` through a configured
+  `pwsh` wrapper, then asserts the workspace side effect and completed persisted
+  shell `ToolSessionPart`. Local Linux and Windows wrappers enable the optional real
+  Ollama-backed native `ask` smoke; release CI stays deterministic and uses only the
+  fixture-backed file-edit and shell-tool paths. The JVM jar is built and uploaded as
+  a release asset, but it is not smoke-tested.
 - `T007_03_add-mcp-and-read-write-tools` is completed. The slice includes direct
   `mcp:` config, `stdio` and `streamable_http` MCP callbacks, local
   `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
@@ -272,20 +295,22 @@
   to `scripts/tests/artifact-smoke.ps1`. Linux native and Windows QEMU native
   smokes use the same artifact harness and enable real Ollama-backed native `ask`;
   release CI uses the same harness without the optional provider-backed ask smoke.
-  `codegeist_edit` native ask-smoke requires GraalVM reflection metadata for
-  `CodegeistEditFileTool$EditToolInput` and `$EditEntryInput`; without it, the
-  native binary records `Invalid tool input JSON` for object-valued Ollama tool
-  arguments. The current `task native-smoke` path passes after adding that metadata.
+  native ask-smokes require GraalVM reflection metadata for object-valued tool
+  inputs such as `CodegeistEditFileTool$EditToolInput`, `$EditEntryInput`, and
+  `CodegeistShellTool$ShellToolInput`; without it, the native binary records
+  `Invalid tool input JSON` for object-valued Ollama tool arguments. The current
+  `task native-smoke` path passes with the edit and shell metadata.
   `mcp-remote-smoke` builds the local MCP fixture Docker image, verifies the direct
   `streamable_http` callback path, then verifies an Ollama-backed `ask` call that
   invokes the remote MCP tool. The Windows guest reaches host Ollama at
   `http://10.0.2.2:11434` by default. Smoke scripts now emit stable
   `Duration: <label>: <seconds>s` lines for Maven, package, native compile,
   archive smoke, platform total, SSH, and QEMU wrapper timings. The latest full
-  `task test` passed with 154 tests, 0 failures, 0 errors, and 6 skips. The latest
-  strict `task final-smoke-suite` passed with `linux platform smoke total: 91.886s`,
-  `windows qemu smoke total: 216.449s`, `linux-x64 native ask smoke: 2.627s`, and
-  `windows-x64 native ask smoke: 1.257s`.
+  `task test` passed with 167 tests, 0 failures, 0 errors, and 6 skips. The latest
+  strict `task final-smoke-suite` passed with `linux platform smoke total: 86.710s`,
+  `windows qemu smoke total: 241.238s`, `linux-x64 native ask smoke: 1.095s`,
+  `windows-x64 native ask smoke: 1.326s`, `linux-x64 native shell ask total:
+  0.588s`, and `windows-x64 native shell ask total: 1.696s`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
   for GitHub-hosted release validation. Pushes to `release/v*` validate without
   publishing, `workflow_dispatch` supports pre-tag validation with
@@ -307,7 +332,8 @@
   smoke. The native matrix calls `scripts/tests/artifact-smoke.ps1`; the harness
   packages Linux, Windows, and macOS native archives, unpacks each native archive
   into a fresh temp directory, smoke-tests `--version`, native `--show-config`, logs,
-  and deterministic file-edit side effects before upload.
+  deterministic file-edit side effects, and deterministic shell-tool side effects
+  before upload.
 - Codegeist `v0.1.0` is published on GitHub Releases:
   `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0`. Pre-tag
   validation run `26537663964`, tag run `26538176834`, and downloaded asset
@@ -333,7 +359,7 @@
   through `task mcp-remote-smoke` with `mcp remote smoke total: 9.794s`. The final
   Linux+Windows suite now passes locally in strict mode: both platforms report
   `Jar status: skipped` and `Native status: passed`; latest totals were Linux
-  `91.886s` and Windows `214.295s`.
+  `86.710s`, Windows platform `221.729s`, and Windows QEMU wrapper `241.238s`.
 - `scripts/tests/qemu-windows-vm.sh` downloads the official Windows Server 2025
   Evaluation ISO with `curl` when no local ISO exists, stores VM state under
   `.local/windows-qemu`, provisions OpenSSH/GraalVM/Maven/MSVC in the guest, syncs
@@ -520,32 +546,36 @@
   `opencode-shell-tool-comparison.md` is the focused OpenCode shell evidence. Use
   the T007_04 research before implementing patch/edit and shell tools; the local
   task-specification rule records the same T007_04 implementation boundaries.
-  `T007_04_02_add-exact-edit-tool.md` is solved with `CodegeistEditFileTool` and
-  `codegeist_edit`: model input uses `path` plus Pi-style `edits[]` entries with
-  `oldText` and `newText`, exact unique matches are validated against the original
-  LF-normalized file content, overlapping edits and outside-workspace paths fail
-  before mutation by default, BOM/CRLF style and stale-byte checks are preserved, and
-  `ToolSessionPart` still stores only the bounded text preview. The edit tool now uses
-  `CodegeistWorkingDirectoryGuard`; direct config `workspace.dir-guard-disabled: true`
-  disables only active-workspace containment for side-effecting file targets, while
-  missing paths and non-regular files still fail. Direct `codegeist.yml`
-  `tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars` tune only the
-  compact edit diff preview; final model-visible and persisted output remains capped
-  by `ToolOutputBounds`. `docs/developer/architecture/edit-tool.md` is the detailed
-  current-state developer documentation for `codegeist_edit`, including planning,
-  guard, normalization, stale-write, preview, and test contracts. `T007_04_03` is
-  deferred: do not add `codegeist_patch` in the current slice; revisit a separate
-  structured patch callback only when multi-file add/update/delete patch semantics
-  are required. T007_04 still has focused implementation children for shell and final
-  documentation/verification slices; there is no separate workspace guard task or
-  implementation plan. Before implementing the remaining side-effecting tools, check
-  Spring AI Agent Utils `FileSystemTools`/`ShellTools` and the MCP filesystem server
-  for reusable internals. Reuse should sit behind Codegeist-owned `codegeist_*`
-  callbacks so workspace policy, encoding, bounded output, handled errors, and
-  `ToolSessionPart(tool,status,outputPreview)` remain Codegeist contracts.
-  Remaining parent-level T007 children are `T007_04_add-patch-edit-and-shell-tools/task.md`,
-  `T007_05_add-agent-control-loop.md`, `T007_06_add-terminal-tui-over-chat-file.md`,
-  and `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
+  `T007_04_add-patch-edit-and-shell-tools/task.md` is completed. `T007_04_02` is
+  solved with `CodegeistEditFileTool` and `codegeist_edit`: model input uses `path`
+  plus Pi-style `edits[]` entries with `oldText` and `newText`, exact unique matches
+  are validated against the original LF-normalized file content, overlapping edits and
+  outside-workspace paths fail before mutation by default, BOM/CRLF style and
+  stale-byte checks are preserved, and `ToolSessionPart` still stores only the bounded
+  text preview. The edit tool uses `CodegeistWorkingDirectoryGuard`; direct config
+  `workspace.dir-guard-disabled: true` disables only active-workspace containment for
+  side-effecting file targets, while missing paths and non-regular files still fail.
+  Direct `codegeist.yml` `tools.codegeist-edit.diff-preview-lines` and
+  `diff-preview-chars` tune only the compact edit diff preview; final model-visible and
+  persisted output remains capped by `ToolOutputBounds`.
+  `docs/developer/architecture/edit-tool.md` is the detailed current-state developer
+  documentation for `codegeist_edit`, including planning, guard, normalization,
+  stale-write, preview, and test contracts. `T007_04_03` is deferred: do not add
+  `codegeist_patch` in the current slice; revisit a separate structured patch callback
+  only when multi-file add/update/delete patch semantics are required. `T007_04_04` is
+  solved with `CodegeistShellTool` and `codegeist_shell`: one local process per tool
+  call, optional configured host-side command prefix, relative cwd under the active
+  workspace, absolute cwd allowed as caller-provided paths, closed stdin, merged
+  stdout/stderr, bounded completed output, exit-code reporting, `timeoutSeconds`, and
+  a positive `tools.codegeist-shell.default-timeout-seconds` fallback. `T007_04_05`
+  closed the current-state docs and verification with focused config/local-tool tests
+  plus the full JVM suite. Reuse of Spring AI Agent Utils `FileSystemTools` or
+  `ShellTools`, MCP filesystem internals, permission prompts, command scanning,
+  background shell process management, and structured patch semantics remain future
+  work behind Codegeist-owned `codegeist_*` callbacks if they are ever needed.
+  Remaining parent-level T007 children are `T007_05_add-agent-control-loop.md`,
+  `T007_06_add-terminal-tui-over-chat-file.md`, and
+  `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
   server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory,
   and subagents.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
@@ -696,11 +726,10 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- Continue the next T007 implementation from `T007_03_03`, adding the first
-  read/list/glob/grep/write tool path on top of the implemented workspace resolver,
-  output bounds, and `.codegeist/session.json` store. Use
-  `docs/tasks/T007_build-codegeist-runtime-harness/session-store-model-specification.md`
-  for the current session-store model.
+- Continue the next T007 implementation from the remaining child tasks after
+  `T007_04`, especially `T007_05_add-agent-control-loop.md` for the
+  model/tool/model continuation loop and `T007_06_add-terminal-tui-over-chat-file.md`
+  for the JLine terminal UI over the same session store.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`

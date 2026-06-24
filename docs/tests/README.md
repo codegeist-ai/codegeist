@@ -49,6 +49,7 @@ Test guidance for Codegeist contributors and coding agents.
 - `app/codegeist/cli/Taskfile.yml`
 - `scripts/tests/artifact-smoke.ps1`
 - `scripts/tests/file-edit-ask-smoke.ps1`
+- `scripts/tests/shell-ask-smoke.ps1`
 - `scripts/tests/native-smoke.ps1`
 - `scripts/tests/smoke-common.ps1`
 - `scripts/tests/mcp-remote-smoke.ps1`

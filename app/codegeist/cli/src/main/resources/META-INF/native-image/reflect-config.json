@@ -82,6 +82,12 @@
     "allPublicMethods": true
   },
   {
+    "name": "ai.codegeist.app.config.CodegeistShellToolConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
     "name": "ai.codegeist.app.config.OllamaProviderConfig",
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,
@@ -101,6 +107,12 @@
   },
   {
     "name": "ai.codegeist.app.tool.CodegeistEditFileTool$EditEntryInput",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.tool.CodegeistShellTool$ShellToolInput",
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,
     "allPublicMethods": true

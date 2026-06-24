@@ -115,8 +115,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `target/smoke-test`, use `scripts/tests/artifact-smoke.ps1` as the shared
   native-only package harness across Linux, Windows, macOS, local wrappers, and
   release CI, and keep `scripts/tests/native-smoke.ps1` as the thin Linux wrapper
-  used by `task native-smoke`. Do not add jar artifact smoke back unless a future
-  task explicitly changes that release contract.
+  used by `task native-smoke`. Keep ask-driven side-effect smoke sub-harnesses such
+  as `scripts/tests/file-edit-ask-smoke.ps1` and `scripts/tests/shell-ask-smoke.ps1`
+  deterministic through fixture-provider tool calls, not real model choice. Do not
+  add jar artifact smoke back unless a future task explicitly changes that release
+  contract.
 - For Codegeist smoke scripts, treat expected devcontainer tools such as `timeout`
   and `curl` as part of the script contract and call them directly. Use
   command-existence checks only when the result drives real `passed`, `skipped`,

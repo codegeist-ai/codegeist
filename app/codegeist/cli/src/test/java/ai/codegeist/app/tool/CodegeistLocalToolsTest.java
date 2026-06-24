@@ -7,6 +7,7 @@ import ai.codegeist.app.config.CodegeistConfig;
 import ai.codegeist.app.config.CodegeistConfigElement;
 import ai.codegeist.app.config.CodegeistConfigRootElement;
 import ai.codegeist.app.config.CodegeistEditToolConfig;
+import ai.codegeist.app.config.CodegeistShellToolConfig;
 import ai.codegeist.app.config.ToolsConfig;
 import ai.codegeist.app.config.ToolsRootElement;
 import ai.codegeist.app.config.WorkspaceConfig;
@@ -21,6 +22,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.SystemUtils;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.ai.tool.ToolCallback;
@@ -47,7 +50,8 @@ class CodegeistLocalToolsTest {
                         CodegeistGlobFileTool.TOOL_NAME,
                         CodegeistGrepFileTool.TOOL_NAME,
                         CodegeistWriteFileTool.TOOL_NAME,
-                        CodegeistEditFileTool.TOOL_NAME);
+                        CodegeistEditFileTool.TOOL_NAME,
+                        CodegeistShellTool.TOOL_NAME);
         assertThat(callbacks)
                 .allSatisfy(callback -> {
                     assertThat(callback.getToolMetadata().returnDirect()).isFalse();
@@ -694,6 +698,206 @@ class CodegeistLocalToolsTest {
     }
 
     @Test
+    void shellSchemaExposesCommandCwdAndTimeoutSeconds() {
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String schema = localTools().callbacks(recordedParts::add).stream()
+                .filter(callback -> callback.getToolDefinition().name().equals(CodegeistShellTool.TOOL_NAME))
+                .findFirst()
+                .orElseThrow()
+                .getToolDefinition()
+                .inputSchema();
+
+        assertThat(schema)
+                .contains("\"command\"", "\"cwd\"", "\"timeoutSeconds\"")
+                .doesNotContain(
+                        "workdir",
+                        "timeoutMillis",
+                        "runInBackground",
+                        "bash_id",
+                        "filter",
+                        "background",
+                        "pty",
+                        "stdin");
+    }
+
+    @Test
+    void shellSettingsUseConfiguredCommandPrefix() {
+        CodegeistConfig config = configWithWorkspace(
+                tempDir,
+                null,
+                false,
+                null,
+                null,
+                List.of("docker", "run", "--rm", "ubuntu", "bash", "-lc"));
+
+        List<String> prefix = new CodegeistShellToolSettings(config).commandPrefix();
+
+        assertThat(prefix).containsExactly("docker", "run", "--rm", "ubuntu", "bash", "-lc");
+    }
+
+    @Test
+    void shellSettingsUseConfiguredDefaultTimeoutSeconds() {
+        CodegeistConfig config = configWithWorkspace(tempDir);
+        ToolsConfig toolsConfig = new ToolsConfig();
+        CodegeistShellToolConfig shellToolConfig = new CodegeistShellToolConfig();
+        shellToolConfig.setDefaultTimeoutSeconds(7L);
+        toolsConfig.setCodegeistShell(shellToolConfig);
+        addRootElement(config, new ToolsRootElement(toolsConfig));
+        CodegeistShellToolSettings settings = new CodegeistShellToolSettings(config);
+
+        assertThat(settings.timeoutSeconds(null)).isEqualTo(7L);
+        assertThat(settings.timeoutSeconds(0L)).isEqualTo(7L);
+        assertThat(settings.timeoutSeconds(3L)).isEqualTo(3L);
+    }
+
+    @Test
+    void shellUsesConfiguredCommandPrefix() {
+        Assumptions.assumeFalse(SystemUtils.IS_OS_WINDOWS, "This wrapper fixture uses POSIX sh argument semantics.");
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String output = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"model-command"}
+                    """,
+                recordedParts,
+                tempDir,
+                null,
+                false,
+                null,
+                null,
+                List.of("sh", "-lc", "printf 'wrapped:%s' \"$1\"", "codegeist-wrapper"));
+
+        assertThat(output).contains("Exit code: 0", "wrapped:model-command");
+        assertCompletedPart(recordedParts, CodegeistShellTool.TOOL_NAME, output);
+    }
+
+    @Test
+    void shellRunsSuccessfulCommandAndRecordsCompletedToolPart() {
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String output = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"%s"}
+                    """.formatted(jsonString(shellCommand("printf 'out'; printf 'err' >&2", "echo out& echo err 1>&2"))),
+                recordedParts);
+
+        assertThat(output).contains(
+                "Command: ",
+                "Cwd: .",
+                "Exit code: 0",
+                "Output:",
+                "out",
+                "err");
+        assertCompletedPart(recordedParts, CodegeistShellTool.TOOL_NAME, output);
+    }
+
+    @Test
+    void shellRunsInsideWorkspaceRelativeCwd() throws IOException {
+        Files.createDirectory(tempDir.resolve("subdir"));
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String output = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"%s","cwd":"subdir"}
+                    """.formatted(jsonString(shellCommand("printf marker > cwd-marker.txt", "echo marker> cwd-marker.txt"))),
+                recordedParts);
+
+        assertThat(output).contains("Cwd: subdir", "Exit code: 0");
+        assertThat(tempDir.resolve("subdir/cwd-marker.txt")).exists();
+        assertCompletedPart(recordedParts, CodegeistShellTool.TOOL_NAME, output);
+    }
+
+    @Test
+    void shellRecordsNonZeroExitAsCompletedResult() {
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String output = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"%s"}
+                    """.formatted(jsonString(shellCommand("printf 'bad' >&2; exit 7", "echo bad 1>&2 & exit /b 7"))),
+                recordedParts);
+
+        assertThat(output).contains("Exit code: 7", "bad");
+        assertCompletedPart(recordedParts, CodegeistShellTool.TOOL_NAME, output);
+    }
+
+    @Test
+    void shellTerminatesTimedOutCommandAndRecordsCompletedResult() {
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String output = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"%s","timeoutSeconds":1}
+                    """.formatted(jsonString(shellCommand(
+                        "sleep 5; printf after > timeout-marker.txt",
+                        "powershell -NoProfile -Command \"Start-Sleep -Seconds 5; Set-Content -LiteralPath timeout-marker.txt -Value after\""))),
+                recordedParts);
+
+        assertThat(output).contains("Timed out: true", "Exit code: -1");
+        assertThat(tempDir.resolve("timeout-marker.txt")).doesNotExist();
+        assertCompletedPart(recordedParts, CodegeistShellTool.TOOL_NAME, output);
+    }
+
+    @Test
+    void shellAllowsAbsoluteCwdOutsideWorkspace() throws IOException {
+        Path workspace = Files.createDirectory(tempDir.resolve("workspace"));
+        Path outside = Files.createDirectory(tempDir.resolve("outside"));
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String output = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"%s","cwd":"%s"}
+                    """.formatted(jsonString(shellCommand("printf marker > marker.txt", "echo marker> marker.txt")),
+                        jsonPath(outside)),
+                recordedParts,
+                workspace,
+                null);
+
+        assertThat(output).contains("Exit code: 0");
+        assertThat(outside.resolve("marker.txt")).exists();
+        assertCompletedPart(recordedParts, CodegeistShellTool.TOOL_NAME, output);
+    }
+
+    @Test
+    void shellRejectsBlankCommand() {
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String blankOutput = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"   "}
+                    """,
+                recordedParts);
+        String missingOutput = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {}
+                    """,
+                recordedParts);
+
+        assertThat(blankOutput).contains("Required text field is missing: command");
+        assertThat(missingOutput).contains("Required text field is missing: command");
+        assertFailedParts(recordedParts, CodegeistShellTool.TOOL_NAME, 2);
+    }
+
+    @Test
+    void shellOutputIsBoundedAndPersistedAsTheSamePreview() {
+        List<ToolSessionPart> recordedParts = new ArrayList<>();
+
+        String output = callTool(CodegeistShellTool.TOOL_NAME,
+                """
+                    {"command":"%s"}
+                    """.formatted(jsonString(shellCommand(
+                        "printf '%*s' 9000 '' | tr ' ' x; printf '%*s' 9000 '' | tr ' ' y >&2",
+                        "powershell -NoProfile -Command \"[Console]::Out.Write(('x' * 9000)); [Console]::Error.Write(('y' * 9000))\""))),
+                recordedParts);
+
+        assertThat(output)
+                .hasSize(ToolOutputBounds.MAX_PREVIEW_CHARS)
+                .contains("x".repeat(1000));
+        assertCompletedPart(recordedParts, CodegeistShellTool.TOOL_NAME, output);
+    }
+
+    @Test
     void toolOutputsArePreviewBoundedAndPersistTheSamePreview() throws IOException {
         Files.writeString(tempDir.resolve("large.txt"), "x".repeat(ToolOutputBounds.MAX_PREVIEW_CHARS + 100));
         List<ToolSessionPart> recordedParts = new ArrayList<>();
@@ -744,7 +948,22 @@ class CodegeistLocalToolsTest {
             boolean dirGuardDisabled,
             Integer diffPreviewLines,
             Integer diffPreviewChars) {
-        return localTools(workspace, encoding, dirGuardDisabled, diffPreviewLines, diffPreviewChars)
+        return callTool(toolName, input, recordedParts, workspace, encoding, dirGuardDisabled,
+                diffPreviewLines, diffPreviewChars, null);
+    }
+
+    private String callTool(
+            String toolName,
+            String input,
+            List<ToolSessionPart> recordedParts,
+            Path workspace,
+            String encoding,
+            boolean dirGuardDisabled,
+            Integer diffPreviewLines,
+            Integer diffPreviewChars,
+            List<String> shellCommandPrefix) {
+        return localTools(workspace, encoding, dirGuardDisabled, diffPreviewLines, diffPreviewChars,
+                shellCommandPrefix)
                 .callbacks(recordedParts::add)
                 .stream()
                 .filter(callback -> callback.getToolDefinition().name().equals(toolName))
@@ -775,18 +994,30 @@ class CodegeistLocalToolsTest {
             boolean dirGuardDisabled,
             Integer diffPreviewLines,
             Integer diffPreviewChars) {
+        return localTools(workspace, encoding, dirGuardDisabled, diffPreviewLines, diffPreviewChars, null);
+    }
+
+    private CodegeistLocalTools localTools(
+            Path workspace,
+            String encoding,
+            boolean dirGuardDisabled,
+            Integer diffPreviewLines,
+            Integer diffPreviewChars,
+            List<String> shellCommandPrefix) {
         CodegeistConfig config = configWithWorkspace(
                 workspace,
                 encoding,
                 dirGuardDisabled,
                 diffPreviewLines,
-                diffPreviewChars);
+                diffPreviewChars,
+                shellCommandPrefix);
         WorkspaceResolver resolver = new WorkspaceResolver(config);
         ReflectionTestUtils.setField(resolver, "workingDir", workspace.toString());
         ToolOutputBounds bounds = new ToolOutputBounds();
         CodegeistFileToolSupport support = fileToolSupport(config, resolver, bounds);
         CodegeistWorkingDirectoryGuard workingDirectoryGuard = new CodegeistWorkingDirectoryGuard(config);
         CodegeistEditToolSettings editToolSettings = new CodegeistEditToolSettings(config);
+        CodegeistShellToolSettings shellToolSettings = new CodegeistShellToolSettings(config);
         return new CodegeistLocalTools(
                 bounds,
                 List.of(
@@ -795,7 +1026,8 @@ class CodegeistLocalToolsTest {
                         new CodegeistGlobFileTool(support),
                         new CodegeistGrepFileTool(support),
                         new CodegeistWriteFileTool(support),
-                        new CodegeistEditFileTool(support, workingDirectoryGuard, editToolSettings)));
+                        new CodegeistEditFileTool(support, workingDirectoryGuard, editToolSettings),
+                        new CodegeistShellTool(support, shellToolSettings)));
     }
 
     private CodegeistEditFileTool editTool(Path workspace, String encoding) {
@@ -837,6 +1069,16 @@ class CodegeistLocalToolsTest {
             boolean dirGuardDisabled,
             Integer diffPreviewLines,
             Integer diffPreviewChars) {
+        return configWithWorkspace(workspace, encoding, dirGuardDisabled, diffPreviewLines, diffPreviewChars, null);
+    }
+
+    private CodegeistConfig configWithWorkspace(
+            Path workspace,
+            String encoding,
+            boolean dirGuardDisabled,
+            Integer diffPreviewLines,
+            Integer diffPreviewChars,
+            List<String> shellCommandPrefix) {
         CodegeistConfig config = new CodegeistConfig();
         WorkspaceConfig workspaceConfig = new WorkspaceConfig();
         workspaceConfig.setDirectory(workspace.toString());
@@ -852,6 +1094,18 @@ class CodegeistLocalToolsTest {
             ToolsConfig toolsConfig = new ToolsConfig();
             toolsConfig.setCodegeistEdit(editToolConfig);
             addRootElement(config, new ToolsRootElement(toolsConfig));
+        }
+        if (shellCommandPrefix != null) {
+            ToolsConfig toolsConfig = config.rootElement(ToolsRootElement.class)
+                    .map(ToolsRootElement::getConfig)
+                    .orElseGet(() -> {
+                        ToolsConfig newToolsConfig = new ToolsConfig();
+                        addRootElement(config, new ToolsRootElement(newToolsConfig));
+                        return newToolsConfig;
+            });
+            CodegeistShellToolConfig shellToolConfig = new CodegeistShellToolConfig();
+            shellToolConfig.setCommandPrefix(shellCommandPrefix);
+            toolsConfig.setCodegeistShell(shellToolConfig);
         }
         return config;
     }
@@ -875,10 +1129,14 @@ class CodegeistLocalToolsTest {
     }
 
     private void assertFailedParts(List<ToolSessionPart> recordedParts, int count) {
+        assertFailedParts(recordedParts, CodegeistEditFileTool.TOOL_NAME, count);
+    }
+
+    private void assertFailedParts(List<ToolSessionPart> recordedParts, String toolName, int count) {
         assertThat(recordedParts)
                 .hasSize(count)
                 .allSatisfy(part -> {
-                    assertThat(part.getTool()).isEqualTo(CodegeistEditFileTool.TOOL_NAME);
+                    assertThat(part.getTool()).isEqualTo(toolName);
                     assertThat(part.getStatus()).isEqualTo(ToolSessionPartStatus.failed);
                     assertThat(part.getOutputPreview()).isNotBlank();
                 });
@@ -887,4 +1145,13 @@ class CodegeistLocalToolsTest {
     private String jsonPath(Path path) {
         return path.toString().replace("\\", "\\\\");
     }
+
+    private String jsonString(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private String shellCommand(String unixCommand, String windowsCommand) {
+        return SystemUtils.IS_OS_WINDOWS ? windowsCommand : unixCommand;
+    }
+
 }

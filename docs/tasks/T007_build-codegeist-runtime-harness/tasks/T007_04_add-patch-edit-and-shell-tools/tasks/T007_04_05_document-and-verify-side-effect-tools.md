@@ -2,7 +2,7 @@
 
 Parent: `T007_04_add-patch-edit-and-shell-tools`
 
-Status: open
+Status: solved
 
 ## Goal
 
@@ -44,11 +44,27 @@ focused verification.
 
 ## Verification
 
-Run from `app/codegeist/cli` after focused checks:
+Final verification from `app/codegeist/cli`:
 
 ```bash
+task test TEST=CodegeistToolsConfigTest,CodegeistLocalToolsTest
 task test
 ```
+
+Results:
+
+- Focused config/local-tool regression passed, 48 tests, 0 failures, 0 errors, 0
+  skipped.
+- Full JVM suite passed, 167 tests, 0 failures, 0 errors, 6 skipped.
+
+## Implementation Result
+
+- `docs/developer/architecture/architecture.md` and
+  `docs/developer/architecture/local-file-tools.md` describe the current exact-edit,
+  deferred patch, and one-shot shell contracts.
+- `docs/memory-bank/chat.md` records the completed T007_04 state for future sessions.
+- Parent `T007_04_add-patch-edit-and-shell-tools/task.md` is marked solved and lists
+  the solved/deferred child outcomes.
 
 ## Source Notes
 

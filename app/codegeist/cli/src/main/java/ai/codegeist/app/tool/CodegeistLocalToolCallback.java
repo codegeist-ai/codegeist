@@ -15,7 +15,8 @@ import org.springframework.ai.tool.metadata.ToolMetadata;
  * Spring AI callback wrapper for Codegeist-owned local tools.
  *
  * <p>The callback boundary is where local tool output becomes model-visible and
- * session-store-visible. Every handled tool failure is therefore converted to a
+ * session-store-visible. Completed local tool output is bounded at this edge
+ * before it is returned or recorded. Every handled tool failure is converted to a
  * bounded string and recorded as a failed {@link ToolSessionPart}; unexpected
  * programming errors are allowed to escape so tests can expose them.
  */
@@ -45,7 +46,8 @@ final class CodegeistLocalToolCallback implements ToolCallback {
     @Override
     public String call(String toolInput) {
         try {
-            String outputPreview = outputBounds.preview(executor.apply(new CodegeistToolInput(toolInput)).outputPreview());
+            String outputPreview = outputBounds.preview(
+                    executor.apply(new CodegeistToolInput(toolInput)).outputPreview());
             record(ToolSessionPartStatus.completed, outputPreview);
             return outputPreview;
         }
@@ -69,4 +71,5 @@ final class CodegeistLocalToolCallback implements ToolCallback {
         part.setOutputPreview(outputPreview);
         recorder.accept(part);
     }
+
 }

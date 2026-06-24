@@ -55,8 +55,9 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/WorkspaceRootElement.java` | `workspace:` root model for direct workspace settings. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/WorkspaceConfig.java` | Direct workspace payload for directory, encoding, and the edit containment guard switch. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsRootElement.java` | `tools:` root model for Codegeist-owned local tool settings. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsConfig.java` | Direct tool settings payload currently containing `codegeist-edit`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsConfig.java` | Direct tool settings payload currently containing `codegeist-edit` and `codegeist-shell`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistEditToolConfig.java` | `tools.codegeist-edit:` payload for edit diff preview line and character limits. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistShellToolConfig.java` | `tools.codegeist-shell:` payload for shell wrapper argv and default timeout seconds. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract base class for provider map values. Holds common access fields, exposes read-only output `type` through concrete constants, and declares provider-owned `defaultModel()` plus `createChatModel()`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Access config class for local Ollama settings, the `llama3.2:1b` default runtime model, and the concrete config-owned chat model seam. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Access config class for OpenAI settings and the `gpt-5-mini` default runtime model; chat-model creation is not implemented yet. |
@@ -70,7 +71,7 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigSpelEvaluationTest.java` | Direct YAML SpEL preprocessing tests. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistConfigCommandTest.java` | Spring command test for `--show-config` stdout shape and unmasked value rendering. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistWorkspaceConfigTest.java` | Direct `workspace:` root mapping and root-shape tests. |
-| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistToolsConfigTest.java` | Direct `tools.codegeist-edit:` root mapping and root-shape tests. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistToolsConfigTest.java` | Direct `tools:` root mapping, edit settings, shell settings, Bean Validation, and root-shape tests. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/ProviderCategory.java` | Class or method annotation for non-config provider feature categories. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/ProviderTestExtension.java` | JUnit condition that skips annotated provider classes or methods unless `CODEGEIST_TEST_PROVIDER_CATEGORY` allows their category. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/OpenAiProviderTest.java` | OpenAI config, model-list, image, text-to-speech, and speech-to-text checks guarded by method-level categories. |
@@ -154,18 +155,26 @@ clients as a list. `CodegeistConfigRootParser` copies the YAML key into the inte
 
 The `tools:` root is a single YAML object for Codegeist-owned local tool settings.
 It is not a user-keyed catalog, so callback-specific settings live under stable
-callback-derived keys. The first implemented tool settings are for `codegeist_edit`:
+callback-derived keys. Current implemented settings cover `codegeist_edit` preview
+tuning and the `codegeist_shell` host wrapper plus default timeout:
 
 ```yaml
 tools:
   codegeist-edit:
     diff-preview-lines: 6
     diff-preview-chars: 4000
+  codegeist-shell:
+    command-prefix: [sh, -lc]
+    default-timeout-seconds: 120
 ```
 
 `CodegeistEditToolSettings` applies defaults and caps at runtime. Non-positive or
 omitted values fall back to defaults, and configured values cannot exceed the
 global tool output caps.
+`CodegeistShellToolSettings` applies platform command-prefix defaults when no
+prefix is configured and falls back to `120` seconds when tool input omits or
+passes a non-positive timeout. Bean Validation rejects blank shell prefix entries
+and non-positive configured default timeouts after Jackson mapping.
 
 ## Typed Config Element Contract
 
@@ -431,11 +440,17 @@ classDiagram
 
     class ToolsConfig {
       CodegeistEditToolConfig codegeistEdit
+      CodegeistShellToolConfig codegeistShell
     }
 
     class CodegeistEditToolConfig {
       Integer diffPreviewLines
       Integer diffPreviewChars
+    }
+
+    class CodegeistShellToolConfig {
+      List~String~ commandPrefix
+      Long defaultTimeoutSeconds
     }
 
     class McpClientConfig {
@@ -493,6 +508,7 @@ classDiagram
     CodegeistConfigElement <|-- WorkspaceConfig
     CodegeistConfigElement <|-- ToolsConfig
     CodegeistConfigElement <|-- CodegeistEditToolConfig
+    CodegeistConfigElement <|-- CodegeistShellToolConfig
     CodegeistTypedConfigElement <|-- ProviderConfig
     CodegeistTypedConfigElement <|-- McpClientConfig
     McpClientConfig <|-- StdioMcpClientConfig
@@ -510,6 +526,7 @@ classDiagram
     ProvidersConfig --> ProviderConfig : elements
     McpClientsConfig --> McpClientConfig : elements
     ToolsConfig --> CodegeistEditToolConfig : stores
+    ToolsConfig --> CodegeistShellToolConfig : stores
     CodegeistConfigRootParser ..> CodegeistConfigElement : converts entries
     ProviderConfig <|-- OllamaProviderConfig
     ProviderConfig <|-- OpenAiProviderConfig

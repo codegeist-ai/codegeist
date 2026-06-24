@@ -35,8 +35,16 @@ Use this rule when adding or changing Java source in Codegeist.
   such as `CodegeistConfigYamlMapper` over Lombok compiler configuration or
   qualifier-copy workarounds.
 - Prefer Bean Validation annotations on configuration POJOs for config validation.
-  When config is loaded directly with Jackson rather than Spring binding, call
-  `jakarta.validation.Validator` explicitly after mapping.
+  Use Jakarta constraints such as `@NotNull`, `@NotBlank`, `@Positive`, `@Min`,
+  `@Max`, `@Size`, container element constraints such as `List<@NotBlank String>`,
+  and cascading `@Valid` before adding manual `if` checks in services, parsers, or
+  settings resolvers. When config is loaded directly with Jackson rather than Spring
+  binding, call `jakarta.validation.Validator` explicitly after mapping.
+- For `codegeist.yml` model classes, make invalid static contracts fail through Bean
+  Validation instead of silently normalizing them in runtime settings code. Keep manual
+  validation only when the rule is about YAML shape before Jackson conversion,
+  cross-field behavior that Bean Validation cannot express cleanly, or intentional
+  runtime fallback semantics such as treating an omitted optional value as a default.
 
 ## Lombok
 
@@ -177,6 +185,9 @@ Use this rule when adding or changing Java source in Codegeist.
 - Use the smallest fitting existing utility, such as Spring `CollectionUtils`,
   `ObjectUtils`, or `StringUtils`, before adding custom helper methods or local
   normalization loops.
+- Prefer Apache Commons Lang `SystemUtils` for OS and platform checks instead of
+  manually parsing `System.getProperty("os.name")` when `commons-lang3` is already
+  available in the module.
 - Do not add a new utility dependency only to replace a trivial check; this rule
   applies to utilities already available through the current framework stack.
 

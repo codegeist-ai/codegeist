@@ -4,6 +4,13 @@ Detailed source-backed comparison between OpenCode's shell tool and the proposed
 Codegeist `CodegeistShellTool` for
 `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/task.md`.
 
+Status note: this comparison preserves earlier source-backed design evidence. The
+implemented `codegeist_shell` was later simplified to plain `ProcessBuilder`
+execution with merged stdout/stderr, optional `timeoutSeconds`, no workspace cwd
+containment, and bounded completed shell summaries. Use
+`tasks/T007_04_04_add-shell-tool.md` and
+`docs/developer/architecture/local-file-tools.md` for current shell behavior.
+
 ## Purpose
 
 This document answers the `ask-project opencode` follow-up for the T007 shell
@@ -186,9 +193,8 @@ Recommended T007 decision:
   `codegeist_*` namespace.
 - Prefer the input name `cwd` if matching current T007 wording, or `workdir` if
   deliberately mirroring OpenCode. Use one name consistently in tests and docs.
-- Consider `timeoutMillis` instead of `timeoutSeconds` if the goal is closer
-  OpenCode parity and faster timeout tests. If `timeoutSeconds` stays, document the
-  divergence clearly.
+- Use `timeoutSeconds` for Codegeist's current human-facing shape, while documenting
+  that OpenCode uses millisecond timeout values.
 - A `description` field is useful for TUI display later, but it is not required by
   the current `ToolSessionPart` schema. The first Codegeist slice can omit it and
   derive a summary from the command, or add optional `description` without storing a
@@ -216,17 +222,25 @@ its own `cmd(...)` function.
 
 ### Codegeist Comparison
 
-The proposed Codegeist implementation simply chooses:
+The implemented Codegeist shell tool chooses an explicit wrapper when configured:
+
+- `tools.codegeist-shell.command-prefix`, then the model command as the final argv
+  entry.
+
+When no command prefix is configured, it falls back to:
 
 - `cmd.exe /c <command>` on Windows;
 - `sh -lc <command>` elsewhere.
 
 Recommended T007 decision:
 
-- This simplification is appropriate for the first Codegeist shell tool.
-- Do not copy OpenCode's full configured-shell matrix until Codegeist has user
-  shell configuration, TUI display requirements, and platform smoke tests that need
-  it.
+- This explicit-wrapper plus default-shell simplification is appropriate for the
+  first Codegeist shell tool.
+- Do not copy OpenCode's full automatic shell-discovery matrix until Codegeist has
+  TUI display requirements and platform smoke tests that need it.
+- Treat Docker or any other configured command prefix as caller-owned host-side argv;
+  it can support sandbox-like execution only when the supplied prefix implements
+  that policy.
 - Keep the first implementation honest in docs: it is a one-shot platform shell
   command, not a login-shell compatibility layer.
 
@@ -560,7 +574,7 @@ Recommended Codegeist T007_04 focused tests:
 | --- | --- | --- | --- |
 | Tool name | Exposed as `bash` for compatibility even for PowerShell/cmd. | `codegeist_shell`. | Keep `codegeist_shell`; no compatibility burden exists. |
 | Input cwd name | `workdir`. | `cwd`. | Pick one. `cwd` matches task wording; `workdir` mirrors OpenCode. |
-| Timeout units | Milliseconds. | Seconds in the earlier sketch. | Prefer `timeoutMillis` for parity and fast tests, or document `timeoutSeconds`. |
+| Timeout units | Milliseconds. | Seconds. | Keep `timeoutSeconds` documented for the current Codegeist contract. |
 | Description | Required, used as title and metadata. | Omitted. | Optional is enough now; useful later for TUI. |
 | Shell selection | Config/env-aware Bash, Zsh, Sh, PowerShell, cmd, Git Bash fallback. | Platform default via `cmd.exe` or `sh`. | Keep simple in T007_04. |
 | Process model | One child process per tool call. | One Java `Process` per tool call. | Copy this; do not add persistent/background shell. |
@@ -633,7 +647,7 @@ Deliberately do not include these OpenCode behaviors in T007_04:
 - plugin hooks;
 - live tool metadata streaming;
 - full-output side files;
-- configured shell discovery;
+- automatic shell discovery;
 - background processes;
 - persistent shell sessions;
 - PTY integration.
@@ -641,8 +655,8 @@ Deliberately do not include these OpenCode behaviors in T007_04:
 ## Open Questions For The Implementation Pass
 
 - Should the public input use `cwd` or `workdir`?
-- Should timeout be `timeoutMillis` for OpenCode parity or `timeoutSeconds` for a
-  simpler human-facing shape?
+- Should timeout be a millisecond field for OpenCode parity or `timeoutSeconds` for a
+  simpler human-facing shape? Codegeist now uses `timeoutSeconds`.
 - Should timeout be recorded as completed shell execution or failed tool execution?
   OpenCode treats timeout as output metadata; this document recommends completed
   shell execution with `Timed out: true` in the preview.

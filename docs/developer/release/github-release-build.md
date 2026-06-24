@@ -86,7 +86,7 @@ The implemented jobs run these gates in order:
 6. Package native archives with sidecar libraries.
 7. Run `scripts/tests/artifact-smoke.ps1` for each native platform; it packages,
    unpacks, verifies `--version`, verifies `--show-config`, checks logs, and runs
-   deterministic file-edit side effects.
+   deterministic file-edit plus shell-tool side effects.
 8. Generate and verify `SHA256SUMS.txt`.
 9. Upload all assets as workflow artifacts.
 10. On `v*` tag runs only, upload the same assets to a published GitHub Release.

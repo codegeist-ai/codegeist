@@ -18,8 +18,13 @@ import lombok.Setter;
 public class ToolsConfig extends CodegeistConfigElement {
 
     public static final String CODEGEIST_EDIT_PROPERTY = "codegeist-edit";
+    public static final String CODEGEIST_SHELL_PROPERTY = "codegeist-shell";
 
     @Valid
     @JsonProperty(CODEGEIST_EDIT_PROPERTY)
     private CodegeistEditToolConfig codegeistEdit;
+
+    @Valid
+    @JsonProperty(CODEGEIST_SHELL_PROPERTY)
+    private CodegeistShellToolConfig codegeistShell;
 }

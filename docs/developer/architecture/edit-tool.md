@@ -40,10 +40,10 @@ session part remain a bounded text summary.
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalTools.java` | Assembles all Spring-injected `CodegeistLocalTool` implementations into Spring AI `ToolCallback` values. It does not know edit-specific behavior. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/tool/CodegeistLocalToolCallback.java` | Wraps local tool execution, returns bounded output to the model, and records completed or failed `ToolSessionPart` values. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsRootElement.java` | Direct `tools:` root model. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsConfig.java` | Direct `tools:` payload currently containing the `codegeist-edit` nested config. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsConfig.java` | Direct `tools:` payload currently containing `codegeist-edit` and `codegeist-shell`; this focused doc covers the edit branch only. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistEditToolConfig.java` | Direct `tools.codegeist-edit:` payload for diff preview line and character limits. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/tool/CodegeistLocalToolsTest.java` | Main contract coverage for edit schema, path behavior, exact matching, multi-edit planning, stale-write failure, output bounds, and recording. |
-| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistToolsConfigTest.java` | Direct YAML parser coverage for `tools.codegeist-edit` settings and root shape failures. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/config/CodegeistToolsConfigTest.java` | Direct YAML parser coverage for `tools.codegeist-edit`, `tools.codegeist-shell`, validation, and root shape failures. |
 | `scripts/tests/artifact-smoke.ps1` | Shared native-only artifact smoke harness used by local platform wrappers and release CI. It delegates edit-specific side-effect checks to `file-edit-ask-smoke.ps1`. |
 | `scripts/tests/file-edit-ask-smoke.ps1` | Focused artifact sub-harness. It runs the real `ask` command against a deterministic Ollama-compatible fixture provider, then checks file bytes and completed `ToolSessionPart` persistence. |
 | `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-config.json` | Native-image reflection metadata for the direct `tools:` config POJOs that Jackson instantiates. |

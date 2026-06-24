@@ -13,8 +13,8 @@
 #
 # Side effects:
 # - Starts or reuses local Ollama through task ollama-start.
-# - Delegates packaging, unpacking, command checks, file-edit checks, and optional
-#   provider-backed ask checks to scripts/tests/artifact-smoke.ps1.
+# - Delegates packaging, unpacking, command checks, file-edit checks, shell-tool
+#   checks, and optional provider-backed ask checks to scripts/tests/artifact-smoke.ps1.
 #
 # Related files:
 # - app/codegeist/cli/Taskfile.yml
@@ -32,6 +32,8 @@ param(
     [int]$AskTimeoutSeconds = 0,
 
     [int]$FileEditTimeoutSeconds = 0,
+
+    [int]$ShellAskTimeoutSeconds = 0,
 
     [string]$OllamaBaseUrl = "http://localhost:11434",
 
@@ -110,6 +112,12 @@ if ($FileEditTimeoutSeconds -le 0) {
 else {
     $fileEditTimeout = $FileEditTimeoutSeconds
 }
+if ($ShellAskTimeoutSeconds -le 0) {
+    $shellAskTimeout = [int](${env:CODEGEIST_SHELL_ASK_SMOKE_TIMEOUT_SECONDS} ?? "90")
+}
+else {
+    $shellAskTimeout = $ShellAskTimeoutSeconds
+}
 
 Push-Location -LiteralPath $CliDir
 try {
@@ -149,6 +157,7 @@ try {
         -NativeTimeoutSeconds $nativeTimeout `
         -AskTimeoutSeconds $askTimeout `
         -FileEditTimeoutSeconds $fileEditTimeout `
+        -ShellAskTimeoutSeconds $shellAskTimeout `
         -RunProviderAskSmoke
 }
 finally {

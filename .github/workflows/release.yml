@@ -41,6 +41,7 @@ env:
   GRAALVM_DISTRIBUTION: graalvm-community
   NATIVE_SMOKE_TIMEOUT_SECONDS: "5"
   FILE_EDIT_SMOKE_TIMEOUT_SECONDS: "90"
+  SHELL_ASK_SMOKE_TIMEOUT_SECONDS: "90"
 
 jobs:
   metadata:
@@ -225,7 +226,8 @@ jobs:
             -ExpectedVersion $env:RELEASE_VERSION `
             -SmokeRoot (Join-Path (Get-Location).Path "target/smoke-test") `
             -NativeTimeoutSeconds ([int]$env:NATIVE_SMOKE_TIMEOUT_SECONDS) `
-            -FileEditTimeoutSeconds ([int]$env:FILE_EDIT_SMOKE_TIMEOUT_SECONDS)
+            -FileEditTimeoutSeconds ([int]$env:FILE_EDIT_SMOKE_TIMEOUT_SECONDS) `
+            -ShellAskTimeoutSeconds ([int]$env:SHELL_ASK_SMOKE_TIMEOUT_SECONDS)
 
       - name: Upload native artifact
         uses: actions/upload-artifact@v4

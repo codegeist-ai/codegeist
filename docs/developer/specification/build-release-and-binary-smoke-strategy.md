@@ -39,7 +39,7 @@ package-manager publishing exists yet.
 
 The current local smoke suite lives under `scripts/tests/` and uses the shared
 `artifact-smoke.ps1` harness to verify implemented `--version`, native
-`--show-config`, file-edit encoding, command logs, and optional Ollama-backed
+`--show-config`, file-edit encoding, shell-tool execution, command logs, and optional Ollama-backed
 `ask` behavior on local Linux artifacts and, when configured, a Windows QEMU VM
 
 ## Release Target
@@ -126,7 +126,7 @@ unsafe.
    for each native platform. It collects the executable and required sidecar
    libraries into the platform archive, unpacks the archive into a clean temporary
    directory, runs `--version` and `--show-config`, verifies logs, and delegates
-   deterministic ask-driven file editing to the file-edit sub-harness.
+   deterministic ask-driven file editing plus shell execution to sub-harnesses.
 6. Native file-edit encoding smoke: verify each extracted native package through
    the shared artifact harness on the target runner.
 7. Native package shape: leave only the release archive under
@@ -171,6 +171,11 @@ Required smoke checks once the corresponding CLI behavior exists:
   completed persisted `ToolSessionPart`. It covers BOM, multibyte text, LF/CRLF,
   final-newline, and configured-charset behavior without relying on
   nondeterministic model choice.
+- Shell ask smoke: `artifact-smoke.ps1` delegates to
+  `scripts/tests/shell-ask-smoke.ps1`. The sub-harness starts a deterministic
+  Ollama-compatible fixture provider, runs the real `ask` command, verifies that
+  Spring AI executes `codegeist_shell` through a cross-platform `pwsh` wrapper, and
+  asserts the filesystem side effect plus completed persisted `ToolSessionPart`.
 - Noninteractive startup: run the default no-side-effect command path and require
   the process to exit or report readiness within the timeout defined by the
   release task.

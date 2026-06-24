@@ -5,6 +5,13 @@ summarizes the follow-up research pass across Aider, OpenCode, Pi,
 mini-SWE-agent, and Spring AI Agent Utils before implementing Codegeist patch/edit
 and shell tools.
 
+Status note: this research preserves the earlier T007_04 source-evidence pass. The
+implemented `codegeist_shell` was later simplified to plain `ProcessBuilder`
+execution with merged stdout/stderr, optional `timeoutSeconds`, no workspace cwd
+containment, and bounded completed shell summaries. Use
+`tasks/T007_04_04_add-shell-tool.md` and
+`docs/developer/architecture/local-file-tools.md` for current shell behavior.
+
 ## Scope And Evidence
 
 - Task: `T007_04_add-patch-edit-and-shell-tools/task.md`.
@@ -20,7 +27,7 @@ and shell tools.
   Java runtime behavior and does not claim that third-party runtime behavior was
   verified locally.
 
-## Current Codegeist Baseline
+## Codegeist Baseline At Research Time
 
 Codegeist T007_03 already provides the foundation that T007_04 should extend:
 
@@ -31,14 +38,17 @@ Codegeist T007_03 already provides the foundation that T007_04 should extend:
 - `ToolSessionPart` currently stores only `tool`, `status`, and `outputPreview`.
   Do not add typed shell fields, patch hunks, timing, metadata maps, attachments,
   or lifecycle states unless the active implementation tests require them.
-- T007_04 must add bounded side-effecting patch/edit and shell tools. File
-  mutation outside the working directory and shell cwd escape must fail before the
-  side effect runs.
+- T007_04 had to add bounded side-effecting patch/edit and shell tools. At research
+  time the draft shell requirement included cwd escape rejection; the implemented
+  shell contract later allowed absolute cwd values and moved the current truth to
+  `tasks/T007_04_04_add-shell-tool.md` plus
+  `docs/developer/architecture/local-file-tools.md`.
 
 ## Executive Decisions
 
-Use these decisions as the implementation starting point unless a focused test or
-user instruction changes the scope.
+These decisions were the implementation starting point for the research pass. Treat
+them as historical evidence when they differ from the current task and architecture
+docs.
 
 | Decision | Recommendation | Evidence |
 | --- | --- | --- |
@@ -52,7 +62,7 @@ user instruction changes the scope.
 | Reuse of Agent Utils | Do not directly reuse `FileSystemTools` or `ShellTools` for T007_04 side effects. Use Agent Utils as source inspiration for tests and callback patterns behind Codegeist wrappers. | Agent Utils tools lack Codegeist working-dir policy, session recording, and prompt-scoped runtime state. |
 | Deferred safety | Defer permission prompts, TUI patch review, tree-sitter command scanning, plugin/env hooks, background shells, patch side-file artifacts, git commits, and benchmark trajectories. | These are broad or product-specific in OpenCode, Aider, mini-SWE-agent, and Agent Utils. |
 
-## Recommended Tool Contracts
+## Original Recommended Tool Contracts
 
 ### Edit Tool
 
@@ -134,8 +144,9 @@ Suggested first-slice behavior:
   OpenCode.
 - Resolve cwd against the active working directory. Reject cwd escape before
   starting the process.
-- Use `cmd.exe /c` on Windows and `sh -lc` or another simple platform shell on
-  Unix-like systems. Do not add configured shell discovery until tests need it.
+- Use explicit `tools.codegeist-shell` wrapper config when present. Otherwise default
+  to `cmd.exe /c` on Windows and `sh -lc` on Unix-like systems. Do not add automatic
+  shell discovery until tests need it.
 - Ignore stdin. Do not support background processes, persistent shell sessions, or
   PTY behavior.
 - Capture stdout and stderr concurrently to avoid deadlocks. Keep separate previews
@@ -279,7 +290,7 @@ Defer or drop:
 - plugin `shell.env` hooks;
 - live running metadata;
 - full-output side files;
-- configured shell discovery;
+- automatic shell discovery;
 - tree-sitter command scanning;
 - LSP/format/watch integration;
 - model-specific hiding of `edit`/`write` versus `apply_patch`.
@@ -544,7 +555,7 @@ Recommended implementation order:
 | Topic | Evidence | Codegeist recommendation |
 | --- | --- | --- |
 | Input schema | OpenCode uses `command`, `description`, `timeout`, `workdir`; Pi uses `command`, optional seconds timeout; mini uses only `command`; Agent Utils uses command plus optional async/timeout flags. | Start with `command`, optional `cwd`, optional timeout. `description` can be deferred. |
-| Shell choice | OpenCode has shell discovery; Pi uses configured shell; mini uses `shell=True`; Agent Utils uses `/bin/bash` or `cmd.exe`. | Use simple platform default now; defer configurable shell. |
+| Shell choice | OpenCode has shell discovery; Pi uses configured shell; mini uses `shell=True`; Agent Utils uses `/bin/bash` or `cmd.exe`. | Use explicit `tools.codegeist-shell` wrapper config when present, otherwise platform defaults. Defer automatic shell discovery. |
 | Cwd policy | OpenCode asks external-directory permission; Pi path policy is broader; mini uses env cwd; Agent Utils lacks containment. | Hard reject cwd escape under Codegeist workingDir. |
 | Timeout | OpenCode, Pi, mini, Agent Utils all have timeout evidence. Aider does not. | Required in T007_04. |
 | stdout/stderr | OpenCode, Pi, and mini merge output; Agent Utils captures separately. T007 asks for bounded stdout/stderr summaries. | Capture separately and render both in one summary. |
@@ -645,7 +656,7 @@ explicitly rescoped:
 - tree-sitter shell command scanning;
 - external-directory approval instead of hard rejection;
 - plugin hooks or extension tool overrides;
-- configured shell discovery;
+- automatic shell discovery;
 - background processes or persistent shell sessions;
 - Docker/Podman/SWE-bench environments;
 - git auto-add/auto-commit/dirty-state management;
@@ -659,8 +670,8 @@ Resolve these before writing Java source:
 
 - Should the shell input field be named `cwd` to match Codegeist task wording, or
   `workdir` to align with OpenCode?
-- Should timeout input be `timeoutMillis` for fast tests and OpenCode parity, or a
-  simpler duration/seconds field?
+- Should timeout input use a millisecond field for OpenCode parity, or a simpler
+  duration/seconds field? Codegeist now uses `timeoutSeconds`.
 - Should timeout be `completed` with `Timed out: true` or `failed` in
   `ToolSessionPart`? Current evidence prefers completed result text, but the
   existing Codegeist status model may make failed easier for command-boundary

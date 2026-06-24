@@ -28,11 +28,15 @@ docs:
   analysis, Spring interaction notes, diagrams, and task handoff value.
 - `provider-configuration.md` - provider configuration source map, Spring binding,
   direct YAML loading, validation flow, tests, and sharp edges.
-- `local-file-tools.md` - local read/list/glob/grep/write/edit callback architecture,
-  MCP callback bridge, source map, recording behavior, and extension guidance.
+- `local-file-tools.md` - local read/list/glob/grep/write/edit/shell callback
+  architecture, MCP callback bridge, source map, recording behavior, and extension
+  guidance.
 - `edit-tool.md` - detailed `codegeist_edit` contract, planning algorithm,
   containment guard, text normalization, stale-write protection, preview settings,
   tests, and sharp edges.
+- `shell-tool.md` - detailed `codegeist_shell` contract, direct config, process
+  lifecycle, timeout behavior, session recording, native metadata, cross-platform
+  ask-driven smoke harness, and sharp edges.
 
 ## Current System State
 
@@ -50,7 +54,7 @@ sends one prompt to the first configured provider with that provider config's
 default runtime model; with `-c/--continue`, it appends the prompt, bounded local or
 MCP tool activity, and provider response to the newest session in
 `.codegeist/session.json`. The current tool slice exposes Codegeist-owned local
-read/list/glob/grep/write/edit file callbacks and lazily opened MCP callbacks to
+read/list/glob/grep/write/edit/shell callbacks and lazily opened MCP callbacks to
 provider calls through prompt-scoped Spring AI tool callbacks. This is not yet an
 OpenCode-style coding-agent loop: Codegeist does not own a repeated
 model/tool/model controller, streaming event loop, permission loop, or multi-step
@@ -79,7 +83,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local-file-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama provider dependency is
 used programmatically instead of through global Spring AI auto-configuration.
@@ -123,7 +127,7 @@ Implemented Java package:
 | `ai.codegeist.app.config` | Top-level config root models, the central root parser, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
 | `ai.codegeist.app.mcp` | Lazy MCP adapter, prompt-scoped MCP run handle, Spring AI/MCP client factory, and closeable client handle for configured `stdio` and `streamable_http` clients |
 | `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
-| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write/edit Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
+| `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write/edit/shell Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
@@ -133,8 +137,8 @@ No other `ai.codegeist.*` application packages currently exist in source code.
 startup to `SpringApplication.run`. GraalVM metadata is kept out of Java code in
 `src/main/resources/META-INF/native-image/`: `resource-config.json` includes
 `logback.xml` and `META-INF/build-info.properties`, and `reflect-config.json`
-registers config root elements and config POJOs for Jackson binding in the native
-binary.
+registers config root elements, config POJOs, session model types, and native-reachable
+local tool input records for Jackson binding in the native binary.
 
 ```mermaid
 flowchart TD
@@ -281,11 +285,14 @@ Current behavior:
   ignored-file behavior, write protection, or symlink policy beyond that tested guard
   switch.
 - `ToolsRootElement` parses optional direct `codegeist.yml` `tools:` objects into
-  `ToolsConfig`. The first implemented nested payload is `codegeist-edit`, modeled by
+  `ToolsConfig`. Implemented nested payloads are `codegeist-edit`, modeled by
   `CodegeistEditToolConfig` with nullable `diff-preview-lines` and
-  `diff-preview-chars`. `CodegeistEditToolSettings` applies runtime defaults of 6
-  lines and half of `ToolOutputBounds.MAX_PREVIEW_CHARS`, falls back for non-positive
-  values, and caps configured values by existing global output bounds.
+  `diff-preview-chars`, and `codegeist-shell`, modeled by `CodegeistShellToolConfig`
+  with optional `command-prefix` plus positive `default-timeout-seconds`.
+  `CodegeistEditToolSettings` applies runtime defaults of 6 lines and half of
+  `ToolOutputBounds.MAX_PREVIEW_CHARS`, falls back for non-positive values, and caps
+  configured values by existing global output bounds. `CodegeistShellToolSettings`
+  applies platform wrapper defaults and the 120-second configured timeout fallback.
 - `WorkspaceResolver` is a Spring component under `ai.codegeist.app.tool`. It reads
   the active `CodegeistConfig`, uses `${user.dir}` as the process working directory,
   returns that directory when no workspace override is configured, normalizes
@@ -301,12 +308,12 @@ Current behavior:
   Bounds return strings or integer limits only; no truncation metadata object exists.
 - `CodegeistLocalTools` is a Spring component under `ai.codegeist.app.tool`. It is
   the generic callback assembler for Codegeist-owned local Spring AI callbacks,
-  including the six implemented file callbacks:
+  including the six implemented file callbacks plus one shell callback:
   `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`,
-  `codegeist_write`, and `codegeist_edit`. Package-private Spring components
+  `codegeist_write`, `codegeist_edit`, and `codegeist_shell`. Package-private Spring components
   `CodegeistReadFileTool`, `CodegeistListFileTool`, `CodegeistGlobFileTool`,
-  `CodegeistGrepFileTool`, `CodegeistWriteFileTool`, and `CodegeistEditFileTool` own
-  each operation and its callback name, while the
+  `CodegeistGrepFileTool`, `CodegeistWriteFileTool`, `CodegeistEditFileTool`, and
+  `CodegeistShellTool` own each operation and its callback name, while the
   package-private Spring component `CodegeistFileToolSupport` owns shared JSON
   parsing, schema, active workspace lookup, path, configured-charset text readers,
   binary, and glob helpers.
@@ -331,10 +338,16 @@ Current behavior:
   rejects outside-workspace targets before reading or writing by default, allows that
   containment guard to be disabled only by `workspace.dir-guard-disabled: true`,
   preserves BOM/CRLF style, and records a bounded diff summary whose compact diff
-  preview can be tuned through `tools.codegeist-edit` direct config.
-  `CodegeistLocalToolCallback` is the
-  package-local wrapper that translates handled local tool failures into bounded
-  failed tool parts.
+  preview can be tuned through `tools.codegeist-edit` direct config; shell runs one
+  local process through the `tools.codegeist-shell` configured host wrapper when set,
+  otherwise through `cmd.exe /c` on Windows or `sh -lc` elsewhere, closes stdin,
+  merges stderr into stdout, reports the exit code, applies optional `timeoutSeconds`
+  with a configurable `tools.codegeist-shell.default-timeout-seconds` fallback,
+  records timed-out commands as completed results with `Timed out: true`, and stores a
+  bounded completed shell summary without workspace cwd containment.
+  `CodegeistLocalToolCallback` is the package-local wrapper that translates handled
+  local tool failures into bounded failed tool parts and keeps completed local-tool
+  output bounded before returning or recording it.
 - `CodegeistMcpAdapter` is a Spring `@Service` under `ai.codegeist.app.mcp`. It is
   intentionally lazy: config parsing, transport-type validation, Spring context
   startup, and `--show-config` do not open MCP clients. `openRun(CodegeistConfig)`
@@ -398,11 +411,12 @@ Current behavior:
   part types are `TextSessionPart`, `CompactionSessionPart`, and the additive
   `ToolSessionPart` for bounded completed or failed tool activity. Tool parts persist
   only the tool name, nested `ToolSessionPart.ToolSessionPartStatus`, and bounded
-  `outputPreview`. Local file callbacks and wrapped MCP callbacks can now record
-  these bounded parts. Structured patch is intentionally deferred after T007_04
-  research selected the Pi-style exact edit path for current file mutation; shell,
-  reasoning, and step parts are deferred until focused tool tasks add the matching
-  execution paths. `SessionStore`
+  `outputPreview`. Local file callbacks, the local shell callback, and wrapped MCP
+  callbacks can now record these bounded parts. Structured patch is intentionally
+  deferred after T007_04 research selected the Pi-style exact edit path for current
+  file mutation; reasoning, step, shell-duration, process-id, and full-output
+  side-file parts are deferred until focused tool tasks add the matching execution
+  paths. `SessionStore`
   is a Lombok getter/setter/builder class with a default empty session list;
   session, message, and existing part model entries stay records or Jackson-bound
   classes as implemented. The JSON mapper registers Java time support, emits ISO
@@ -459,9 +473,11 @@ resolver can fall back later, and rejects a present non-object `workspace:` root
 a focused validation message.
 
 `CodegeistToolsConfigTest` proves direct `codegeist.yml` can load optional
-`tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars`, allows an empty
-`tools:` root, and rejects a present non-object `tools:` root with a focused
-validation message.
+`tools.codegeist-edit.diff-preview-lines` and `diff-preview-chars` plus optional
+`tools.codegeist-shell.command-prefix` and `default-timeout-seconds`, allows an empty
+`tools:` root, rejects blank shell prefix entries and non-positive shell default
+timeouts through Bean Validation, and rejects a present non-object `tools:` root with
+a focused validation message.
 
 `CodegeistProviderConfigTest` proves the supported `ollama` and `openai` provider
 types map through the explicit Java registry to the
@@ -530,15 +546,18 @@ without treating those configured values as policy violations.
 `ToolOutputBoundsTest` proves deterministic preview capping, line capping, result
 limit capping, read-limit defaults and caps, and normalized bounded error previews.
 
-`CodegeistLocalToolsTest` uses temp-directory fixtures to prove the six local file
-callbacks expose stable names and schemas, resolve relative paths from the active
-workspace, return bounded model-visible text, record the same bounded preview in
-`ToolSessionPart`, and handle focused read/list/glob/grep/write/edit success and
-failure paths without provider calls. Edit coverage includes exact single and
-multi-edit replacement, no partial mutation, workspace and symlink escape rejection,
-invalid input failures, ambiguous or missing match failures, stale-byte checking,
-BOM/CRLF preservation, bounded diff previews, and configured edit diff line and
-character caps.
+`CodegeistLocalToolsTest` uses temp-directory fixtures to prove the local file and
+shell callbacks expose stable names and schemas, resolve relative paths from the
+active workspace, record tool output in `ToolSessionPart`, and handle focused
+read/list/glob/grep/write/edit/shell success and failure paths without provider
+calls. Edit coverage includes exact single and multi-edit replacement, no partial
+mutation, workspace and symlink escape rejection, invalid input failures, ambiguous
+or missing match failures, stale-byte checking, BOM/CRLF preservation, bounded diff
+previews, and configured edit diff line and character caps. Shell coverage includes
+successful merged stdout/stderr capture, relative cwd execution, absolute cwd outside
+the workspace, configured wrapper prefix resolution, platform-default wrapper
+fallback, non-zero exit as a completed result, blank command failures, and full
+bounded output persistence.
 
 `CodegeistToolServiceTest` proves one prompt-scoped tool run exposes local callbacks
 through `CodegeistChatExecutionContext`, includes configured MCP callbacks, records
@@ -612,6 +631,7 @@ harness. It packages native artifacts into
 `target/dist/codegeist-<platform>.<extension>`, unpacks native archives into a
 fresh temp directory, runs `--version`, runs native `--show-config`, delegates
 deterministic ask-driven file-edit checks to `scripts/tests/file-edit-ask-smoke.ps1`,
+delegates deterministic ask-driven shell checks to `scripts/tests/shell-ask-smoke.ps1`,
 and can optionally run a real Ollama-backed native `ask` smoke.
 
 `scripts/tests/native-smoke.ps1` is the Linux native smoke wrapper used by
@@ -731,7 +751,11 @@ Java source:
 - Workspace and file-access policy beyond active workspace resolution and the stored
   session `workingDir` value.
 - Patch/edit proposal flow.
-- Controlled shell execution.
+- Broader shell controls beyond the first simple one-shot `codegeist_shell`, such as
+  permission prompts, command scanning, process-tree timeout cleanup, PTY, persistent
+  shells, background process registries, automatic shell discovery, sandbox
+  guarantees, and full-output side files. Configured `tools.codegeist-shell` wrappers
+  are explicit host-side argv prefixes, not a Codegeist-owned sandbox policy.
 - Storage ports or adapters beyond local `.codegeist/session.json` persistence.
 - CLI/Spring Shell commands beyond `--version`, `--show-config`, and `ask`.
 - Headless server endpoints.
