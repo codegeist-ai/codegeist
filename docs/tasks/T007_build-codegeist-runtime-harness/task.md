@@ -163,9 +163,14 @@ implementation tests need them.
   `ask-project-question-catalog.md`, `ask-project-research.md`, and
   `opencode-shell-tool-comparison.md`. Its child tasks split the work into exact
   edit, structured patch, shell, and final documentation/verification slices.
-- `T007_05_add-agent-control-loop.md` - add the first Codegeist-owned
+- `T007_05_add-agent-control-loop/task.md` - add the first Codegeist-owned
   model/tool/model control loop so tool results can drive model continuation instead
-  of relying only on a single provider call with prompt-scoped callbacks.
+  of relying only on a single provider call with prompt-scoped callbacks. Its
+  research docs include `ask-project-question-catalog.md`,
+  `ask-project-research.md`, `opencode-agent-loop.md`, and `pi-agent-loop.md`
+  plus `aider-agent-loop.md` with inline Mermaid diagrams for the Pi and Aider
+  loop translations. Its detailed implementation handoff is
+  `implementation-plan.md`.
 - `T007_06_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,
   renders, updates, and saves the same session store on top of the agent loop.
 - `T007_07_verify-chat-file-tool-harness.md` - run focused and broad verification,

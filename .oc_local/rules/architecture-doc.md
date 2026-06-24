@@ -100,6 +100,9 @@ specification documentation under `docs/developer/architecture/` and
 - Keep implemented and planned concepts visibly separate.
 - Prefer concrete file paths and class names over vague descriptions.
 - Keep diagrams small enough for a coding agent to scan quickly.
+- In Mermaid `sequenceDiagram` blocks, do not use reserved Mermaid keywords such
+  as `loop` as participant aliases. Choose explicit aliases like `AgentLoop` so
+  diagrams render reliably in Mermaid CLI and Markdown previews.
 - Keep Mermaid class diagrams readable on a single DIN A4 landscape page when
   rendered or printed. Split large diagrams into focused views instead of forcing
   many classes onto one page.

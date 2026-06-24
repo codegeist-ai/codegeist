@@ -16,7 +16,7 @@ save the same file.
 
 ## Dependencies
 
-- Depends on `T007_05_add-agent-control-loop.md` so prompt submission can drive the
+- Depends on `T007_05_add-agent-control-loop/task.md` so prompt submission can drive the
   Codegeist-owned model/tool/model loop instead of only a one-turn provider call.
 
 ## Scope

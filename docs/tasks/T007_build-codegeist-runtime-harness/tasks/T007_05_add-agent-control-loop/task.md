@@ -85,6 +85,14 @@ task test
 
 ## Implementation Notes
 
+- Use `implementation-plan.md` as the detailed coding handoff for the planned
+  test-first implementation sequence, source changes, Spring AI message shape,
+  loop algorithm, risks, and verification commands.
+- Use `ask-project-question-catalog.md` for the repeatable third-party question
+  set, `ask-project-research.md` for the answered source-backed comparison,
+  `opencode-agent-loop.md` for the focused OpenCode loop translation notes, and
+  `pi-agent-loop.md` plus `aider-agent-loop.md` for focused loop translation
+  notes.
 - Treat OpenCode as behavior evidence only: preserve the loop shape and observable
   lifecycle, not the implementation architecture.
 - Prefer the smallest synchronous loop first. Streaming, cancellation, approval
@@ -95,3 +103,31 @@ task test
 - If Spring AI's current `ChatResponse` does not expose enough portable tool-call
   details for Codegeist-owned dispatch, add the smallest internal test seam first
   before changing provider-facing production code.
+
+## Source Notes
+
+- `ask-project-question-catalog.md` is the source-backed research question catalog
+  for Aider, OpenCode, Pi, mini-SWE-agent, and Spring AI Agent Utils. Keep future
+  T007_05 third-party questions in this directory so the agent-loop handoff stays
+  local to the task.
+- `ask-project-research.md` answers the catalog across all five projects and
+  records the accepted Codegeist translation, test seams, deferred work, and
+  caveats for the implementation pass.
+- `implementation-plan.md` is the detailed T007_05 implementation handoff. It
+  records the planned `CodegeistAgentLoopService`, `CodegeistChatTurnRequest`, raw
+  `ChatResponse` seam, provider-model message-history call contract, sequential
+  tool dispatch loop, max-round guard, focused tests, architecture-doc updates,
+  risks, and verification commands.
+- `opencode-agent-loop.md` is the focused OpenCode behavior map for the
+  model/tool/model loop. Use it when implementing the loop or updating the
+  architecture docs to distinguish Codegeist-owned dispatch from Spring AI's
+  internal tool-calling behavior.
+- `pi-agent-loop.md` is the focused Pi behavior map for a small linear owned loop.
+  Its Mermaid diagrams are embedded directly in that markdown file, so the runtime
+  sequence, stop/continue states, and Codegeist translation can be reviewed without
+  following external diagram files or rereading the full third-party analysis.
+- `aider-agent-loop.md` is the focused Aider behavior map for the reflection loop
+  around model text, app-owned edits, shell/test observations, and bounded
+  reflection retries. Its Mermaid diagrams are embedded directly in markdown and
+  are intended as cautionary evidence for what Codegeist should not copy into a
+  typed tool-call loop.

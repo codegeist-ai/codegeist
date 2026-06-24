@@ -227,10 +227,17 @@
   model invoke the remote MCP tool and persist a completed `ToolSessionPart`. SSE,
   OAuth, server management, resources, prompts, public timeout config, and
   external-network-dependent MCP tests remain out of scope.
-- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_05_add-agent-control-loop.md`
-  is the planned follow-up for the actual OpenCode-style loop translation. It should
-  add Codegeist-owned model/tool/model continuation on top of the current one-turn
-  callback harness instead of reopening `T007_03_04`.
+- `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_05_add-agent-control-loop/task.md`
+  is the planned follow-up for the actual OpenCode-style loop translation. Its
+  local directory now contains `ask-project-question-catalog.md`,
+  `ask-project-research.md`, `opencode-agent-loop.md`, `pi-agent-loop.md`, and
+  `aider-agent-loop.md`, with Pi and Aider Mermaid diagrams embedded directly in
+  markdown. `implementation-plan.md` is the detailed coding handoff for the
+  planned test-first loop implementation, including the raw `ChatResponse` seam,
+  Spring AI message-history shape, sequential tool dispatch, max-round guard, and
+  verification commands. The task should add Codegeist-owned model/tool/model
+  continuation on top of the current one-turn callback harness instead of reopening
+  `T007_03_04`.
 - `CodegeistConfigYamlMapper` is the concrete Spring service and Jackson mapper
   used by the config service for direct `codegeist.yml` parsing, empty-safe source
   tree loading, list-backed keyed element rendering, and direct YAML output.
@@ -573,8 +580,8 @@
   `ShellTools`, MCP filesystem internals, permission prompts, command scanning,
   background shell process management, and structured patch semantics remain future
   work behind Codegeist-owned `codegeist_*` callbacks if they are ever needed.
-  Remaining parent-level T007 children are `T007_05_add-agent-control-loop.md`,
-  `T007_06_add-terminal-tui-over-chat-file.md`, and
+  Remaining parent-level T007 children are `T007_05_add-agent-control-loop/task.md`
+  with its `implementation-plan.md`, `T007_06_add-terminal-tui-over-chat-file.md`, and
   `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
   server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory,
   and subagents.
@@ -727,9 +734,10 @@
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
 - Continue the next T007 implementation from the remaining child tasks after
-  `T007_04`, especially `T007_05_add-agent-control-loop.md` for the
-  model/tool/model continuation loop and `T007_06_add-terminal-tui-over-chat-file.md`
-  for the JLine terminal UI over the same session store.
+  `T007_04`, especially `T007_05_add-agent-control-loop/implementation-plan.md` for
+  the model/tool/model continuation loop and
+  `T007_06_add-terminal-tui-over-chat-file.md` for the JLine terminal UI over the
+  same session store.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`
