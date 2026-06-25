@@ -30,6 +30,9 @@ Test guidance for Codegeist contributors and coding agents.
   It builds and runs a local fixture container, checks the direct MCP callback path,
   then checks the `ask` plus local Ollama path. It is intentionally not part of
   `task test`.
+- `task server:native-smoke` from `app/codegeist` builds the Codegeist Cloud server
+  native executable, starts it on a temporary localhost port, verifies `/health`,
+  and reports native startup timing.
 - Report command duration when a check is slow, platform-specific, or part of a
   smoke-test workflow.
 - Keep smoke scripts non-interactive and make their status plus duration easy to
@@ -52,6 +55,7 @@ Test guidance for Codegeist contributors and coding agents.
 - `scripts/tests/file-edit-ask-smoke.ps1`
 - `scripts/tests/shell-ask-smoke.ps1`
 - `scripts/tests/native-smoke.ps1`
+- `scripts/tests/server-native-smoke.ps1`
 - `scripts/tests/smoke-common.ps1`
 - `scripts/tests/qemu-linux-install-smoke.sh`
 - `scripts/tests/mcp-remote-smoke.ps1`

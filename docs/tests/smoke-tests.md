@@ -17,6 +17,9 @@ Current smoke entrypoints:
 - `task mcp-remote-smoke` - build a local Docker MCP server fixture, start it on a
   localhost-only port, and verify Codegeist's real `streamable_http` MCP callback
   path directly and through `ask` with local Ollama.
+- `task server:native-smoke` - build the Codegeist Cloud server native executable,
+  start it on a temporary localhost port, verify `GET /health`, and report native
+  server startup timing.
 - `task qemu-windows-smoke` - sync the repo into the Windows QEMU VM, build Windows
   native, package it, smoke the extracted native archive, and run
   `codegeist-install-windows.ps1` against local release-shaped assets.
@@ -55,6 +58,7 @@ Native status: passed|failed|skipped
 Install status: passed|failed|skipped
 Native reason: none|<reason>
 MCP remote smoke status: passed|failed
+Server native smoke status: passed|failed
 ```
 
 Smoke output must also include duration lines for every meaningful subcheck. Use
@@ -90,6 +94,10 @@ Labels should be stable and specific, for example:
 - `mcp remote ollama start`
 - `mcp remote ask ollama test`
 - `mcp remote smoke total`
+- `server native compile`
+- `server native startup`
+- `server native smoke total`
+- `windows ollama reachability`
 - `windows native compile`
 - `windows native archive smoke`
 - `windows native version smoke`
@@ -149,9 +157,13 @@ Labels should be stable and specific, for example:
   `codegeist-mcp-remote-smoke:local`, starts a temporary container, starts or reuses
   local Ollama, verifies the direct remote callback path, verifies the `ask` command
   can make Ollama invoke `remote_echo`, and removes the fixture container on exit.
-- Smoke logs stay under `app/codegeist/cli/target/smoke-test`.
+- CLI artifact smoke logs stay under `app/codegeist/cli/target/smoke-test`.
 - Linux QEMU install-smoke assets are staged under
   `app/codegeist/cli/target/smoke-test/qemu-linux-install-assets` and served by a
   temporary host HTTP server only for the duration of the smoke.
+- Server native smoke starts only the temporary server process it is checking. It
+  writes stdout/stderr under `app/codegeist/server/target/smoke-test`, polls the
+  module's bootstrap `/health` contract, and terminates the process after the
+  readiness check.
 - Generated smoke artifacts remain ignored build output unless a task explicitly
   asks for a handoff snapshot.

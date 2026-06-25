@@ -18,7 +18,11 @@ The repository now contains the first runnable application bootstrap for that
 vision:
 
 - a compose-based devcontainer setup mounted from the `.devcontainer/` submodule
-- a Spring Boot CLI application under `app/codegeist/cli` built in the devcontainer with Java 25 and GraalVM Community 25
+- a shared Maven Java workspace under `app/codegeist` with Java 25 and GraalVM
+  Community 25
+- a Spring Boot CLI application under `app/codegeist/cli`
+- a Spring Boot server application under `app/codegeist/server` with a first local
+  `/health` endpoint for the planned Codegeist Cloud control plane
 - Spring Shell commands for `--version`, direct `codegeist.yml` `--show-config`,
   and one-shot `ask`
 - direct `codegeist.yml` parsing for typed `provider:` entries and the first
@@ -53,14 +57,17 @@ Key properties:
 ## Repository Layout
 
 - `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
-- `app/codegeist/cli/` - Spring Boot CLI bootstrap application, Maven project files, and local `Taskfile.yml`
+- `app/codegeist/pom.xml` - shared Maven parent and aggregator for Codegeist Java applications
+- `app/codegeist/Taskfile.yml` - parent entrypoints for CLI and server builds/tests
+- `app/codegeist/cli/` - Spring Boot CLI bootstrap application, Maven module files, and local `Taskfile.yml`
+- `app/codegeist/server/` - Spring Boot server bootstrap application, Maven module files, and local `Taskfile.yml`
 - `scripts/install/` - curl-downloadable release install scripts for Linux,
   macOS, and Windows
 - `scripts/tests/` - local Linux, Windows QEMU, native, MCP remote, and final smoke-suite scripts
 - `docs/memory-bank/chat.md` - lightweight project memory for the repository
 - `README.md` - project overview
 
-## Application Bootstrap
+## CLI Application Bootstrap
 
 The first application milestone is an executable Spring Boot jar that can be
 built and started inside `app/codegeist/cli/` with:
@@ -105,6 +112,34 @@ Implementation notes:
   `--show-config`, and `ask`
 - `application.yaml` is only Spring Boot/Shell configuration; Codegeist runtime
   config is loaded from explicit `codegeist.yml` paths
+
+## Server Application Bootstrap
+
+The first Codegeist Cloud server module lives under `app/codegeist/server` and can
+be built and started with:
+
+```bash
+task run
+```
+
+From the repository root, the equivalent command is:
+
+```bash
+task -t app/codegeist/server/Taskfile.yml run
+```
+
+The server currently exposes only a minimal unauthenticated health endpoint:
+
+```text
+GET /health -> {"status":"ok"}
+```
+
+The shared Java parent workspace lives under `app/codegeist`. To run both CLI and
+server test suites through their module Taskfiles:
+
+```bash
+task -t app/codegeist/Taskfile.yml test
+```
 
 ## Local Smoke Tests
 
