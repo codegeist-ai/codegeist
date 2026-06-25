@@ -49,9 +49,10 @@ small before remote provider account work begins.
   `OllamaChatModel` when the focused test needs those classes.
 - `CodegeistChatService` should receive the selected raw `ProviderConfig` separately
   from `CodegeistChatRequest`; the request carries only runtime model and prompt.
-  The service asks that provider config to create the matching `CodegeistChatModel`.
-- Keep provider-specific imports isolated in `OllamaChatModel`. The generic chat
-  service should depend only on `ProviderConfig` and `CodegeistChatModel`.
+  The service maps that provider config to the matching `CodegeistChatModel`.
+- Keep provider-specific Spring AI imports isolated in `OllamaChatModel`. The generic
+  chat service may depend on Codegeist-owned provider adapter classes for its narrow
+  dispatch.
 - `CodegeistChatService` should create the selected provider's Codegeist chat model lazily
   inside the call path. Loading config, running `--show-config`, or starting the
   Spring context must not pull models, create every configured provider client, or

@@ -725,8 +725,8 @@ Implementation:
 - Existing method delegates to the overload with
   `CodegeistChatExecutionContext.empty(Path.of("."))` or directly to the model
   without tools.
-- The overload asks `providerConfig.createChatModel()` and calls
-  `chatModel.call(request, context)`.
+- The overload creates the provider model through the chat service's adapter dispatch
+  and calls `chatModel.call(request, context)`.
 - Response extraction remains first result output text.
 
 ### `CodegeistChatModel<T extends ProviderConfig>`

@@ -31,9 +31,10 @@ The current provider implementation is intentionally small:
 - `ProvidersRootElement` uses an explicit Java registry to map registered provider
   type constants to config classes. It maps the raw YAML object into the matching
   class without branching on JVM versus native-image runtime.
-- `OllamaProviderConfig` creates the implemented local Ollama chat model.
-- `OpenAiProviderConfig` is currently config-only for runtime chat; the OpenAI
-  provider feature tests call selected HTTP endpoints directly.
+- `CodegeistChatService` creates the implemented local Ollama and OpenAI chat models
+  from the selected access-only provider config. OpenAI provider feature tests still
+  call selected media/model HTTP endpoints directly when they do not need the
+  Codegeist chat runtime.
 - `CodegeistChatRequest` carries the runtime model and prompt. The selected
   provider is passed separately to `CodegeistChatService`.
 
@@ -42,7 +43,7 @@ Implemented provider config types:
 | Type | Config class | Runtime status |
 | --- | --- | --- |
 | `ollama` | `OllamaProviderConfig` | Local chat model implemented. |
-| `openai` | `OpenAiProviderConfig` | Config binding implemented; provider feature tests cover selected remote endpoints. |
+| `openai` | `OpenAiProviderConfig` | OpenAI chat model implemented; provider feature tests cover selected remote endpoints and one explicit tool-call smoke. |
 
 ## Category Contract
 
@@ -84,6 +85,7 @@ because they do not call local services or hosted APIs.
 | `OllamaProviderTest` | Runs config binding and missing-base-url validation. | `local` for one local Ollama chat call. |
 | `AskCommandsTest` | Skips the whole class. | `local` at class level for one Spring Boot command test backed by local Ollama. |
 | `AskCommandsMcpRemoteSmokeIT` | Not included by the default Surefire test name patterns; run only by `task mcp-remote-smoke`. | `local` at class level for one Spring Boot `ask` command test backed by local Ollama plus the Docker MCP fixture. |
+| `AskCommandsOpenAiToolSmokeIT` | Not included by the default Surefire test name patterns; run only by explicit selector. | `remote_paid` at class level for one Spring Boot `ask` command test backed by OpenAI plus local `codegeist_write`. |
 | `LocalOllamaProviderIT` | Not included by the default Surefire test name patterns; run only by explicit selector. | No category gate; it is an explicit live integration test. |
 
 ## Why These Tests Exist
@@ -223,6 +225,22 @@ can call all OpenAI provider feature methods; missing required credentials or
 speech-to-text fixture generation failures fail the selected test instead of
 skipping it.
 
+### Hosted OpenAI Tool-Call Smoke
+
+Use this only after an explicit cost and rate-limit decision for the selected OpenAI
+account and model:
+
+```bash
+CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=AskCommandsOpenAiToolSmokeIT
+```
+
+Why: this runs one Spring Boot `ask` command through `OpenAiChatModel`, exposes the
+normal Codegeist local tool callbacks to OpenAI with Spring AI internal tool
+execution disabled, asks the model to call `codegeist_write`, and asserts both the
+created workspace file and the persisted completed `ToolSessionPart`. The test writes
+only SpEL environment references to its temporary `codegeist.yml`; it does not write
+the API-key value to disk.
+
 ### Full OpenAI Remote-Paid Verification
 
 Use this when the current account is intentionally allowed to spend quota on every
@@ -245,21 +263,24 @@ hosted-provider quota and may fail when credentials are missing, the account has
 available quota, a hard billing limit is reached, organization verification is
 missing for image models, or `espeak-ng` cannot create the missing audio fixture.
 
-The latest explicit full run used the built-in low-cost defaults and an API key from
-the environment:
+The latest explicit OpenAI runtime tool-call smoke used an API key from the
+environment:
 
 ```text
 CODEGEIST_TEST_OPENAI_APIKEY=<set in the environment>
 CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid
+task test TEST=AskCommandsOpenAiToolSmokeIT
 ```
 
-Current blocker:
+Result:
 
 ```text
-Tests run: 6, Failures: 4, Errors: 0, Skipped: 0
-OpenAI returned 401 invalid_api_key for list models, image generation,
-text-to-speech, and speech-to-text.
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
 ```
+
+The full `OpenAiProviderTest` media and model-list run was not repeated in that
+tool-call smoke pass; run it separately when the current account is intentionally
+allowed to spend quota on every implemented OpenAI provider feature test.
 
 ## Hosted OpenAI Test Inputs
 
@@ -270,7 +291,9 @@ overrides for base URL or model.
 | Environment variable | Used by | Meaning |
 | --- | --- | --- |
 | `CODEGEIST_TEST_OPENAI_APIKEY` | `remote_free`, `remote_paid` | API key for explicitly selected OpenAI checks. |
-| `CODEGEIST_TEST_OPENAI_BASE_URL` | `remote_free`, `remote_paid` | OpenAI-compatible base URL; defaults to `https://api.openai.com`. |
+| `CODEGEIST_TEST_OPENAI_BASE_URL` | `remote_free`, `remote_paid` | OpenAI-compatible base URL; defaults to the Spring AI OpenAI default when omitted by runtime adapter tests and to `https://api.openai.com` in direct HTTP feature tests. |
+| `CODEGEIST_TEST_OPENAI_ORGANIZATION_ID` | `remote_paid` | Optional OpenAI organization id used by the OpenAI chat adapter smoke. |
+| `CODEGEIST_TEST_OPENAI_PROJECT_ID` | `remote_paid` | Optional OpenAI project id sent as the `OpenAI-Project` header by the OpenAI chat adapter smoke. |
 | `CODEGEIST_TEST_OPENAI_IMAGE_MODEL` | `remote_paid` | Image model; defaults to `gpt-image-1-mini`. |
 | `CODEGEIST_TEST_OPENAI_IMAGE_SIZE` | `remote_paid` | Image size; defaults to `1024x1024`. |
 | `CODEGEIST_TEST_OPENAI_SPEECH_MODEL` | `remote_paid` | Text-to-speech model; defaults to `tts-1`. |

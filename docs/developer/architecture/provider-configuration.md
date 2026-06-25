@@ -58,9 +58,10 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ToolsConfig.java` | Direct tool settings payload currently containing `codegeist-edit` and `codegeist-shell`. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistEditToolConfig.java` | `tools.codegeist-edit:` payload for edit diff preview line and character limits. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistShellToolConfig.java` | `tools.codegeist-shell:` payload for shell wrapper argv and default timeout seconds. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract base class for provider map values. Holds common access fields, exposes read-only output `type` through concrete constants, and declares provider-owned `defaultModel()` plus `createChatModel()`. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Access config class for local Ollama settings, the `llama3.2:1b` default runtime model, and the concrete config-owned chat model seam. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Access config class for OpenAI settings and the `gpt-5-mini` default runtime model; chat-model creation is not implemented yet. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract base class for provider map values. Holds common access fields, exposes read-only output `type` through concrete constants, and declares provider-owned `defaultModel()`. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Access config class for local Ollama settings and the `llama3.2:1b` default runtime model. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Access config class for OpenAI settings and the `gpt-5-mini` default runtime model. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/chat/OpenAiChatModel.java` | OpenAI chat adapter that exposes Codegeist tool callbacks as Spring AI OpenAI tool definitions while keeping internal tool execution disabled. |
 | `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-config.json` | GraalVM reflection metadata that lets Jackson instantiate config root, provider, MCP, workspace, and tools POJOs in native images. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistConfigYamlMapper.java` | Spring service and Jackson mapper for direct `codegeist.yml` parsing, empty-safe source-tree loading, list-backed keyed element rendering, and direct YAML output. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistYamlExpressionEvaluator.java` | Spring service that receives `CodegeistConfigYamlMapper` and evaluates SpEL in direct-YAML string scalar values only. |
@@ -156,7 +157,10 @@ clients as a list. `CodegeistConfigRootParser` copies the YAML key into the inte
 The `tools:` root is a single YAML object for Codegeist-owned local tool settings.
 It is not a user-keyed catalog, so callback-specific settings live under stable
 callback-derived keys. Current implemented settings cover `codegeist_edit` preview
-tuning and the `codegeist_shell` host wrapper plus default timeout:
+tuning and the `codegeist_shell` host wrapper plus default timeout. The root does
+not include a global disable switch: tools remain available to the agent loop, while
+provider-owned or Spring AI internal tool execution stays disabled in provider
+adapters so Codegeist always owns dispatch and continuation.
 
 ```yaml
 tools:
@@ -227,7 +231,6 @@ classDiagram
       String baseUrl
       getType() String
       defaultModel() String
-      createChatModel() CodegeistChatModel
     }
 
     class OllamaProviderConfig {
@@ -236,7 +239,6 @@ classDiagram
       String DEFAULT_MODEL
       getType() String
       defaultModel() String
-      createChatModel() CodegeistChatModel
     }
 
     class OpenAiProviderConfig {
@@ -248,7 +250,6 @@ classDiagram
       String projectId
       getType() String
       defaultModel() String
-      createChatModel() CodegeistChatModel
     }
 
     class McpClientConfig {
@@ -347,10 +348,11 @@ callers that require a provider choose the failure policy at their boundary.
 Concrete provider classes add provider-specific data fields and own a
 provider-specific `defaultModel()` runtime fallback. `OpenAiProviderConfig` adds
 `api-key`, `organization-id`, and `project-id`, and returns `gpt-5-mini` as its
-default runtime model. `OllamaProviderConfig` relies on the common access fields,
-returns `llama3.2:1b`, and creates the first concrete chat model. Stored provider
+default runtime model. `OllamaProviderConfig` relies on the common access fields and
+returns `llama3.2:1b`. `CodegeistChatService` owns the narrow runtime dispatch from
+those config subclasses to `OpenAiChatModel` or `OllamaChatModel`. Stored provider
 config remains an access data contract and does not contain YAML model names,
-generation options, enablement, or completion-path routing.
+generation options, enablement, chat adapter factories, or completion-path routing.
 
 ```mermaid
 classDiagram
@@ -474,7 +476,6 @@ classDiagram
       String baseUrl
       getType() String
       defaultModel() String
-      createChatModel() CodegeistChatModel
     }
 
     class OllamaProviderConfig {
@@ -482,7 +483,6 @@ classDiagram
       String DEFAULT_MODEL
       isBaseUrlConfigured() boolean
       defaultModel() String
-      createChatModel() CodegeistChatModel
     }
 
     class OpenAiProviderConfig {
@@ -492,7 +492,6 @@ classDiagram
       String projectId
       String DEFAULT_MODEL
       defaultModel() String
-      createChatModel() CodegeistChatModel
     }
 
     CodegeistConfigService --> CodegeistConfigRootParser : delegates top-level roots

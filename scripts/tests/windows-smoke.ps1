@@ -16,9 +16,6 @@
 #   cl.exe is already available, then tries common Visual Studio Build Tools paths.
 # - NativeTimeoutSeconds, FileEditTimeoutSeconds, and ShellAskTimeoutSeconds bound
 #   native command smoke execution.
-# - AskTimeoutSeconds bounds the real Ollama-backed `ask` smoke.
-# - OllamaBaseUrl points to the host Ollama service. With QEMU user networking,
-#   the Windows guest reaches the Linux host through `http://10.0.2.2:11434`.
 #
 # Side effects:
 # - May rebuild app/codegeist/cli/target/codegeist.exe and write
@@ -36,20 +33,12 @@ param(
 
     [int]$NativeTimeoutSeconds = 5,
 
-    [int]$AskTimeoutSeconds = 60,
-
     [int]$FileEditTimeoutSeconds = 15,
 
-    [int]$ShellAskTimeoutSeconds = 90,
-
-    [string]$OllamaBaseUrl = $env:CODEGEIST_WINDOWS_OLLAMA_BASE_URL
+    [int]$ShellAskTimeoutSeconds = 90
 )
 
 $ErrorActionPreference = "Stop"
-
-if (-not $OllamaBaseUrl) {
-    $OllamaBaseUrl = "http://10.0.2.2:11434"
-}
 
 $platformStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
@@ -189,11 +178,8 @@ if ($NativeMode -ne "skip") {
                 -ExpectedVersion $expected `
                 -SmokeRoot $smokeDir `
                 -NativeTimeoutSeconds $NativeTimeoutSeconds `
-                -AskTimeoutSeconds $AskTimeoutSeconds `
                 -FileEditTimeoutSeconds $FileEditTimeoutSeconds `
-                -ShellAskTimeoutSeconds $ShellAskTimeoutSeconds `
-                -OllamaBaseUrl $OllamaBaseUrl `
-                -RunProviderAskSmoke
+                -ShellAskTimeoutSeconds $ShellAskTimeoutSeconds
 
             $nativeStatus = "passed"
             $nativeReason = "none"

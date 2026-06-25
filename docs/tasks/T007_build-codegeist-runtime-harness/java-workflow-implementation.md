@@ -63,10 +63,10 @@ Relevant Spring AI Agent Utils facts from local source and Repomix:
 Current implemented chat behavior is small and provider-oriented:
 
 - `AskCommands.ask(...)` selects the first configured provider and default model.
-- `CodegeistChatService.chat(ProviderConfig, CodegeistChatRequest)` creates the
-  provider-owned `CodegeistChatModel` and returns only response text.
+- `CodegeistChatService.chat(ProviderConfig, CodegeistChatRequest)` maps the
+  selected access-only provider config to a concrete `CodegeistChatModel` adapter and
+  returns only response text.
 - `CodegeistChatRequest` contains only runtime model and prompt.
-- `ProviderConfig.createChatModel()` creates the provider-specific chat model.
 - `OllamaChatModel` maps `CodegeistChatRequest.model()` to `OllamaChatOptions` and
   calls Spring AI's Ollama model with a simple `Prompt`.
 

@@ -1,7 +1,5 @@
 package ai.codegeist.app.config;
 
-import ai.codegeist.app.chat.CodegeistChatModel;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -29,6 +27,4 @@ public abstract class ProviderConfig extends CodegeistTypedConfigElement<String>
     public abstract String getType();
 
     public abstract String defaultModel();
-
-    public abstract CodegeistChatModel<?> createChatModel();
 }

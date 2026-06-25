@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
 /**
  * Orchestrates one non-streaming chat turn for command and future UI callers.
  *
- * <p>The service keeps provider selection, prompt-scoped tool callback setup,
- * provider invocation, and session-store persistence in one boundary while leaving
- * stdout handling to Spring Shell adapters. It intentionally does not rebuild
+ * <p>The service keeps provider selection, prompt-scoped tool callback setup, the
+ * Codegeist-owned agent loop, and session-store persistence in one boundary while
+ * leaving stdout handling to Spring Shell adapters. It intentionally does not rebuild
  * provider-facing context from stored session history; persisted sessions only record
  * the prompt, bounded tool activity, and assistant response for this T007 slice.
  */
@@ -28,7 +28,7 @@ public class ChatHarnessService {
 
     private final CodegeistConfig config;
 
-    private final CodegeistChatService chatService;
+    private final CodegeistAgentLoopService agentLoopService;
 
     private final CodegeistToolService toolService;
 
@@ -43,7 +43,7 @@ public class ChatHarnessService {
         Path workingDirectory = workspaceResolver.currentWorkspace();
         log.debug("Asking provider type {} with default model {} and tools", providerConfig.getType(), model);
         try (CodegeistToolRun toolRun = toolService.openRun(config, workingDirectory)) {
-            CodegeistChatResponse response = chatService.chat(
+            CodegeistChatResponse response = agentLoopService.run(
                     providerConfig,
                     new CodegeistChatRequest(model, prompt),
                     toolRun.executionContext());

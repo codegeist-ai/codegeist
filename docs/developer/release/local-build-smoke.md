@@ -69,8 +69,8 @@ The Linux smoke command runs:
 - native compile, `target/dist/codegeist-linux-x64.tar.gz` packaging,
   archive extraction into a fresh temp directory, `./codegeist --version`,
   `./codegeist --show-config`, command logs, deterministic file-edit side effects,
-  and real Ollama-backed `ask` from the extracted package when `native-image` is on
-  `PATH`
+  and deterministic shell side effects through fixture-backed `ask` runs when
+  `native-image` is on `PATH`
 
 If `native-image` is missing, the native subcheck is reported as `skipped` unless
 `CODEGEIST_SMOKE_REQUIRE_NATIVE=1` is set.
@@ -167,7 +167,7 @@ pwsh -NoProfile -File scripts/tests/qemu-windows-smoke.ps1
 
 - `auto` - run native smoke only when `native-image` and MSVC Build Tools are
   available.
-- `skip` - skip Windows native smoke and still verify the jar.
+- `skip` - skip Windows native smoke and report the platform smoke as skipped.
 - `required` - fail when native prerequisites are missing.
 
 ## Final Suite

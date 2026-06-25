@@ -49,7 +49,7 @@ class ChatHarnessServiceTest {
 
     private SessionStoreService sessionStoreService;
     private StubCodegeistConfig config;
-    private StubChatService chatService;
+    private StubCodegeistAgentLoopService agentLoopService;
     private StubCodegeistToolService toolService;
     private ChatHarnessService harnessService;
 
@@ -60,11 +60,11 @@ class ChatHarnessServiceTest {
                 new CodegeistSpringAppProperties());
         ReflectionTestUtils.setField(sessionStoreService, "workingDir", tempDir.toString());
         config = new StubCodegeistConfig();
-        chatService = new StubChatService();
+        agentLoopService = new StubCodegeistAgentLoopService();
         toolService = new StubCodegeistToolService();
         harnessService = new ChatHarnessService(
                 config,
-                chatService,
+                agentLoopService,
                 toolService,
                 new StubWorkspaceResolver(config, tempDir),
                 sessionStoreService);
@@ -75,9 +75,9 @@ class ChatHarnessServiceTest {
         CodegeistChatResponse response = harnessService.ask(true, PROMPT);
 
         assertThat(response.content()).isEqualTo(RESPONSE);
-        assertThat(chatService.providerConfig).isSameAs(config.providerConfig);
-        assertThat(chatService.request).isEqualTo(new CodegeistChatRequest(MODEL, PROMPT));
-        assertThat(chatService.context.workingDirectory()).isEqualTo(tempDir.toAbsolutePath().normalize());
+        assertThat(agentLoopService.providerConfig).isSameAs(config.providerConfig);
+        assertThat(agentLoopService.request).isEqualTo(new CodegeistChatRequest(MODEL, PROMPT));
+        assertThat(agentLoopService.context.workingDirectory()).isEqualTo(tempDir.toAbsolutePath().normalize());
 
         SessionStore updated = sessionStoreService.load(sessionStoreService.currentStorePath());
         assertThat(updated.getSessions()).hasSize(1);
@@ -120,11 +120,6 @@ class ChatHarnessServiceTest {
         @Override
         public String defaultModel() {
             return MODEL;
-        }
-
-        @Override
-        public CodegeistChatModel<?> createChatModel() {
-            throw new UnsupportedOperationException("Stub chat service should handle requests");
         }
     }
 
@@ -224,14 +219,18 @@ class ChatHarnessServiceTest {
         }
     }
 
-    private static final class StubChatService extends CodegeistChatService {
+    private static final class StubCodegeistAgentLoopService extends CodegeistAgentLoopService {
 
         private ProviderConfig providerConfig;
         private CodegeistChatRequest request;
         private CodegeistChatExecutionContext context;
 
+        private StubCodegeistAgentLoopService() {
+            super(null);
+        }
+
         @Override
-        public CodegeistChatResponse chat(
+        public CodegeistChatResponse run(
                 ProviderConfig providerConfig,
                 CodegeistChatRequest request,
                 CodegeistChatExecutionContext context) {

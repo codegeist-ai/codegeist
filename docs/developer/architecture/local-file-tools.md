@@ -15,8 +15,9 @@ focused tests.
 This document does not describe provider-specific model internals, permission
 prompts, ignored-file filtering, session-store write protection, command scanning,
 or full workspace sandboxing. Those behaviors are deferred to later focused tasks.
-It also does not describe a full OpenCode-style coding-agent loop; the current
-harness only makes prompt-scoped callbacks available to one provider call.
+The implemented model/tool/model controller is documented in
+`agent-control-loop.md`; this file focuses on the callbacks and recording boundary
+that controller uses.
 
 There is intentionally no `codegeist_patch` callback in the current implementation.
 T007_04 research compared OpenCode, Pi, Aider, mini-SWE-agent, and Spring AI Agent
@@ -37,13 +38,14 @@ edges in more detail than this subsystem overview.
 ## Current Status
 
 Codegeist now exposes local file/shell tools and configured MCP tools to `ask` through
-`ChatHarnessService` and `CodegeistToolService`. `CodegeistToolService.openRun(...)`
-creates one closeable `CodegeistToolRun` per prompt turn, asks
-`CodegeistLocalTools.callbacks(...)` for local Spring AI `ToolCallback` values, opens
-`CodegeistMcpAdapter` for configured MCP callbacks, and gives both callback sources
-one ordered `ToolSessionPart` recorder. Local and MCP callbacks return bounded
-model-visible text and record the same bounded preview. Handled failures also use
-bounded error previews.
+`ChatHarnessService`, `CodegeistAgentLoopService`, and `CodegeistToolService`.
+`CodegeistToolService.openRun(...)` creates one closeable `CodegeistToolRun` per
+prompt request, asks `CodegeistLocalTools.callbacks(...)` for local Spring AI
+`ToolCallback` values, opens `CodegeistMcpAdapter` for configured MCP callbacks, and
+gives both callback sources one ordered `ToolSessionPart` recorder. The agent loop
+selects callbacks by name when the assistant requests tools, while local and MCP
+callbacks return bounded model-visible text and record the same bounded preview.
+Handled failures also use bounded error previews.
 
 Implemented callback names:
 
@@ -331,9 +333,9 @@ scoped to one prompt turn, returns defensive completed-part copies through
 
 ## Callback Assembly Flow
 
-`CodegeistToolService.openRun(...)` is the chat-harness entrypoint. Inside that
-scope, `CodegeistLocalTools.callbacks(...)` remains the local callback assembly seam
-and receives the run's ordered `ToolSessionPart` recorder. The same scope opens
+`CodegeistToolService.openRun(...)` is the chat-harness entrypoint.
+`CodegeistLocalTools.callbacks(...)` remains the local callback assembly seam and
+receives the run's ordered `ToolSessionPart` recorder. The same prompt scope opens
 `CodegeistMcpAdapter` with the active `CodegeistConfig`, wraps returned MCP callbacks
 with `RecordingToolCallback`, and stores the MCP run for cleanup.
 
@@ -367,11 +369,13 @@ shortcuts.
 
 ## End-To-End MCP Tool Invocation Flow
 
-This is the current path from the first provider call to the point where the MCP Java
+This is the current path from prompt-scoped MCP setup to the point where the MCP Java
 SDK client invokes the remote or stdio MCP server. Codegeist does not call MCP server
-tools directly from the chat harness. It assembles Spring AI callbacks, gives those
-callbacks to the provider adapter, and then Spring AI's MCP callback delegates the
-selected tool invocation to the `McpSyncClient` opened for the configured client.
+tools directly from the chat harness. It assembles Spring AI callbacks, gives their
+definitions to the provider adapter, receives assistant tool-call messages, and then
+`CodegeistAgentLoopService` dispatches the selected callback itself. Spring AI's MCP
+callback still delegates the concrete MCP invocation to the `McpSyncClient` opened
+for the configured client.
 
 ```mermaid
 sequenceDiagram
@@ -384,6 +388,7 @@ sequenceDiagram
     participant Provider as SyncMcpToolCallbackProvider
     participant McpRun as CodegeistMcpRun
     participant Run as CodegeistToolRun
+    participant AgentLoop as CodegeistAgentLoopService
     participant ChatService as CodegeistChatService
     participant Model as CodegeistChatModel
     participant SpringModel as Spring AI ChatModel
@@ -407,13 +412,17 @@ sequenceDiagram
     ToolService-->>Harness: CodegeistToolRun
 
     Harness->>Run: executionContext()
-    Harness->>ChatService: chat(providerConfig, request, context)
-    ChatService->>ChatService: providerConfig.createChatModel()
-    ChatService->>Model: call(request, context)
-    Model->>SpringModel: delegate.call(Prompt with context.toolCallbackArray())
+    Harness->>AgentLoop: run(providerConfig, request, context)
+    AgentLoop->>ChatService: rawChat(providerConfig, turnRequest, context)
+    ChatService->>ChatService: createChatModel(providerConfig)
+    ChatService->>Model: call(turnRequest, context)
+    Model->>SpringModel: delegate.call(Prompt with context.toolCallbacks())
     SpringModel->>LLM: first provider request with tool definitions
-    LLM-->>SpringModel: tool-call request with tool name and JSON arguments
-    SpringModel->>Recording: call(toolInputJson)
+    LLM-->>SpringModel: assistant tool-call message
+    SpringModel-->>Model: ChatResponse with tool calls
+    Model-->>ChatService: ChatResponse
+    ChatService-->>AgentLoop: raw ChatResponse
+    AgentLoop->>Recording: call(toolInputJson)
     Recording->>McpCallback: call(toolInputJson)
     McpCallback->>McpCallback: parse JSON and build CallToolRequest
     McpCallback->>Client: callTool(request)
@@ -422,10 +431,17 @@ sequenceDiagram
     Client-->>McpCallback: CallToolResult
     McpCallback-->>Recording: JSON string for MCP content
     Recording->>Recording: bound output and record ToolSessionPart
-    Recording-->>SpringModel: bounded output preview
+    Recording-->>AgentLoop: bounded output preview
+    AgentLoop->>AgentLoop: append ToolResponseMessage
+    AgentLoop->>ChatService: rawChat(providerConfig, continuationTurnRequest, context)
+    ChatService->>Model: call(continuation, context)
+    Model->>SpringModel: delegate.call(Prompt with tool result history)
+    SpringModel->>LLM: provider continuation request
+    LLM-->>SpringModel: final assistant text
     SpringModel-->>Model: ChatResponse
     Model-->>ChatService: ChatResponse
-    ChatService-->>Harness: CodegeistChatResponse
+    ChatService-->>AgentLoop: raw ChatResponse
+    AgentLoop-->>Harness: CodegeistChatResponse
     Harness->>Run: completedToolParts()
     Harness->>Store: saveExchangeToCurrentSession(prompt, response, toolParts)
     Harness->>Run: close()
@@ -444,10 +460,11 @@ The setup half of the flow is lazy and prompt-scoped:
 | Codegeist wrapping | `CodegeistToolService` | Wraps each MCP callback in `RecordingToolCallback` so output bounds and session-part recording are consistent with local tools. |
 
 The execute half starts only if the model selects one of those callback names during
-the provider call. In the current Ollama adapter, `OllamaChatModel.call(...)` builds
-`OllamaChatOptions` with `context.toolCallbackArray()` and then delegates to Spring
-AI. If Spring AI receives a tool-call request from the provider, it calls the selected
-`ToolCallback`. For MCP tools, the selected callback chain is:
+the provider call. Current provider adapters build provider-specific Spring AI
+options with `context.toolCallbacks()` and `internalToolExecutionEnabled(false)`,
+then delegate a message-history `Prompt` to Spring AI. If Spring AI returns an
+assistant tool-call message, Codegeist's loop calls the selected `ToolCallback`. For
+MCP tools, the selected callback chain is:
 
 ```text
 RecordingToolCallback.call(toolInputJson)
@@ -461,15 +478,18 @@ arguments into a map, builds an MCP `CallToolRequest` with the original MCP tool
 and invokes `McpSyncClient.callTool(request)`. It returns the MCP content as a JSON
 string. If the SDK call throws or the MCP response is marked as an error, Spring AI
 raises a tool execution exception; `RecordingToolCallback` catches runtime failures,
-returns a bounded error preview to the model, and records a failed `ToolSessionPart`.
+returns a bounded error preview to the loop, and records a failed `ToolSessionPart`.
+The loop feeds that same bounded string back to the model through a
+`ToolResponseMessage`.
 
 Important current constraints:
 
-- Codegeist currently owns only one non-streaming `ChatHarnessService.ask(...)` turn.
-- Codegeist does not yet implement an OpenCode-style model/tool/model controller or
-  explicit multi-step agent loop.
-- Any provider-side tool-calling behavior inside that one `delegate.call(...)` is
-  managed by Spring AI and the selected provider adapter.
+- Codegeist currently owns one synchronous, non-streaming model/tool/model loop for
+  each `ChatHarnessService.ask(...)` prompt request.
+- Tool execution is sequential and selected by callback name; there is no permission
+  prompt, streaming event projection, cancellation, or parallel tool dispatch.
+- Provider-side hidden tool execution is disabled in the current Ollama adapter, so
+  Codegeist can append tool results before the next model call.
 - The session store records bounded tool activity only after the provider call returns;
   it does not persist raw MCP arguments, MCP tool definitions, transport config,
   remote server status, or full MCP results.
@@ -884,8 +904,9 @@ Related tests:
 - `CodegeistMcpRemoteSmokeIT`, run only through `task mcp-remote-smoke`, proves the
   real `streamable_http` MCP callback path against a local Docker fixture.
 - `AskCommandsMcpRemoteSmokeIT`, also run only through `task mcp-remote-smoke`, proves
-  the Spring Boot `ask` path can pass MCP callbacks to local Ollama and persist the
-  completed remote MCP `ToolSessionPart`.
+  the Spring Boot `ask` path can expose MCP callback definitions to local Ollama,
+  dispatch the selected remote MCP callback through the Codegeist loop, and persist
+  the completed remote MCP `ToolSessionPart`.
 
 Recommended focused verification for local tool callback changes:
 
@@ -995,8 +1016,9 @@ final class CodegeistStatFileTool implements CodegeistLocalTool {
 
 ## Sharp Edges
 
-- Provider-backed `ask` receives local and MCP callbacks for one prompt turn, but
-  Codegeist still does not own an iterative model/tool/model controller.
+- Provider-backed `ask` receives local and MCP callbacks for one synchronous
+  model/tool/model loop. Streaming, permissions, cancellation, and parallel tool
+  dispatch remain out of scope.
 - MCP clients are opened only inside `CodegeistMcpAdapter.openRun(...)`; configured
   `stdio` clients may start processes and configured `streamable_http` clients may
   connect to their configured local or remote URL only when a tool run opens.

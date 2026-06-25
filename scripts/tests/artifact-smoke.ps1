@@ -10,7 +10,8 @@
 # Inputs:
 # - Platform: `linux-x64`, `windows-x64`, or `macos-x64`.
 # - CliDir: app/codegeist/cli directory containing target/ build outputs.
-# - Optional RunProviderAskSmoke also verifies a real Ollama-backed `ask` turn.
+# - Ask-driven tool smokes use deterministic fixture providers so real model wording
+#   never decides whether side-effecting tool checks pass.
 #
 # Related files:
 # - scripts/tests/file-edit-ask-smoke.ps1
@@ -43,17 +44,11 @@ param(
 
     [int]$NativeTimeoutSeconds = 5,
 
-    [int]$AskTimeoutSeconds = 60,
-
     [int]$FileEditTimeoutSeconds = 90,
 
     [int]$ShellAskTimeoutSeconds = 90,
 
-    [switch]$RunProviderAskSmoke,
-
-    [string]$OllamaBaseUrl = "http://localhost:11434",
-
-    [string]$AskPrompt = "Reply with exactly the lowercase word codegeist."
+    [string]$OllamaBaseUrl = "http://localhost:11434"
 )
 
 $ErrorActionPreference = "Stop"
@@ -184,37 +179,6 @@ function Invoke-SmokeProcess {
     if (-not (Test-Path -LiteralPath $LogFile) -or (Get-Item -LiteralPath $LogFile).Length -eq 0) {
         Fail-Smoke "$Label log was not written: $LogFile"
     }
-}
-
-function Assert-OllamaReady {
-    param([string]$BaseUrl)
-
-    $versionUrl = $BaseUrl.TrimEnd("/") + "/api/version"
-    Write-SmokeLog "Command: Invoke-WebRequest $versionUrl"
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    try {
-        Invoke-WebRequest -Uri $versionUrl -UseBasicParsing -TimeoutSec 30 | Out-Null
-    }
-    catch {
-        Fail-Smoke "Ollama is not reachable at ${BaseUrl}: $($_.Exception.Message)"
-    }
-    finally {
-        Write-SmokeDuration "$Platform ollama reachability" $stopwatch
-    }
-}
-
-function Write-AskConfig {
-    param(
-        [string]$ConfigFile,
-        [string]$BaseUrl
-    )
-
-    Set-Content -LiteralPath $ConfigFile -Encoding ASCII -Value @"
-provider:
-  ollama:
-    type: ollama
-    base-url: $BaseUrl
-"@
 }
 
 function Invoke-FileEditAskSmoke {
@@ -416,25 +380,6 @@ function Invoke-NativeArtifactSmoke {
             -LabelPrefix "$Platform native" `
             -WorkingDirectory $runDir
 
-        if ($RunProviderAskSmoke) {
-            Assert-OllamaReady $OllamaBaseUrl
-            $askConfig = Join-Path $SmokeRoot "codegeist-$Platform-native-ask.yml"
-            Write-AskConfig $askConfig $OllamaBaseUrl
-
-            Write-SmokeLog "Command: $native -Dcodegeist.config=$askConfig ask <prompt>"
-            Invoke-SmokeProcess `
-                -Label "Native ask smoke" `
-                -FilePath $native `
-                -ArgumentList @("-Dcodegeist.config=$askConfig", "ask", $AskPrompt) `
-                -Expected "" `
-                -ExpectedSubstring "" `
-                -RequireNonEmptyOutput `
-                -LogFile (Join-Path $SmokeRoot "codegeist-$Platform-native-ask.log") `
-                -TimeoutSeconds $AskTimeoutSeconds `
-                -OutputPrefix "codegeist-$Platform-native-ask" `
-                -WorkingDirectory $runDir `
-                -DurationLabel "$Platform native ask smoke"
-        }
     }
     finally {
         Remove-Item -Recurse -Force -LiteralPath $tempRoot -ErrorAction SilentlyContinue

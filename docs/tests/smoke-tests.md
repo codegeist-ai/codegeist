@@ -58,7 +58,6 @@ Labels should be stable and specific, for example:
 
 - `linux maven tests`
 - `linux jar package`
-- `linux ollama start`
 - `linux native compile`
 - `linux native archive smoke`
 - `linux native version smoke`
@@ -68,7 +67,6 @@ Labels should be stable and specific, for example:
 - `linux native file-edit ask no-final-newline smoke`
 - `linux native file-edit ask latin1-crlf smoke`
 - `linux native shell ask smoke`
-- `linux native ask smoke`
 - `linux platform smoke total`
 - `mcp remote fixture package`
 - `mcp remote docker build`
@@ -77,7 +75,6 @@ Labels should be stable and specific, for example:
 - `mcp remote ollama start`
 - `mcp remote ask ollama test`
 - `mcp remote smoke total`
-- `windows ollama reachability`
 - `windows native compile`
 - `windows native archive smoke`
 - `windows native version smoke`
@@ -87,8 +84,6 @@ Labels should be stable and specific, for example:
 - `windows native file-edit ask no-final-newline smoke`
 - `windows native file-edit ask latin1-crlf smoke`
 - `windows native shell ask smoke`
-- `windows native ask smoke`
-- `windows host ollama start`
 - `windows platform smoke total`
 
 ## Timing Rules
@@ -122,10 +117,10 @@ Labels should be stable and specific, for example:
   -NonInteractive -Command` as the cross-platform shell wrapper, then verifies the
   created workspace file and a completed persisted
   `ToolSessionPart(tool=codegeist_shell)` whose preview includes `Exit code: 0`.
-- Local Linux and Windows platform smokes pass `-RunProviderAskSmoke` to
-  `artifact-smoke.ps1`, so those developer checks also verify a real
-  Ollama-backed native `ask` turn. Release CI omits that provider smoke and relies
-  on the deterministic fixture-backed file-edit path.
+- Local Linux and Windows platform smokes do not run a provider-only native ask
+  check. The native ask coverage stays on deterministic fixture-backed file-edit and
+  shell harnesses so smoke results do not depend on local model wording when no tool
+  is needed.
 - Linux, Windows, and macOS native archive smokes all check `--show-config`; empty
   direct `codegeist.yml` config must render exactly `{}`.
 - MCP remote smoke packages the fixture jar under

@@ -135,10 +135,10 @@ Use this rule when adding or changing Java source in Codegeist.
 - Keep selected provider config separate from runtime request data. Pass the
   validated `ProviderConfig` to `CodegeistChatService`, and keep
   `CodegeistChatRequest` focused on runtime model and prompt.
-- Let each concrete `ProviderConfig` implement `createChatModel()` and return the
-  matching `CodegeistChatModel<T extends ProviderConfig>`. Do not reintroduce
-  factory or strategy layers unless a focused task intentionally replaces this
-  contract.
+- Keep chat model creation out of `ProviderConfig`. `CodegeistChatService` owns the
+  narrow provider-config-to-`CodegeistChatModel<T extends ProviderConfig>` adapter
+  dispatch for currently implemented providers. Do not add a broader factory,
+  registry, or strategy layer unless a focused task needs it.
 
 ## String Constants
 
@@ -251,10 +251,12 @@ Use this rule when adding or changing Java source in Codegeist.
   wrappers in the same task. Update all production and test call sites immediately.
   Keep a compatibility overload only when a concrete external API, framework binding,
   serialization contract, or shipped consumer requires it.
-- Do not add compact constructors to records only to make defensive copies such as
-  `List.copyOf(...)` by default. Keep record construction direct unless an immutable
-  snapshot is part of a current API, persistence, concurrency, or test-visible
-  contract.
+- Do not add compact constructors to records only to copy collection components, for
+  example `messages = List.copyOf(messages)`, by default. Keep record construction
+  direct unless an immutable snapshot is a current API, persistence, concurrency, or
+  test-visible contract. When a snapshot is genuinely needed, prefer creating it at
+  the owning call site so the record type itself does not hide extra allocation or
+  semantics from every caller.
 - If two methods have the same signature and behavior and differ only by name, keep
   the one that callers should use and remove the other instead of adding a wrapper.
 - Add a helper only when it centralizes non-trivial behavior, improves repeated

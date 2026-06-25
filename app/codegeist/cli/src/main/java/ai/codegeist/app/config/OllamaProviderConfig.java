@@ -1,7 +1,5 @@
 package ai.codegeist.app.config;
 
-import ai.codegeist.app.chat.CodegeistChatModel;
-import ai.codegeist.app.chat.OllamaChatModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import lombok.Getter;
@@ -31,10 +29,5 @@ public final class OllamaProviderConfig extends ProviderConfig {
     @Override
     public String defaultModel() {
         return DEFAULT_MODEL;
-    }
-
-    @Override
-    public CodegeistChatModel<OllamaProviderConfig> createChatModel() {
-        return new OllamaChatModel(this);
     }
 }

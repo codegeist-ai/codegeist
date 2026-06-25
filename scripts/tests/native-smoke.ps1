@@ -12,9 +12,8 @@
 # - Optional timeout parameters override environment defaults.
 #
 # Side effects:
-# - Starts or reuses local Ollama through task ollama-start.
 # - Delegates packaging, unpacking, command checks, file-edit checks, shell-tool
-#   checks, and optional provider-backed ask checks to scripts/tests/artifact-smoke.ps1.
+#   checks to scripts/tests/artifact-smoke.ps1.
 #
 # Related files:
 # - app/codegeist/cli/Taskfile.yml
@@ -29,13 +28,9 @@ param(
 
     [int]$NativeTimeoutSeconds = 0,
 
-    [int]$AskTimeoutSeconds = 0,
-
     [int]$FileEditTimeoutSeconds = 0,
 
     [int]$ShellAskTimeoutSeconds = 0,
-
-    [string]$OllamaBaseUrl = "http://localhost:11434",
 
     [switch]$BuildNative
 )
@@ -105,7 +100,6 @@ if (-not $SmokeRoot) {
 $SmokeRoot = [System.IO.Path]::GetFullPath($SmokeRoot)
 
 $nativeTimeout = Get-SmokeSeconds $NativeTimeoutSeconds "CODEGEIST_NATIVE_SMOKE_TIMEOUT_SECONDS" "CODEGEIST_NATIVE_SMOKE_TIMEOUT" 5
-$askTimeout = Get-SmokeSeconds $AskTimeoutSeconds "CODEGEIST_ASK_SMOKE_TIMEOUT_SECONDS" "CODEGEIST_ASK_SMOKE_TIMEOUT" 60
 if ($FileEditTimeoutSeconds -le 0) {
     $fileEditTimeout = [int](${env:CODEGEIST_FILE_EDIT_SMOKE_TIMEOUT_SECONDS} ?? "90")
 }
@@ -128,37 +122,14 @@ try {
             { & mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile }
     }
 
-    Write-Host "Command: OLLAMA_ENTER=false task ollama-start"
-    $ollamaStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $previousOllamaEnter = $env:OLLAMA_ENTER
-    $env:OLLAMA_ENTER = "false"
-    try {
-        & task ollama-start
-    }
-    finally {
-        if ($null -eq $previousOllamaEnter) {
-            Remove-Item Env:OLLAMA_ENTER -ErrorAction SilentlyContinue
-        }
-        else {
-            $env:OLLAMA_ENTER = $previousOllamaEnter
-        }
-    }
-    Write-SmokeDuration "linux ollama start" $ollamaStopwatch
-    if ($LASTEXITCODE -ne 0) {
-        throw "Ollama start failed with exit code $LASTEXITCODE"
-    }
-
     Write-Host "Command: pwsh scripts/tests/artifact-smoke.ps1 -Platform linux-x64"
     & (Join-Path $PSScriptRoot "artifact-smoke.ps1") `
         -Platform linux-x64 `
         -CliDir $CliDir `
         -SmokeRoot $SmokeRoot `
-        -OllamaBaseUrl $OllamaBaseUrl `
         -NativeTimeoutSeconds $nativeTimeout `
-        -AskTimeoutSeconds $askTimeout `
         -FileEditTimeoutSeconds $fileEditTimeout `
-        -ShellAskTimeoutSeconds $shellAskTimeout `
-        -RunProviderAskSmoke
+        -ShellAskTimeoutSeconds $shellAskTimeout
 }
 finally {
     Pop-Location

@@ -6,12 +6,12 @@ import lombok.NonNull;
 import org.springframework.ai.tool.ToolCallback;
 
 /**
- * Runtime-only context for one provider chat call.
+ * Runtime-only context for one chat request and its provider turns.
  *
- * <p>The context carries prompt-scoped tool callbacks beside
- * {@link CodegeistChatRequest} so the request record remains limited to model and
- * prompt. It is not serialized to the session store and must not grow provider,
- * model, MCP config, or session-state fields.
+ * <p>The context carries prompt-scoped tool callbacks beside chat and turn requests
+ * so {@link CodegeistChatRequest} remains limited to model and prompt. It is not
+ * serialized to the session store and must not grow provider, model, MCP config, or
+ * session-state fields.
  */
 public record CodegeistChatExecutionContext(
         @NonNull Path workingDirectory,
@@ -25,7 +25,4 @@ public record CodegeistChatExecutionContext(
         return new CodegeistChatExecutionContext(workingDirectory, List.of());
     }
 
-    public ToolCallback[] toolCallbackArray() {
-        return toolCallbacks.toArray(ToolCallback[]::new);
-    }
 }

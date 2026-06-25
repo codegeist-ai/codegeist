@@ -32,8 +32,8 @@ sequenceDiagram
     Caller->>Config: Select one validated ProviderConfig
     Caller->>Request: Build request with model and prompt
     Caller->>Service: chat(providerConfig, request)
-    Service->>Config: providerConfig.createChatModel()
-    Config->>Model: Instantiate concrete CodegeistChatModel
+    Service->>Service: createChatModel(providerConfig)
+    Service->>Model: Instantiate concrete CodegeistChatModel
     Service->>Model: call(request, context)
     Model->>Model: Build provider Prompt options from runtime model
     Model->>Provider: Execute one selected-provider request
@@ -94,7 +94,6 @@ classDiagram
       String type
       String baseUrl
       +defaultModel() String
-      +createChatModel() CodegeistChatModel
     }
 
     class OllamaProviderConfig {
@@ -108,7 +107,7 @@ classDiagram
     }
 
     CodegeistConfig --> ProviderConfig : owns validated provider map
-    CodegeistChatService --> ProviderConfig : createChatModel()
+    CodegeistChatService --> ProviderConfig : reads selected type
     CodegeistChatService --> CodegeistChatRequest
     CodegeistChatService --> CodegeistChatResponse
     CodegeistChatModel <|-- OllamaChatModel
@@ -159,8 +158,8 @@ flowchart TD
 
 ## Design Pattern
 
-Do not use a factory or strategy layer for chat model creation. Use a typed
-Codegeist chat model hierarchy:
+Do not put chat model creation on provider config. Use a typed Codegeist chat model
+hierarchy with narrow adapter dispatch in `CodegeistChatService`:
 
 ```text
 CodegeistChatService
@@ -170,11 +169,12 @@ CodegeistChatService
 
 The application chats through `CodegeistChatService`. The caller passes the already
 selected and validated `ProviderConfig` separately from `CodegeistChatRequest`. The
-service asks that provider config to create a `CodegeistChatModel`, then passes the
-request to the selected model. Each concrete provider config passes itself into the
-matching concrete chat model, and that chat model maps one provider config type
-plus the request model into the matching Spring AI API, options, and dependency
-route.
+service maps the selected provider config subclass to a concrete
+`CodegeistChatModel`, then passes the request to the selected model. Each concrete
+chat model receives its matching provider config type, and that chat model maps the
+access config plus the request model into the matching Spring AI API, options, and
+dependency route. Do not add a separate broad factory, registry, or strategy layer
+unless a focused provider task needs it.
 
 ## Provider Versus Model
 
@@ -285,7 +285,7 @@ public class CodegeistChatService {
             ProviderConfig providerConfig,
             CodegeistChatRequest request,
             CodegeistChatExecutionContext context) {
-        CodegeistChatModel<?> chatModel = providerConfig.createChatModel();
+        CodegeistChatModel<?> chatModel = createChatModel(providerConfig);
 
         String content = chatModel.call(request, context)
                 .getResult()
@@ -300,8 +300,9 @@ public class CodegeistChatService {
 Rules:
 
 - It may depend on Codegeist's provider-neutral `CodegeistChatModel` contract.
-- It must not import provider-specific Spring AI classes such as Ollama or OpenAI
-  types.
+- It may import Codegeist-owned provider adapter classes such as `OllamaChatModel`
+  and `OpenAiChatModel` for the narrow dispatch, but provider-specific Spring AI
+  imports stay inside those adapter classes.
 - It must not load config files, choose providers from raw YAML, manage local
   provider lifecycle, pull models, or check remote billing posture by itself.
 
@@ -329,9 +330,8 @@ public abstract class CodegeistChatModel<T extends ProviderConfig> {
 
 Rules:
 
-- Each concrete `ProviderConfig` creates its matching `CodegeistChatModel` in
-  `createChatModel()`, for example `OllamaProviderConfig` creates an
-  `OllamaChatModel` without storing a runtime model.
+- `CodegeistChatService` creates the matching `CodegeistChatModel` from the selected
+  provider config subclass without storing a runtime model on the config.
 - Each concrete `ProviderConfig` owns a `defaultModel()` runtime fallback for
   commands that intentionally do not expose a model selector.
 - Provider ids are resolved by `ProviderConfig.getType()` from the concrete config
@@ -348,18 +348,22 @@ Rules:
   `spring.ai.*` properties as the primary runtime mechanism, or own CLI command
   behavior.
 
-### `ProviderConfig` Model Creation
+### Chat Model Creation
 
-Each concrete `ProviderConfig` selects the concrete chat model for itself. Runtime
-model selection is not part of chat model construction.
+`CodegeistChatService` selects the concrete chat model for the already selected
+provider config. Runtime model selection is not part of chat model construction.
 
 Planned shape:
 
 ```java
-public abstract class ProviderConfig {
-    public abstract String defaultModel();
+class CodegeistChatService {
+    CodegeistChatModel<?> createChatModel(ProviderConfig providerConfig) {
+        if (providerConfig instanceof OllamaProviderConfig ollamaProviderConfig) {
+            return new OllamaChatModel(ollamaProviderConfig);
+        }
 
-    public abstract CodegeistChatModel<?> createChatModel();
+        throw new IllegalArgumentException(...);
+    }
 }
 ```
 
@@ -391,7 +395,7 @@ For each provider-specific task:
 - Keep `codegeist.yml` loading, SpEL evaluation, provider dispatch, and Bean
   Validation separate from provider calls.
 - Create the provider's Spring AI `ChatModel` lazily from one selected, normalized
-  provider config through `ProviderConfig.createChatModel()`.
+  provider config through `CodegeistChatService` adapter dispatch.
 - Map the runtime model to provider-specific prompt options at call time, not in
   the chat model constructor.
 - Keep provider-specific generation options outside `ProviderConfig` as request,
@@ -459,11 +463,11 @@ types in the first runtime slice.
    `getType()` so the explicit provider registry can match it.
 6. Implement `defaultModel()` on the provider config without adding a stored YAML
    model field.
-7. Implement `createChatModel()` on the provider config.
-8. Add config binding, default-model, and validation tests for the provider fields.
-9. Implement one concrete `CodegeistChatModel<T>` for the provider type.
+7. Implement one concrete `CodegeistChatModel<T>` for the provider type.
+8. Add the provider branch to `CodegeistChatService.createChatModel(...)`.
+9. Add config binding, default-model, and validation tests for the provider fields.
 10. Map Codegeist runtime request fields to provider-specific Spring AI prompt
-   options or builders at call time.
+    options or builders at call time.
 11. Add a focused chat or config-to-model test.
 12. For hosted providers, keep live calls behind explicit no-cost confirmation and
     never trigger them from default tests.

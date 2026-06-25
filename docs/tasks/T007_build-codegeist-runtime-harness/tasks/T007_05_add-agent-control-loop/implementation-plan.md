@@ -118,10 +118,6 @@ Create a small internal record under `ai.codegeist.app.chat`:
 public record CodegeistChatTurnRequest(
         @NonNull String model,
         @NonNull List<Message> messages) {
-
-    public CodegeistChatTurnRequest {
-        messages = List.copyOf(messages);
-    }
 }
 ```
 
@@ -186,7 +182,7 @@ ChatResponse rawChat(
 
 Expected behavior:
 
-- Create the provider model from `providerConfig.createChatModel()`.
+- Create the provider model through `CodegeistChatService` adapter dispatch.
 - Log provider type and callback count as before.
 - Return the raw `ChatResponse` without converting it to text.
 - Let `chat(...)` adapt `CodegeistChatRequest` to a one-message

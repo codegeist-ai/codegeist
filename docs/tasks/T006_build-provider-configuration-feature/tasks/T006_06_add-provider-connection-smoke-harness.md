@@ -192,11 +192,14 @@ CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid \
 task test TEST=OpenAiProviderTest
   ```
 
-  The latest run used low-cost defaults: `gpt-image-1-mini`, `tts-1`, and
-  `gpt-4o-mini-transcribe`. It is currently blocked by the configured API key
-  returning `401 invalid_api_key`; rerun after `CODEGEIST_TEST_OPENAI_APIKEY` is
-  valid for the account being tested. The speech-to-text test generates its default
-  audio fixture with `espeak-ng` under `target/provider-tests/` when needed.
+  A historical run with the low-cost defaults `gpt-image-1-mini`, `tts-1`, and
+  `gpt-4o-mini-transcribe` was blocked by the configured API key returning
+  `401 invalid_api_key`. A later `AskCommandsOpenAiToolSmokeIT` remote-paid run
+  proved OpenAI chat tool calling with `codegeist_write`; rerun the full
+  `OpenAiProviderTest` class separately when the current account is intentionally
+  allowed to spend quota on every implemented OpenAI provider feature test. The
+  speech-to-text test generates its default audio fixture with `espeak-ng` under
+  `target/provider-tests/` when needed.
 
 ## Planning Notes
 

@@ -211,7 +211,7 @@ Actions release jobs.
 | Script | Current behavior |
 | --- | --- |
 | `scripts/tests/smoke-common.ps1` | Shared PowerShell 7 helper layer for platform smoke status files, duration output, environment overrides, command steps, and readiness checks. |
-| `scripts/tests/artifact-smoke.ps1` | Shared native-only PowerShell 7 artifact harness used by release CI plus local Linux and Windows wrappers. It packages native artifacts, unpacks native archives, verifies `--version`, native `--show-config`, command logs, deterministic file-edit side effects, and optional real Ollama-backed `ask`. |
+| `scripts/tests/artifact-smoke.ps1` | Shared native-only PowerShell 7 artifact harness used by release CI plus local Linux and Windows wrappers. It packages native artifacts, unpacks native archives, verifies `--version`, native `--show-config`, command logs, deterministic file-edit side effects, and deterministic shell side effects through fixture-backed `ask` runs. |
 | `scripts/tests/local-linux-smoke.ps1` | Runs Maven tests, builds `target/codegeist.jar` as a build gate, and when `native-image` is available delegates native build and archive checks to `native-smoke.ps1` and the shared artifact harness for `target/dist/codegeist-linux-x64.tar.gz`. |
 | `scripts/tests/qemu-windows-vm.sh` | Downloads the official Windows Server Evaluation ISO when needed, creates or starts the local Windows QEMU VM, syncs the repo subset, and runs Windows smoke through SSH. Download, ISO, or VM failures fail by default. |
 | `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH wrapper that runs `scripts/tests/windows-smoke.ps1` inside an already reachable Windows VM. |

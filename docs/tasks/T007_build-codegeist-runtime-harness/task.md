@@ -11,10 +11,10 @@ Implement a resumable Codegeist chat harness centered on a portable
 
 T007 targets a practical local coding-agent loop: one directory-local session store
 with multiple chat sessions, optional MCP, Codegeist tools, patch/edit, shell, TUI,
-and file-based storage. This target is not complete yet. The current implemented
-tool-aware chat harness exposes prompt-scoped callbacks to one provider call, but
-Codegeist does not yet own an OpenCode-style iterative model/tool/model control loop.
-Do not add a database or server runtime for this task.
+and file-based storage. This target is not complete yet because the terminal TUI and
+final verification slices remain open. The current implemented chat harness owns a
+synchronous model/tool/model control loop over prompt-scoped callbacks. Do not add a
+database or server runtime for this task.
 
 ## Current Codegeist Baseline
 
@@ -32,9 +32,9 @@ Do not add a database or server runtime for this task.
 - Direct `codegeist.yml` loading can parse the top-level `mcp:` client catalog as a
   YAML object keyed by client id. `stdio` clients use `type`, `command`, and `args`;
   `streamable_http` clients use `type`, `url`, and optional `endpoint`. The completed
-  `T007_03` slice makes MCP callbacks and local read/list/glob/grep/write tools
-  available to the one-turn chat harness, but Codegeist still does not own an
-  iterative model/tool/model loop.
+  `T007_03` slice made MCP callbacks and local read/list/glob/grep/write tools
+  available to the chat harness, and `T007_05` adds the first synchronous
+  Codegeist-owned model/tool/model loop over those callbacks.
 - `task test` from `app/codegeist/cli` is the implementation verification entrypoint
   and starts the fixed local Ollama container with `OLLAMA_ENTER=false` before
   Maven.
@@ -163,14 +163,16 @@ implementation tests need them.
   `ask-project-question-catalog.md`, `ask-project-research.md`, and
   `opencode-shell-tool-comparison.md`. Its child tasks split the work into exact
   edit, structured patch, shell, and final documentation/verification slices.
-- `T007_05_add-agent-control-loop/task.md` - add the first Codegeist-owned
-  model/tool/model control loop so tool results can drive model continuation instead
-  of relying only on a single provider call with prompt-scoped callbacks. Its
-  research docs include `ask-project-question-catalog.md`,
+- `T007_05_add-agent-control-loop/task.md` - solved: added the first
+  Codegeist-owned model/tool/model control loop so tool results drive model
+  continuation instead of relying on a single provider call with hidden Spring AI
+  tool execution. Its research docs include `ask-project-question-catalog.md`,
   `ask-project-research.md`, `opencode-agent-loop.md`, and `pi-agent-loop.md`
   plus `aider-agent-loop.md` with inline Mermaid diagrams for the Pi and Aider
   loop translations. Its detailed implementation handoff is
-  `implementation-plan.md`.
+  `implementation-plan.md`. Final verification included broad JVM tests,
+  `native-smoke`, `local-linux-smoke`, `mcp-remote-smoke`, and the Linux plus
+  Windows QEMU `final-smoke-suite`.
 - `T007_06_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,
   renders, updates, and saves the same session store on top of the agent loop.
 - `T007_07_verify-chat-file-tool-harness.md` - run focused and broad verification,

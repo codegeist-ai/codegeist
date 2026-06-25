@@ -63,7 +63,6 @@ classDiagram
       class ProviderConfig {
         <<existing>>
         +defaultModel() String
-        +createChatModel() CodegeistChatModel
       }
     }
 
@@ -83,7 +82,7 @@ classDiagram
     CodegeistConfigService --> CodegeistConfig
     CodegeistConfig --> ProviderConfig
     CodegeistConfig --> McpClientConfig
-    ProviderConfig --> CodegeistChatModel
+    CodegeistChatService --> CodegeistChatModel
     CodegeistChatService --> CodegeistChatRequest
     CodegeistChatService --> CodegeistChatResponse
 ```

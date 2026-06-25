@@ -894,7 +894,7 @@ passed separately as it is today.
 ```mermaid
 flowchart LR
     Request[CodegeistChatRequest: model + prompt] --> ChatSvc
-    Provider[ProviderConfig: access + defaultModel + createChatModel] --> ChatSvc
+    Provider[ProviderConfig: access + defaultModel] --> ChatSvc
     Context[ChatExecutionContext: chatId + workingDir + history + tool callbacks] --> ChatSvc
     ChatSvc[CodegeistChatService] --> Model[CodegeistChatModel]
 ```

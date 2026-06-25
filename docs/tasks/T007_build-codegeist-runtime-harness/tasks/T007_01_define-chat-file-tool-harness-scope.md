@@ -40,19 +40,22 @@ model into Codegeist terms before Java implementation starts.
   tools, MCP tools, patch/edit, and shell.
 - Store only chat-relevant information needed to resume and save the chat.
 - Do not store provider config, selected provider, selected model, MCP client
-  definitions, enabled tool definitions, or status in `chat.json`.
+  definitions, tool-definition catalogs, or status in `chat.json`.
 - Do not add a database, server-side session service, remote sync, API/SDK, Vaadin,
   PF4J, JBang, LSP, skills, memory, or subagents in this T007 slice.
 
-## Configurable Harness Profiles
+## Deferred Harness Profiles
 
-Codegeist should treat a harness profile as a named runtime composition of provider
-selection policy, MCP clients, Codegeist-owned tools, workspace policy, output
-limits, and verification defaults. The first profile model belongs in direct
-`codegeist.yml`, not in `chat.json`.
+Earlier planning considered named harness profiles as runtime compositions of
+provider selection policy, MCP clients, Codegeist-owned tools, workspace policy,
+output limits, and verification defaults. That profile layer is not implemented in
+the current T007 runtime. The implemented runtime keeps tools available to the agent
+loop and does not expose a global or per-tool disable switch.
 
-The intended shape is a top-level reusable MCP catalog plus a top-level `harness:`
-map keyed by harness id:
+If a later task adds harness profiles, keep the reusable MCP catalog separate from
+profile-specific runtime limits and make any tool-selection behavior explicit in that
+task's acceptance criteria. A future profile shape could use catalog references rather
+than negative enablement switches:
 
 ```yaml
 mcp:
@@ -74,17 +77,12 @@ mcp:
 harness:
   my-harness:
     mcp:
-      grep:
-        enabled: true
-      filesystem:
-        enabled: false
+      - grep
+      - filesystem
     tools:
-      read:
-        enabled: true
-      write:
-        enabled: false
+      - read
+      - write
       shell:
-        enabled: true
         timeout-seconds: 30
     context:
       max-tool-output-chars: 12000
@@ -93,37 +91,30 @@ harness:
 
   coding-harness:
     mcp:
-      filesystem:
-        enabled: true
+      - filesystem
     tools:
-      read:
-        enabled: true
-      grep:
-        enabled: true
-      patch:
-        enabled: true
-      shell:
-        enabled: true
+      - read
+      - grep
+      - patch
+      - shell
 ```
 
 Rules:
 
 - Keep `mcp:` as the reusable catalog of MCP server definitions. This avoids
   duplicating the same server command under several harness profiles.
-- Use `harness.<harness-id>.mcp.<mcp-id>` to select and optionally override how a
-  catalog MCP server participates in that harness.
-- Keep the first MCP selection object small: `enabled` plus focused per-profile
-  limits or overrides only when an implementation test needs them.
-- Use `harness.<harness-id>.tools.<tool-id>` to activate Codegeist-owned local
-  tools such as `read`, `grep`, `write`, `patch`, and `shell` for that harness.
+- If profiles are implemented later, use explicit catalog references to include MCP
+  servers and Codegeist-owned local tools for that profile. Do not add a global
+  disable switch only to stabilize tests.
 - Use annotations in Java source to describe available local harness capabilities,
   for example tool id, model-visible description, side-effect posture, and default
   limits.
 - Resolve annotation metadata through an explicit Java registry, not broad runtime
   classpath scanning, so the design stays GraalVM-friendly.
-- Let `codegeist.yml` decide profile composition and runtime limits. An annotation
-  says what exists; a harness profile says what is active.
-- Do not persist the active harness profile, MCP catalog, enabled tool definitions,
+- Let `codegeist.yml` decide future profile composition and runtime limits. An
+  annotation says what exists; a harness profile would say which catalog entries are
+  included.
+- Do not persist the active harness profile, MCP catalog, tool-definition catalogs,
   or runtime limits into `chat.json`. Persist only chat messages and bounded tool
   activity needed to resume and render the chat.
 - Defer final active-profile selection until a focused implementation task. Likely
@@ -141,9 +132,9 @@ final class ShellTool {
 }
 ```
 
-The annotation is metadata, not activation. If `shell` is not enabled under the
-selected `harness.<id>.tools.shell` entry, the shell tool must not be exposed to the
-model for that chat run.
+The annotation is metadata, not activation. The current runtime does not implement a
+profile selection layer; future tasks must define profile behavior before changing
+which tool definitions are exposed.
 
 ## Rough Package Diagram
 

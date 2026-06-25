@@ -351,8 +351,8 @@ define and test this smallest contract:
 This contract is intentionally per-provider. Do not introduce a broad provider
 registry, adapter hierarchy, dynamic plugin layer, factory layer, or
 model-selection policy before a focused provider task needs it. The first provider
-task should let the selected provider config create its concrete chat model from
-access config only, then pass the runtime model at prompt-call time.
+task should map the selected provider config to its concrete chat model in the chat
+service from access config only, then pass the runtime model at prompt-call time.
 
 ## Provider Access Fields Needed For On-Demand Use
 
@@ -429,8 +429,9 @@ Use this order so provider availability grows without a broad placeholder layer:
 1. `T006_04`: finish config source loading, SpEL evaluation, direct rendering, and
    config behavior. No provider client creation.
 2. `T006_05`: add the Ollama starter and one local on-demand provider call through
-   a focused test. The selected provider config creates the concrete chat model
-   from access config only; the runtime model is passed at prompt-call time.
+   a focused test. The chat service maps the selected provider config to the
+   concrete chat model from access config only; the runtime model is passed at
+   prompt-call time.
 3. `T006_06`: add the generic smoke harness and status vocabulary around the first
    local provider path.
 4. Later provider-specific tasks: add one hosted or OpenAI-compatible provider at a

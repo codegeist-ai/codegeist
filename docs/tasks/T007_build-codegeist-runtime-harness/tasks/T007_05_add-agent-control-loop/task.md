@@ -2,7 +2,7 @@
 
 Parent: `T007_build-codegeist-runtime-harness`
 
-Status: open
+Status: solved
 
 ## Goal
 
@@ -54,6 +54,25 @@ the current Java/Spring boundaries, file-backed session store, and minimal scope
 - The architecture docs clearly distinguish the implemented Codegeist loop from
   Spring AI's internal tool-calling behavior.
 
+## Implementation Result
+
+- Added `CodegeistAgentLoopService` as the synchronous Codegeist-owned
+  model/tool/model controller for one prompt request.
+- Added `CodegeistChatTurnRequest` so provider-facing Spring AI message history stays
+  internal while `CodegeistChatRequest` remains limited to `model` and `prompt`.
+- Added a raw `ChatResponse` seam in `CodegeistChatService` and updated
+  `CodegeistChatModel` plus `OllamaChatModel` to receive message-history turns.
+- Updated `OllamaChatModel` to pass tool callback definitions while setting
+  `internalToolExecutionEnabled(false)`, so Codegeist owns dispatch and
+  continuation.
+- Rewired `ChatHarnessService` to run through the loop and keep existing session
+  persistence and stdout behavior unchanged.
+- Added `docs/developer/architecture/agent-control-loop.md` and refreshed the current
+  architecture map, tool-callback docs, parent T007 task, and project memory.
+- Kept provider/framework-owned internal tool execution disabled in provider adapters;
+  Codegeist exposes local and MCP callback definitions but owns dispatch and
+  continuation.
+
 ## Non-Goals
 
 - Do not implement the terminal TUI in this task.
@@ -82,6 +101,26 @@ Candidate commands from `app/codegeist/cli`:
 task test TEST=CodegeistAgentLoopServiceTest,ChatHarnessServiceTest,AskCommandsSessionStoreTest,SessionStoreServiceTest
 task test
 ```
+
+Final verification from `app/codegeist/cli`:
+
+```bash
+task test TEST=CodegeistAgentLoopServiceTest,ChatHarnessServiceTest,CodegeistChatServiceTest,AskCommandsSessionStoreTest,SessionStoreServiceTest
+task test
+```
+
+Results:
+
+- Focused selector: 24 tests, 0 failures, 0 errors, 0 skipped.
+- Broad JVM suite: 174 tests, 0 failures, 0 errors, 6 skipped.
+- `task native-smoke` passed on Linux, including deterministic file-edit and shell
+  ask smokes.
+- `task local-linux-smoke` passed, including JVM tests, jar packaging, native build,
+  and native artifact smokes.
+- `task mcp-remote-smoke` passed, including the direct `streamable_http` callback
+  path and the Ollama-backed `ask` path that persists a completed remote MCP
+  `ToolSessionPart`.
+- `task final-smoke-suite` passed for Linux and Windows QEMU native smokes.
 
 ## Implementation Notes
 

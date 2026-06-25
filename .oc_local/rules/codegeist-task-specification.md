@@ -296,16 +296,24 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   require the needed config fields and safety gate, and create only the selected
   provider's Spring AI client on demand instead of instantiating all configured
   providers at startup.
-- For Codegeist chat model implementation, do not introduce factory or strategy
-  layers. Use `CodegeistChatModel<T extends ProviderConfig>` as the abstract base,
-  let each concrete provider model such as `OllamaChatModel` extend it with the
-  matching config type, and make every concrete `ProviderConfig` implement
-  `defaultModel()` and `createChatModel()`. The provider config owns its runtime
-  default model and creates the matching chat model from provider access data only;
-  explicit runtime model selection stays in `CodegeistChatRequest` and is mapped to
+- For Codegeist chat model implementation, keep provider configs access-only. Use
+  `CodegeistChatModel<T extends ProviderConfig>` as the abstract base, let each
+  concrete provider model such as `OllamaChatModel` extend it with the matching
+  config type, and keep `ProviderConfig` limited to access data plus
+  `defaultModel()`. `CodegeistChatService` owns the narrow dispatch from the selected
+  `ProviderConfig` subclass to the matching chat adapter; do not add a broader
+  factory, registry, or strategy layer unless a focused task needs it. Explicit
+  runtime model selection stays in `CodegeistChatRequest` and is mapped to
   provider-specific prompt options at call time. Do not put the selected provider
   into `CodegeistChatRequest`; pass the validated `ProviderConfig` separately to the
   chat service.
+- For Codegeist provider adapters, provider- or framework-owned internal tool
+  execution must always stay disabled. Provider adapters may expose Codegeist-owned
+  tool callback definitions to the model when the active tool context is enabled,
+  but Codegeist must inspect returned tool-call messages, dispatch callbacks through
+  `CodegeistAgentLoopService`, append tool-result messages, and continue the model
+  turn itself. Do not add a config flag that re-enables hidden Spring AI or provider
+  tool execution.
 - Keep `ProviderConfig` free of stored YAML model fields, options, enablement, and
   completions-path routing. Provider config stores access, endpoint, and
   credentials; enablement, routing, explicit model selection, and generation-option
