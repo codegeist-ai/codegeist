@@ -1,0 +1,29 @@
+version: '3'
+
+tasks:
+  test:
+    desc: Run the Codegeist server test suite
+    cmds:
+      - mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test
+
+  build:
+    desc: Build the executable Codegeist server jar
+    cmds:
+      - mvn --batch-mode --no-transfer-progress -DskipTests clean package
+
+  native:
+    desc: Build the GraalVM native Codegeist server executable
+    cmds:
+      - mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile
+
+  native-smoke:
+    desc: Build and smoke-test the native Codegeist server executable
+    cmds:
+      - pwsh -NoProfile -File ../../../scripts/tests/server-native-smoke.ps1 -BuildNative
+
+  run:
+    desc: Build and run the Codegeist server application
+    deps:
+      - build
+    cmds:
+      - java -jar target/codegeist-server.jar

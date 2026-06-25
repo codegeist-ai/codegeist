@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: codegeist-server
+  main:
+    banner-mode: off

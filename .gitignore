@@ -4,6 +4,7 @@
 /app/codegeist/target/
 /app/codegeist/cli/.settings/
 /app/codegeist/cli/target/
+/app/codegeist/server/target/
 /scripts/tests/fixtures/**/target/
 **/bin/**
 *.log

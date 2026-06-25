@@ -34,6 +34,8 @@ docs:
 - `agent-control-loop.md` - Codegeist-owned model/tool/model loop, Spring AI message
   history shape, explicit callback dispatch, persistence boundary, tests, and
   non-goals.
+- `cloud-server.md` - server module source map, Maven parent layout, health API,
+  tests, and explicit cloud-server non-goals for the current bootstrap.
 - `edit-tool.md` - detailed `codegeist_edit` contract, planning algorithm,
   containment guard, text normalization, stale-write protection, preview settings,
   tests, and sharp edges.
@@ -43,8 +45,9 @@ docs:
 
 ## Current System State
 
-Codegeist currently contains one Java/Spring Boot CLI application under
-`app/codegeist/cli`. Implemented runtime behavior is Spring Boot application
+Codegeist currently contains a Java/Spring workspace under `app/codegeist` with a
+shared Maven parent POM and two application modules. `app/codegeist/cli` is the
+local CLI application. Implemented CLI runtime behavior is Spring Boot application
 startup, typed access-only provider config loading and validation, trusted local
 SpEL preprocessing for explicit `codegeist.yml` files, direct workspace, tools, and
 MCP config loading, active workspace resolution, provider-neutral chat execution
@@ -66,30 +69,38 @@ prompts, prompt history, TerminalUI prompt submission, and a broader agent drive
 not implemented. The current `tui` command only starts a minimal Spring Shell
 `TerminalUI` root view with localized Codegeist text and a `Ctrl-Q` quit binding.
 
+`app/codegeist/server` is the separate Codegeist Cloud server application. The
+current server slice boots a Spring WebMVC app named `codegeist-server` and exposes
+only `GET /health` with `{"status":"ok"}`. It has no authentication, tenant
+model, object storage, metadata store, LLM proxy, OpenRouter calls, quotas,
+billing, or CLI sync behavior yet.
+
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
 from focused tests and add only the source needed by the current behavior.
 
 ## Build Baseline
 
-The current application build is defined by `app/codegeist/cli/pom.xml`.
+The current Java application build is defined by `app/codegeist/pom.xml` and child
+module POMs under `app/codegeist/cli` and `app/codegeist/server`.
 
 | Area | Current state |
 | --- | --- |
-| Module shape | Single Maven module under `app/codegeist/cli` |
-| Group/artifact | `ai.codegeist:codegeist` |
+| Module shape | Maven parent/aggregator under `app/codegeist` with `cli` and `server` child modules |
+| Group/artifact | Parent `ai.codegeist:codegeist-parent`; CLI `ai.codegeist:codegeist`; server `ai.codegeist:codegeist-server` |
 | Java | `25` through `java.version` and `maven.compiler.release` |
 | Spring Boot | Parent `spring-boot-starter-parent` `4.0.6` |
 | Logging | Spring Boot default logging with SLF4J and Logback; application logs are file-only through `logback.xml` |
 | Spring Shell | BOM `4.0.2`, dependencies `spring-shell-starter` and `spring-shell-jline` |
+| Spring WebMVC | Server dependency `spring-boot-starter-webmvc` for the first HTTP health endpoint |
 | Jackson | `jackson-databind` plus `jackson-dataformat-yaml` for direct YAML-to-POJO config mapping |
 | Lombok | `1.18.46`, configured as an explicit annotation processor for Java 25 |
 | Spring AI | BOM `2.0.0-M6` imported for dependency management; `spring-ai-ollama` and `spring-ai-openai` are present for programmatic provider `ChatModel` creation, and `spring-ai-starter-mcp-client` is present for prompt-scoped MCP callbacks |
 | Spring AI Agent Utils | BOM and core artifact `0.7.0` |
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
-| Packaging | Spring Boot executable jar named `target/codegeist.jar` |
+| Packaging | CLI Spring Boot executable jar named `target/codegeist.jar`; server Spring Boot executable jar named `target/codegeist-server.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | CLI Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, final local smoke suite, server context-load test, server health endpoint test, and server native smoke |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -102,7 +113,14 @@ runtime utility is wired into the app yet.
 ```text
 .github/workflows/
   release.yml
+app/codegeist/
+  pom.xml
+  Taskfile.yml
 app/codegeist/cli/
+  pom.xml
+  Taskfile.yml
+  src/...
+app/codegeist/server/
   pom.xml
   Taskfile.yml
   src/...
@@ -143,26 +161,35 @@ Implemented Java package:
 | `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write/edit/shell Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
 | `ai.codegeist.app.tui` | Minimal Spring Shell `tui` command and `CodegeistTerminalUi` root view over `TerminalUIBuilder`, without chat submission or a separate agent runtime |
 | `ai.codegeist.app.i18n` | App-wide Spring resource-bundle-backed `CodegeistMessages` helper and `CodegeistLocaleService` for user-visible text and locale selection |
+| `ai.codegeist.server` | Codegeist Cloud server entrypoint and first unauthenticated health endpoint |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
-## Application Entrypoint
+## Application Entrypoints
 
-`CodegeistApplication` is annotated with `@SpringBootApplication` and uses the
-normal `ai.codegeist.app` package scan root. It delegates startup to
+The CLI `CodegeistApplication` is annotated with `@SpringBootApplication`, uses the
+normal `ai.codegeist.app` package scan root, and delegates startup to
 `SpringApplication.run`. GraalVM metadata is kept out of Java code in
 `src/main/resources/META-INF/native-image/`: `resource-config.json` includes
 `logback.xml` and `META-INF/build-info.properties`, and `reflect-config.json`
-registers config root elements, config POJOs, session model types, and native-reachable
-local tool input records for Jackson binding in the native binary.
+registers config root elements, config POJOs, session model types, and
+native-reachable local tool input records for Jackson binding in the native binary.
+
+The server `CodegeistServerApplication` is a separate `@SpringBootApplication`
+under `app/codegeist/server`. Its first implemented web component is
+`HealthController`, which exposes only `GET /health` for the bootstrap slice.
 
 ```mermaid
 flowchart TD
     Main[CodegeistApplication.main]
+    ServerMain[CodegeistServerApplication.main]
     Boot[SpringApplication.run]
+    ServerBoot[SpringApplication.run]
     Context[Spring application context]
+    ServerContext[Server Spring application context]
 
     Main --> Boot --> Context
+    ServerMain --> ServerBoot --> ServerContext
 ```
 
 ## Runtime Components
@@ -769,6 +796,7 @@ download or VM prerequisites.
 | `task qemu-linux-install-smoke` | Runs `task native`, then `scripts/tests/qemu-linux-install-smoke.sh smoke` | Fresh Linux QEMU guest verifies the curl-downloadable Linux install script against local release-shaped assets and checks the installed command |
 | `task mcp-remote-smoke` | Runs `scripts/tests/mcp-remote-smoke.ps1` | Docker-backed local MCP server fixture, real `streamable_http` MCP callback discovery, direct deterministic callback invocation, local Ollama-backed `ask` invocation of the remote MCP tool, session `ToolSessionPart` persistence, and container cleanup outside the default test path |
 | `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, then runs native smoke over SSH including file-edit, shell, and Windows install-script smoke checks |
+| `task server:native-smoke` from `app/codegeist` | Runs `scripts/tests/server-native-smoke.ps1 -BuildNative` | Codegeist Cloud server GraalVM native executable builds, starts on a temporary localhost port, returns `GET /health -> {"status":"ok"}`, reports `server native startup`, and terminates the temporary process |
 | `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.ps1` | Local Linux and Windows smoke suite; both platforms must pass by default |
 | `task ollama-start` | Starts or reuses the local `ollama/ollama` container, waits for `/api/version`, and ensures the selected model is present | External local Ollama prerequisite for focused live provider tests and the MCP remote ask smoke |
 | `task run` | `java -jar target/codegeist.jar` after `build` | Starts the packaged Spring Boot application |

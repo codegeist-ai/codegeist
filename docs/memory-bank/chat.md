@@ -4,6 +4,9 @@
 
 - `codegeist.ai` should grow into a customizable coding agent for CLI, TUI, and
   web use.
+- Codegeist Cloud is now a planned separate SaaS control plane: users log in to
+  Codegeist to access allowed models, S3-compatible storage for commands, skills,
+  rules, agent configuration, and later synced cloud workflows.
 - Codegeist is Java-first: Java 25, Spring Boot, Spring Shell, Spring AI,
   GraalVM, and later Vaadin, JBang, and PF4J where they fit.
 - OpenCode is a feature and behavior reference, not an implementation blueprint.
@@ -30,9 +33,22 @@
   browser state.
 - `start.sh` has been removed. Start the devcontainer through VS Code Dev
   Containers or `devcontainer up --workspace-folder .`.
-- `app/codegeist/cli` is the only implemented Codegeist application module. It is
-  a Spring Boot 4 and Spring Shell 4 CLI bootstrap with Java 25, Maven, Spring AI
-  `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, and GraalVM native build posture.
+- `app/codegeist` is now the shared Maven parent workspace for Codegeist Java
+  applications. It contains the existing `cli` module and the new `server` module.
+  The parent POM owns shared Java 25, Spring Boot 4.0.6, Spring AI `2.0.0-M6`,
+  Spring Shell 4.0.2, Spring AI Agent Utils `0.7.0`, Lombok, and GraalVM build-tool
+  versions. `app/codegeist/Taskfile.yml` includes the CLI and server Taskfiles and
+  aggregates `test`, `build`, and `native` tasks for both modules. The server module
+  also has `task server:native-smoke`, which builds the native server, starts it on
+  a temporary localhost port, verifies `/health`, and reports startup timing.
+- `app/codegeist/cli` remains the local Spring Boot 4 and Spring Shell 4 CLI
+  application. Its executable jar name stays `target/codegeist.jar`.
+- `docs/tasks/T008_build-codegeist-cloud-server/task.md` is the Codegeist Cloud
+  epic. The first bootstrap has added `app/codegeist/server` as a second Spring Boot
+  WebMVC application for the hosted SaaS server. It currently exposes only
+  `GET /health -> {"status":"ok"}` and has no auth, tenants, object storage,
+  metadata store, OpenRouter/OpenAI-compatible LLM proxy, usage accounting, billing,
+  or CLI/TUI sync yet. This is not a local `opencode serve` adapter.
 - `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
   through `CommandOutputService` and prints only the Spring Boot build version,
   currently `0.1.0-SNAPSHOT`.
@@ -348,11 +364,11 @@
   the model requests the remote MCP tool and the Codegeist loop dispatches it. That
   ask smoke asserts the persisted completed `ToolSessionPart` rather than exact final
   model wording. Smoke scripts now emit stable
-  `Duration: <label>: <seconds>s` lines for Maven, package, native compile,
-  archive smoke, platform total, SSH, and QEMU wrapper timings. The latest full
-  JVM suite passed with 173 tests, 0 failures, 0 errors, and 6 skips. The latest
-  `task mcp-remote-smoke` passed with `mcp remote smoke total: 13.058s`. The latest
-  strict `task final-smoke-suite` passed with `linux platform smoke total: 85.696s`,
+  archive smoke, platform total, SSH, and QEMU wrapper timings. The latest Maven
+  reactor test from `app/codegeist` passed with 173 CLI tests, 2 server tests, 0
+  failures, 0 errors, and 6 skips. The latest `task mcp-remote-smoke` passed with
+  `mcp remote smoke total: 13.058s`. The latest strict `task final-smoke-suite`
+  passed with `linux platform smoke total: 85.696s`,
   `windows qemu smoke total: 233.055s`, `linux-x64 native shell ask total:
   0.572s`, and `windows-x64 native shell ask total: 1.690s`.
 - Branch `release/v0.1.0-github-release-build` adds `.github/workflows/release.yml`
@@ -753,9 +769,9 @@
 - Add a thin Codegeist adapter only when a concrete boundary needs policy
   mediation, workspace validation, permission handling, session/event mapping,
   output mapping, or replacement flexibility.
-- Core implementation scope includes CLI and TUI behavior. Keep JBang, PF4J,
-  Vaadin, headless server, API, and SDK/OpenAPI in the backlog while preserving
-  adapter-ready boundaries when real behavior exists.
+- Core local implementation scope includes CLI and TUI behavior. T008 now tracks
+  the separate Codegeist Cloud SaaS server; keep JBang, PF4J, Vaadin, and
+  SDK/OpenAPI deferred until focused tasks define stable behavior and contracts.
 - Build artifacts such as `target/`, `bin/`, `.class`, and `.jar` stay out of
   git.
 - Consumer-specific NVIDIA/Ollama development support belongs in local
@@ -778,9 +794,15 @@
 
 ## Workflow Notes
 
-- Use `/specify-task`, `/plan-task`, `/solve-task`, and `/work-task` from the
-  shared `.opencode` agent kit for phased task work when a tracked task benefits
-  from that workflow.
+- Use `/task spec "<title/context>"` and `/task impl <task-ref> [instructions]`
+  from the shared `.opencode` agent kit when tracked task work benefits from the
+  repo task workflow.
+- Shared `/save` is branch-aware and uses rebase, not merge. On a feature branch,
+  it refreshes the local base branch from upstream, rebases the current branch
+  onto that refreshed base, and pushes only the current branch. It must not merge,
+  fast-forward, or push the base branch from that path; `--force-with-lease` is
+  allowed only for the current non-base branch after a rebase rewrote commits
+  already present upstream.
 - Use `docs/developer/specification/java-generation-guidance.md` before writing
   Java implementation code.
 - Use `docs/developer/specification/testing-strategy-and-agent-rules.md` for
@@ -888,3 +910,6 @@
   provider-specific methods or treating any hosted provider feature as
   `remote_free`; use its availability matrix before adding a provider starter or
   client code.
+- Next cloud-server work should create a focused `T008` child task, starting with
+  product-boundary decisions for login, tenancy, entitlements, S3 artifact storage,
+  metadata persistence, OpenRouter proxy behavior, and the first CLI sync target.

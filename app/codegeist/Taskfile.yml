@@ -1,0 +1,67 @@
+version: '3'
+
+includes:
+  cli:
+    taskfile: ./cli/Taskfile.yml
+    dir: ./cli
+  server:
+    taskfile: ./server/Taskfile.yml
+    dir: ./server
+
+tasks:
+  test:
+    desc: Run CLI and server test suites
+    cmds:
+      - task: cli:test
+      - task: server:test
+
+  test-cli:
+    desc: Run the Codegeist CLI test suite
+    cmds:
+      - task: cli:test
+        vars:
+          TEST: '{{if .TEST}}{{.TEST}}{{end}}'
+
+  test-server:
+    desc: Run the Codegeist server test suite
+    cmds:
+      - task: server:test
+        vars:
+          TEST: '{{if .TEST}}{{.TEST}}{{end}}'
+
+  build:
+    desc: Build CLI and server applications
+    cmds:
+      - task: cli:build
+      - task: server:build
+
+  build-cli:
+    desc: Build the Codegeist CLI application
+    cmds:
+      - task: cli:build
+
+  build-server:
+    desc: Build the Codegeist server application
+    cmds:
+      - task: server:build
+
+  native:
+    desc: Build CLI and server GraalVM native executables
+    cmds:
+      - task: cli:native
+      - task: server:native
+
+  native-cli:
+    desc: Build the Codegeist CLI GraalVM native executable
+    cmds:
+      - task: cli:native
+
+  native-server:
+    desc: Build the Codegeist server GraalVM native executable
+    cmds:
+      - task: server:native
+
+  native-smoke-server:
+    desc: Build, smoke-test, and time the native Codegeist server executable
+    cmds:
+      - task: server:native-smoke
