@@ -173,7 +173,7 @@ implementation tests need them.
   `implementation-plan.md`. Final verification included broad JVM tests,
   `native-smoke`, `local-linux-smoke`, `mcp-remote-smoke`, and the Linux plus
   Windows QEMU `final-smoke-suite`.
-- `T007_06_add-terminal-tui-over-chat-file.md` - add a terminal TUI that opens,
+- `T007_06_add-terminal-tui-over-chat-file/task.md` - add a terminal TUI that opens,
   renders, updates, and saves the same session store on top of the agent loop.
 - `T007_07_verify-chat-file-tool-harness.md` - run focused and broad verification,
   update architecture docs, and ensure the parent acceptance criteria hold.

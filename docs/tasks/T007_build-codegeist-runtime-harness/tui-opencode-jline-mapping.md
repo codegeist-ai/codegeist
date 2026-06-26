@@ -6,41 +6,46 @@ or Spring Shell/JLine equivalents for Codegeist T007.
 ## Purpose
 
 Use this document when implementing
-`tasks/T007_06_add-terminal-tui-over-chat-file.md`. It identifies the OpenCode TUI
+`tasks/T007_06_add-terminal-tui-over-chat-file/task.md`. It identifies the OpenCode TUI
 elements that matter for a minimum usable local coding-agent TUI and maps each one
-to Java/JLine primitives that fit Codegeist's current Spring Shell CLI.
+to Java/JLine primitives that fit Codegeist's current Spring Shell CLI. Use the
+deeper multi-project comparison in
+`tasks/T007_06_add-terminal-tui-over-chat-file/third-party-tui-deep-analysis.md`
+for source-backed tradeoffs across OpenCode, Pi, Aider, mini-SWE-agent, and
+Spring AI Agent Utils.
 
 The goal is not OpenTUI/Solid parity. The goal is a practical terminal interface
-that can read and update the same `chat.json` used by `ask --chat`, render enough
-tool activity for daily coding-agent use, and keep runtime-only data out of the
-chat file.
+that can read and update the same `.codegeist/session.json` used by
+`ask -c/--continue`, render enough tool activity for daily coding-agent use, and
+keep runtime-only data out of the session store.
 
 ## Evidence Sources
 
 OpenCode source areas inspected:
 
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/app.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/thread.ts`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/routes/home.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/routes/session/index.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/routes/session/permission.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/routes/session/question.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/routes/session/footer.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/routes/session/sidebar.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/component/prompt/index.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/component/prompt/autocomplete.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/component/prompt/history.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/component/prompt/stash.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/component/dialog-status.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/component/startup-loading.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/component/error-component.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/ui/dialog*.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/ui/toast.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/keymap.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/config/tui-schema.ts`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/context/sync.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/context/sdk.tsx`
-- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui/feature-plugins/sidebar/*.tsx`
+- `docs/third-party/opencode/source/packages/opencode/src/cli/cmd/tui.ts`
+- `docs/third-party/opencode/source/packages/tui/src/app.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/context/sdk.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/context/sync.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/context/sync-v2.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/routes/home.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/routes/session/index.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/routes/session/permission.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/routes/session/question.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/routes/session/footer.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/routes/session/sidebar.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/component/prompt/index.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/component/prompt/autocomplete.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/component/prompt/history.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/component/prompt/stash.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/component/dialog-status.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/component/startup-loading.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/component/error-component.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/ui/dialog*.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/ui/toast.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/keymap.tsx`
+- `docs/third-party/opencode/source/packages/tui/src/config/`
+- `docs/third-party/opencode/source/packages/tui/src/plugin/`
 
 JLine evidence came from Context7 library `/jline/jline3`, especially examples for:
 
@@ -55,12 +60,13 @@ JLine evidence came from Context7 library `/jline/jline3`, especially examples f
 
 ## Codegeist T007 Constraints
 
-- `chat.json` is the only persisted chat state.
-- `chat.json` stores chat history and tool activity only.
+- `.codegeist/session.json` is the only persisted chat state.
+- `.codegeist/session.json` stores chat history and tool activity only.
 - Provider config, selected provider/model, MCP client definitions, enabled tool
   definitions, runtime status, UI layout, scroll position, focused pane, and draft
-  prompt text stay out of `chat.json`.
-- The TUI uses the same chat services and chat file service as `ask --chat`.
+  prompt text stay out of `.codegeist/session.json`.
+- The TUI uses the same `ChatHarnessService` and `SessionStoreService` path as
+  `ask -c/--continue`.
 - The TUI must not add server runtime, remote sync, Vaadin, desktop UI, API/SDK,
   OpenTUI/Solid, plugins, skills, memory, LSP, or subagents in T007.
 
@@ -76,11 +82,11 @@ flowchart TD
     Terminal --> Render["Transcript renderer"]
     Render --> Style["AttributedString / AttributedStyle"]
     Keys --> Actions["submit / cancel / quit / help / scroll / save"]
-    Actions --> ChatFile["ChatFileService"]
+    Actions --> SessionStore["SessionStoreService"]
     Actions --> Chat["CodegeistChatService"]
     Chat --> ToolService["CodegeistToolService"]
-    ToolService --> ChatFile
-    ChatFile --> ViewModel["TuiViewModel"]
+    ToolService --> SessionStore
+    SessionStore --> ViewModel["TuiViewModel"]
     ViewModel --> Render
 ```
 
@@ -113,7 +119,7 @@ the same view model can later back a richer full-screen layout.
 | TUI host and render loop | `app.tsx`, `thread.ts` | Starts OpenTUI renderer, providers, plugins, routes, title, exit. | Must have minimal host. | `TerminalBuilder`, one `TuiController`, line fallback renderer. Do not copy plugin/runtime architecture. |
 | Home/new-session screen | `routes/home.tsx` | Logo, centered prompt, auto-submit from CLI args. | Defer. | Start directly in chat view; show a welcome line for empty files. |
 | Session/chat layout | `routes/session/index.tsx` | Main transcript, prompt/permission footer, optional sidebar. | Must have. | Transcript renderer plus bottom `LineReader` composer and `Status`. Sidebar deferred. |
-| Message transcript | `routes/session/index.tsx` | User messages, assistant text, reasoning, tool parts, errors, model metadata. | Must have. | `AttributedString` rows from `chat.json` messages and parts. Keep markdown simple. |
+| Message transcript | `routes/session/index.tsx` | User messages, assistant text, reasoning, tool parts, errors, model metadata. | Must have. | `AttributedString` rows from `.codegeist/session.json` messages and parts. Keep markdown simple. |
 | Generic tool dispatcher | `routes/session/index.tsx` | Routes tool parts to specialized renderers; hides/shows details. | Must have. | `ToolActivityRenderer` with per-tool renderers and common state row. |
 | Read/list/glob/grep/write rendering | `routes/session/index.tsx`, `permission.tsx` | Shows file paths, patterns, counts, line previews, write content. | Must have. | File tool renderer with paths, counts, previews, and truncation markers. |
 | Diff/change rendering | `routes/session/index.tsx`, `permission.tsx` | Unified/split diff, added/removed/context colors, diagnostics. | Must have simplified. | Unified diff text with `AttributedStyle` colors and bounded preview. Split diff deferred. |
@@ -129,16 +135,16 @@ the same view model can later back a richer full-screen layout.
 | Side panels | `routes/session/sidebar.tsx`, `feature-plugins/sidebar/*.tsx` | Context/MCP/LSP/todo/files sidebar. | Defer full panel. | Fold required runtime status into `Status` and `/status` view. |
 | Notifications/toasts | `ui/toast.tsx`, `app.tsx` | Transient success/error/warning messages. | Must have minimal. | One notification/status line; styled error/warn/saved messages. |
 | Scroll and transcript navigation | `routes/session/index.tsx`, `dialog-timeline.tsx`, `dialog-message.tsx`, `util/scroll.ts` | Sticky scroll, page/home/end, message jumps, timeline, copy/fork/revert actions. | Must have scroll only. | In-memory scroll offset and follow-bottom mode; defer timeline/fork/revert/export. |
-| Transcript copy/export | `routes/session/index.tsx`, `util/transcript.ts` | Copy/export transcript as markdown with options. | Defer. | `chat.json` is inspectable; later add export command if needed. |
+| Transcript copy/export | `routes/session/index.tsx`, `util/transcript.ts` | Copy/export transcript as markdown with options. | Defer. | `.codegeist/session.json` is inspectable; later add export command if needed. |
 | Startup/loading and fatal errors | `startup-loading.tsx`, `error-component.tsx` | Loading spinner and crash/error recovery UI. | Partial. | Deterministic load/save/render error screen/line; no plugin spinner. |
-| Server-backed sync model | `context/sync.tsx`, `context/sdk.tsx` | Syncs provider, model, config, session, status, parts, permissions, MCP, LSP. | Concept only. | Replace with `ChatFileState` plus transient `RuntimeStatus`; no server or DB. |
+| Server-backed sync model | `context/sync.tsx`, `context/sdk.tsx` | Syncs provider, model, config, session, status, parts, permissions, MCP, LSP. | Concept only. | Replace with `SessionStoreView` plus transient `RuntimeStatus`; no server or DB. |
 
 ## Minimum T007 View Model
 
 ```mermaid
 classDiagram
     class TuiViewModel {
-      ChatFileView chatFile
+      SessionStoreView sessionStore
       RuntimeStatus runtimeStatus
       List~TranscriptRow~ rows
       PromptState prompt
@@ -147,10 +153,10 @@ classDiagram
       ScrollState scroll
     }
 
-    class ChatFileView {
-      Path chatPath
+    class SessionStoreView {
+      Path storePath
       Path workingDir
-      List~ChatMessageView~ messages
+      List~SessionMessageView~ messages
       boolean dirty
     }
 
@@ -184,14 +190,14 @@ classDiagram
       List~String~ options
     }
 
-    TuiViewModel --> ChatFileView
+    TuiViewModel --> SessionStoreView
     TuiViewModel --> RuntimeStatus
     TuiViewModel --> TranscriptRow
     TuiViewModel --> PromptState
     TuiViewModel --> ModalState
 ```
 
-Only `ChatFileView` data comes from persisted `chat.json`. `RuntimeStatus`,
+Only `SessionStoreView` data comes from persisted `.codegeist/session.json`. `RuntimeStatus`,
 `PromptState`, `Notification`, `ModalState`, and `ScrollState` are transient TUI
 state.
 
@@ -212,7 +218,7 @@ state.
 
 ## Implementation Priority
 
-1. Build `TuiViewModel` from `chat.json` plus transient `RuntimeStatus`.
+1. Build `TuiViewModel` from `.codegeist/session.json` plus transient `RuntimeStatus`.
 2. Render deterministic transcript rows with `AttributedString` and line fallback.
 3. Add common tool renderer with status, duration, error, and truncation markers.
 4. Add specific file, change, and shell renderers.
@@ -227,7 +233,7 @@ state.
 - TUI plugins, slots, theme package loading, and plugin runtime.
 - Home screen/session browser, fork, share, revert, and timeline actions.
 - Autocomplete for files, agents, MCP resources, and command palette.
-- Prompt stash/history persisted outside `chat.json`.
+- Prompt stash/history persisted outside `.codegeist/session.json`.
 - Question tool multi-select UI.
 - Sidebar panels for LSP, todos, modified files, context cost, and plugins.
 - Transcript export/copy features.
@@ -241,7 +247,7 @@ state.
 - Renderer projects user messages, assistant messages, file tools, write results,
   patch/edit summaries, shell output, errors, and truncation markers.
 - Status line projection can show provider/model/MCP/tool availability from runtime
-  state without changing `chat.json`.
+  state without changing `.codegeist/session.json`.
 - Prompt loop handles submit, empty input, interrupt, EOF/quit, help, and status in a
   deterministic noninteractive test path.
 - Line-oriented fallback renders the same essential rows as the richer renderer.

@@ -23,6 +23,12 @@ save the same file.
 
 - Use `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`
   as the source-backed element inventory and JLine mapping for this implementation.
+- Use `third-party-tui-deep-analysis.md` in this task directory for the current
+  source-backed comparison of OpenCode, Pi, Aider, mini-SWE-agent, and Spring AI
+  Agent Utils terminal UI patterns before adding UI dependencies or renderer
+  abstractions.
+- Use `implementation-plan.md` in this task directory as the detailed class,
+  package, phase, test, and documentation handoff for implementation.
 - Add the smallest terminal UI approach that supports the required coding-agent
   elements and still fits the existing Spring Shell/JLine stack. Add a new UI
   dependency only if focused tests or smoke checks prove JLine is not enough.
@@ -68,6 +74,34 @@ save the same file.
 - UI-only state such as selected pane, scroll offset, layout, focused widget, draft
   prompt text, and transient keybinding state must stay outside
   `.codegeist/session.json`.
+
+## Child Tasks
+
+Solve these child tasks sequentially. Do not parallelize implementation; each child
+creates the contract used by the next one.
+
+- `tasks/T007_06_01_build-tui-view-model-projection.md` - build pure view-model and
+  runtime-status projection from persisted session state and transient config/tool
+  inventory.
+- `tasks/T007_06_02_add-deterministic-line-renderers.md` - render the view model into
+  deterministic line-oriented output for chat, tools, status, help, and errors.
+- `tasks/T007_06_03_add-tui-input-parser-and-console-seam.md` - add the parsed input
+  model and testable terminal seam before any real JLine integration.
+- `tasks/T007_06_04_implement-terminal-tui-controller-loop.md` - implement the
+  prompt loop over `SessionStoreService` and `ChatHarnessService.ask(true, prompt)`.
+- `tasks/T007_06_05_add-jline-console-and-spring-command.md` - add the production
+  JLine console and Spring Shell `tui` command.
+- `tasks/T007_06_06_document-terminal-tui-architecture.md` - document the implemented
+  TUI architecture and run final verification.
+
+## Dependency Order
+
+- `T007_06_01` comes first and owns data projection.
+- `T007_06_02` depends on `T007_06_01` and owns deterministic rendering.
+- `T007_06_03` depends on `T007_06_02` and owns input parsing plus the console seam.
+- `T007_06_04` depends on `T007_06_03` and owns the controller loop.
+- `T007_06_05` depends on `T007_06_04` and owns real terminal plus command wiring.
+- `T007_06_06` depends on `T007_06_05` and closes docs plus verification.
 
 ## Acceptance Criteria
 

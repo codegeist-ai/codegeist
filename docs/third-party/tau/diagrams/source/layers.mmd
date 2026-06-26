@@ -1,0 +1,27 @@
+flowchart TB
+    User[User or automation]
+    CLI[tau_coding CLI]
+    TUI[Textual TUI]
+    CodingSession[tau_coding CodingSession]
+    Harness[tau_agent AgentHarness]
+    AgentLoop[tau_agent run_agent_loop]
+    Provider[tau_ai ModelProvider]
+    Tools[tau_coding read/write/edit/bash tools]
+    Storage[append-only JSONL sessions]
+    Resources[skills prompts AGENTS.md resources]
+
+    User --> CLI
+    CLI --> TUI
+    CLI --> CodingSession
+    TUI --> CodingSession
+    CodingSession --> Harness
+    Harness --> AgentLoop
+    AgentLoop --> Provider
+    AgentLoop --> Tools
+    CodingSession --> Storage
+    CodingSession --> Resources
+
+    Provider -- provider events --> AgentLoop
+    AgentLoop -- agent events --> Harness
+    Harness -- agent events --> CodingSession
+    CodingSession -- projected state --> TUI

@@ -563,6 +563,25 @@
   `T007_03_add-mcp-and-read-write-tools/tasks/`, not as one large runtime change.
   The required OpenCode-style TUI elements are mapped to JLine implementation primitives in
   `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md`.
+  The deeper source-backed comparison for `T007_06` now lives at
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_06_add-terminal-tui-over-chat-file/third-party-tui-deep-analysis.md`.
+  It compares OpenCode, Pi, Aider, mini-SWE-agent, and Spring AI Agent Utils and
+  recommends a line-first JLine-close TUI projection over `SessionStoreService`,
+  not a copied OpenTUI, Pi TUI, Textual, or prompt_toolkit framework.
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_06_add-terminal-tui-over-chat-file/implementation-plan.md`
+  is the detailed implementation handoff: it defines the planned
+  `ai.codegeist.app.tui` package, `TuiCommands`, `CodegeistTerminalTui`, JLine
+  console seam, input parser, view model, runtime status projection, deterministic
+  line renderers, local-tool inventory service, focused tests, verification commands,
+  and architecture-doc updates. It keeps `.codegeist/session.json` as the only chat
+  persistence source and defers full-screen rendering, prompt history, provider/model
+  selectors, approval UI, live cancellation, and streaming updates.
+  T007_06 is now split into a strictly sequential child-task chain under
+  `T007_06_add-terminal-tui-over-chat-file/tasks/`: `T007_06_01` builds the pure
+  view model, `T007_06_02` adds deterministic line renderers, `T007_06_03` adds the
+  input parser and console seam, `T007_06_04` implements the controller loop,
+  `T007_06_05` wires JLine plus the Spring Shell command, and `T007_06_06` closes
+  architecture docs and verification. Complete each child before starting the next.
   `T007_03_add-mcp-and-read-write-tools/task.md` is completed: direct `mcp:` config,
   workspace resolution, local read/list/glob/grep/write callbacks, the one-turn
   `ChatHarnessService`, MCP callback integration, Docker-backed remote MCP smoke,
@@ -602,7 +621,7 @@
   background shell process management, and structured patch semantics remain future
   work behind Codegeist-owned `codegeist_*` callbacks if they are ever needed.
   Remaining parent-level T007 children are `T007_05_add-agent-control-loop/task.md`
-  with its `implementation-plan.md`, `T007_06_add-terminal-tui-over-chat-file.md`, and
+  with its `implementation-plan.md`, `T007_06_add-terminal-tui-over-chat-file/task.md`, and
   `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
   server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory,
   and subagents.
@@ -755,7 +774,7 @@
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
 - Continue the next T007 implementation from the remaining child tasks after
-  `T007_05`, especially `T007_06_add-terminal-tui-over-chat-file.md` for the JLine
+  `T007_05`, especially `T007_06_add-terminal-tui-over-chat-file/task.md` for the JLine
   terminal UI over the same session store.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
@@ -792,6 +811,17 @@
   verification artifacts. The latest focused Graphify run used 203 filtered
   source/doc files and generated 1,874 nodes, 2,955 edges, and 131 communities;
   use `/ask-project mini-swe-agent ...` for follow-up source-backed questions.
+- `docs/third-party/tau/` contains the Tau analysis workspace with source
+  submodule on `main` at `1c10d33800d2c551bdff9f252f25ae51e8809e7e`, durable
+  handoff docs, focused feature/user/developer notes, editable Mermaid layer and
+  runtime-flow sources, and ignored local Repomix/Graphify/manifest/verification
+  artifacts. Tau is a Python `>=3.14` Pi-inspired coding-agent harness; use it as
+  behavior evidence for provider-neutral events, append-only JSONL session trees,
+  local read/write/edit/bash tools, slash commands, provider selection, and a
+  Textual TUI adapter, not as a direct Java implementation blueprint. The latest
+  focused Graphify run used 139 filtered source/doc files and generated 3,064
+  nodes, 9,229 edges, and 135 communities; use `/ask-project tau ...` for
+  follow-up source-backed questions.
 - `docs/tasks/T007_build-codegeist-runtime-harness/aider-mini-swe-harness-research.md`
   applies the T007_03 smaller-harness catalog to the local Aider and
   mini-SWE-agent workspaces. It confirms that neither project implements MCP, but

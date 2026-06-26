@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant User
+    participant TauCli as tau_coding.cli
+    participant TuiOrPrint as TUI or print renderer
+    participant CodingSession
+    participant Harness as AgentHarness
+    participant AgentLoop as run_agent_loop
+    participant Provider as ModelProvider
+    participant Tool as AgentTool
+    participant Store as JsonlSessionStorage
+
+    User->>TauCli: tau prompt or tau -p prompt
+    TauCli->>CodingSession: load session with provider, model, cwd, tools
+    CodingSession->>Harness: prompt or continue
+    Harness->>AgentLoop: run with transcript and queues
+    AgentLoop->>Provider: stream_response
+    Provider-->>AgentLoop: provider events
+    AgentLoop-->>Harness: message and thinking events
+    Harness-->>CodingSession: agent events
+    CodingSession->>Store: append completed messages on MessageEndEvent
+    AgentLoop->>Tool: execute requested tool calls
+    Tool-->>AgentLoop: AgentToolResult
+    AgentLoop-->>Harness: tool execution events
+    Harness-->>CodingSession: final events
+    CodingSession-->>TuiOrPrint: render or project state
+    TuiOrPrint-->>User: transcript, status, tool output
