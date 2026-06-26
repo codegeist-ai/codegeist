@@ -8,7 +8,9 @@ platform-native binary smoke validation.
 This document defines how Codegeist builds, packages, publishes, and verifies
 release artifacts. The current implementation is `.github/workflows/release.yml`,
 which validates release-shaped artifacts on GitHub-hosted runners and publishes
-GitHub Releases for `v*` tag runs. It does not add installers, signing keys,
+GitHub Releases for `v*` tag runs. It includes curl-downloadable install scripts
+and runs each platform install script against local release-shaped assets on its
+matching native runner, but does not add OS-native installers, signing keys,
 notarization setup, package-manager manifests, or runtime behavior.
 
 Use this guide before changing release CI, release scripts, native packaging
@@ -30,17 +32,20 @@ GitHub-hosted release workflow.
 | Spring AI Agent Utils | BOM and core dependency `0.7.0` |
 | JVM package | Spring Boot executable jar named `target/codegeist.jar`; release asset `codegeist-jvm.jar` |
 | Native package | GraalVM native Maven profile using `native-maven-plugin` `0.10.6` |
-| Local commands | `task test`, `task build`, `task native`, `task native-smoke`, `task local-linux-smoke`, `task qemu-windows-smoke`, `task final-smoke-suite`, `task ollama-start`, `task run` |
+| Local commands | `task test`, `task build`, `task native`, `task native-smoke`, `task local-linux-smoke`, `task qemu-linux-install-smoke`, `task qemu-windows-smoke`, `task final-smoke-suite`, `task ollama-start`, `task run` |
 | GitHub release workflow | `.github/workflows/release.yml` for `release/v*` iteration and candidate branch validation, `workflow_dispatch` pre-tag validation, and `v*` tag release publication |
 | Main promotion | Multi-commit release iteration branches are squashed into `release/v<version>-codegeist-rc-<n>` candidate branches; `main` is advanced by fast-forward only after candidate validation passes |
 
-No artifact signing, notarization, installer generation, SBOM, SLSA provenance, or
-package-manager publishing exists yet.
+No artifact signing, notarization, SBOM, SLSA provenance, package-manager
+publishing, or OS-native installer packages exist yet. The release does include
+curl-downloadable install scripts that bootstrap the native archives.
 
 The current local smoke suite lives under `scripts/tests/` and uses the shared
 `artifact-smoke.ps1` harness to verify implemented `--version`, native
 `--show-config`, file-edit encoding, shell-tool execution, command logs, and optional Ollama-backed
-`ask` behavior on local Linux artifacts and, when configured, a Windows QEMU VM
+`ask` behavior on local Linux artifacts and, when configured, a Windows QEMU VM.
+Release CI also uses `scripts/tests/install-script-smoke.ps1` to verify Linux,
+Windows, and macOS install scripts on their matching native runners.
 
 ## Release Target
 
@@ -51,6 +56,7 @@ associated with a `v*` release tag. Each release includes:
 
 - JVM jar artifact.
 - Platform-native archive artifacts when the platform build is available.
+- Curl-downloadable install script assets for Linux, macOS, and Windows.
 - SHA-256 checksum file for every published artifact.
 - Validation summary that lists every platform check as `passed`, `skipped`, or
   `failed`.
@@ -59,9 +65,9 @@ associated with a `v*` release tag. Each release includes:
 - Provenance notes that identify the source tag, workflow run, runner images, Java
   and GraalVM versions, and checksum generation command.
 
-Signing, notarization, SBOM generation, SLSA-style provenance, installer creation,
-and package-manager distribution are future hardening items unless a later release
-task explicitly makes one of them release-blocking.
+Signing, notarization, SBOM generation, SLSA-style provenance, OS-native installer
+creation, and package-manager distribution are future hardening items unless a
+later release task explicitly makes one of them release-blocking.
 
 ## Platform Matrix
 
@@ -90,6 +96,9 @@ The JVM jar and native distribution archives have separate responsibilities.
 | Windows native archive | `codegeist-windows-x64.zip` | Native compile and package on Windows x64 | Release-blocking in the implemented workflow. |
 | macOS Intel native archive | `codegeist-macos-x64.tar.gz` | Native compile and package on macOS x64 | Release-blocking in the implemented workflow. |
 | macOS Apple Silicon native archive | `codegeist-macos-aarch64.tar.gz` | Native compile and package on macOS arm64 | Compatibility target; skip only with explicit runner/toolchain reason. |
+| Linux install script | `codegeist-install-linux.sh` | Repo script staging job | Release asset with checksum coverage; release CI runs it on the Linux native runner, and local QEMU install smoke verifies the curl path before release when run. |
+| macOS install script | `codegeist-install-macos.sh` | Repo script staging job | Release asset with checksum coverage; release CI runs it on the macOS x64 native runner. |
+| Windows install script | `codegeist-install-windows.ps1` | Repo script staging job | Release asset with checksum coverage; release CI runs it on the Windows native runner, and local Windows QEMU smoke verifies it against local release-shaped assets. |
 | Checksums | `SHA256SUMS.txt` | Platform-neutral checksum step | Required for every uploaded artifact. |
 
 Release asset filenames intentionally omit the version because the GitHub Release
@@ -130,23 +139,29 @@ unsafe.
 6. Native file-edit encoding smoke: verify each extracted native package through
    the shared artifact harness on the target runner.
 7. Native package shape: leave only the release archive under
-   `target/dist/codegeist-<platform>.<extension>` for upload.
-8. Artifact integrity: generate checksums and verify every checksum before upload.
-9. Main promotion: after candidate branch validation, advance `main` by
-    fast-forward only from the candidate commit.
-10. Release publication: on `v*` tag runs only, create or update a published GitHub
-    Release and attach all artifacts and checksums.
-11. Post-release verification: download the published assets and verify
-     `SHA256SUMS.txt` before reporting the release complete.
-12. Latest mirror: after downloaded checksum verification passes, move the
-    lightweight `latest` tag to the verified `v*` release commit and create or
-    update the `latest` GitHub Release with those same verified downloaded assets.
+    `target/dist/codegeist-<platform>.<extension>` for upload.
+8. Install script smoke: run `scripts/tests/install-script-smoke.ps1` on each
+   native runner against the matching local archive and installer, including the
+   macOS script on the GitHub-hosted macOS x64 runner.
+9. Install script staging: upload Linux, macOS, and Windows install scripts as
+   release assets.
+10. Artifact integrity: generate checksums and verify every checksum before upload.
+11. Main promotion: after candidate branch validation, advance `main` by
+      fast-forward only from the candidate commit.
+12. Release publication: on `v*` tag runs only, create or update a published GitHub
+      Release and attach all artifacts and checksums.
+13. Post-release verification: download the published assets and verify
+       `SHA256SUMS.txt` before reporting the release complete.
+14. Latest mirror: after downloaded checksum verification passes, move the
+      lightweight `latest` tag to the verified `v*` release commit and create or
+      update the `latest` GitHub Release with those same verified downloaded assets.
     Do not run another build for `latest`.
 
 The JVM jar is a release-blocking asset because it must build and upload, but it is
 not an artifact-smoke target. Linux x64, Windows x64, and macOS x64 native archives
-are the release-blocking smoke targets in the implemented GitHub workflow. Missing
-native checks must be recorded as `skipped`, not left implicit.
+plus their matching install-script smokes are release-blocking smoke targets in the
+implemented GitHub workflow. Missing native or install checks must be recorded as
+`skipped`, not left implicit.
 
 ## Binary Smoke Scenarios
 
@@ -162,8 +177,9 @@ Required smoke checks once the corresponding CLI behavior exists:
   command.
 - Native artifact smoke: run `scripts/tests/artifact-smoke.ps1` against native build
   output. This PowerShell 7 harness owns native packaging, archive unpacking,
-  `--version`, native `--show-config`, command-log assertions, and file-edit
-  delegation across Linux, Windows, macOS, local wrappers, and release CI.
+  `--version`, native `--show-config`, command-log assertions, file-edit
+  delegation, and shell-tool delegation across Linux, Windows, macOS, local
+  wrappers, and release CI.
 - File-edit encoding smoke: `artifact-smoke.ps1` delegates to
   `scripts/tests/file-edit-ask-smoke.ps1`. The sub-harness starts a local
   deterministic Ollama-compatible fixture provider, runs the real `ask` command,
@@ -185,23 +201,32 @@ Required smoke checks once the corresponding CLI behavior exists:
   command being tested.
 - Artifact integrity: verify the downloaded artifact checksum before execution.
 - Timeout handling: fail the smoke if the process hangs beyond the smoke budget.
+- Install script smoke: run `scripts/tests/install-script-smoke.ps1` after the
+  native archive smoke on the matching release runner. The harness serves local
+  release-shaped assets over localhost, executes the platform installer in an
+  isolated install root, and verifies installed `codegeist --version` plus
+  `codegeist --show-config`.
 
 Implemented CI smoke command shapes:
 
 ```bash
 pwsh -NoProfile -File scripts/tests/artifact-smoke.ps1 -Platform linux-x64 -CliDir app/codegeist/cli
 pwsh -NoProfile -File scripts/tests/artifact-smoke.ps1 -Platform macos-x64 -CliDir app/codegeist/cli
+pwsh -NoProfile -File scripts/tests/install-script-smoke.ps1 -Platform linux-x64 -CliDir app/codegeist/cli
+pwsh -NoProfile -File scripts/tests/install-script-smoke.ps1 -Platform macos-x64 -CliDir app/codegeist/cli
 ```
 
 ```powershell
 pwsh -NoProfile -File scripts\tests\artifact-smoke.ps1 -Platform windows-x64 -CliDir app\codegeist\cli
+pwsh -NoProfile -File scripts\tests\install-script-smoke.ps1 -Platform windows-x64 -CliDir app\codegeist\cli
 ```
 
 These examples reflect the implemented release workflow's `--version`,
-`--show-config`, packaging, archive unpacking, and ask-driven file-edit smoke
-shape through the shared artifact harness. Do not report broader commands such as
-`--help` as executed until the CLI owns that behavior and the corresponding release
-job really runs it.
+`--show-config`, packaging, archive unpacking, ask-driven file-edit and shell-tool
+smoke through the shared artifact harness, plus installed-command verification
+through the install-script harness. Do not report broader commands such as `--help`
+as executed until the CLI owns that behavior and the corresponding release job
+really runs it.
 
 ## Implemented Local Smoke Suite
 
@@ -212,14 +237,17 @@ Actions release jobs.
 | --- | --- |
 | `scripts/tests/smoke-common.ps1` | Shared PowerShell 7 helper layer for platform smoke status files, duration output, environment overrides, command steps, and readiness checks. |
 | `scripts/tests/artifact-smoke.ps1` | Shared native-only PowerShell 7 artifact harness used by release CI plus local Linux and Windows wrappers. It packages native artifacts, unpacks native archives, verifies `--version`, native `--show-config`, command logs, deterministic file-edit side effects, and deterministic shell side effects through fixture-backed `ask` runs. |
+| `scripts/tests/install-script-smoke.ps1` | Shared install-script smoke harness used by release CI and the Windows QEMU smoke. It serves local release-shaped assets, runs the matching platform install script in an isolated install root, and verifies the installed command wrapper. |
 | `scripts/tests/local-linux-smoke.ps1` | Runs Maven tests, builds `target/codegeist.jar` as a build gate, and when `native-image` is available delegates native build and archive checks to `native-smoke.ps1` and the shared artifact harness for `target/dist/codegeist-linux-x64.tar.gz`. |
-| `scripts/tests/qemu-windows-vm.sh` | Downloads the official Windows Server Evaluation ISO when needed, creates or starts the local Windows QEMU VM, syncs the repo subset, and runs Windows smoke through SSH. Download, ISO, or VM failures fail by default. |
+| `scripts/tests/qemu-linux-install-smoke.sh` | Boots a fresh Ubuntu Linux QEMU guest, serves local release-shaped assets from the host, downloads `codegeist-install-linux.sh` with guest `curl`, installs the Linux archive, and verifies the installed command. It is opt-in and not part of `final-smoke-suite` by default. |
+| `scripts/tests/qemu-windows-vm.sh` | Downloads the official Windows Server Evaluation ISO when needed, creates or starts the local Windows QEMU VM, syncs `app/codegeist/cli`, `scripts/tests`, and `scripts/install`, and runs Windows smoke through SSH. Download, ISO, or VM failures fail by default. |
 | `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH wrapper that runs `scripts/tests/windows-smoke.ps1` inside an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Runs Windows-side native compile and calls the shared artifact harness for `target/dist/codegeist-windows-x64.zip` when GraalVM and MSVC Build Tools are available. |
+| `scripts/tests/windows-smoke.ps1` | Runs Windows-side native compile, calls the shared artifact harness for `target/dist/codegeist-windows-x64.zip`, then runs the Windows install script smoke against local release-shaped assets when GraalVM and MSVC Build Tools are available. |
 | `scripts/tests/final-smoke-suite.ps1` | Runs Linux and Windows local smoke checks. Default mode requires both platforms to pass; `-AllowSkips` is developer-only. |
 
-Smoke orchestration logic lives in the PowerShell scripts; do not add shell
-compatibility wrappers around these workflows.
+Most smoke orchestration logic lives in the PowerShell scripts. Bash scripts under
+`scripts/tests/` are used only for host-side QEMU VM lifecycle, SSH, and
+asset-server orchestration where they keep the workflow smaller and clearer.
 
 The local suite is intentionally not a release publisher. It does not upload
 artifacts, generate checksums, create GitHub Releases, sign binaries, or replace
@@ -247,6 +275,8 @@ Initial provisional budgets until baseline measurements exist:
 | JVM jar non-interactive startup | 15 seconds | Conservative for Spring Boot startup in CI. Refine after measurements. |
 | Native non-interactive startup | 5 seconds | Native should start faster, but early GraalVM or runner variance may require adjustment. |
 | File-edit encoding smoke | 90 seconds | Runs the artifact's real `ask` command, deterministic fixture tool call, local tool callbacks, and byte-level fixture checks without remote provider calls. |
+| Install script smoke | 15 seconds per command | Excludes native compilation and archive packaging; covers local asset serving, installer execution, installed `--version`, and installed `--show-config`. |
+| Linux QEMU install smoke | 600 seconds | Includes cloud image boot, cloud-init, host asset serving, curl install, checksum verification, and installed command checks. |
 | Help or version command | 5 seconds | Applies once the CLI owns those commands. |
 | Platform smoke suite | 60 seconds per artifact | Excludes native compilation time. |
 
@@ -335,11 +365,14 @@ Before publishing or approving a release candidate, verify:
 - `main` was advanced by fast-forward only; no merge commit, GitHub merge button,
   GitHub squash button, or force-push was used.
 - Maven tests passed from `app/codegeist/cli` with the selected `-Drevision`.
-- JVM jar was built, renamed for release, checksumed, and smoke tested, including
-  UTF-8 and ISO-8859-1 file-edit encoding checks.
+- JVM jar was built, renamed for release, checksumed, and uploaded without artifact
+  smoke.
 - Each platform-native archive is either unpacked and smoke tested on its own
   platform, including UTF-8 and ISO-8859-1 file-edit encoding checks, or recorded as
   `skipped` or `failed` with required details.
+- Each platform install script is either run on its matching native runner against
+  local release-shaped assets, including macOS on the GitHub macOS runner, or
+  recorded as `skipped` or `failed` with required details.
 - Checksum verification passed before artifact upload.
 - Release notes list supported platforms and skipped or failed platform checks.
 - Published GitHub Release contains the expected artifacts and checksum files.

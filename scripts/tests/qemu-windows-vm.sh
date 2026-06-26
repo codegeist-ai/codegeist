@@ -33,6 +33,8 @@
 # - Runs native archive smoke checks in the guest through the shared PowerShell
 #   harness. The artifact harness uses deterministic fixture providers for
 #   ask-driven tool checks, so this script does not start host Ollama.
+# - Also syncs scripts/install/ so the Windows installer can be smoked against
+#   local release-shaped assets inside the guest.
 #
 # Related files:
 # - scripts/tests/windows-qemu/autounattend.xml
@@ -401,7 +403,7 @@ sync_repo() {
     --exclude='app/codegeist/cli/target' \
     --exclude='app/codegeist/cli/logs' \
     --exclude='.git' \
-    -cf - app/codegeist/cli scripts/tests \
+    -cf - app/codegeist/cli scripts/install scripts/tests \
     | windows_ssh "powershell -NoProfile -Command \"tar -xf - -C '$repo_dir'\""
 }
 

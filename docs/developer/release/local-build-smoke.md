@@ -1,16 +1,21 @@
 # Local Build Smoke
 
 Local Linux and Windows smoke checks verify the current Codegeist native executable
-before GitHub release automation runs. The jar is built as a release asset, but it
-is not smoke-tested.
+before GitHub release automation runs. The Windows QEMU smoke also verifies the
+curl-downloadable Windows install script, while a separate opt-in Linux QEMU smoke
+verifies the Linux install script against local release-shaped assets. The jar is
+built as a release asset, but it is not smoke-tested.
 
 ## Scope
 
 This workflow covers the implemented Spring Boot CLI module under
 `app/codegeist/cli`. It proves `--version`, the default `--show-config` output,
-logs, and file-edit side effects on packaged native artifacts through the shared
-artifact smoke harness. It does not create release uploads, installers, signing,
-notarization, or GitHub Actions release jobs.
+logs, file-edit side effects, and shell-tool side effects on packaged native
+artifacts through the shared artifact smoke harness. Windows QEMU also runs the
+Windows bootstrap script through the install-script harness, and the opt-in Linux
+QEMU install smoke verifies the Linux bootstrap script. It does not create release
+uploads, OS-native installers, signing, notarization, or GitHub Actions release
+jobs.
 
 All local test and smoke scripts live under `scripts/tests/`.
 
@@ -28,22 +33,26 @@ sidecar libraries next to the GraalVM executable.
 | --- | --- |
 | `scripts/tests/smoke-common.ps1` | Shared PowerShell helper layer for status files, duration output, environment overrides, TCP readiness checks, and command steps. |
 | `scripts/tests/artifact-smoke.ps1` | Shared native-only artifact smoke harness used by local Linux, Windows QEMU, macOS release CI, and GitHub release jobs. |
+| `scripts/tests/install-script-smoke.ps1` | Release-runner install smoke harness used by GitHub native jobs after archive packaging. It can also be run locally against a prepared `target/dist` archive. |
 | `scripts/tests/file-edit-ask-smoke.ps1` | Deterministic fixture-provider sub-harness for native `ask` plus `codegeist_edit` side effects. |
 | `scripts/tests/shell-ask-smoke.ps1` | Deterministic fixture-provider sub-harness for native `ask` plus `codegeist_shell` side effects through a cross-platform `pwsh` wrapper. |
 | `scripts/tests/local-linux-smoke.ps1` | Runs Maven tests, builds the jar as a build gate, then calls `native-smoke.ps1` for optional Linux native archive checks. |
-| `scripts/tests/qemu-windows-vm.sh` | Creates or starts the local Windows QEMU VM, syncs the repo subset, and runs the Windows smoke helper. |
+| `scripts/tests/qemu-linux-install-smoke.sh` | Boots a fresh Ubuntu Linux QEMU guest, serves local release-shaped assets from the host, downloads the Linux install script with guest `curl`, installs the Linux archive, and verifies the installed command. |
+| `scripts/tests/qemu-windows-vm.sh` | Creates or starts the local Windows QEMU VM, syncs the repo subset including `scripts/install/`, and runs the Windows smoke helper. |
 | `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH wrapper for an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Runs inside the Windows VM to build native and call `artifact-smoke.ps1` for optional Windows native zip checks. |
+| `scripts/tests/windows-smoke.ps1` | Runs inside the Windows VM to build native, call `artifact-smoke.ps1` for Windows native zip checks, and call `install-script-smoke.ps1` for the Windows installer. |
 | `scripts/tests/final-smoke-suite.ps1` | Runs Linux and Windows smoke entrypoints as the final local suite. |
 | `scripts/tests/native-smoke.ps1` | Thin Linux wrapper that starts local Ollama and calls `artifact-smoke.ps1` for native archive checks. |
 
-Smoke orchestration logic lives in the PowerShell entrypoints. Do not add shell
-compatibility wrappers around these workflows.
+Most smoke orchestration logic lives in the PowerShell entrypoints. Bash scripts
+under `scripts/tests/` are reserved for host-side QEMU VM lifecycle, SSH, and
+asset-server orchestration where PowerShell would add avoidable indirection.
 
 The same checks are exposed through `app/codegeist/cli/Taskfile.yml`:
 
 ```bash
 task local-linux-smoke
+task qemu-linux-install-smoke
 task qemu-windows-smoke
 task final-smoke-suite
 ```
@@ -78,12 +87,62 @@ If `native-image` is missing, the native subcheck is reported as `skipped` unles
 Linux native version and config smokes are bounded by
 `CODEGEIST_NATIVE_SMOKE_TIMEOUT`, default `5s`.
 
+## Linux QEMU Install Smoke
+
+Run from `app/codegeist/cli`:
+
+```bash
+task qemu-linux-install-smoke
+```
+
+From the repository root:
+
+```bash
+task -t app/codegeist/cli/Taskfile.yml qemu-linux-install-smoke
+```
+
+The Taskfile entrypoint first runs `task native`, then calls
+`scripts/tests/qemu-linux-install-smoke.sh smoke`. The script downloads and caches
+an Ubuntu 24.04 x64 cloud image under `.local/linux-qemu/`, creates a fresh qcow2
+overlay for each smoke run, provisions a `codegeist` SSH user through cloud-init,
+and starts QEMU with user networking plus host SSH port forwarding.
+
+Before booting the guest, the script stages local release-shaped assets under
+`app/codegeist/cli/target/smoke-test/qemu-linux-install-assets`:
+
+- `codegeist-linux-x64.tar.gz`
+- `codegeist-install-linux.sh`
+- `SHA256SUMS.txt`
+
+The script serves those files from a temporary host HTTP server. Inside the guest,
+the smoke downloads `codegeist-install-linux.sh` with `curl`, sets
+`CODEGEIST_INSTALL_BASE_URL` to the host asset server at `http://10.0.2.2:<port>`,
+runs the installer, and verifies `codegeist --version` plus `codegeist
+--show-config` from a separate working directory.
+
+Optional host environment:
+
+```bash
+export CODEGEIST_LINUX_QEMU_VM_DIR='.local/linux-qemu'
+export CODEGEIST_LINUX_QEMU_SSH_PORT='2223'
+export CODEGEIST_LINUX_QEMU_MEMORY='2048'
+export CODEGEIST_LINUX_QEMU_CPUS='2'
+export CODEGEIST_LINUX_QEMU_DISK_SIZE='10G'
+```
+
+Use `CODEGEIST_LINUX_QEMU_ALLOW_SKIP=1` only for developer-only runs where missing
+QEMU, image download, or SSH prerequisites should report `skipped` instead of
+failing. The smoke is intentionally not part of `final-smoke-suite` by default.
+
 ## Windows QEMU Smoke
 
 The automated Windows path downloads the official Windows Server 2025 Evaluation
-ISO from Microsoft when no local ISO exists. Set `CODEGEIST_WINDOWS_ISO` to reuse
-or choose a local ISO path. Set `CODEGEIST_WINDOWS_ISO_URL` to override the
-official Microsoft URL when using another official evaluation ISO.
+ISO from Microsoft when no local ISO exists. It syncs `scripts/install/` into the
+guest, builds `codegeist-windows-x64.zip`, runs the shared artifact smoke, then
+runs `codegeist-install-windows.ps1` against locally served release-shaped assets.
+Set `CODEGEIST_WINDOWS_ISO` to reuse or choose a local ISO path. Set
+`CODEGEIST_WINDOWS_ISO_URL` to override the official Microsoft URL when using
+another official evaluation ISO.
 
 Optional host environment for first VM creation:
 
@@ -200,6 +259,7 @@ Platform smoke status: passed
 Platform: linux
 Jar status: skipped
 Native status: passed
+Install status: passed
 ```
 
 Smoke scripts also report duration lines for meaningful subchecks:
@@ -207,6 +267,7 @@ Smoke scripts also report duration lines for meaningful subchecks:
 ```text
 Duration: linux native compile: 64.799s
 Duration: linux native version smoke: 0.035s
+Duration: linux qemu install smoke total: 42.000s
 Duration: windows native compile: 164.255s
 Duration: windows platform smoke total: 197.473s
 ```

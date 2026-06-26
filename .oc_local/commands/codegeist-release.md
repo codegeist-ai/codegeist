@@ -231,6 +231,9 @@ codegeist-jvm.jar
 codegeist-linux-x64.tar.gz
 codegeist-windows-x64.zip
 codegeist-macos-x64.tar.gz
+codegeist-install-linux.sh
+codegeist-install-macos.sh
+codegeist-install-windows.ps1
 SHA256SUMS.txt
 ```
 
@@ -283,6 +286,9 @@ latest_assets=(
   "$tmp_dir/codegeist-linux-x64.tar.gz"
   "$tmp_dir/codegeist-windows-x64.zip"
   "$tmp_dir/codegeist-macos-x64.tar.gz"
+  "$tmp_dir/codegeist-install-linux.sh"
+  "$tmp_dir/codegeist-install-macos.sh"
+  "$tmp_dir/codegeist-install-windows.ps1"
   "$tmp_dir/SHA256SUMS.txt"
 )
 

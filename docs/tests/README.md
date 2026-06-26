@@ -41,17 +41,19 @@ Test guidance for Codegeist contributors and coding agents.
   guidance for config-only, local, `remote_free`, and paid-capable provider checks.
 - `codegeist-test-guidelines.md` - Java, Spring, provider, and task-verification
   test conventions.
-- `smoke-tests.md` - Linux, Windows, and MCP remote smoke-test status and
-  duration-output contract.
+- `smoke-tests.md` - Linux, Windows, release install, and MCP remote smoke-test
+  status and duration-output contract.
 
 ## Related Files
 
 - `app/codegeist/cli/Taskfile.yml`
 - `scripts/tests/artifact-smoke.ps1`
+- `scripts/tests/install-script-smoke.ps1`
 - `scripts/tests/file-edit-ask-smoke.ps1`
 - `scripts/tests/shell-ask-smoke.ps1`
 - `scripts/tests/native-smoke.ps1`
 - `scripts/tests/smoke-common.ps1`
+- `scripts/tests/qemu-linux-install-smoke.sh`
 - `scripts/tests/mcp-remote-smoke.ps1`
 - `scripts/tests/fixtures/mcp-remote-server/`
 - `scripts/tests/local-linux-smoke.ps1`

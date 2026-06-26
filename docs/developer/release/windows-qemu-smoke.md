@@ -1,15 +1,17 @@
 # Windows QEMU Smoke Tests
 
-The Windows QEMU smoke workflow verifies Codegeist jar and native executable
-behavior on a real Windows operating system before GitHub release automation runs.
+The Windows QEMU smoke workflow verifies Codegeist native archive behavior and the
+curl-downloadable Windows install script on a real Windows operating system before
+GitHub release automation runs.
 
 ## Scope
 
 This workflow covers the implemented Spring Boot CLI module under
-`app/codegeist/cli`. It proves the current `--version` command on Windows jar and
-GraalVM native executable artifacts, and it proves the default native
-`--show-config` output. It does not publish releases, sign binaries, create
-installers, or replace GitHub-hosted Windows release builds.
+`app/codegeist/cli`. It proves the current `--version` command on Windows native
+artifacts, proves the default native `--show-config` output, and runs the
+curl-downloadable Windows install script against local release-shaped assets inside
+the VM. It does not publish releases, sign binaries, create OS-native installers,
+or replace GitHub-hosted Windows release builds.
 
 The workflow intentionally uses a real Windows VM over SSH. Local Wine or other
 compatibility-layer smoke checks are not part of the release-grade path.
@@ -47,9 +49,8 @@ VM state under `.local/windows-qemu/`.
 
 The Windows smoke path validates these observable contracts inside Windows:
 
-- Maven tests pass for `app/codegeist/cli`.
-- Maven can build the executable Spring Boot jar.
-- `java -jar target/codegeist.jar --version` prints the build version only.
+- Maven can run the native profile and build the executable Spring Boot jar as the
+  native-image input.
 - GraalVM `native-image` can build `target/codegeist.exe` with MSVC Build Tools.
 - The smoke helper can create `target/dist/codegeist-windows-x64.zip`
   with `codegeist.exe` and required DLLs.
@@ -57,16 +58,23 @@ The Windows smoke path validates these observable contracts inside Windows:
   `codegeist.exe --version` prints the build version only.
 - The extracted `codegeist.exe --show-config` prints only the current default
   direct YAML shape, `{}`.
-- Jar and native runs write non-empty smoke log files under `target/smoke-test/`.
+- `codegeist-install-windows.ps1` can download `SHA256SUMS.txt` and
+  `codegeist-windows-x64.zip` from a local VM HTTP server, verify the checksum,
+  install into an isolated user-local root, and expose a working `codegeist.cmd`
+  shim.
+- The installed `codegeist.cmd --version` and `codegeist.cmd --show-config`
+  commands match the packaged native behavior.
+- Native runs write non-empty smoke log files under `target/smoke-test/`.
 - The host receives an explicit `passed`, `skipped`, or `failed` platform status.
 
 ## Entrypoints
 
 | File or task | Role |
 | --- | --- |
-| `scripts/tests/qemu-windows-vm.sh` | High-level VM lifecycle, ISO download, answer ISO generation, QEMU startup, repo sync, and smoke dispatch. |
+| `scripts/tests/qemu-windows-vm.sh` | High-level VM lifecycle, ISO download, answer ISO generation, QEMU startup, repo plus install-script sync, and smoke dispatch. |
 | `scripts/tests/qemu-windows-smoke.ps1` | Lower-level SSH smoke entrypoint for an already reachable Windows VM. |
-| `scripts/tests/windows-smoke.ps1` | Windows-side Maven, jar version, native build, native version, native config output, and status checks. |
+| `scripts/tests/windows-smoke.ps1` | Windows-side native build, native artifact smoke, Windows install-script smoke, and status checks. |
+| `scripts/tests/install-script-smoke.ps1` | Shared install-script harness used inside the VM after `codegeist-windows-x64.zip` exists. |
 | `scripts/tests/windows-qemu/autounattend.xml` | Windows Setup answer-file template used during unattended installation. |
 | `scripts/tests/windows-qemu/setup.ps1` | First-logon guest provisioning for OpenSSH, authorized keys, GraalVM, Maven, MSVC, and readiness marker. |
 | `scripts/tests/final-smoke-suite.ps1` | Final local Linux and Windows suite. Windows is required by default. |
@@ -86,7 +94,8 @@ flowchart LR
     SshSmoke[scripts/tests/qemu-windows-smoke.ps1]
     WinSmoke[scripts/tests/windows-smoke.ps1]
     BuildTools[GraalVM, Maven, MSVC]
-    Artifacts[target/codegeist.jar and target/dist/codegeist-windows-x64.zip]
+    Artifacts[target/dist/codegeist-windows-x64.zip]
+    Installer[codegeist-install-windows.ps1]
 
     Developer --> Taskfile
     Developer --> VmScript
@@ -99,6 +108,7 @@ flowchart LR
     Qemu --> WinSmoke
     WinSmoke --> BuildTools
     BuildTools --> Artifacts
+    WinSmoke --> Installer
     WinSmoke --> SshSmoke
     SshSmoke --> VmScript
 ```
@@ -149,7 +159,7 @@ sequenceDiagram
     Host->>VM: smoke
     VM->>VM: create or start VM
     VM->>VM: wait for C:\codegeist-vm-ready.txt
-    VM->>VM: tar app/codegeist/cli and scripts/tests
+    VM->>VM: tar app/codegeist/cli, scripts/install, and scripts/tests
     VM->>SSH: pass SSH target, key, port, repo dir
     SSH->>PS: powershell windows-smoke.ps1
     PS->>Maven: activate MSVC and run native:compile with -DskipTests
@@ -158,6 +168,8 @@ sequenceDiagram
     PS->>PS: artifact-smoke.ps1 runs extracted codegeist.exe --show-config
     PS->>PS: artifact-smoke.ps1 runs deterministic native file-edit ask smoke
     PS->>PS: artifact-smoke.ps1 runs deterministic native shell ask smoke
+    PS->>PS: install-script-smoke.ps1 runs codegeist-install-windows.ps1
+    PS->>PS: installed codegeist.cmd --version and --show-config
     PS-->>SSH: platform status
     SSH-->>VM: SSH exit and status
     VM-->>Host: passed, skipped, or failed
@@ -178,7 +190,7 @@ All VM state is local to the developer machine and ignored by Git.
 | `.local/windows-qemu/credentials.env` | Host | Generated local Windows password. Do not commit or paste it. |
 | `.local/windows-qemu/qemu.pid` | Host | PID file while QEMU is running. |
 | `.local/windows-qemu/qemu-monitor.sock` | Host | QEMU monitor socket used to send the initial boot key. |
-| `app/codegeist/cli/target/smoke-test/` | Host and guest | Generated smoke status and output logs. |
+| `app/codegeist/cli/target/smoke-test/` | Host and guest | Generated smoke status, install-script assets, and output logs. |
 
 ## Host Prerequisites
 
@@ -266,7 +278,7 @@ The final local smoke suite sets `CODEGEIST_WINDOWS_NATIVE_MODE=required` unless
 | `scripts/tests/qemu-windows-vm.sh download` | Download or verify the Windows ISO without starting QEMU. |
 | `scripts/tests/qemu-windows-vm.sh create` | Build answer media, create the disk if needed, boot the installer, and wait for provisioning readiness. |
 | `scripts/tests/qemu-windows-vm.sh start` | Start an existing VM and wait for SSH readiness. Creates the VM if no disk exists. |
-| `scripts/tests/qemu-windows-vm.sh sync` | Start the VM and copy `app/codegeist/cli` plus `scripts/tests` into `C:\codegeist`. |
+| `scripts/tests/qemu-windows-vm.sh sync` | Start the VM and copy `app/codegeist/cli`, `scripts/tests`, and `scripts/install` into `C:\codegeist`. |
 | `scripts/tests/qemu-windows-vm.sh smoke` | Start or create the VM, sync the repo subset, and run `windows-smoke.ps1`. |
 | `scripts/tests/qemu-windows-vm.sh status` | Print VM running state, VM directory, ISO path, ISO URL, and SSH target. |
 | `scripts/tests/qemu-windows-vm.sh stop` | Request Windows shutdown over SSH. |
@@ -383,10 +395,12 @@ suite intentionally fails on skipped Windows validation.
 
 ## Current Verification
 
-The `T005_01` local build-smoke task is solved. The acceptance path passed locally
-with `task final-smoke-suite`, and the run reported Linux and Windows native
-statuses as `passed`.
+The original `T005_01` local build-smoke task established the Windows native QEMU
+path. `T009` added install-script verification; the current acceptance path passed
+locally with `task qemu-windows-smoke`, reporting `Native status: passed` and
+`Install status: passed`.
 
 Use `docs/tasks/T005_add-cross-platform-release-and-qemu-smoke/tasks/T005_01_add-local-linux-windows-build-smoke.md`
-for the task-level verification record. Use this document for the operational
-contract and troubleshooting guide.
+for the original native-smoke record and
+`docs/tasks/T009_add-cross-platform-install-scripts.md` for the installer-smoke
+record. Use this document for the operational contract and troubleshooting guide.

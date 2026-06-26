@@ -14,6 +14,7 @@
 # Related files:
 # - app/codegeist/cli/pom.xml
 # - docs/developer/release/github-release-build.md
+# - scripts/install/
 name: Codegeist Release Build
 
 on:
@@ -229,12 +230,63 @@ jobs:
             -FileEditTimeoutSeconds ([int]$env:FILE_EDIT_SMOKE_TIMEOUT_SECONDS) `
             -ShellAskTimeoutSeconds ([int]$env:SHELL_ASK_SMOKE_TIMEOUT_SECONDS)
 
+      - name: Smoke platform install script
+        working-directory: app/codegeist/cli
+        shell: pwsh
+        run: |
+          ../../../scripts/tests/install-script-smoke.ps1 `
+            -Platform "${{ matrix.platform }}" `
+            -CliDir (Get-Location).Path `
+            -ExpectedVersion $env:RELEASE_VERSION `
+            -SmokeRoot (Join-Path (Get-Location).Path "target/smoke-test/install-script/${{ matrix.platform }}") `
+            -InstallScriptDir (Resolve-Path "../../../scripts/install").Path
+
       - name: Upload native artifact
         uses: actions/upload-artifact@v4
         with:
           name: codegeist-${{ matrix.platform }}
           if-no-files-found: error
           path: app/codegeist/cli/target/dist/codegeist-${{ matrix.platform }}.${{ matrix.extension }}
+
+  stage-install-scripts:
+    name: Stage install scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Stage install script assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bash -n \
+            scripts/install/codegeist-install-linux.sh \
+            scripts/install/codegeist-install-macos.sh
+          pwsh -NoProfile -Command '"scripts/install/codegeist-install-windows.ps1" | ForEach-Object { $tokens = $null; $errors = $null; [System.Management.Automation.Language.Parser]::ParseFile($_, [ref]$tokens, [ref]$errors) > $null; if ($errors.Count -gt 0) { throw $errors[0] } }'
+
+          mkdir -p dist
+          install_scripts=(
+            codegeist-install-linux.sh
+            codegeist-install-macos.sh
+            codegeist-install-windows.ps1
+          )
+
+          for script in "${install_scripts[@]}"; do
+            source="scripts/install/$script"
+            if [ ! -f "$source" ]; then
+              printf 'Install script not found: %s\n' "$source" >&2
+              exit 1
+            fi
+            cp -p "$source" "dist/$script"
+          done
+
+      - name: Upload install script artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codegeist-install-scripts
+          if-no-files-found: error
+          path: dist/codegeist-install-*
 
   checksums:
     name: Generate and verify checksums
@@ -243,6 +295,7 @@ jobs:
       - metadata
       - build-jvm
       - build-native
+      - stage-install-scripts
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v4
@@ -260,6 +313,9 @@ jobs:
             codegeist-linux-x64.tar.gz
             codegeist-windows-x64.zip
             codegeist-macos-x64.tar.gz
+            codegeist-install-linux.sh
+            codegeist-install-macos.sh
+            codegeist-install-windows.ps1
           )
 
           shopt -s nullglob
@@ -321,6 +377,9 @@ jobs:
             codegeist-linux-x64.tar.gz
             codegeist-windows-x64.zip
             codegeist-macos-x64.tar.gz
+            codegeist-install-linux.sh
+            codegeist-install-macos.sh
+            codegeist-install-windows.ps1
             SHA256SUMS.txt
           )
 
@@ -342,10 +401,11 @@ jobs:
 
           - Maven test suite passed before packaging.
           - JVM jar was packaged as a release asset without artifact smoke.
-          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version, --show-config, and ask-driven file-edit side effects.
+          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version, --show-config, and ask-driven file-edit plus shell-tool side effects.
+          - Linux, macOS, and Windows install scripts were run against local release-shaped assets on their matching release runners, then staged as release assets for curl-based downloads.
           - The SHA-256 checksum file was generated and verified before upload.
 
-          This release intentionally excludes installers, signing, notarization, SBOM, and SLSA provenance.
+          Install scripts are bootstrap helpers for the native archives. This release intentionally excludes package-manager publishing, signing, notarization, SBOM, and SLSA provenance.
           EOF
 
       - name: Upload GitHub release

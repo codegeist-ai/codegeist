@@ -6,7 +6,8 @@
 # - Keeps Windows command details out of the host-side SSH wrapper.
 # - Delegates jar and native artifact checks to the shared
 #   scripts/tests/artifact-smoke.ps1 harness so Windows, Linux, macOS, and release
-#   workflows verify the same artifact contract.
+#   workflows verify the same artifact contract, then runs the Windows install
+#   script smoke against that release-shaped zip inside the VM.
 #
 # Inputs:
 # - RepoDir: absolute path to the repository checkout inside the VM.
@@ -18,8 +19,10 @@
 #   native command smoke execution.
 #
 # Side effects:
-# - May rebuild app/codegeist/cli/target/codegeist.exe and write
-#   app/codegeist/cli/target/dist/codegeist-windows-x64.zip.
+# - May rebuild app/codegeist/cli/target/codegeist.exe, write
+#   app/codegeist/cli/target/dist/codegeist-windows-x64.zip, and run
+#   scripts/install/codegeist-install-windows.ps1 against local release-shaped
+#   assets.
 # - Writes smoke logs under app/codegeist/cli/target/smoke-test.
 
 param(
@@ -120,6 +123,8 @@ function Find-MsvcCommand {
 
 $cliDir = Join-Path $RepoDir "app/codegeist/cli"
 $script:artifactSmokeScript = Join-Path $RepoDir "scripts/tests/artifact-smoke.ps1"
+$script:installSmokeScript = Join-Path $RepoDir "scripts/tests/install-script-smoke.ps1"
+$script:installScriptDir = Join-Path $RepoDir "scripts/install"
 
 if (-not (Test-Path -LiteralPath $cliDir)) {
     Fail-Smoke "CLI module directory not found: $cliDir"
@@ -136,10 +141,13 @@ New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
 
 $nativeStatus = "skipped"
 $nativeReason = "NativeMode is skip"
+$installStatus = "skipped"
+$installReason = "NativeMode is skip"
 
 if ($NativeMode -ne "skip") {
     if (-not (Get-Command native-image -ErrorAction SilentlyContinue)) {
         $nativeReason = "native-image is not available on PATH"
+        $installReason = $nativeReason
         if ($NativeMode -eq "required") {
             Fail-Smoke $nativeReason
         }
@@ -150,6 +158,7 @@ if ($NativeMode -ne "skip") {
 
         if (-not $clAvailable -and -not $msvc) {
             $nativeReason = "MSVC Build Tools environment is not active and no VsDevCmd.bat was found"
+            $installReason = $nativeReason
             if ($NativeMode -eq "required") {
                 Fail-Smoke $nativeReason
             }
@@ -183,6 +192,22 @@ if ($NativeMode -ne "skip") {
 
             $nativeStatus = "passed"
             $nativeReason = "none"
+
+            Write-Host "Command: pwsh scripts/tests/install-script-smoke.ps1 -Platform windows-x64"
+            try {
+                & $script:installSmokeScript `
+                    -Platform windows-x64 `
+                    -CliDir $cliDir `
+                    -ExpectedVersion $expected `
+                    -SmokeRoot (Join-Path $smokeDir "install-script/windows-x64") `
+                    -InstallScriptDir $script:installScriptDir
+            }
+            catch {
+                Fail-Smoke "Windows install script smoke failed: $($_.Exception.Message)"
+            }
+
+            $installStatus = "passed"
+            $installReason = "none"
         }
     }
 }
@@ -191,6 +216,8 @@ Write-Host "Platform smoke status: passed"
 Write-Host "Platform: windows-x64"
 Write-Host "Jar status: skipped"
 Write-Host "Native status: $nativeStatus"
+Write-Host "Install status: $installStatus"
 Write-Host "Native reason: $nativeReason"
+Write-Host "Install reason: $installReason"
 $platformStopwatch.Stop()
 Write-SmokeDuration "windows platform smoke total" $platformStopwatch.Elapsed

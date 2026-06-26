@@ -2,6 +2,11 @@
 
 User-facing usage notes for Codegeist.
 
+## Guides
+
+- `install-from-github-releases.md` - install Codegeist from GitHub Release assets
+  on Linux, macOS, or Windows.
+
 ## Ask Command Sessions
 
 `codegeist ask <prompt>` sends one prompt to the configured provider and prints only

@@ -7,10 +7,13 @@ uploads Codegeist release artifacts.
 
 The workflow lives at `.github/workflows/release.yml` and covers the implemented
 Spring Boot CLI module under `app/codegeist/cli`. It validates the current
-`--version` behavior on generated JVM artifacts and validates both `--version`
-and default `--show-config` behavior on native archives. It does not create
-installers, signing, notarization, SBOM, SLSA provenance, package-manager
-publishing, or runtime behavior beyond the existing no-side-effect commands.
+`--version` behavior on generated JVM artifacts, validates both `--version` and
+default `--show-config` behavior on native archives, and runs each matching
+platform install script against local release-shaped assets on the native runner.
+It stages curl-downloadable install scripts as release assets, but does not create
+OS-native installers, signing, notarization, SBOM, SLSA provenance,
+package-manager publishing, or runtime behavior beyond the existing no-side-effect
+commands.
 
 ## Triggers
 
@@ -68,6 +71,9 @@ immutable `v*` tag carry the version, so filenames intentionally omit it:
 | `codegeist-linux-x64.tar.gz` | Ubuntu native job | `scripts/tests/artifact-smoke.ps1 -Platform linux-x64` |
 | `codegeist-windows-x64.zip` | Windows native job | `scripts/tests/artifact-smoke.ps1 -Platform windows-x64` |
 | `codegeist-macos-x64.tar.gz` | macOS native job | `scripts/tests/artifact-smoke.ps1 -Platform macos-x64` |
+| `codegeist-install-linux.sh` | Install script staging job | `scripts/tests/install-script-smoke.ps1 -Platform linux-x64` in the native Linux job, plus parser and checksum coverage |
+| `codegeist-install-macos.sh` | Install script staging job | `scripts/tests/install-script-smoke.ps1 -Platform macos-x64` in the native macOS job, plus parser and checksum coverage |
+| `codegeist-install-windows.ps1` | Install script staging job | `scripts/tests/install-script-smoke.ps1 -Platform windows-x64` in the native Windows job, plus parser and checksum coverage |
 | `SHA256SUMS.txt` | Checksum job | `sha256sum -c` before upload |
 
 Native archives keep the executable and required GraalVM sidecar libraries in one
@@ -87,9 +93,13 @@ The implemented jobs run these gates in order:
 7. Run `scripts/tests/artifact-smoke.ps1` for each native platform; it packages,
    unpacks, verifies `--version`, verifies `--show-config`, checks logs, and runs
    deterministic file-edit plus shell-tool side effects.
-8. Generate and verify `SHA256SUMS.txt`.
-9. Upload all assets as workflow artifacts.
-10. On `v*` tag runs only, upload the same assets to a published GitHub Release.
+8. Run `scripts/tests/install-script-smoke.ps1` on each native runner against the
+   matching local archive, including macOS on `macos-15-intel`.
+9. Stage Linux, macOS, and Windows install scripts as release assets.
+10. Generate and verify `SHA256SUMS.txt` for the jar, native archives, and install
+   scripts.
+11. Upload all assets as workflow artifacts.
+12. On `v*` tag runs only, upload the same assets to a published GitHub Release.
 
 ## Iteration Branch Validation Flow
 
@@ -115,6 +125,7 @@ Releases. Use the run page's `Artifacts` section or GitHub CLI:
 gh run download <run-id> -n codegeist-linux-x64 -D downloads/linux
 gh run download <run-id> -n codegeist-windows-x64 -D downloads/windows
 gh run download <run-id> -n codegeist-jvm -D downloads/jvm
+gh run download <run-id> -n codegeist-install-scripts -D downloads/install
 ```
 
 The Linux artifact contains `codegeist-linux-x64.tar.gz`; the Windows artifact

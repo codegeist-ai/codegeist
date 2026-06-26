@@ -9,26 +9,35 @@ not a replacement for focused unit or Spring tests.
 
 Current smoke entrypoints:
 
-- `task native-smoke` - build Linux native executable, package it, start host
-  Ollama through `task ollama-start`, and smoke the extracted native archive,
-  including ask-driven file-edit encoding checks and ask-driven shell-tool checks.
+- `task native-smoke` - build Linux native executable, package it, and smoke the
+  extracted native archive, including deterministic ask-driven file-edit encoding
+  checks and shell-tool checks.
 - `task local-linux-smoke` - run JVM tests, build the jar as a build gate, and run
   native checks when required or available. The jar is not smoke-tested.
 - `task mcp-remote-smoke` - build a local Docker MCP server fixture, start it on a
   localhost-only port, and verify Codegeist's real `streamable_http` MCP callback
   path directly and through `ask` with local Ollama.
 - `task qemu-windows-smoke` - sync the repo into the Windows QEMU VM, build Windows
-  native, package it, and smoke the extracted native archive. The host wrapper
-  starts Ollama through `task ollama-start`; the guest reaches it at
-  `http://10.0.2.2:11434` by default.
+  native, package it, smoke the extracted native archive, and run
+  `codegeist-install-windows.ps1` against local release-shaped assets.
+- `task qemu-linux-install-smoke` - build the Linux native executable, boot a fresh
+  Ubuntu Linux QEMU guest, serve local release-shaped assets from the host,
+  download the Linux install script with guest `curl`, install the Linux archive,
+  and verify the installed `codegeist` command inside the guest. This smoke is
+  opt-in and is not part of
+  `final-smoke-suite` by default.
 - `task final-smoke-suite` - run Linux and Windows platform smokes and require
   both to pass by default.
 
 `scripts/tests/artifact-smoke.ps1` is the shared native package smoke contract.
-Platform wrappers build artifacts, prepare VM or Ollama prerequisites, then call
+Platform wrappers build artifacts, prepare VM prerequisites when needed, then call
 this one native-only harness so Linux, Windows, macOS, and release CI use the same
 `--version`, `--show-config`, file-edit, shell-tool, package, unpack, and log
 assertions.
+`scripts/tests/install-script-smoke.ps1` is the release-runner install smoke
+harness. The GitHub native matrix calls it after archive packaging so each Linux,
+Windows, and macOS install script runs against local release-shaped assets on its
+matching runner.
 `scripts/tests/file-edit-ask-smoke.ps1` remains the focused sub-harness used by
 `artifact-smoke.ps1` for deterministic ask-driven native file-edit side effects.
 `scripts/tests/shell-ask-smoke.ps1` is the focused sub-harness for deterministic
@@ -40,9 +49,10 @@ Smoke output must include scan-friendly status lines:
 
 ```text
 Platform smoke status: passed|failed|skipped
-Platform: linux|windows-x64
+Platform: linux|linux-x64|windows-x64|macos-x64
 Jar status: passed|failed|skipped
 Native status: passed|failed|skipped
+Install status: passed|failed|skipped
 Native reason: none|<reason>
 MCP remote smoke status: passed|failed
 ```
@@ -68,6 +78,11 @@ Labels should be stable and specific, for example:
 - `linux native file-edit ask latin1-crlf smoke`
 - `linux native shell ask smoke`
 - `linux platform smoke total`
+- `linux qemu install smoke total`
+- `<platform> install script run`
+- `<platform> install command version smoke`
+- `<platform> install command show-config smoke`
+- `<platform> install script smoke`
 - `mcp remote fixture package`
 - `mcp remote docker build`
 - `mcp remote container start`
@@ -121,6 +136,12 @@ Labels should be stable and specific, for example:
   check. The native ask coverage stays on deterministic fixture-backed file-edit and
   shell harnesses so smoke results do not depend on local model wording when no tool
   is needed.
+- GitHub release native jobs run `scripts/tests/install-script-smoke.ps1` after
+  `artifact-smoke.ps1`. The Windows QEMU smoke uses the same harness inside the
+  guest after creating `codegeist-windows-x64.zip`. The harness stages the matching
+  install script beside the native archive, writes a local `SHA256SUMS.txt`, serves
+  those assets over localhost, runs the installer in an isolated install root, and
+  verifies installed `codegeist --version` plus `codegeist --show-config`.
 - Linux, Windows, and macOS native archive smokes all check `--show-config`; empty
   direct `codegeist.yml` config must render exactly `{}`.
 - MCP remote smoke packages the fixture jar under
@@ -129,5 +150,8 @@ Labels should be stable and specific, for example:
   local Ollama, verifies the direct remote callback path, verifies the `ask` command
   can make Ollama invoke `remote_echo`, and removes the fixture container on exit.
 - Smoke logs stay under `app/codegeist/cli/target/smoke-test`.
+- Linux QEMU install-smoke assets are staged under
+  `app/codegeist/cli/target/smoke-test/qemu-linux-install-assets` and served by a
+  temporary host HTTP server only for the duration of the smoke.
 - Generated smoke artifacts remain ignored build output unless a task explicitly
   asks for a handoff snapshot.

@@ -362,7 +362,13 @@
   packages Linux, Windows, and macOS native archives, unpacks each native archive
   into a fresh temp directory, smoke-tests `--version`, native `--show-config`, logs,
   deterministic file-edit side effects, and deterministic shell-tool side effects
-  before upload.
+  before upload. The same native jobs then run
+  `scripts/tests/install-script-smoke.ps1` so Linux, Windows, and macOS install
+  scripts install from local release-shaped assets on their matching runners before
+  upload. A separate install-script staging job syntax-checks and uploads
+  `codegeist-install-linux.sh`, `codegeist-install-macos.sh`, and
+  `codegeist-install-windows.ps1` as release assets; `SHA256SUMS.txt` covers the jar,
+  native archives, and install scripts.
 - Codegeist `v0.1.0` is published on GitHub Releases:
   `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0`. Pre-tag
   validation run `26537663964`, tag run `26538176834`, and downloaded asset
@@ -374,15 +380,18 @@
   URL and immutable `v*` tag carry it. Current workflow asset names are
   `codegeist-jvm.jar`,
   `codegeist-linux-x64.tar.gz`, `codegeist-windows-x64.zip`,
-  `codegeist-macos-x64.tar.gz`, and `SHA256SUMS.txt`. The already-published
-  `v0.1.0` release used the older versioned asset names.
+  `codegeist-macos-x64.tar.gz`, `codegeist-install-linux.sh`,
+  `codegeist-install-macos.sh`, `codegeist-install-windows.ps1`, and
+  `SHA256SUMS.txt`. The already-published `v0.1.0` release used the older
+  versioned asset names.
 - Smoke orchestration logic now lives in PowerShell entrypoints under
   `scripts/tests/`, sharing `scripts/tests/smoke-common.ps1` for status files,
   duration output, environment overrides, command steps, and readiness checks.
+  Bash scripts under `scripts/tests/` own host-side QEMU lifecycle, SSH, and
+  temporary asset-server orchestration when that is the smallest practical tool.
   `scripts/tests/final-smoke-suite.ps1` runs Linux direct smoke and automated
   Windows QEMU/SSH smoke. Default mode requires both platforms to pass;
-  `-AllowSkips` is developer-only. Do not add shell compatibility wrappers for
-  these workflows. The latest PowerShell-only Linux path passed through
+  `-AllowSkips` is developer-only. The latest PowerShell-only Linux path passed through
   `task local-linux-smoke` with 154 Maven tests, 0 failures, 0 errors, 6 skips,
   and `linux platform smoke total: 89.625s`. The latest PowerShell MCP path passed
   through `task mcp-remote-smoke` with `mcp remote smoke total: 9.794s`. The final
@@ -392,8 +401,35 @@
 - `scripts/tests/qemu-windows-vm.sh` downloads the official Windows Server 2025
   Evaluation ISO with `curl` when no local ISO exists, stores VM state under
   `.local/windows-qemu`, provisions OpenSSH/GraalVM/Maven/MSVC in the guest, syncs
-  the repo subset, and runs Windows smoke over SSH. It uses `-cpu host` with KVM
-  and `-cpu max` without KVM unless `CODEGEIST_WINDOWS_CPU` overrides the model.
+  the repo subset including `scripts/install/`, and runs Windows smoke over SSH. It
+  uses `-cpu host` with KVM and `-cpu max` without KVM unless
+  `CODEGEIST_WINDOWS_CPU` overrides the model. The Windows-side smoke now runs
+  `install-script-smoke.ps1` after native archive smoke, so the QEMU guest also
+  verifies `codegeist-install-windows.ps1` against local release-shaped assets. The
+  latest run passed with `Native status: passed`, `Install status: passed`,
+  `windows-x64 install script smoke: 3.205s`, `windows platform smoke total:
+  255.819s`, and `windows qemu smoke total: 262.229s`; the VM was stopped afterward.
+- `scripts/tests/qemu-linux-install-smoke.sh` is the opt-in Linux installer smoke.
+  `task qemu-linux-install-smoke` first runs `task native`, then stages
+  `codegeist-linux-x64.tar.gz`, `codegeist-install-linux.sh`, and `SHA256SUMS.txt`,
+  serves them from a temporary host HTTP server, boots a fresh Ubuntu 24.04 x64
+  QEMU guest under `.local/linux-qemu`, downloads the installer with guest `curl`,
+  and verifies installed `codegeist --version` plus `codegeist --show-config`. The
+  latest full Taskfile run passed with `linux qemu install smoke total: 86.785s`;
+  a direct rerun with the cached image and native output passed in `32.091s`.
+- `scripts/tests/install-script-smoke.ps1` is the shared installer smoke used by
+  GitHub release runners and the Windows QEMU smoke. It stages the matching install
+  script beside the platform archive already produced in `target/dist`, writes local
+  checksums, serves the assets over localhost, runs the installer in an isolated
+  install root, and verifies installed `codegeist --version` plus
+  `codegeist --show-config`. The latest local Linux run against an existing archive
+  passed with `linux-x64 install script smoke: 2.246s`.
+- `docs/user/install-from-github-releases.md` is the user-facing install guide for
+  GitHub Release assets. It documents Linux, macOS, and Windows install commands,
+  default user-local paths, install override variables, update behavior, and the
+  accepted verification posture: Linux and Windows installer paths are proven by
+  local QEMU smokes, while macOS installability is covered by the GitHub macOS x64
+  release runner.
 - Native release artifacts should be platform archives, not true single executable
   files: Linux uses `codegeist-linux-x64.tar.gz`, Windows uses
   `codegeist-windows-x64.zip`, and each archive keeps the executable next to

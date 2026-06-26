@@ -29,6 +29,13 @@ tasks:
     cmds:
       - pwsh -NoProfile -File ../../../scripts/tests/local-linux-smoke.ps1
 
+  qemu-linux-install-smoke:
+    desc: Run the Linux install script in a fresh Linux QEMU guest
+    deps:
+      - native
+    cmds:
+      - bash ../../../scripts/tests/qemu-linux-install-smoke.sh smoke
+
   mcp-remote-smoke:
     desc: Run Docker-backed remote MCP streamable HTTP smoke
     cmds:

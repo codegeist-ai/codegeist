@@ -85,8 +85,8 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | Spring AI Agent Utils | BOM and core artifact `0.7.0` |
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
-| Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, local Linux smoke, Windows QEMU smoke, and final local smoke suite |
+| Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -105,9 +105,11 @@ app/codegeist/cli/
   src/...
 scripts/tests/
   smoke-common.ps1
+  install-script-smoke.ps1
   mcp-remote-smoke.ps1
   native-smoke.ps1
   local-linux-smoke.ps1
+  qemu-linux-install-smoke.sh
   qemu-windows-vm.sh
   qemu-windows-smoke.ps1
   windows-smoke.ps1
@@ -120,6 +122,10 @@ scripts/tests/
       Dockerfile
       pom.xml
       src/...
+scripts/install/
+  codegeist-install-linux.sh
+  codegeist-install-macos.sh
+  codegeist-install-windows.ps1
 ```
 
 Implemented Java package:
@@ -667,6 +673,13 @@ and delegates deterministic ask-driven shell checks to
 provider-only native `ask` check so smoke results do not depend on local model
 wording when no tool call is needed.
 
+`scripts/tests/install-script-smoke.ps1` is the shared install-script smoke harness
+used by release runners and the Windows QEMU smoke. It stages the matching install
+script beside the archive already produced by the artifact harness, writes local
+checksums, serves release-shaped assets over localhost, runs the platform installer
+in an isolated install root, and verifies the installed wrapper with `--version`
+plus `--show-config`.
+
 `scripts/tests/native-smoke.ps1` is the Linux native smoke wrapper used by
 `task native-smoke` and the Linux smoke entrypoint. The wrapper optionally builds
 the native executable and calls `artifact-smoke.ps1 -Platform linux-x64`; ask
@@ -683,6 +696,15 @@ gate, then verifies the packaged Linux native archive through `native-smoke.ps1`
 and the shared artifact harness when `native-image` is available. The jar is not
 smoke-tested.
 
+`scripts/tests/qemu-linux-install-smoke.sh` is the opt-in Linux install-script
+smoke. It stages local release-shaped assets, serves them from a temporary host
+HTTP server, boots a fresh Ubuntu Linux QEMU guest with cloud-init, downloads
+`codegeist-install-linux.sh` with guest `curl`, runs the installer with
+`CODEGEIST_INSTALL_BASE_URL` pointed at the host server, and verifies installed
+`codegeist --version` plus `codegeist --show-config` inside the guest. VM state
+lives under `.local/linux-qemu/` and generated smoke assets live under
+`app/codegeist/cli/target/smoke-test/`.
+
 `scripts/tests/mcp-remote-smoke.ps1` packages the local MCP fixture jar, builds the
 `codegeist-mcp-remote-smoke:local` Docker image, starts a temporary container on a
 localhost-only port, runs `CodegeistMcpRemoteSmokeIT` with the discovered URL, starts
@@ -693,13 +715,16 @@ container in a `finally` cleanup path. The fixture source lives under
 `scripts/tests/qemu-windows-vm.sh` is the host-side Windows VM automation
 entrypoint. It downloads the official Windows Server Evaluation ISO when no local
 ISO exists, creates or starts the local Windows QEMU VM, generates answer media,
-syncs the repo subset needed by smoke checks, and delegates execution to
-`scripts/tests/qemu-windows-smoke.ps1`.
+syncs the repo subset needed by smoke checks including `scripts/install/`, and
+delegates execution to `scripts/tests/qemu-windows-smoke.ps1`.
 
 `scripts/tests/qemu-windows-smoke.ps1` is the lower-level SSH wrapper. It runs
 `scripts/tests/windows-smoke.ps1` in the Windows VM. The Windows-side script calls
 the shared artifact harness for native `--version`, native `--show-config`,
 file-edit, shell, and log checks.
+After the Windows zip exists, the Windows-side script calls
+`install-script-smoke.ps1` to run `codegeist-install-windows.ps1` against local
+release-shaped assets and verify the installed `codegeist.cmd` wrapper.
 Missing Windows VM configuration fails by default and can only be skipped when
 developer-only skip mode is explicitly enabled.
 
@@ -715,8 +740,9 @@ download or VM prerequisites.
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
 | `task native-smoke` | Runs `scripts/tests/native-smoke.ps1 -BuildNative` | Linux native archive is checked through the shared artifact harness: package, unpack, packaged `--version`, packaged `--show-config`, command logs, ask-driven file-edit side effects, and ask-driven shell side effects |
 | `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.ps1` | Local Linux Maven tests, jar packaging as a build gate, and shared artifact-harness native smoke when native-image is available |
+| `task qemu-linux-install-smoke` | Runs `task native`, then `scripts/tests/qemu-linux-install-smoke.sh smoke` | Fresh Linux QEMU guest verifies the curl-downloadable Linux install script against local release-shaped assets and checks the installed command |
 | `task mcp-remote-smoke` | Runs `scripts/tests/mcp-remote-smoke.ps1` | Docker-backed local MCP server fixture, real `streamable_http` MCP callback discovery, direct deterministic callback invocation, local Ollama-backed `ask` invocation of the remote MCP tool, session `ToolSessionPart` persistence, and container cleanup outside the default test path |
-| `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, then runs native smoke over SSH including file-edit and shell checks |
+| `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, then runs native smoke over SSH including file-edit, shell, and Windows install-script smoke checks |
 | `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.ps1` | Local Linux and Windows smoke suite; both platforms must pass by default |
 | `task ollama-start` | Starts or reuses the local `ollama/ollama` container, waits for `/api/version`, and ensures the selected model is present | External local Ollama prerequisite for focused live provider tests and the MCP remote ask smoke |
 | `task run` | `java -jar target/codegeist.jar` after `build` | Starts the packaged Spring Boot application |
@@ -737,11 +763,15 @@ jar release asset without artifact smoke, then builds native archives on
 GitHub-hosted Linux x64, Windows x64, and macOS x64 runners. Native artifact smoke
 runs `scripts/tests/artifact-smoke.ps1`, so release CI uses the same harness as
 local platform wrappers for native packaging, archive unpacking, `--version`,
-native `--show-config`, command-log assertions, and deterministic file-edit side
-effects. The Windows native job activates the MSVC tools environment before running
-Maven native compilation. The checksum job generates and verifies
-`SHA256SUMS.txt`; the release job uploads the jar, native archives, and checksum
-file to a published GitHub Release only for matching `v*` tags.
+native `--show-config`, command-log assertions, deterministic file-edit side
+effects, and deterministic shell-tool side effects. The same native job then runs
+`scripts/tests/install-script-smoke.ps1` for the matching platform, including the
+macOS install script on the GitHub macOS x64 runner. The Windows native job
+activates the MSVC tools environment before running Maven native compilation. A
+separate staging job uploads Linux, macOS, and Windows install scripts as release
+assets. The checksum job generates and verifies `SHA256SUMS.txt`; the release job
+uploads the jar, native archives, install scripts, and checksum file to a published
+GitHub Release only for matching `v*` tags.
 
 Release workflow changes are promoted through `/codegeist-release --source
 <release-work-branch> --rc <n>` instead of merging a multi-commit work branch
@@ -765,6 +795,9 @@ The implemented release artifact names are:
 - `codegeist-linux-x64.tar.gz`
 - `codegeist-windows-x64.zip`
 - `codegeist-macos-x64.tar.gz`
+- `codegeist-install-linux.sh`
+- `codegeist-install-macos.sh`
+- `codegeist-install-windows.ps1`
 - `SHA256SUMS.txt`
 
 ## Not Implemented Yet

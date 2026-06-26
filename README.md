@@ -30,7 +30,7 @@ vision:
   `scripts/tests/`
 - a GitHub Actions release workflow for branch validation, pre-tag validation,
   tag-triggered published releases, checksums, and Linux/Windows/macOS native
-  smokes
+  plus install-script smokes
 - repo-local agent workflow rules, commands, and configuration
 - lightweight project memory in `docs/memory-bank/chat.md`
 
@@ -54,6 +54,8 @@ Key properties:
 
 - `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
 - `app/codegeist/cli/` - Spring Boot CLI bootstrap application, Maven project files, and local `Taskfile.yml`
+- `scripts/install/` - curl-downloadable release install scripts for Linux,
+  macOS, and Windows
 - `scripts/tests/` - local Linux, Windows QEMU, native, MCP remote, and final smoke-suite scripts
 - `docs/memory-bank/chat.md` - lightweight project memory for the repository
 - `README.md` - project overview
@@ -108,8 +110,9 @@ Implementation notes:
 
 Local smoke scripts live under `scripts/tests/`. The primary smoke logic is
 implemented in PowerShell 7 (`*.ps1`) so Linux, Windows, MCP, and final-suite
-orchestration use the same helper code. Matching `*.sh` files are compatibility
-wrappers for existing shell callers.
+orchestration use the same helper code. Bash scripts under `scripts/tests/` own
+QEMU VM lifecycle and host-side SSH/asset-server orchestration when that is the
+smallest practical tool for the platform smoke.
 
 Run the local Linux smoke from the repository root:
 
@@ -139,9 +142,10 @@ For developer-only runs that may skip missing platform prerequisites, use:
 pwsh -NoProfile -File scripts/tests/final-smoke-suite.ps1 -AllowSkips
 ```
 
-The Windows smoke path uses a local Windows QEMU VM over SSH. See
-`docs/developer/release/windows-qemu-smoke.md` for the detailed VM lifecycle,
-ISO, toolchain, artifact, and troubleshooting guide.
+The Windows smoke path uses a local Windows QEMU VM over SSH and includes native
+archive plus Windows install-script smoke. See
+`docs/developer/release/windows-qemu-smoke.md` for the detailed VM lifecycle, ISO,
+toolchain, artifact, installer, and troubleshooting guide.
 
 The MCP remote smoke starts a deterministic local Docker fixture, verifies the real
 `streamable_http` callback path directly, then starts local Ollama and verifies that
@@ -151,6 +155,48 @@ The MCP remote smoke starts a deterministic local Docker fixture, verifies the r
 Native release downloads are planned as platform archives, not true single-file
 executables. See `docs/developer/release/native-distribution-packaging.md` for the
 Linux `tar.gz`, Windows `zip`, sidecar-library, and no-single-executable rationale.
+
+Run the Linux install-script smoke in a fresh Linux QEMU guest from
+`app/codegeist/cli`:
+
+```bash
+task qemu-linux-install-smoke
+```
+
+This opt-in smoke builds the Linux native executable through the Taskfile, serves
+local release-shaped assets from the host, has the guest download
+`codegeist-install-linux.sh` with `curl`, installs the Linux archive, and checks
+`codegeist --version` plus `codegeist --show-config` inside the guest. It is not
+part of `final-smoke-suite` by default.
+
+## Install From GitHub Releases
+
+After a release is published, Linux users can install the latest release with:
+
+```bash
+curl -fsSL https://github.com/codegeist-ai/codegeist/releases/latest/download/codegeist-install-linux.sh | bash
+```
+
+macOS users can use the matching macOS script:
+
+```bash
+curl -fsSL https://github.com/codegeist-ai/codegeist/releases/latest/download/codegeist-install-macos.sh | bash
+```
+
+Windows users can download and run the PowerShell script:
+
+```powershell
+curl.exe -fsSL -o codegeist-install-windows.ps1 https://github.com/codegeist-ai/codegeist/releases/latest/download/codegeist-install-windows.ps1
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\codegeist-install-windows.ps1
+```
+
+The scripts download `SHA256SUMS.txt`, verify the matching native archive, install
+the complete archive contents under a user-local directory, and print the PATH
+directory that exposes the `codegeist` command. Set `CODEGEIST_INSTALL_BASE_URL` to
+install from another release asset location, such as a local smoke-test server.
+
+See `docs/user/install-from-github-releases.md` for install locations, overrides,
+update behavior, and current Linux/Windows/macOS verification status.
 
 ## GitHub Release Build
 
@@ -162,7 +208,14 @@ It validates release artifacts on GitHub-hosted runners:
 - `codegeist-linux-x64.tar.gz`
 - `codegeist-windows-x64.zip`
 - `codegeist-macos-x64.tar.gz`
+- `codegeist-install-linux.sh`
+- `codegeist-install-macos.sh`
+- `codegeist-install-windows.ps1`
 - `SHA256SUMS.txt`
+
+The native runner jobs build and smoke the platform archive, then run the matching
+install script against local release-shaped assets. This includes
+`codegeist-install-macos.sh` on the GitHub-hosted macOS x64 runner.
 
 Release work may start on an unversioned work branch. When the work branch is
 ready, run `/codegeist-release --source <release-work-branch> --rc 1`. The command
