@@ -6,12 +6,14 @@
   web use.
 - Codegeist Cloud is now a planned separate SaaS control plane: users log in to
   Codegeist to access allowed models, S3-compatible storage for commands, skills,
-  rules, agent configuration, and later synced cloud workflows. The first cloud
-  product boundary targets hosted OAuth/OIDC evaluation with GitHub OAuth as the
-  first provider candidate, individual users before organizations, Codegeist-owned
-  upstream model credentials, metadata-backed quotas/entitlements/model allowlists,
-  S3-compatible artifact bytes with separate metadata, and command artifacts as the
-  first client-sync family.
+  rules, agent configuration, and later synced cloud workflows. The first auth
+  direction is multiple statically configured external OIDC providers such as
+  Keycloak, authentik, or Google; Codegeist does not host its own OAuth/OIDC
+  server and issues its own API tokens after external login. The first cloud
+  product boundary also targets individual users before organizations,
+  Codegeist-owned upstream model credentials, metadata-backed
+  quotas/entitlements/model allowlists, S3-compatible artifact bytes with separate
+  metadata, and command artifacts as the first client-sync family.
 - Codegeist is Java-first: Java 25, Spring Boot, Spring Shell, Spring AI,
   GraalVM, and later Vaadin, JBang, and PF4J where they fit.
 - OpenCode is a feature and behavior reference, not an implementation blueprint.
