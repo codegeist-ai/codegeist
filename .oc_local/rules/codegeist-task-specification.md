@@ -213,14 +213,19 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   unless the task is explicitly rescoped again.
 - For `T008_build-codegeist-cloud-server` tasks, use
   `docs/tasks/T008_build-codegeist-cloud-server/tasks/T008_01_define-cloud-product-boundaries.md`
-  as the settled product-boundary record. The first cloud direction is hosted
-  OAuth/OIDC evaluation with GitHub OAuth as the first provider candidate,
-  individual users before organizations, Codegeist-owned upstream model
-  credentials, metadata-backed entitlements/quotas/usage/model allowlists,
-  S3-compatible artifact bytes with separate metadata, and command artifacts as
-  the first sync family. Do not add live hosted LLM calls, paid-provider checks,
-  real cloud storage effects, organization sharing, or bring-your-own-key unless a
-  focused later T008 task explicitly allows it.
+  as the settled product-boundary record and
+  `docs/tasks/T008_build-codegeist-cloud-server/tasks/T008_03_design-auth-and-tenant-model.md`
+  as the settled auth and tenant model. The first auth direction is multiple
+  statically configured external OIDC providers such as Keycloak, authentik, or
+  Google; Codegeist does not host its own OAuth/OIDC server and issues its own API
+  tokens after external login. The broader cloud direction remains individual
+  users before organizations, Codegeist-owned upstream model credentials,
+  metadata-backed entitlements/quotas/usage/model allowlists, S3-compatible
+  artifact bytes with separate metadata, and command artifacts as the first sync
+  family. Do not add live hosted LLM calls, paid-provider checks, real cloud
+  storage effects, organization sharing, bring-your-own-key, or dynamic
+  tenant-managed identity-provider registration unless a focused later T008 task
+  explicitly allows it.
 - For `T007_04`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/ask-project-research.md`
   before implementation. Keep `codegeist_write` create/overwrite behavior and
