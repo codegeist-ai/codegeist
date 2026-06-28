@@ -553,300 +553,84 @@ classDiagram
     ShellCommandResult --> OutputPreview
 ```
 
-## 5. Terminal TUI Model
+## 5. TerminalUI Chat Harness
 
-### 5.1 TUI Entry And Control
+T007_06 now targets the existing Spring Shell `TerminalUI` entrypoint instead of a
+custom JLine console, deterministic line renderer, or multi-child terminal UI
+architecture. `spring-shell-jline` remains a dependency because `TerminalUI` lives
+there, but Codegeist should not introduce direct `TerminalBuilder`, `LineReader`,
+or status-line wiring in this slice.
+
+### 5.1 Entry And Submission Flow
+
+```mermaid
+flowchart TD
+    Command["TuiCommands.tui"] --> TerminalUi["CodegeistTerminalUi"]
+    TerminalUi --> Builder["TerminalUIBuilder"]
+    Builder --> SpringTerminalUi["Spring Shell TerminalUI"]
+    TerminalUi --> Prompt["InputView / submit action"]
+    Prompt --> Harness["ChatHarnessService.ask(true, prompt)"]
+    Harness --> AgentLoop["CodegeistAgentLoopService"]
+    AgentLoop --> Tools["CodegeistToolRun callbacks"]
+    Harness --> Store["SessionStoreService"]
+    Harness --> Response["CodegeistChatResponse"]
+    Response --> VisibleState["TerminalUI-visible response state"]
+    VisibleState --> Redraw["TerminalUI.redraw()"]
+```
+
+### 5.2 Minimal State Boundary
 
 ```mermaid
 classDiagram
     direction TB
 
-    class TerminalTuiCommands {
-      <<planned>>
-      +tui(Path chatPath) void
+    class TuiCommands {
+      <<Component>>
+      +tui() void
     }
 
-    class TuiController {
-      <<planned>>
-      +open(Path chatPath) void
-      +submitPrompt(String prompt) void
-      +save() void
+    class CodegeistTerminalUi {
+      <<Component>>
+      -TerminalUIBuilder terminalUIBuilder
+      -ChatHarnessService chatHarnessService
+      +run() void
     }
 
-    class TerminalPromptLoop {
-      <<planned>>
-      +run(TuiController controller) void
-    }
-
-    class KeyBindingHelp {
-      <<planned>>
-      +rows() List~String~
-    }
-
-    class ChatFileService {
-      <<planned>>
+    class TerminalUiState {
+      <<planned local state>>
+      List~String~ visibleMessages
+      String notice
     }
 
     class ChatHarnessService {
-      <<planned>>
+      <<existing>>
+      +ask(boolean continueSession, String prompt) CodegeistChatResponse
     }
 
-    class TuiViewModelFactory {
-      <<planned>>
-    }
-
-    TerminalTuiCommands --> TuiController
-    TuiController --> ChatFileService
-    TuiController --> ChatHarnessService
-    TuiController --> TuiViewModelFactory
-    TuiController --> TerminalPromptLoop
-    TerminalPromptLoop --> TuiController
-    TerminalPromptLoop --> KeyBindingHelp
-```
-
-### 5.2 TUI Projection And Runtime Status
-
-```mermaid
-classDiagram
-    direction TB
-
-    class TuiViewModelFactory {
-      <<planned>>
-      +from(ChatFile chatFile, RuntimeStatus runtimeStatus) TuiViewModel
-    }
-
-    class RuntimeStatusProjector {
-      <<planned>>
-      +project(CodegeistConfig config, CodegeistToolService tools) RuntimeStatus
-    }
-
-    class RuntimeStatus {
-      <<planned record>>
-      String provider
-      String model
-      int mcpToolCount
-      int codegeistToolCount
-      boolean busy
-      String error
-    }
-
-    class ChatFile {
-      <<planned record>>
-    }
-
-    class TuiViewModel {
-      <<planned record>>
-    }
-
-    class CodegeistConfig {
+    class CodegeistAgentLoopService {
       <<existing>>
     }
 
-    class CodegeistToolService {
-      <<planned>>
-    }
-
-    TuiViewModelFactory --> ChatFile
-    TuiViewModelFactory --> RuntimeStatus
-    TuiViewModelFactory --> TuiViewModel
-    RuntimeStatusProjector --> CodegeistConfig
-    RuntimeStatusProjector --> CodegeistToolService
-    RuntimeStatusProjector --> RuntimeStatus
+    TuiCommands --> CodegeistTerminalUi
+    CodegeistTerminalUi --> TerminalUiState
+    CodegeistTerminalUi --> ChatHarnessService
+    ChatHarnessService --> CodegeistAgentLoopService
 ```
 
-### 5.3 Persisted Chat View State
+### 5.3 Persistence Boundary
 
-```mermaid
-classDiagram
-    direction TB
-
-    class TuiViewModel {
-      <<planned record>>
-      ChatFileView chatFile
-      RuntimeStatus runtimeStatus
-      List~TranscriptRow~ rows
-      PromptState prompt
-      Notification notification
-      ModalState modal
-      ScrollState scroll
-    }
-
-    class ChatFileView {
-      <<planned record>>
-      Path chatPath
-      Path workingDir
-      List~ChatMessageView~ messages
-      boolean dirty
-    }
-
-    class ChatMessageView {
-      <<planned record>>
-      String role
-      String text
-      Instant createdAt
-    }
-
-    class RuntimeStatus {
-      <<planned record>>
-    }
-
-    TuiViewModel --> ChatFileView
-    TuiViewModel --> RuntimeStatus
-    ChatFileView --> ChatMessageView
-```
-
-### 5.4 Transcript Rows And Activity Views
-
-```mermaid
-classDiagram
-    direction TB
-
-    class TuiViewModel {
-      <<planned record>>
-      List~TranscriptRow~ rows
-    }
-
-    class TranscriptRow {
-      <<planned record>>
-      String role
-      String text
-      ToolActivityView tool
-      ChangeView change
-      ShellView shell
-      boolean truncated
-    }
-
-    class ToolActivityView {
-      <<planned record>>
-      String toolName
-      ChatToolStatus status
-      String summary
-      Duration duration
-    }
-
-    class ChangeView {
-      <<planned record>>
-      List~Path~ affectedPaths
-      String diffPreview
-      boolean truncated
-    }
-
-    class ShellView {
-      <<planned record>>
-      String command
-      Path cwd
-      int exitCode
-      boolean timedOut
-      OutputPreview stdout
-      OutputPreview stderr
-    }
-
-    class ChatToolStatus {
-      <<planned enum>>
-    }
-
-    class OutputPreview {
-      <<planned record>>
-    }
-
-    TuiViewModel --> TranscriptRow
-    TranscriptRow --> ToolActivityView
-    TranscriptRow --> ChangeView
-    TranscriptRow --> ShellView
-    ToolActivityView --> ChatToolStatus
-    ShellView --> OutputPreview
-```
-
-### 5.5 Transient TUI State
-
-```mermaid
-classDiagram
-    direction TB
-
-    class TuiViewModel {
-      <<planned record>>
-      PromptState prompt
-      Notification notification
-      ModalState modal
-      ScrollState scroll
-    }
-
-    class PromptState {
-      <<planned record>>
-      String draft
-      boolean disabled
-    }
-
-    class Notification {
-      <<planned record>>
-      String level
-      String message
-    }
-
-    class ModalState {
-      <<planned record>>
-      String type
-      String title
-      List~String~ options
-    }
-
-    class ScrollState {
-      <<planned record>>
-      int offset
-      boolean followBottom
-    }
-
-    TuiViewModel --> PromptState
-    TuiViewModel --> Notification
-    TuiViewModel --> ModalState
-    TuiViewModel --> ScrollState
-```
-
-### 5.6 TUI Rendering
-
-```mermaid
-classDiagram
-    direction TB
-
-    class ChatScreenRenderer {
-      <<planned>>
-      +render(TuiViewModel model) List~String~
-    }
-
-    class LineChatRenderer {
-      <<planned>>
-      +render(TuiViewModel model) List~String~
-    }
-
-    class ToolActivityRenderer {
-      <<planned>>
-      +render(ToolActivityView tool) String
-      +render(ChangeView change) String
-      +render(ShellView shell) String
-    }
-
-    class TuiViewModel {
-      <<planned record>>
-    }
-
-    class ToolActivityView {
-      <<planned record>>
-    }
-
-    class ChangeView {
-      <<planned record>>
-    }
-
-    class ShellView {
-      <<planned record>>
-    }
-
-    ChatScreenRenderer --> TuiViewModel
-    LineChatRenderer --> TuiViewModel
-    ToolActivityRenderer --> ToolActivityView
-    ToolActivityRenderer --> ChangeView
-    ToolActivityRenderer --> ShellView
-```
+- `CodegeistTerminalUi` may keep transient visible response text, notices, or input
+  state in memory for redraws.
+- `CodegeistTerminalUi` must submit prompts through
+  `ChatHarnessService.ask(true, prompt)` so provider selection, MCP/tool callbacks,
+  model/tool/model continuation, and `.codegeist/session.json` persistence remain in
+  the existing harness.
+- `CodegeistTerminalUi` must not call `CodegeistAgentLoopService` directly.
+- `CodegeistTerminalUi` must not persist provider config, selected provider/model,
+  MCP client definitions, tool definitions, prompt drafts, layout, scroll, focus, or
+  other UI-only state into `.codegeist/session.json`.
+- Streaming, cancellation, patch review UI, shell review panes, session browsers,
+  and richer transcript projection require later focused tasks.
 
 ## Iteration Rule
 
@@ -856,5 +640,6 @@ Keep this specification synchronized with the active child task:
 - `T007_03` should refine sections 3.1, 3.2, 3.3, and 4.1.
 - `T007_04` should refine sections 4.2 and 4.3.
 - `T007_05` should add the Codegeist-owned model/tool/model loop contract.
-- `T007_06` should refine sections 5.1 through 5.6.
+- `T007_06` should refine section 5 around the Spring Shell `TerminalUI` chat-harness
+  path.
 - `T007_07` should reconcile all diagrams with the implemented source.

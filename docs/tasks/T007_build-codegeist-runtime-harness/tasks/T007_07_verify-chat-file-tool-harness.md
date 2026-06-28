@@ -29,7 +29,7 @@ read/write tools, patch/edit, shell, Codegeist-owned agent control loop, TUI, an
 - Focused MCP/read/write tool tests pass.
 - Focused patch/edit and shell tests pass.
 - Focused agent-loop tests pass.
-- Focused TUI renderer or TUI smoke tests pass.
+- Focused TerminalUI harness tests or bounded TUI smoke checks pass.
 - `task test` passes from `app/codegeist/cli`.
 - Architecture docs match the implemented current state.
 - T007 parent acceptance criteria are satisfied.
@@ -51,7 +51,7 @@ task test TEST=<session-store-test-selector>
 task test TEST=<mcp-and-readwrite-tools-test-selector>
 task test TEST=<patch-shell-tools-test-selector>
 task test TEST=<agent-loop-test-selector>
-task test TEST=<terminal-tui-test-selector>
+task test TEST=<terminalui-harness-test-selector>
 task test
 ```
 

@@ -2,7 +2,7 @@
 
 Source-backed answers for the T007 chat-file tool harness question catalog.
 
-Related TUI mapping: `tui-opencode-jline-mapping.md`.
+Related current TUI task: `tasks/T007_06_add-terminalui-chat-harness/task.md`.
 
 ## Scope And Evidence Notes
 
@@ -883,7 +883,8 @@ Recommended Codegeist tests:
 - `T007_04`: patch/edit path escape, exact edit errors, shell timeout, exit code,
   stderr/stdout bounds.
 - `T007_05`: fake model/tool loop proving tool results feed model continuation.
-- `T007_06`: deterministic TUI rendering from representative `chat.json`.
+- `T007_06`: TerminalUI prompt submission through `ChatHarnessService` and no
+  UI-only persistence.
 
 ### A13. Integrating While Keeping `CodegeistChatRequest` Focused
 
@@ -1089,6 +1090,7 @@ flowchart TD
 - Use Agent Utils `GlobTool`/`GrepTool` only behind wrappers, or copy the behavior
   into Codegeist if wrapper friction becomes larger than implementation.
 - Implement shell with explicit cwd and no background process persistence in T007.
-- Render TUI from `chat.json`; keep draft input/layout out of the file.
+- Keep TerminalUI draft input and layout outside the session store; submit prompts
+  through the existing chat harness.
 - Verify with `task test TEST=<selector>` and final `task test` from
   `app/codegeist/cli`.

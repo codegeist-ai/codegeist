@@ -91,7 +91,7 @@ tools for resumable chats.
   Docker fixture.
 - Final docs and broad T007_03 verification are complete. Remaining runtime work for
   the parent T007 harness now moves to `T007_04` patch/edit and shell tools,
-  `T007_05` agent control loop, and `T007_06` terminal TUI.
+  `T007_05` agent control loop, and `T007_06` TerminalUI chat-harness integration.
 
 ## Child Tasks
 

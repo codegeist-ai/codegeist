@@ -135,4 +135,4 @@ tasks:
     deps:
       - build
     cmds:
-      - java -jar target/codegeist.jar
+      - java -jar target/codegeist.jar {{.CLI_ARGS}}

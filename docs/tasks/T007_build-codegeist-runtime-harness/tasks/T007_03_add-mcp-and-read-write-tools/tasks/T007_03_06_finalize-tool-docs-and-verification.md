@@ -50,7 +50,8 @@ the completed T007_03 MCP and local read/write tool slice.
   `codegeist_write` tools, bounded `ToolSessionPart` recording, prompt-scoped MCP
   cleanup, and the focused test surface.
 - Marked the aggregate `T007_03` task complete while keeping `T007_04` patch/edit
-  and shell tools, `T007_05` agent control loop, and `T007_06` TUI work open.
+  and shell tools, `T007_05` agent control loop, and `T007_06` TerminalUI
+  chat-harness work open.
 
 ## Suggested Tests
 

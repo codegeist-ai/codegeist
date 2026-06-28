@@ -576,12 +576,12 @@ Implement:
 
 Implement:
 
-- TUI view model from `chat.json` plus transient runtime status.
-- Deterministic line renderer first.
-- Runtime provider/model/MCP/tool status projection that does not write status to
-  `chat.json`.
+- Spring Shell `TerminalUI` over the existing `codegeist tui` command.
 - Prompt submission through the same agent-loop-backed `ChatHarnessService` used by
-  `ask --chat`.
+  `ask -c/--continue`.
+- Synchronous response display in TerminalUI-visible state.
+- No custom JLine console, deterministic line renderer pipeline, or second
+  persistence path.
 
 ## Test Strategy
 

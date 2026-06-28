@@ -43,7 +43,8 @@ keeping a separate structured patch tool deferred.
   output side files.
 - Do not implement network tools, MCP server management, plugins, LSP, subagents, or
   background process persistence.
-- Do not add a patch review TUI unless `T007_06` implements the needed rendering.
+- Do not add patch review UI in this task; the replacement `T007_06` slice is only
+  a minimal TerminalUI chat-harness integration.
 
 ## Child Tasks
 

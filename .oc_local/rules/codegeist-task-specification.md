@@ -235,8 +235,10 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   containment for side-effecting file targets; missing paths and non-regular files
   still fail before mutation.
 - For `T007_06`, use
-  `docs/tasks/T007_build-codegeist-runtime-harness/tui-opencode-jline-mapping.md` as
-  the source-backed OpenCode TUI element inventory and JLine implementation mapping.
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_06_add-terminalui-chat-harness/task.md`
+  as the active task. Keep this slice on Spring Shell `TerminalUI` over
+  `ChatHarnessService.ask(true, prompt)`; do not revive the removed custom JLine
+  console, line-renderer pipeline, or multi-child TUI handoff.
 - For the first provider-backed workflow in the replacement epic, use an externally
   managed local Ollama instance started through `task ollama-start` instead of a
   fake provider. Do not use Testcontainers or pull local models from Java tests;
