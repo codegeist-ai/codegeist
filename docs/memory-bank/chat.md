@@ -6,7 +6,12 @@
   web use.
 - Codegeist Cloud is now a planned separate SaaS control plane: users log in to
   Codegeist to access allowed models, S3-compatible storage for commands, skills,
-  rules, agent configuration, and later synced cloud workflows.
+  rules, agent configuration, and later synced cloud workflows. The first cloud
+  product boundary targets hosted OAuth/OIDC evaluation with GitHub OAuth as the
+  first provider candidate, individual users before organizations, Codegeist-owned
+  upstream model credentials, metadata-backed quotas/entitlements/model allowlists,
+  S3-compatible artifact bytes with separate metadata, and command artifacts as the
+  first client-sync family.
 - Codegeist is Java-first: Java 25, Spring Boot, Spring Shell, Spring AI,
   GraalVM, and later Vaadin, JBang, and PF4J where they fit.
 - OpenCode is a feature and behavior reference, not an implementation blueprint.
@@ -46,6 +51,10 @@
   `GET /health -> {"status":"ok"}` and has no auth, tenants, object storage,
   metadata store, OpenRouter/OpenAI-compatible LLM proxy, usage accounting, billing,
   or CLI/TUI sync yet. This is not a local `opencode serve` adapter.
+- `T008_01_define-cloud-product-boundaries.md` is solved as a documentation-only
+  boundary decision record. It does not add Java source. Later T008 tasks own the
+  exact auth model, S3 metadata design, OpenRouter/OpenAI-compatible proxy contract,
+  first authenticated server API, and CLI command-sync slice.
 - `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
   through `CommandOutputService` and prints only the Spring Boot build version,
   currently `0.1.0-SNAPSHOT`.
