@@ -34,14 +34,15 @@ LLM proxy, billing, or client sync behavior in source code.
 
 ### Login Direction
 
-Evaluate hosted OAuth/OIDC-style login first. GitHub OAuth is the first provider
-candidate because Codegeist is developer-facing and GitHub accounts are common in
-the expected early user base.
+Use generic external OIDC as the first login direction so a deployment can target
+Keycloak, authentik, Google, or another normal OIDC issuer without Codegeist
+hosting identity itself. GitHub OAuth can be added later as a provider adapter,
+but it is not the core first path.
 
-`T008_03` owns the exact provider choice, callback flow, CLI-friendly login flow,
-session lifetime, token storage, logout behavior, and test strategy. Magic-link
-login and username/password accounts are deferred until a later product task needs
-them.
+`T008_03` owns the first implementation of the settled external-OIDC provider
+configuration, internal user/account metadata, Codegeist-owned API token storage,
+and security baseline. Magic-link login and username/password accounts are
+deferred until a later product task needs them.
 
 ### Account And Tenancy Shape
 
@@ -70,11 +71,13 @@ tracked in Codegeist metadata for at least model requests, token or provider usa
 when available, storage bytes, and stored artifact counts. Model allowlists should
 be Codegeist policy, not an implicit copy of an upstream provider catalog.
 
-OpenRouter remains the first likely hosted upstream profile because it is
-OpenAI-compatible and supports broad routing. `T008_05` owns the exact proxy API,
-streaming behavior, request limits, response usage mapping, model allowlist shape,
-safe test posture, and any live-call approval. This task does not permit live
-hosted LLM calls, paid provider checks, or remote smokes.
+Envoy AI Gateway is the first internal LLM gateway target. It sits behind
+Codegeist Server and may later route to OpenRouter, OpenAI-compatible providers,
+self-hosted model backends, or other upstreams. `T008_05` owns the exact internal
+gateway contract, streaming behavior, request limits, response usage mapping,
+trusted identity headers, model allowlist shape, safe test posture, and any
+live-call approval. This task does not permit live hosted LLM calls, paid provider
+checks, or remote smokes.
 
 ### Artifact Storage And Metadata Ownership
 
@@ -88,9 +91,9 @@ Normal artifact bytes must not contain API keys, OAuth tokens, provider secrets,
 cloud credentials, or generated secret material. Encrypted secret storage is a
 separate future security task, not part of the reusable artifact store boundary.
 
-`T008_04` owns the first development target, such as MinIO or AWS S3, plus bucket
-layout, object-key conventions, metadata records, checksums, versioning, sync
-markers, and local no-credential test posture.
+`T008_04` owns MinIO as the first local development target, plus bucket layout,
+object-key conventions, metadata records, checksums, versioning, sync markers, and
+local no-credential test posture.
 
 ### First Client-Sync Artifact Family
 
@@ -108,9 +111,9 @@ the terminal TUI; local CLI/TUI clients remain clients of the SaaS control plane
 
 | Task | Allowed boundary after this decision |
 | --- | --- |
-| `T008_03` | Choose the exact first auth strategy and define user, personal account, future organization, token, and authorization metadata contracts. |
+| `T008_03` | Implement the first auth and tenant foundation from the settled external-OIDC and Codegeist-token model. |
 | `T008_04` | Define the S3-compatible artifact byte store and metadata records, starting from command artifacts as the first sync family. |
-| `T008_05` | Define the OpenRouter/OpenAI-compatible hosted model proxy, including entitlement checks, quotas, usage accounting, model allowlists, streaming, and safe-call gates. |
+| `T008_05` | Define Envoy AI Gateway as the internal LLM gateway behind Codegeist auth, including entitlement checks, quotas, usage accounting, model allowlists, trusted headers, streaming, and safe-call gates. |
 | `T008_06` | Implement one authenticated server API only after the auth, metadata, storage, and policy boundaries needed by that endpoint are specified. |
 | `T008_07` | Add the first CLI cloud login and command-sync slice using the server auth and artifact contracts, without ad hoc credentials or live hosted-provider calls. |
 

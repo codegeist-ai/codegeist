@@ -14,12 +14,18 @@ metadata, and storage boundaries are specified.
 - Add only one small authenticated endpoint or workflow.
 - Use the chosen auth and tenancy model from `T008_03`.
 - Use metadata-backed authorization rather than S3 object paths alone.
+- Keep Envoy AI Gateway behind Codegeist Server. If this task touches model
+  access, the selected endpoint must prove that unauthenticated clients cannot
+  reach Envoy responses directly and that Codegeist forwards only after validating
+  the Codegeist token and policy context.
 - Add focused server tests through `app/codegeist/server/Taskfile.yml`.
 
 ## Acceptance Criteria
 
 - Unauthenticated access is rejected for the selected API.
 - Authenticated access proves the minimum user or tenant identity contract.
+- Any Envoy AI Gateway path remains internal to Codegeist Server and uses trusted
+  server-set identity/account headers, not client-supplied identity headers.
 - The implementation does not add full sync, billing, live hosted LLM calls, or broad
   storage behavior unless the task is explicitly rescoped.
 - Architecture docs describe the implemented source and tests.

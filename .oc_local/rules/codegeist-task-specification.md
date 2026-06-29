@@ -215,15 +215,22 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `docs/tasks/T008_build-codegeist-cloud-server/tasks/T008_01_define-cloud-product-boundaries.md`
   as the settled product-boundary record and
   `docs/tasks/T008_build-codegeist-cloud-server/tasks/T008_03_design-auth-and-tenant-model.md`
-  as the settled auth and tenant model. The first auth direction is multiple
-  statically configured external OIDC providers such as Keycloak, authentik, or
-  Google; Codegeist does not host its own OAuth/OIDC server and issues its own API
-  tokens after external login. The broader cloud direction remains individual
-  users before organizations, Codegeist-owned upstream model credentials,
-  metadata-backed entitlements/quotas/usage/model allowlists, S3-compatible
-  artifact bytes with separate metadata, and command artifacts as the first sync
-  family. Do not add live hosted LLM calls, paid-provider checks, real cloud
-  storage effects, organization sharing, bring-your-own-key, or dynamic
+  as the active auth and tenant foundation task with the settled first auth model.
+  The first auth direction is multiple statically configured external OIDC
+  providers; authentik is the local test provider and stands in for later
+  production providers such as Google, GitHub, Keycloak, or authentik deployments.
+  Codegeist does not host its own OAuth/OIDC server and issues its own API tokens
+  after external login. The broader cloud direction remains individual users
+  before organizations, Codegeist-owned upstream model credentials,
+  metadata-backed entitlements/quotas/usage/model allowlists, MinIO as the first
+  local S3-compatible artifact byte store with separate metadata, Envoy AI Gateway
+  as an internal LLM gateway reachable only through Codegeist-authenticated and
+  Codegeist-authorized requests, and command artifacts as the first sync family.
+  Envoy AI Gateway may enforce gateway-level rate limits and emit token usage
+  metadata from trusted Codegeist-set user/account headers, but Codegeist remains
+  the source of truth for users, accounts, entitlements, sharing, quotas, and
+  durable usage records. Do not add live hosted LLM calls, paid-provider checks,
+  real cloud storage effects, organization sharing, bring-your-own-key, or dynamic
   tenant-managed identity-provider registration unless a focused later T008 task
   explicitly allows it.
 - For `T007_04`, use
