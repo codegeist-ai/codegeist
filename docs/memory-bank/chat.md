@@ -7,13 +7,16 @@
 - Codegeist Cloud is now a planned separate SaaS control plane: users log in to
   Codegeist to access allowed models, S3-compatible storage for commands, skills,
   rules, agent configuration, and later synced cloud workflows. The first auth
-  direction is multiple statically configured external OIDC providers such as
-  Keycloak, authentik, or Google; Codegeist does not host its own OAuth/OIDC
-  server and issues its own API tokens after external login. The first cloud
-  product boundary also targets individual users before organizations,
+  direction is multiple statically configured external OIDC providers; authentik
+  is the local test provider and stands in for later production providers such as
+  Google, GitHub, Keycloak, or authentik deployments. Codegeist does not host its
+  own OAuth/OIDC server and issues its own API tokens after external login. The
+  first cloud product boundary also targets individual users before organizations,
   Codegeist-owned upstream model credentials, metadata-backed
-  quotas/entitlements/model allowlists, S3-compatible artifact bytes with separate
-  metadata, and command artifacts as the first client-sync family.
+  quotas/entitlements/model allowlists, MinIO as the first local S3-compatible
+  artifact byte store with separate metadata, Envoy AI Gateway as an internal LLM
+  gateway reachable only through Codegeist-authenticated and Codegeist-authorized
+  requests, and command artifacts as the first client-sync family.
 - Codegeist is Java-first: Java 25, Spring Boot, Spring Shell, Spring AI,
   GraalVM, and later Vaadin, JBang, and PF4J where they fit.
 - OpenCode is a feature and behavior reference, not an implementation blueprint.
@@ -54,12 +57,21 @@
   epic. The first bootstrap has added `app/codegeist/server` as a second Spring Boot
   WebMVC application for the hosted SaaS server. It currently exposes only
   `GET /health -> {"status":"ok"}` and has no auth, tenants, object storage,
-  metadata store, OpenRouter/OpenAI-compatible LLM proxy, usage accounting, billing,
-  or CLI/TUI sync yet. This is not a local `opencode serve` adapter.
+  metadata store, Envoy AI Gateway integration, usage accounting, billing, or
+  CLI/TUI sync yet. This is not a local `opencode serve` adapter.
 - `T008_01_define-cloud-product-boundaries.md` is solved as a documentation-only
   boundary decision record. It does not add Java source. Later T008 tasks own the
-  exact auth model, S3 metadata design, OpenRouter/OpenAI-compatible proxy contract,
+  exact auth model, MinIO/S3 metadata design, Envoy AI Gateway proxy contract,
   first authenticated server API, and CLI command-sync slice.
+- `T008_03_design-auth-and-tenant-model.md` is now open as the first auth and
+  tenant foundation implementation task. It keeps the settled external-OIDC and
+  Codegeist-owned API token direction, but now requires server source, focused
+  tests, and architecture-doc updates instead of remaining documentation-only.
+- T008 local cloud test posture is now authentik for OIDC, MinIO for
+  S3-compatible artifact bytes, and Envoy AI Gateway for internal LLM routing.
+  Envoy must not be exposed as a public unauthenticated API; Codegeist Server owns
+  auth, account policy, entitlements, model allowlists, trusted identity headers,
+  and durable usage records before forwarding to Envoy.
 - `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
   through `CommandOutputService` and prints only the Spring Boot build version,
   currently `0.1.0-SNAPSHOT`.
@@ -921,6 +933,6 @@
   provider-specific methods or treating any hosted provider feature as
   `remote_free`; use its availability matrix before adding a provider starter or
   client code.
-- Next cloud-server work should create a focused `T008` child task, starting with
-  product-boundary decisions for login, tenancy, entitlements, S3 artifact storage,
-  metadata persistence, OpenRouter proxy behavior, and the first CLI sync target.
+- Next cloud-server work should implement focused `T008` child tasks from the
+  documented boundaries: auth/tenant foundation, MinIO-backed artifact storage,
+  Envoy AI Gateway behind Codegeist auth, first authenticated API, and CLI sync.

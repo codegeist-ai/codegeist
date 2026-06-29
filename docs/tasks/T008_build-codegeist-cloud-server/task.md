@@ -12,10 +12,10 @@ stored agent assets, and later cloud-backed Codegeist workflows.
 The first implementation direction is a Java/Spring workspace under
 `app/codegeist` with a shared Maven parent POM, the existing CLI module in
 `app/codegeist/cli`, and the SaaS server module in `app/codegeist/server`. The
-server can grow into an authenticated LLM proxy and storage service. OpenRouter is
-the first likely upstream provider profile because it is OpenAI-compatible and
-supports broad model routing, but the first task slices must not make paid or
-credentialed remote provider calls by default.
+server can grow into an authenticated cloud API and storage service that forwards
+hosted model requests to an internal Envoy AI Gateway. OpenRouter is now only a
+possible upstream behind Envoy AI Gateway; the first task slices must not make
+paid or credentialed remote provider calls by default.
 
 ## Product Decision
 
@@ -23,8 +23,9 @@ Codegeist Cloud is a separate SaaS product surface:
 
 - Users authenticate with Codegeist before they can use hosted models or storage.
 - Codegeist controls model access through entitlements, quotas, and usage policy.
-- The first model backend should be an LLM proxy that can route to OpenRouter or
-  another OpenAI-compatible upstream.
+- The first model gateway target is Envoy AI Gateway behind Codegeist Server. Only
+  Codegeist-authenticated and Codegeist-authorized requests may reach Envoy
+  responses.
 - User and organization assets are stored in an S3-compatible bucket, with a
   metadata store for identity, ownership, indexing, permissions, and quotas.
 - Commands, skills, rules, agent configuration, and related reusable agent assets
@@ -52,8 +53,8 @@ A Codegeist user signs in and receives access to:
   are not automatically lifted into the cloud server. Share code only after a
   focused task defines a stable library/module boundary.
 - The existing `T006` provider matrix is useful source context for OpenRouter and
-  OpenAI-compatible routing, but T008 owns cloud auth, entitlements, usage policy,
-  SaaS storage, and hosted model access.
+  OpenAI-compatible upstream behavior behind Envoy AI Gateway, but T008 owns cloud
+  auth, entitlements, usage policy, SaaS storage, and hosted model access.
 - The existing `T007` local session/tool harness stays local. T008 must not add a
   database, object store, or cloud sync back into T007.
 
@@ -62,8 +63,9 @@ A Codegeist user signs in and receives access to:
 ### Authentication And Tenancy
 
 - Login is mandatory before model or storage access.
-- The first design must decide the initial login method: OAuth, magic link,
-  username/password, or another hosted identity provider.
+- The first local OIDC test provider is authentik. It stands in for later
+  production providers such as Google, GitHub, Keycloak, authentik, or another
+  external provider.
 - The data model should support individual users and leave room for organizations
   or teams before shared artifacts are exposed.
 - Authorization decisions must be stored in a metadata system, not inferred only
@@ -72,19 +74,22 @@ A Codegeist user signs in and receives access to:
 ### Model Access And LLM Proxy
 
 - Codegeist should present a stable model-access API to clients.
-- OpenRouter is the first likely upstream because it can act as an
-  OpenAI-compatible gateway to many models.
+- Envoy AI Gateway is the first internal LLM gateway target. OpenRouter can be one
+  upstream behind Envoy, but it is not the public Codegeist proxy contract.
 - Default assumption: Codegeist owns upstream provider credentials and grants users
   access through account entitlements. Bring-your-own-key should be a separate
   later decision if needed.
 - Usage accounting, quota checks, model allowlists, request size limits, and
   response streaming behavior are part of the cloud server boundary.
-- Do not make live OpenRouter or hosted LLM calls until a focused task defines
-  credentials, no-cost or paid-test approval, and usage controls.
+- Envoy AI Gateway may enforce gateway-level token or request limits from trusted
+  Codegeist-set account/user headers, but Codegeist remains the source of truth for
+  users, accounts, entitlements, model allowlists, sharing, and durable usage.
+- Do not make live OpenRouter or other hosted LLM calls until a focused task
+  defines credentials, no-cost or paid-test approval, and usage controls.
 
 ### S3-Compatible Artifact Storage
 
-- The hosted artifact store is an S3-compatible bucket.
+- The first local artifact-store target is MinIO as an S3-compatible bucket.
 - Store artifact bytes in S3 and store metadata separately for lookup,
   permissions, versioning, ownership, checksums, sync state, and quotas.
 - Candidate artifact families include commands, skills, rules, agent profiles,
@@ -111,13 +116,13 @@ Create child task files before implementation work starts.
 - `T008_02_bootstrap-server-spring-project.md` - add the shared
   `app/codegeist/pom.xml` parent, minimal `app/codegeist/server` Spring Boot module,
   Taskfile, health endpoint, and tests.
-- `T008_03_design-auth-and-tenant-model.md` - choose the initial identity provider
-  strategy and define user/organization/account metadata contracts.
+- `T008_03_design-auth-and-tenant-model.md` - implement the first auth and tenant
+  foundation from the settled external-OIDC and Codegeist-token model.
 - `T008_04_design-s3-artifact-storage.md` - define S3 bucket layout, metadata
-  records, artifact types, versioning, checksums, and local MinIO/AWS test posture.
-- `T008_05_design-openrouter-llm-proxy.md` - define OpenRouter/OpenAI-compatible
-  proxy contracts, entitlement checks, model allowlists, streaming, and usage
-  accounting before live calls.
+  records, artifact types, versioning, checksums, and local MinIO test posture.
+- `T008_05_design-envoy-ai-gateway-llm-proxy.md` - define Envoy AI Gateway as the
+  internal LLM gateway behind Codegeist authentication, entitlement checks, model
+  allowlists, streaming, and usage accounting before live calls.
 - `T008_06_add-first-authenticated-cloud-api.md` - implement the first
   authenticated API slice after auth, metadata, and storage boundaries are clear.
 - `T008_07_add-cli-cloud-login-and-sync-slice.md` - add the first local client flow
@@ -132,8 +137,8 @@ Create child task files before implementation work starts.
   `app/codegeist/cli`.
 - Login, tenancy, entitlements, model access, S3 artifact storage, and client sync
   are treated as first-class product boundaries.
-- OpenRouter is captured as the first likely LLM proxy upstream while remote calls
-  remain blocked until a focused safe-call task exists.
+- Envoy AI Gateway is captured as the first internal LLM gateway target while live
+  remote provider calls remain blocked until a focused safe-call task exists.
 - S3 storage is specified as object storage plus separate metadata and permission
   state, not as the sole source of authorization truth.
 - Existing local CLI/runtime tasks remain separate from the cloud server scope.
@@ -144,7 +149,7 @@ Create child task files before implementation work starts.
 - Do not copy OpenCode Go, OpenCode Zen, OpenCode's TypeScript server, or
   OpenCode's hosted provider product shape.
 - Do not add live OpenRouter calls, paid provider calls, or hosted provider smoke
-  tests in the parent task.
+  tests in the parent task, including through Envoy AI Gateway.
 - Do not add billing, payments, subscriptions, or invoice workflows before model
   access and usage accounting boundaries are defined.
 - Do not store secrets in S3 artifacts.
@@ -155,18 +160,18 @@ Create child task files before implementation work starts.
 
 ## Implementation-Readiness Questions
 
-- Which login method is first: GitHub OAuth, Google OAuth, magic link, hosted auth,
-  or username/password?
-- Should the first account model support only users, or users plus organizations
-  from the start?
-- Will Codegeist always own upstream model-provider credentials, or is
-  bring-your-own-key planned for some accounts?
-- Which S3-compatible target is first for development and tests: MinIO, AWS S3, or
-  another provider?
+- How much of the authentik OIDC flow should be automated in the first local smoke
+  stack, and which parts should stay manual or fixture-backed?
+- Which account metadata fields are required now so individual users can work
+  before organizations without blocking later organization accounts?
+- Which Envoy AI Gateway credential and backend resources should be generated or
+  documented first while Codegeist-owned upstream credentials remain the default?
+- Which MinIO bucket and metadata records should the first artifact implementation
+  create for commands, skills, rules, and agent configuration?
 - Which metadata store should own users, artifact indexes, permissions, usage, and
   quotas?
-- Should the public model proxy API mimic OpenAI `/v1/chat/completions`, expose a
-  Codegeist-specific API, or support both through separate endpoints?
+- Should the public Codegeist model API mimic OpenAI `/v1/chat/completions`, expose
+  a Codegeist-specific API, or support both while Envoy stays internal?
 - Which artifact family should sync first: commands, skills, rules, or agent
   profiles?
 
@@ -194,7 +199,8 @@ explicit credentials, cost policy, and usage limits.
   behavior posture. This cloud server is a Codegeist SaaS product, not a
   translation of OpenCode's local headless server.
 - Use `docs/tasks/T006_build-provider-configuration-feature/tasks/T006_03_define-provider-credential-and-account-strategy.md`
-  for current OpenRouter/OpenAI-compatible provider evidence.
+  for current OpenRouter/OpenAI-compatible provider evidence that may become an
+  upstream behind Envoy AI Gateway.
 - Use `docs/tests/README.md` before adding server tests or any hosted provider
   verification.
 - Update `docs/developer/architecture/architecture.md` when Java source, server
