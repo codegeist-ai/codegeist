@@ -22,6 +22,9 @@ paid or credentialed remote provider calls by default.
 Codegeist Cloud is a separate SaaS product surface:
 
 - Users authenticate with Codegeist before they can use hosted models or storage.
+- The local CLI login command is `codegeist login`; with no local server
+  configuration it targets `https://codegeist.cloud`. This login is against a
+  Codegeist server, not an LLM provider such as OpenAI or Ollama.
 - Codegeist controls model access through entitlements, quotas, and usage policy.
 - The first model gateway target is Envoy AI Gateway behind Codegeist Server. Only
   Codegeist-authenticated and Codegeist-authorized requests may reach Envoy
@@ -63,6 +66,12 @@ A Codegeist user signs in and receives access to:
 ### Authentication And Tenancy
 
 - Login is mandatory before model or storage access.
+- `codegeist login` targets a Codegeist server. The default target is
+  `https://codegeist.cloud`; future `codegeist login <server-id>` support may
+  select another configured Codegeist server URL.
+- Codegeist server login is separate from local LLM provider configuration. The
+  CLI should store Codegeist server URLs and Codegeist-issued API tokens for cloud
+  access, not model the server as `provider: codegeist`.
 - The first local OIDC test provider is authentik. It stands in for later
   production providers such as Google, GitHub, Keycloak, authentik, or another
   external provider.
@@ -101,6 +110,9 @@ A Codegeist user signs in and receives access to:
 
 - Local Codegeist clients should eventually sync commands, skills, rules, and
   agent configuration with the cloud server.
+- Local clients authenticate through `codegeist login` before sync. With no
+  configured target, they use `https://codegeist.cloud`; configured alternatives
+  are Codegeist server URLs.
 - The first cloud task does not need full CLI sync. It should define enough API
   and storage boundaries so later CLI tasks can add login and sync safely.
 - Conflict handling, offline edits, artifact versioning, and organization sharing
@@ -116,8 +128,8 @@ Create child task files before implementation work starts.
 - `T008_02_bootstrap-server-spring-project.md` - add the shared
   `app/codegeist/pom.xml` parent, minimal `app/codegeist/server` Spring Boot module,
   Taskfile, health endpoint, and tests.
-- `T008_03_design-auth-and-tenant-model.md` - implement the first auth and tenant
-  foundation from the settled external-OIDC and Codegeist-token model.
+- `T008_03_implement-oauth-provider-configuration.md` - implement the first static
+  external OAuth2/OIDC provider configuration for Codegeist Server.
 - `T008_04_design-s3-artifact-storage.md` - define S3 bucket layout, metadata
   records, artifact types, versioning, checksums, and local MinIO test posture.
 - `T008_05_design-envoy-ai-gateway-llm-proxy.md` - define Envoy AI Gateway as the
@@ -125,8 +137,9 @@ Create child task files before implementation work starts.
   allowlists, streaming, and usage accounting before live calls.
 - `T008_06_add-first-authenticated-cloud-api.md` - implement the first
   authenticated API slice after auth, metadata, and storage boundaries are clear.
-- `T008_07_add-cli-cloud-login-and-sync-slice.md` - add the first local client flow
-  that logs in and syncs one artifact family.
+- `T008_07_add-cli-cloud-login-and-sync-slice.md` - add `codegeist login`, default
+  to `https://codegeist.cloud` when no server is configured, store a
+  Codegeist-issued API token for the selected server, and sync one artifact family.
 
 ## Parent Acceptance Criteria
 
@@ -137,6 +150,8 @@ Create child task files before implementation work starts.
   `app/codegeist/cli`.
 - Login, tenancy, entitlements, model access, S3 artifact storage, and client sync
   are treated as first-class product boundaries.
+- CLI login is tracked as Codegeist-server authentication, not as a generic LLM
+  provider login; the default server URL is `https://codegeist.cloud`.
 - Envoy AI Gateway is captured as the first internal LLM gateway target while live
   remote provider calls remain blocked until a focused safe-call task exists.
 - S3 storage is specified as object storage plus separate metadata and permission
@@ -157,6 +172,7 @@ Create child task files before implementation work starts.
   library-boundary task.
 - Do not implement full command, skill, rule, session, or organization sync in the
   first server bootstrap.
+- Do not model Codegeist Cloud login as an LLM-provider configuration path.
 
 ## Implementation-Readiness Questions
 
@@ -174,6 +190,9 @@ Create child task files before implementation work starts.
   a Codegeist-specific API, or support both while Envoy stays internal?
 - Which artifact family should sync first: commands, skills, rules, or agent
   profiles?
+- What exact local config shape should store additional Codegeist server URLs for
+  `codegeist login <server-id>` beyond the built-in `https://codegeist.cloud`
+  default?
 
 ## Verification
 

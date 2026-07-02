@@ -35,7 +35,8 @@ docs:
   history shape, explicit callback dispatch, persistence boundary, tests, and
   non-goals.
 - `cloud-server.md` - server module source map, Maven parent layout, health API,
-  tests, and explicit cloud-server non-goals for the current bootstrap.
+  static OAuth provider configuration, planned cloud-login boundary, tests, and
+  explicit cloud-server non-goals.
 - `edit-tool.md` - detailed `codegeist_edit` contract, planning algorithm,
   containment guard, text normalization, stale-write protection, preview settings,
   tests, and sharp edges.
@@ -70,10 +71,17 @@ not implemented. The current `tui` command only starts a minimal Spring Shell
 `TerminalUI` root view with localized Codegeist text and a `Ctrl-Q` quit binding.
 
 `app/codegeist/server` is the separate Codegeist Cloud server application. The
-current server slice boots a Spring WebMVC app named `codegeist-server` and exposes
-only `GET /health` with `{"status":"ok"}`. It has no authentication, tenant
-model, object storage, metadata store, LLM proxy, OpenRouter calls, quotas,
-billing, or CLI sync behavior yet.
+current server slice boots a Spring WebMVC app named `codegeist-server`, exposes
+`GET /health` with `{"status":"ok"}`, validates static external OIDC provider
+configuration under `codegeist.auth.providers`, and ships a local authentik OIDC
+profile. It still has no browser login endpoint, live external identity-provider
+call, user/account metadata, Codegeist API tokens, Spring Security route
+protection, durable database, object storage, LLM proxy, OpenRouter call, quota,
+billing, or CLI sync behavior. The planned CLI login contract is `codegeist login`,
+defaulting to `https://codegeist.cloud` when no local Codegeist server target is
+configured. That login targets a Codegeist server and later stores a
+Codegeist-issued API token for that server; it is not an LLM-provider
+configuration path.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -92,7 +100,8 @@ module POMs under `app/codegeist/cli` and `app/codegeist/server`.
 | Spring Boot | Parent `spring-boot-starter-parent` `4.0.6` |
 | Logging | Spring Boot default logging with SLF4J and Logback; application logs are file-only through `logback.xml` |
 | Spring Shell | BOM `4.0.2`, dependencies `spring-shell-starter` and `spring-shell-jline` |
-| Spring WebMVC | Server dependency `spring-boot-starter-webmvc` for the first HTTP health endpoint |
+| Spring WebMVC | Server dependency `spring-boot-starter-webmvc` for the first HTTP health endpoint and future cloud API routes |
+| Server auth config | Static generic OAuth2/OIDC provider configuration under `codegeist.auth.providers`; no Spring Security route protection or live OAuth2 login yet |
 | Jackson | `jackson-databind` plus `jackson-dataformat-yaml` for direct YAML-to-POJO config mapping |
 | Lombok | `1.18.46`, configured as an explicit annotation processor for Java 25 |
 | Spring AI | BOM `2.0.0-M6` imported for dependency management; `spring-ai-ollama` and `spring-ai-openai` are present for programmatic provider `ChatModel` creation, and `spring-ai-starter-mcp-client` is present for prompt-scoped MCP callbacks |
@@ -100,7 +109,7 @@ module POMs under `app/codegeist/cli` and `app/codegeist/server`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | CLI Spring Boot executable jar named `target/codegeist.jar`; server Spring Boot executable jar named `target/codegeist-server.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
-| Tests | CLI Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, final local smoke suite, server context-load test, server health endpoint test, and server native smoke |
+| Tests | CLI Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, final local smoke suite, server context-load test, server health endpoint test, server auth config tests, local authentik profile test, and server native smoke |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -162,6 +171,7 @@ Implemented Java package:
 | `ai.codegeist.app.tui` | Minimal Spring Shell `tui` command and `CodegeistTerminalUi` root view over `TerminalUIBuilder`, without chat submission or a separate agent runtime |
 | `ai.codegeist.app.i18n` | App-wide Spring resource-bundle-backed `CodegeistMessages` helper and `CodegeistLocaleService` for user-visible text and locale selection |
 | `ai.codegeist.server` | Codegeist Cloud server entrypoint and first unauthenticated health endpoint |
+| `ai.codegeist.server.auth.config` | Static generic OIDC provider configuration under `codegeist.auth.providers`, including local authentik profile validation |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 

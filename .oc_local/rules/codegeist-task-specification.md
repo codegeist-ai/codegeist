@@ -214,14 +214,21 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
 - For `T008_build-codegeist-cloud-server` tasks, use
   `docs/tasks/T008_build-codegeist-cloud-server/tasks/T008_01_define-cloud-product-boundaries.md`
   as the settled product-boundary record and
-  `docs/tasks/T008_build-codegeist-cloud-server/tasks/T008_03_design-auth-and-tenant-model.md`
-  as the active auth and tenant foundation task with the settled first auth model.
+  `docs/tasks/T008_build-codegeist-cloud-server/tasks/T008_03_implement-oauth-provider-configuration.md`
+  as the implemented first static OAuth/OIDC provider configuration slice.
   The first auth direction is multiple statically configured external OIDC
   providers; authentik is the local test provider and stands in for later
   production providers such as Google, GitHub, Keycloak, or authentik deployments.
   Codegeist does not host its own OAuth/OIDC server and issues its own API tokens
-  after external login. The broader cloud direction remains individual users
-  before organizations, Codegeist-owned upstream model credentials,
+  after external login. `codegeist login` targets a Codegeist server, defaults to
+  `https://codegeist.cloud` when no local server target is configured, and is not an
+  LLM-provider login. Future `codegeist login <server-id>` support should select a
+  configured Codegeist server URL and store the Codegeist-issued token for that
+  server; do not model this as `provider: codegeist`. Current server source has
+  static OIDC provider config only; user/account metadata, Codegeist-owned API
+  tokens, and Spring Security route protection are deferred. The broader cloud
+  direction remains individual users before organizations, Codegeist-owned upstream
+  model credentials,
   metadata-backed entitlements/quotas/usage/model allowlists, MinIO as the first
   local S3-compatible artifact byte store with separate metadata, Envoy AI Gateway
   as an internal LLM gateway reachable only through Codegeist-authenticated and

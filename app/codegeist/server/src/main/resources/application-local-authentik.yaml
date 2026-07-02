@@ -1,0 +1,7 @@
+codegeist:
+  auth:
+    providers:
+      authentik:
+        type: oidc
+        issuer-uri: http://localhost:9000/application/o/codegeist/
+        client-id: codegeist

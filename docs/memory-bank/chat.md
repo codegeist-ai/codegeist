@@ -10,9 +10,13 @@
   direction is multiple statically configured external OIDC providers; authentik
   is the local test provider and stands in for later production providers such as
   Google, GitHub, Keycloak, or authentik deployments. Codegeist does not host its
-  own OAuth/OIDC server and issues its own API tokens after external login. The
-  first cloud product boundary also targets individual users before organizations,
-  Codegeist-owned upstream model credentials, metadata-backed
+  own OAuth/OIDC server and issues its own API tokens after external login.
+  `codegeist login` targets a Codegeist server, defaults to
+  `https://codegeist.cloud` when no local server target is configured, and is not an
+  LLM-provider login. Future `codegeist login <server-id>` support should select a
+  configured Codegeist server URL and store the Codegeist-issued token for that
+  server. The first cloud product boundary also targets individual users before
+  organizations, Codegeist-owned upstream model credentials, metadata-backed
   quotas/entitlements/model allowlists, MinIO as the first local S3-compatible
   artifact byte store with separate metadata, Envoy AI Gateway as an internal LLM
   gateway reachable only through Codegeist-authenticated and Codegeist-authorized
@@ -55,18 +59,22 @@
   application. Its executable jar name stays `target/codegeist.jar`.
 - `docs/tasks/T008_build-codegeist-cloud-server/task.md` is the Codegeist Cloud
   epic. The first bootstrap has added `app/codegeist/server` as a second Spring Boot
-  WebMVC application for the hosted SaaS server. It currently exposes only
-  `GET /health -> {"status":"ok"}` and has no auth, tenants, object storage,
-  metadata store, Envoy AI Gateway integration, usage accounting, billing, or
-  CLI/TUI sync yet. This is not a local `opencode serve` adapter.
+  WebMVC application for the hosted SaaS server. It exposes
+  `GET /health -> {"status":"ok"}` and now has the first OAuth configuration
+  slice: static external OIDC provider config under `codegeist.auth.providers` plus
+  a local `authentik` profile. It still has no browser login endpoint,
+  user/account metadata, Codegeist API tokens, Spring Security route protection,
+  durable database, object storage, Envoy AI Gateway integration, usage accounting,
+  billing, or CLI/TUI sync yet. This is not a local `opencode serve` adapter.
 - `T008_01_define-cloud-product-boundaries.md` is solved as a documentation-only
   boundary decision record. It does not add Java source. Later T008 tasks own the
   exact auth model, MinIO/S3 metadata design, Envoy AI Gateway proxy contract,
   first authenticated server API, and CLI command-sync slice.
-- `T008_03_design-auth-and-tenant-model.md` is now open as the first auth and
-  tenant foundation implementation task. It keeps the settled external-OIDC and
-  Codegeist-owned API token direction, but now requires server source, focused
-  tests, and architecture-doc updates instead of remaining documentation-only.
+- `T008_03_implement-oauth-provider-configuration.md` is solved. The server source
+  implements only the settled external-OIDC provider config in
+  `ai.codegeist.server.auth.config` plus focused config tests. User/account
+  metadata, Codegeist-owned API token issuance, token validation, and Spring
+  Security route protection are deferred to later auth/API tasks.
 - T008 local cloud test posture is now authentik for OIDC, MinIO for
   S3-compatible artifact bytes, and Envoy AI Gateway for internal LLM routing.
   Envoy must not be exposed as a public unauthenticated API; Codegeist Server owns

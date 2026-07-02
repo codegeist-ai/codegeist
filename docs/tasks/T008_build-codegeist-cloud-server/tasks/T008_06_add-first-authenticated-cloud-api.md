@@ -12,7 +12,9 @@ metadata, and storage boundaries are specified.
 ## Scope
 
 - Add only one small authenticated endpoint or workflow.
-- Use the chosen auth and tenancy model from `T008_03`.
+- Use the static OAuth/OIDC provider configuration from `T008_03` only as the
+  login-provider source. Define the needed user/account/token/security contract in
+  this task or in a preceding focused auth/API task before adding the endpoint.
 - Use metadata-backed authorization rather than S3 object paths alone.
 - Keep Envoy AI Gateway behind Codegeist Server. If this task touches model
   access, the selected endpoint must prove that unauthenticated clients cannot

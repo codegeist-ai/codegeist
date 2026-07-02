@@ -22,7 +22,8 @@ vision:
   Community 25
 - a Spring Boot CLI application under `app/codegeist/cli`
 - a Spring Boot server application under `app/codegeist/server` with a first local
-  `/health` endpoint for the planned Codegeist Cloud control plane
+  `/health` endpoint and static external OIDC provider configuration for the
+  planned Codegeist Cloud control plane
 - Spring Shell commands for `--version`, direct `codegeist.yml` `--show-config`,
   and one-shot `ask`
 - direct `codegeist.yml` parsing for typed `provider:` entries and the first
@@ -128,11 +129,16 @@ From the repository root, the equivalent command is:
 task -t app/codegeist/server/Taskfile.yml run
 ```
 
-The server currently exposes only a minimal unauthenticated health endpoint:
+The server currently exposes a minimal unauthenticated health endpoint:
 
 ```text
 GET /health -> {"status":"ok"}
 ```
+
+It also binds static external OAuth2/OIDC provider configuration under
+`codegeist.auth.providers`, including a local authentik profile. Browser login,
+Codegeist API tokens, Spring Security route protection, user/account metadata,
+storage, and model proxying are still deferred.
 
 The shared Java parent workspace lives under `app/codegeist`. To run both CLI and
 server test suites through their module Taskfiles:
