@@ -47,6 +47,10 @@ Test guidance for Codegeist contributors and coding agents.
 ## Related Files
 
 - `app/codegeist/cli/Taskfile.yml`
+- `app/codegeist/cli/src/test/java/ai/codegeist/app/tui/CodegeistTerminalUiTest.java`
+- `app/codegeist/cli/src/test/java/ai/codegeist/app/tui/TuiCommandsTest.java`
+- `app/codegeist/cli/src/test/java/ai/codegeist/app/i18n/CodegeistLocaleServiceTest.java`
+- `app/codegeist/cli/src/test/java/ai/codegeist/app/i18n/CodegeistMessagesTest.java`
 - `scripts/tests/artifact-smoke.ps1`
 - `scripts/tests/install-script-smoke.ps1`
 - `scripts/tests/file-edit-ask-smoke.ps1`

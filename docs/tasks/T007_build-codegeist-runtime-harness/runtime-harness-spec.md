@@ -555,82 +555,29 @@ classDiagram
 
 ## 5. TerminalUI Chat Harness
 
-T007_06 now targets the existing Spring Shell `TerminalUI` entrypoint instead of a
-custom JLine console, deterministic line renderer, or multi-child terminal UI
-architecture. `spring-shell-jline` remains a dependency because `TerminalUI` lives
-there, but Codegeist should not introduce direct `TerminalBuilder`, `LineReader`,
-or status-line wiring in this slice.
+T007_06 now has a minimal Spring Shell `TerminalUI` launcher, not a chat harness.
+`ai.codegeist.app.tui.TuiCommands` exposes the `tui` command and delegates to
+`CodegeistTerminalUi`. `CodegeistTerminalUi` builds a `TerminalUI` from
+`TerminalUIBuilder`, configures one bordered `BoxView` root, renders localized text
+from `CodegeistMessages`, binds `Ctrl-Q` to interrupt the loop, and enters
+`TerminalUI.run()`.
 
-### 5.1 Entry And Submission Flow
+`CodegeistLocaleService` uses optional app-wide `codegeist.locale` and otherwise
+falls back to the JVM default locale for message lookup. There is still no prompt submission,
+session projection, streaming output, permission prompt, tool transcript view,
+presenter, view factory, responsive layout service, Spring Shell control wrapper
+package, virtual-terminal smoke, or `task tui-smoke` entrypoint.
 
-```mermaid
-flowchart TD
-    Command["TuiCommands.tui"] --> TerminalUi["CodegeistTerminalUi"]
-    TerminalUi --> Builder["TerminalUIBuilder"]
-    Builder --> SpringTerminalUi["Spring Shell TerminalUI"]
-    TerminalUi --> Prompt["InputView / submit action"]
-    Prompt --> Harness["ChatHarnessService.ask(true, prompt)"]
-    Harness --> AgentLoop["CodegeistAgentLoopService"]
-    AgentLoop --> Tools["CodegeistToolRun callbacks"]
-    Harness --> Store["SessionStoreService"]
-    Harness --> Response["CodegeistChatResponse"]
-    Response --> VisibleState["TerminalUI-visible response state"]
-    VisibleState --> Redraw["TerminalUI.redraw()"]
-```
+Future TUI work should add one concrete interaction at a time, starting with prompt
+submission through `ChatHarnessService.ask(true, prompt)` if chat is the next target.
+Keep provider selection, MCP/tool callbacks, the model/tool/model continuation loop,
+and `.codegeist/session.json` persistence behind `ChatHarnessService` and existing
+runtime services.
 
-### 5.2 Minimal State Boundary
-
-```mermaid
-classDiagram
-    direction TB
-
-    class TuiCommands {
-      <<Component>>
-      +tui() void
-    }
-
-    class CodegeistTerminalUi {
-      <<Component>>
-      -TerminalUIBuilder terminalUIBuilder
-      -ChatHarnessService chatHarnessService
-      +run() void
-    }
-
-    class TerminalUiState {
-      <<planned local state>>
-      List~String~ visibleMessages
-      String notice
-    }
-
-    class ChatHarnessService {
-      <<existing>>
-      +ask(boolean continueSession, String prompt) CodegeistChatResponse
-    }
-
-    class CodegeistAgentLoopService {
-      <<existing>>
-    }
-
-    TuiCommands --> CodegeistTerminalUi
-    CodegeistTerminalUi --> TerminalUiState
-    CodegeistTerminalUi --> ChatHarnessService
-    ChatHarnessService --> CodegeistAgentLoopService
-```
-
-### 5.3 Persistence Boundary
-
-- `CodegeistTerminalUi` may keep transient visible response text, notices, or input
-  state in memory for redraws.
-- `CodegeistTerminalUi` must submit prompts through
-  `ChatHarnessService.ask(true, prompt)` so provider selection, MCP/tool callbacks,
-  model/tool/model continuation, and `.codegeist/session.json` persistence remain in
-  the existing harness.
-- `CodegeistTerminalUi` must not call `CodegeistAgentLoopService` directly.
-- `CodegeistTerminalUi` must not persist provider config, selected provider/model,
-  MCP client definitions, tool definitions, prompt drafts, layout, scroll, focus, or
-  other UI-only state into `.codegeist/session.json`.
-- Streaming, cancellation, patch review UI, shell review panes, session browsers,
-  and richer transcript projection require later focused tasks.
+Do not restore a custom JLine console, deterministic line-renderer pipeline, or
+second agent runtime unless a future task explicitly replaces the Spring Shell
+approach. Streaming, cancellation, patch review UI, shell review panes, session
+browsers, and richer transcript projection remain future work.
 
 ## Iteration Rule
 
@@ -640,6 +587,6 @@ Keep this specification synchronized with the active child task:
 - `T007_03` should refine sections 3.1, 3.2, 3.3, and 4.1.
 - `T007_04` should refine sections 4.2 and 4.3.
 - `T007_05` should add the Codegeist-owned model/tool/model loop contract.
-- `T007_06` should refine section 5 around the Spring Shell `TerminalUI` chat-harness
-  path.
+- `T007_06` should refine section 5 around the minimal Spring Shell `TerminalUI`
+  launcher and any next focused prompt-submission slice.
 - `T007_07` should reconcile all diagrams with the implemented source.

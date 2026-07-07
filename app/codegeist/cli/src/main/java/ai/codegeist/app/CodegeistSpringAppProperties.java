@@ -1,6 +1,8 @@
 package ai.codegeist.app;
 
+import java.util.Locale;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -13,15 +15,18 @@ public class CodegeistSpringAppProperties {
     public static final String CONFIGURATION_PREFIX = CodegeistApplication.APP_NAME;
     public static final String SESSION_DIRECTORY_PROPERTY = CONFIGURATION_PREFIX + ".session.directory";
     public static final String SESSION_STORE_FILE_PROPERTY = CONFIGURATION_PREFIX + ".session.store-file";
+    public static final String LOCALE_PROPERTY = CONFIGURATION_PREFIX + ".locale";
     public static final String DEFAULT_SESSION_DIRECTORY = ".codegeist";
     public static final String DEFAULT_SESSION_STORE_FILE = "session.json";
 
     @Getter
+    @Setter
+    @NonNull
     private Session session = new Session();
 
-    public void setSession(Session session) {
-        this.session = session == null ? new Session() : session;
-    }
+    @Setter
+    @Getter
+    private Locale locale;
 
     @Setter
     public static class Session {

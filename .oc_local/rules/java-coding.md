@@ -52,6 +52,10 @@ Use this rule when adding or changing Java source in Codegeist.
   read.
 - Prefer focused Lombok annotations such as `@Getter` and `@Setter` over broad
   annotations such as `@Data`.
+- For initialized nested property holders that must not become null, prefer
+  Lombok `@Getter`, `@Setter`, and field-level `@NonNull` over hand-written
+  setters that replace null with a new default instance. Keep an explicit setter
+  only when accepting null is a deliberate runtime fallback contract.
 - For trivial enum or value-object constructor and accessor boilerplate, prefer
   focused Lombok annotations such as `@RequiredArgsConstructor` and `@Getter` with
   the narrowest useful access level over hand-written boilerplate.

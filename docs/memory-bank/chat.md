@@ -61,17 +61,22 @@
   instead of overwriting them. Streaming event output, permission prompts,
   provider-facing reconstruction from stored sessions, and broader multi-step UI
   projection remain deferred.
-- `app/codegeist/cli` now implements a minimal `tui` Spring Shell command in
-  `ai.codegeist.app.TuiCommands`. `task run -- tui` reaches a Spring Shell
-  `TerminalUI` built by `CodegeistTerminalUi`; the current root view is only a
-  static `ListView` titled `Codegeist` showing `hello tui`. Session projection,
-  streaming chat, permission prompts, and tool rendering are still deferred.
+- `app/codegeist/cli` now has a minimal `tui` Spring Shell command in
+  `ai.codegeist.app.tui.TuiCommands`. It delegates to `CodegeistTerminalUi`, which
+  builds a Spring Shell `TerminalUI`, configures one bordered `BoxView` root,
+  renders a localized quit hint, binds `Ctrl-Q` to interrupt the TUI loop, and then
+  enters `TerminalUI.run()`. It does not submit prompts, stream chat, project
+  sessions, render tool activity, request permissions, or use a presenter, layout
+  service, custom JLine console, Spring Shell control wrapper package,
+  virtual-terminal smoke, `task tui-smoke`, `docs/developer/architecture/terminal-ui.md`,
+  or editable TerminalUI sketch. `CodegeistLocaleService` uses optional app-wide
+  `codegeist.locale` and otherwise falls back to the JVM default locale.
 - `application.yaml` sets `spring.shell.interactive.enabled=false` so Spring
   Shell's noninteractive runner handles argument commands by default.
   `CodegeistShellRunnerConfiguration` contributes a primary noninteractive runner
   while that property is false, preserving `--version`, `--show-config`, `ask`, and
-  `tui` dispatch after adding `spring-shell-jline`. Interactive shell behavior is
-  deferred. Codegeist-owned application defaults such as `codegeist.session.*` live
+  `tui` dispatch through Spring Shell's stdout-friendly `NonInteractiveShellRunner`
+  instead of the JLine noninteractive variant. Interactive shell behavior is deferred. Codegeist-owned application defaults such as `codegeist.session.*` live
   in `CodegeistSpringAppProperties`, not in the repo `application.yaml`.
 - `CodegeistApplication.APP_NAME` is the shared application name and Spring config
   prefix. Configuration code lives under `ai.codegeist.app.config`.
@@ -604,14 +609,11 @@
   concrete implementation plan with focused class views and a child-task split for
   `T007_03`; implement that work through the child tasks under
   `T007_03_add-mcp-and-read-write-tools/tasks/`, not as one large runtime change.
-  T007_06 was reset from the previous custom JLine/line-renderer handoff to a
-  single focused TerminalUI task at
-  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_06_add-terminalui-chat-harness/task.md`.
-  The old `tui-opencode-jline-mapping.md`, multi-child `T007_06` directory,
-  third-party deep analysis, and implementation plan were removed. The active T007_06
-  path is now `TuiCommands -> CodegeistTerminalUi -> ChatHarnessService.ask(true,
-  prompt)` with Spring Shell `TerminalUI`; do not add a separate JLine console,
-  deterministic line renderer pipeline, or second agent runtime.
+  T007_06 was reset from the previous custom JLine/line-renderer handoff. The current
+  implementation is only the smallest Spring Shell `TerminalUI` launcher: `tui` opens
+  a bordered root view with localized text and `Ctrl-Q` exit. Future TUI work should
+  add one concrete interaction at a time, starting with prompt submission through
+  `ChatHarnessService`, without restoring the removed presentation architecture.
   `T007_03_add-mcp-and-read-write-tools/task.md` is completed: direct `mcp:` config,
   workspace resolution, local read/list/glob/grep/write callbacks, the one-turn
   `ChatHarnessService`, MCP callback integration, Docker-backed remote MCP smoke,
@@ -651,7 +653,7 @@
   background shell process management, and structured patch semantics remain future
   work behind Codegeist-owned `codegeist_*` callbacks if they are ever needed.
   Remaining parent-level T007 children are the solved
-  `T007_05_add-agent-control-loop/task.md`, the active
+  `T007_05_add-agent-control-loop/task.md`, the solved
   `T007_06_add-terminalui-chat-harness/task.md`, and
   `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
   server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory,
@@ -805,9 +807,10 @@
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
 - Continue the next T007 implementation from
-  `T007_06_add-terminalui-chat-harness/task.md`: connect the existing Spring Shell
-  `TerminalUI` path to `ChatHarnessService.ask(true, prompt)` without reviving the
-  removed custom JLine console or line-renderer task chain.
+  `T007_07_verify-chat-file-tool-harness.md`; future TUI work should build on the
+  minimal `TuiCommands -> CodegeistTerminalUi` path and should not revive the removed
+  custom JLine console, line-renderer task chain, or over-broad TerminalUI
+  presentation architecture.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`

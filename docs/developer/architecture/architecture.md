@@ -51,10 +51,9 @@ MCP config loading, active workspace resolution, provider-neutral chat execution
 through `ChatHarnessService` and `CodegeistAgentLoopService`, a lazily created
 Codegeist chat model that wraps Spring AI Ollama and uses the runtime model name
 from the request, a Spring Shell `--version` command that prints the build version,
-a Spring Shell `--show-config` command that prints the current Codegeist config as
-direct `codegeist.yml` YAML with configured values unchanged, and a minimal Spring
-Shell `tui` command that starts a `TerminalUI` with a static Codegeist root view. A
-Spring Shell `ask` command sends one prompt to the first configured provider with
+and a Spring Shell `--show-config` command that prints the current Codegeist config
+as direct `codegeist.yml` YAML with configured values unchanged. A Spring Shell
+`ask` command sends one prompt to the first configured provider with
 that provider config's default runtime model; with `-c/--continue`, it appends the
 prompt, bounded
 local or MCP tool activity, and final provider response to the newest session in
@@ -63,7 +62,9 @@ read/list/glob/grep/write/edit/shell callbacks and lazily opened MCP callbacks t
 provider calls, inspects assistant tool-call messages itself, dispatches callbacks
 through `CodegeistToolRun`, appends Spring AI `ToolResponseMessage` values, and calls
 the model again until final assistant text is returned. Streaming events, permission
-prompts, multi-step TUI projection, and a broader agent driver are not implemented.
+prompts, prompt history, TerminalUI prompt submission, and a broader agent driver are
+not implemented. The current `tui` command only starts a minimal Spring Shell
+`TerminalUI` root view with localized Codegeist text and a `Ctrl-Q` quit binding.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -88,7 +89,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused TUI command delegation test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -134,19 +135,22 @@ Implemented Java package:
 
 | Package | Current responsibility |
 | --- | --- |
-| `ai.codegeist.app` | Spring Boot application entrypoint, version command, minimal `tui` command, TerminalUI bootstrap, noninteractive Spring Shell runner guard, and shared command exception mapping |
+| `ai.codegeist.app` | Spring Boot application entrypoint, Spring component scan root, version command, noninteractive Spring Shell runner guard, and shared command exception mapping |
 | `ai.codegeist.app.chat` | Provider-neutral chat harness, Codegeist-owned synchronous agent loop, internal turn request, runtime chat execution context, chat service, generic `CodegeistChatModel<T extends ProviderConfig>` base, Ollama and OpenAI chat model adapters, and the `ask` Spring Shell command with optional session continuation |
 | `ai.codegeist.app.config` | Top-level config root models, the central root parser, typed provider and MCP config root elements, explicit Java-registry provider type dispatch, qualified YAML `ObjectMapper` bean, direct YAML SpEL preprocessing, config service, config command, merged-config injection behavior, and validation exception |
 | `ai.codegeist.app.mcp` | Lazy MCP adapter, prompt-scoped MCP run handle, Spring AI/MCP client factory, and closeable client handle for configured `stdio` and `streamable_http` clients |
 | `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
 | `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write/edit/shell Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
+| `ai.codegeist.app.tui` | Minimal Spring Shell `tui` command and `CodegeistTerminalUi` root view over `TerminalUIBuilder`, without chat submission or a separate agent runtime |
+| `ai.codegeist.app.i18n` | App-wide Spring resource-bundle-backed `CodegeistMessages` helper and `CodegeistLocaleService` for user-visible text and locale selection |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
 
 ## Application Entrypoint
 
-`CodegeistApplication` is annotated with `@SpringBootApplication` and delegates
-startup to `SpringApplication.run`. GraalVM metadata is kept out of Java code in
+`CodegeistApplication` is annotated with `@SpringBootApplication` and uses the
+normal `ai.codegeist.app` package scan root. It delegates startup to
+`SpringApplication.run`. GraalVM metadata is kept out of Java code in
 `src/main/resources/META-INF/native-image/`: `resource-config.json` includes
 `logback.xml` and `META-INF/build-info.properties`, and `reflect-config.json`
 registers config root elements, config POJOs, session model types, and native-reachable
@@ -172,8 +176,9 @@ Current behavior:
   arguments such as `--version` run through Spring Shell's noninteractive runner.
 - `CodegeistShellRunnerConfiguration` contributes a primary noninteractive
   `ShellRunner` while `spring.shell.interactive.enabled=false` is active. This keeps
-  command-argument dispatch stable after `spring-shell-jline` adds TerminalUI
-  infrastructure.
+  command-argument dispatch stable for `--version`, `--show-config`, `ask`, and
+  `tui` by using Spring Shell's stdout-friendly `NonInteractiveShellRunner` instead
+  of the JLine noninteractive variant that writes through `Terminal.writer()`.
 - `CodegeistApplication.APP_NAME` is the shared application name and Spring
   configuration prefix constant.
 - The provider configuration slice lives under `ai.codegeist.app.config`.
@@ -419,11 +424,13 @@ Current behavior:
   output is only the version string, for
   example `0.1.0-SNAPSHOT`. Its debug log is file-only and does not pollute
   command stdout.
-- `tui` is implemented as a Spring Shell command in `TuiCommands`. It delegates to
-  `CodegeistTerminalUi`, which builds a Spring Shell `TerminalUI`, sets a minimal
-  `ListView` titled `Codegeist` as the root, and then enters `TerminalUI.run()`.
-  The view currently shows only `hello tui`; it does not project sessions, stream
-  chat, request permissions, or render tool activity yet.
+- `tui` is implemented as a Spring Shell command in `ai.codegeist.app.tui.TuiCommands`.
+  It delegates to `CodegeistTerminalUi`, which builds a Spring Shell `TerminalUI`
+  from `TerminalUIBuilder`, configures one bordered `BoxView` root, renders a
+  localized quit hint from `CodegeistMessages`, binds `Ctrl-Q` to an interrupt message,
+  and enters `TerminalUI.run()`. The current TUI does not submit prompts, stream
+  chat, show sessions, render tool activity, request permissions, or use a presenter,
+  layout service, custom JLine console, or Spring Shell control wrapper layer.
 - `logback.xml` writes logs only to `${LOG_FILE:-logs/codegeist.log}`. Console
   output is reserved for command output, so jar `--version` smokes print only the
   version and packaged native `--show-config` smokes print only direct YAML.
@@ -465,10 +472,11 @@ Current behavior:
   instants, omits null fields, and writes inspectable JSON. Native reflection
   metadata includes the session model types and part implementations.
   `CodegeistSpringAppProperties` binds Spring application configuration under
-  `codegeist.session.*` and owns the built-in default
-  `.codegeist/session.json` path. External Spring `application.yaml` values or
+  `codegeist.*`. It owns the built-in default `.codegeist/session.json` path and
+  the optional app-wide `codegeist.locale` setting used by
+  `CodegeistLocaleService`. External Spring `application.yaml` values or
   `CODEGEIST_SESSION_DIRECTORY` and `CODEGEIST_SESSION_STORE_FILE` environment
-  variables can override the path. These settings are not part of direct
+  variables can override the session path. These settings are not part of direct
   `codegeist.yml` provider/tool configuration.
 - The default `.codegeist/session.json` store does not store API keys, OAuth tokens,
   cloud credentials, evaluated secret values, provider config, selected provider,
@@ -569,6 +577,13 @@ injects a stub `ChatHarnessService`, calls `AskCommands` directly for plain and
 continued `ask` paths, verifies stdout remains the returned response text only,
 checks the continue flag delegation, and checks Spring Shell parsing for both
 `ask -c "prompt"` and `ask --continue "prompt"`.
+
+`TuiCommandsTest`, `CodegeistTerminalUiTest`, `CodegeistLocaleServiceTest`, and
+`CodegeistMessagesTest` are the focused TUI-adjacent unit tests. They verify command
+delegation, minimal root-view creation, default-locale fallback, configured locale
+selection, default resource-bundle lookup from `messages.properties`, and message
+lookup through the configured locale. The blocking `TerminalUI.run()` loop is not
+entered by unit tests.
 
 `ChatHarnessServiceTest` is the focused provider-free harness test. It uses
 hand-written fakes for provider config, agent loop service, tool run, and workspace

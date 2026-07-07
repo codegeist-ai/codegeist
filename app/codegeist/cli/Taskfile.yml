@@ -136,3 +136,8 @@ tasks:
       - build
     cmds:
       - java -jar target/codegeist.jar {{.CLI_ARGS}}
+
+  tui:
+    desc: Run the already-built Codegeist TUI jar
+    cmds:
+      - java -jar target/codegeist.jar tui

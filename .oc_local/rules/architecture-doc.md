@@ -37,6 +37,9 @@ specification documentation under `docs/developer/architecture/` and
 - Mermaid or UML diagrams that summarize components, package layout, class
   relationships, runtime flows, startup, adapter boundaries, and verification
   flows.
+- If a future task reintroduces a current TUI runtime, document its layout, focus
+  order, visible state, controls, user interactions, and any editable overview
+  sketch in `docs/developer/architecture/` in the same task.
 - Focused source-code documentation for implemented subsystems that explains
   important source files, solved problems, Spring annotations and bean contracts,
   validation flows, error behavior, tests, sharp edges, and future task impact.

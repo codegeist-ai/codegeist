@@ -4,96 +4,52 @@ Parent: `T007_build-codegeist-runtime-harness`
 
 Status: open
 
-## Goal
+## Current Outcome
 
-Connect the existing `codegeist tui` Spring Shell command to the current chat
-harness through Spring Shell `TerminalUI`, keeping the TUI as a small UI adapter
-over `ChatHarnessService` instead of a separate JLine console, renderer pipeline,
-or agent loop.
+Codegeist now has the smallest useful Spring Shell `TerminalUI` launcher. The
+`tui` command lives in `ai.codegeist.app.tui.TuiCommands` and delegates to
+`CodegeistTerminalUi`. `CodegeistTerminalUi` builds a Spring Shell `TerminalUI`,
+configures one bordered `BoxView` root, renders localized text from `CodegeistMessages`,
+binds `Ctrl-Q` to interrupt the TUI loop, and enters `TerminalUI.run()`.
 
-The first useful slice should let a user type a prompt in the TerminalUI, submit it
-through `ChatHarnessService.ask(true, prompt)`, and see the response in the same
-TerminalUI surface. The existing harness remains responsible for provider
-selection, tool/MCP callback setup, the Codegeist-owned model/tool/model loop, and
-session-store persistence.
+This is not a chat harness yet. There is no prompt submission, session projection,
+streaming output, permission prompt, tool transcript view, virtual-terminal smoke,
+or `task tui-smoke` entrypoint. The previous presenter, view factory, responsive
+layout service, Spring Shell control wrapper package, custom JLine console, and
+line-renderer pipeline remain removed.
 
-## Current Baseline
+`CodegeistLocaleService` uses optional app-wide `codegeist.locale` and otherwise
+falls back to the JVM default locale for message lookup.
 
-- `app/codegeist/cli` already has a minimal Spring Shell `tui` command in
-  `ai.codegeist.app.TuiCommands`.
-- `CodegeistTerminalUi` already builds a Spring Shell `TerminalUI` through
-  `TerminalUIBuilder` and shows a static `ListView` titled `Codegeist`.
-- `spring-shell-jline` is present because Spring Shell `TerminalUI` lives there;
-  Codegeist should not add a separate direct JLine console layer for this task.
-- `CodegeistShellRunnerConfiguration` keeps noninteractive command-argument
-  dispatch stable while `spring.shell.interactive.enabled=false` is configured.
-- `ChatHarnessService.ask(boolean continueSession, String prompt)` is the runtime
-  submission boundary for both commands and this TUI.
+## Next Scope
 
-## Scope
+The next TUI slice should add exactly one concrete interaction. If chat is next,
+connect a prompt input to `ChatHarnessService.ask(true, prompt)` and display the
+returned `CodegeistChatResponse.content()` in the TerminalUI surface.
 
-- Keep the runtime path as
-  `TuiCommands -> CodegeistTerminalUi -> ChatHarnessService.ask(true, prompt)`.
-- Use Spring Shell `TerminalUI` components such as `GridView`, `InputView`,
-  `ListView`, `ButtonView`, `TerminalUI.redraw()`, and `TerminalUI.interrupt()`
-  when they fit.
-- Add the smallest testable UI state or helper needed to submit one prompt and show
-  the latest response without running the real `TerminalUI.run()` loop in unit
-  tests.
-- Keep prompt submission synchronous for this slice. A provider or tool call may
-  block the UI until `ChatHarnessService.ask(...)` returns.
-- Keep `.codegeist/session.json` writes owned by `ChatHarnessService` and
-  `SessionStoreService`. The TUI may display returned text and later reload stored
-  state, but it must not create a second persistence path.
-- Preserve existing `--version`, `--show-config`, and `ask` command behavior.
-
-## Acceptance Criteria
-
-- `codegeist tui` still starts a Spring Shell `TerminalUI`.
-- A focused test proves submitting a non-blank prompt delegates to
-  `ChatHarnessService.ask(true, prompt)`.
-- A focused test proves the returned `CodegeistChatResponse.content()` is added to
-  the TerminalUI-visible state.
-- Blank prompt handling is deterministic and does not call the harness.
-- TUI code does not call `CodegeistAgentLoopService` directly and does not duplicate
-  provider, tool, MCP, or session-store orchestration.
-- TUI code does not persist provider config, selected provider/model, MCP client
-  definitions, tool definitions, prompt drafts, layout, scroll, or other UI-only
-  state into `.codegeist/session.json`.
-- Existing noninteractive command tests for `--version`, `--show-config`, and `ask`
-  continue to pass.
-- Architecture and memory docs describe the implemented TerminalUI behavior after
-  the runtime change lands.
+Keep provider, tool/MCP, agent-loop, and session-store behavior behind
+`ChatHarnessService` and existing runtime services. Add Codegeist-owned wrappers,
+layout services, or long-lived view state only when a current test or behavior
+requires them.
 
 ## Non-Goals
 
-- Do not implement a custom JLine `TerminalBuilder`, `LineReader`, status line,
-  console seam, deterministic line renderer pipeline, or full-screen renderer
-  abstraction in this task.
-- Do not revive the removed `T007_06` child-task sequence for view models,
-  renderers, input parsers, controller loops, or JLine console wiring.
-- Do not implement streaming model events, cancellation tokens, background provider
-  calls, permission prompts, patch review UI, scrollback navigation, prompt history,
-  autocomplete, mouse support, server runtime, Vaadin, API/SDK, plugins, subagents,
-  skills, or memory.
-- Do not make the TUI a second agent runtime. `ChatHarnessService` remains the
-  only integration point for provider/tool/session behavior in this slice.
+- Do not recreate a custom JLine console, deterministic line-renderer pipeline, or
+  second agent runtime unless a future task explicitly replaces the Spring Shell
+  approach.
+- Do not persist prompt drafts, layout, focus, scroll, or other UI-only state into
+  `.codegeist/session.json`.
+- Do not add streaming, cancellation, permission prompts, patch review UI, shell
+  review panes, session browsers, or richer transcript projection without a focused
+  task.
 
 ## Verification
 
-Candidate commands from `app/codegeist/cli`:
+Use the normal Codegeist test entrypoint from `app/codegeist/cli`:
 
 ```bash
-task test TEST=TuiCommandsTest
+task test TEST=CodegeistTerminalUiTest,TuiCommandsTest,CodegeistLocaleServiceTest,CodegeistMessagesTest
 task test TEST=VersionCommandsTests,CodegeistConfigCommandTest,AskCommandsSessionStoreTest
-task run -- --version
 ```
 
-For the interactive entrypoint, use a bounded smoke check because `TerminalUI.run()`
-is expected to keep running until interrupted:
-
-```bash
-timeout 15s task run -- tui
-```
-
-Do not document direct `mvn test` commands for this implementation task.
+Do not run or document `task tui-smoke`; that Taskfile entrypoint does not exist.

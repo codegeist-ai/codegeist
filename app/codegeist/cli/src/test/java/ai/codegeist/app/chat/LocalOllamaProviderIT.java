@@ -19,8 +19,6 @@ class LocalOllamaProviderIT {
 
     private static final String OLLAMA_BASE_URL = "http://localhost:11434";
     private static final String OLLAMA_MODEL = "llama3.2:1b";
-    private static final String SPRING_SHELL_AUTO_CONFIGURATION =
-            "org.springframework.shell.core.autoconfigure.SpringShellAutoConfiguration";
     private static final String PROMPT = "Respond with exactly the lowercase word codegeist. No explanation.";
 
     @TempDir
@@ -30,7 +28,6 @@ class LocalOllamaProviderIT {
     void chatsWithLocalOllamaThroughProviderNeutralService() throws Exception {
         try (ConfigurableApplicationContext context = new SpringApplicationBuilder(CodegeistApplication.class)
                 .web(WebApplicationType.NONE)
-                .properties("spring.autoconfigure.exclude=" + SPRING_SHELL_AUTO_CONFIGURATION)
                 .run()) {
             CodegeistConfigService configService = context.getBean(CodegeistConfigService.class);
             CodegeistChatService chatService = context.getBean(CodegeistChatService.class);

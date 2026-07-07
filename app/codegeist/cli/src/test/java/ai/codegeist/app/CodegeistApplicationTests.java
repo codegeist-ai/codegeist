@@ -11,7 +11,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
     properties = {
-            "spring.autoconfigure.exclude=org.springframework.shell.core.autoconfigure.SpringShellAutoConfiguration",
             CodegeistSpringAppProperties.SESSION_DIRECTORY_PROPERTY + "=custom-codegeist",
             CodegeistSpringAppProperties.SESSION_STORE_FILE_PROPERTY + "=custom-session.json"
     }

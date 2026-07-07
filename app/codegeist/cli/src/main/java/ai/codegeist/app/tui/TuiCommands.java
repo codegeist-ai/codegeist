@@ -1,4 +1,4 @@
-package ai.codegeist.app;
+package ai.codegeist.app.tui;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.shell.core.command.annotation.Command;
@@ -12,7 +12,7 @@ class TuiCommands {
 
     private final CodegeistTerminalUi terminalUi;
 
-    @Command(name = TUI_COMMAND, description = "Start the Codegeist TUI")
+    @Command(name = TUI_COMMAND, description = "Open the Codegeist terminal UI")
     void tui() {
         terminalUi.run();
     }

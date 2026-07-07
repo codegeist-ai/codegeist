@@ -12,11 +12,12 @@ import org.springframework.shell.core.command.CommandRegistry;
 /**
  * Keeps command-argument execution on Spring Shell's non-interactive runner.
  *
- * <p>Adding {@code spring-shell-jline} contributes terminal UI infrastructure and
- * can also make an interactive runner available. Codegeist currently dispatches
- * commands such as {@code --version}, {@code --show-config}, and {@code tui} from
- * process arguments, so this primary runner preserves that contract while
- * {@code spring.shell.interactive.enabled=false} remains configured.</p>
+ * <p>Codegeist currently dispatches commands such as {@code --version},
+ * {@code --show-config}, and {@code ask} from process arguments, so this primary
+ * runner preserves that contract while {@code spring.shell.interactive.enabled=false}
+ * remains configured. It deliberately uses Spring Shell's default noninteractive
+ * runner instead of the JLine variant so command output goes through {@code System.out}
+ * and remains capturable in tests and native smokes.</p>
  */
 @Configuration(proxyBeanMethods = false)
 class CodegeistShellRunnerConfiguration {

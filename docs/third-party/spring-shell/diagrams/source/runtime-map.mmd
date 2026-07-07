@@ -1,0 +1,71 @@
+flowchart LR
+    User[User or process args]
+    Boot[Spring Boot ApplicationRunner]
+    Runner[ShellRunner]
+    Interactive[InteractiveShellRunner]
+    NonInteractive[NonInteractiveShellRunner]
+    Parser[CommandParser]
+    Parsed[ParsedInput]
+    Registry[CommandRegistry]
+    Executor[CommandExecutor]
+    Context[CommandContext]
+    Command[Command]
+    Output[Output writer]
+    Input[Input reader]
+
+    User --> Boot
+    Boot --> Runner
+    Runner --> Interactive
+    Runner --> NonInteractive
+    Interactive --> Parser
+    NonInteractive --> Parser
+    Parser --> Parsed
+    Parsed --> Context
+    Registry --> Context
+    Context --> Executor
+    Executor --> Command
+    Command --> Output
+    Command --> Input
+
+    AutoConfig[CommandRegistryAutoConfiguration]
+    Annotated[@Command methods]
+    Programmatic[Command beans]
+    Quit[Quit command]
+
+    AutoConfig --> Registry
+    Annotated --> AutoConfig
+    Programmatic --> AutoConfig
+    Quit --> AutoConfig
+
+    subgraph TerminalUI
+        Terminal[JLine Terminal]
+        UI[TerminalUI]
+        Builder[TerminalUIBuilder]
+        EventLoop[DefaultEventLoop]
+        RootView[Root View]
+        Modal[Modal View]
+        Focus[Focused View]
+        Theme[ThemeResolver]
+        Screen[DefaultScreen and Display]
+    end
+
+    Builder --> UI
+    Terminal --> UI
+    Theme --> UI
+    UI --> EventLoop
+    UI --> RootView
+    UI --> Modal
+    UI --> Focus
+    UI --> Screen
+    EventLoop --> RootView
+    EventLoop --> Modal
+
+    Test[ShellTestClient]
+    TestInput[ShellInputProvider]
+    TestScreen[ShellScreen]
+
+    TestInput --> Test
+    Test --> Parser
+    Test --> Registry
+    Test --> Executor
+    Test --> TestScreen

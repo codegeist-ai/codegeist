@@ -26,3 +26,7 @@
 	path = docs/third-party/tau/source
 	url = https://github.com/alejandro-ao/tau.git
 	branch = main
+[submodule "docs/third-party/spring-shell/source"]
+	path = docs/third-party/spring-shell/source
+	url = https://github.com/spring-projects/spring-shell
+	branch = main
