@@ -1,0 +1,113 @@
+# compose.yml - local authentik plus MinIO OIDC/STS smoke stack.
+#
+# Why this exists:
+# - Proves the T008_04 storage path without Java Codegeist Server code.
+# - authentik issues a local OIDC token, MinIO exchanges it through STS, and the
+#   smoke script uses temporary S3 credentials for normal SigV4 object access.
+#
+# Inputs:
+# - Docker Compose v2.
+# - Local fixture credentials below are test-only and must not be reused outside
+#   this disposable smoke stack.
+#
+# Related files:
+# - scripts/tests/minio-oidc-storage-smoke.ps1
+# - authentik/blueprints/minio-oidc-smoke.yaml
+# - minio/policies/codegeist-artifacts-smoke.json
+services:
+  authentik-postgresql:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: codegeist-smoke-postgres-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - authentik-postgresql:/var/lib/postgresql/data
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.5.3
+    command: server
+    depends_on:
+      authentik-postgresql:
+        condition: service_healthy
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgresql
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: codegeist-smoke-postgres-password
+      AUTHENTIK_SECRET_KEY: codegeist-smoke-authentik-secret-key-not-for-production
+      AUTHENTIK_BOOTSTRAP_PASSWORD: codegeist-smoke-admin-password
+      AUTHENTIK_BOOTSTRAP_TOKEN: codegeist-smoke-bootstrap-token
+      AUTHENTIK_BOOTSTRAP_EMAIL: smoke-admin@example.invalid
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_LOG_LEVEL: info
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - authentik-data:/data
+      - ./authentik/blueprints:/blueprints/custom:ro
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.5.3
+    command: worker
+    depends_on:
+      authentik-postgresql:
+        condition: service_healthy
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgresql
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: codegeist-smoke-postgres-password
+      AUTHENTIK_SECRET_KEY: codegeist-smoke-authentik-secret-key-not-for-production
+      AUTHENTIK_BOOTSTRAP_PASSWORD: codegeist-smoke-admin-password
+      AUTHENTIK_BOOTSTRAP_TOKEN: codegeist-smoke-bootstrap-token
+      AUTHENTIK_BOOTSTRAP_EMAIL: smoke-admin@example.invalid
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_LOG_LEVEL: info
+    user: root
+    volumes:
+      - authentik-data:/data
+      - ./authentik/blueprints:/blueprints/custom:ro
+
+  minio:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    depends_on:
+      authentik-server:
+        condition: service_started
+    environment:
+      MINIO_ROOT_USER: codegeist-smoke-minio-root
+      MINIO_ROOT_PASSWORD: codegeist-smoke-minio-root-password
+      MINIO_IDENTITY_OPENID_CONFIG_URL: http://authentik-server:9000/application/o/minio-smoke/.well-known/openid-configuration
+      MINIO_IDENTITY_OPENID_CLIENT_ID: minio-smoke-client
+      MINIO_IDENTITY_OPENID_CLIENT_SECRET: codegeist-smoke-minio-client-secret
+      MINIO_IDENTITY_OPENID_CLAIM_NAME: minio-policies
+      MINIO_IDENTITY_OPENID_SCOPES: openid,profile,email,minio-policies
+    ports:
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    environment:
+      MINIO_ROOT_USER: codegeist-smoke-minio-root
+      MINIO_ROOT_PASSWORD: codegeist-smoke-minio-root-password
+    volumes:
+      - ./minio/policies:/policies:ro
+      - ./minio/init.sh:/scripts/minio-init.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/minio-init.sh"]
+
+volumes:
+  authentik-data:
+  authentik-postgresql:
+  minio-data:

@@ -21,6 +21,16 @@ tasks:
     cmds:
       - pwsh -NoProfile -File ../../../scripts/tests/server-native-smoke.ps1 -BuildNative
 
+  devenv-smoke:
+    desc: Run the Docker-backed authentik plus MinIO OIDC/STS storage smoke
+    cmds:
+      - pwsh -NoProfile -File ../../../scripts/tests/minio-oidc-storage-smoke.ps1
+
+  devenv-up:
+    desc: Start the local authentik plus MinIO OIDC/STS Docker environment
+    cmds:
+      - docker compose --project-name codegeist-minio-oidc --file ../../../scripts/tests/fixtures/minio-oidc-storage/compose.yml up --detach
+
   run:
     desc: Build and run the Codegeist server application
     deps:

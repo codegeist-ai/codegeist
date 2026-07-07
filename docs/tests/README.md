@@ -30,6 +30,11 @@ Test guidance for Codegeist contributors and coding agents.
   It builds and runs a local fixture container, checks the direct MCP callback path,
   then checks the `ask` plus local Ollama path. It is intentionally not part of
   `task test`.
+- `task devenv-smoke` from `app/codegeist/server` is the separate
+  Docker-backed authentik plus MinIO smoke. It proves fixture app-password
+  client-credentials OIDC token issuance, MinIO STS temporary S3 credentials,
+  allowed command-artifact upload/download, and denied cross-account writes without
+  Java Codegeist Server code.
 - `task server:native-smoke` from `app/codegeist` builds the Codegeist Cloud server
   native executable, starts it on a temporary localhost port, verifies `/health`,
   and reports native startup timing.
@@ -64,6 +69,8 @@ Test guidance for Codegeist contributors and coding agents.
 - `scripts/tests/qemu-linux-install-smoke.sh`
 - `scripts/tests/mcp-remote-smoke.ps1`
 - `scripts/tests/fixtures/mcp-remote-server/`
+- `scripts/tests/minio-oidc-storage-smoke.ps1`
+- `scripts/tests/fixtures/minio-oidc-storage/`
 - `scripts/tests/local-linux-smoke.ps1`
 - `scripts/tests/qemu-windows-vm.sh`
 - `scripts/tests/qemu-windows-smoke.ps1`

@@ -17,6 +17,10 @@ Current smoke entrypoints:
 - `task mcp-remote-smoke` - build a local Docker MCP server fixture, start it on a
   localhost-only port, and verify Codegeist's real `streamable_http` MCP callback
   path directly and through `ask` with local Ollama.
+- `task devenv-smoke` from `app/codegeist/server` - start a local
+  Docker Compose authentik plus MinIO fixture, exchange an authentik OIDC token
+  through MinIO STS, verify a command-artifact S3 upload/download with temporary
+  credentials, and verify a cross-account write is denied.
 - `task server:native-smoke` - build the Codegeist Cloud server native executable,
   start it on a temporary localhost port, verify `GET /health`, and report native
   server startup timing.
@@ -58,6 +62,7 @@ Native status: passed|failed|skipped
 Install status: passed|failed|skipped
 Native reason: none|<reason>
 MCP remote smoke status: passed|failed
+MinIO OIDC storage smoke status: passed|failed
 Server native smoke status: passed|failed
 ```
 
@@ -94,6 +99,8 @@ Labels should be stable and specific, for example:
 - `mcp remote ollama start`
 - `mcp remote ask ollama test`
 - `mcp remote smoke total`
+- `minio oidc compose up`
+- `minio oidc storage smoke total`
 - `server native compile`
 - `server native startup`
 - `server native smoke total`
@@ -157,6 +164,14 @@ Labels should be stable and specific, for example:
   `codegeist-mcp-remote-smoke:local`, starts a temporary container, starts or reuses
   local Ollama, verifies the direct remote callback path, verifies the `ask` command
   can make Ollama invoke `remote_echo`, and removes the fixture container on exit.
+- MinIO OIDC storage smoke starts the Compose fixture under
+  `scripts/tests/fixtures/minio-oidc-storage/`, explicitly applies authentik's
+  required OAuth default blueprints plus the local fixture blueprint, creates a
+  fixture app password, obtains a local authentik OIDC token through the
+  client-credentials grant, exchanges it through MinIO STS, uploads and downloads
+  one command-artifact object with temporary S3 credentials, verifies a denied
+  cross-account write, and removes containers plus volumes unless `-KeepRunning`
+  is used for inspection.
 - CLI artifact smoke logs stay under `app/codegeist/cli/target/smoke-test`.
 - Linux QEMU install-smoke assets are staged under
   `app/codegeist/cli/target/smoke-test/qemu-linux-install-assets` and served by a

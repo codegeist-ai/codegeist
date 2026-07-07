@@ -17,10 +17,11 @@
   configured Codegeist server URL and store the Codegeist-issued token for that
   server. The first cloud product boundary also targets individual users before
   organizations, Codegeist-owned upstream model credentials, metadata-backed
-  quotas/entitlements/model allowlists, MinIO as the first local S3-compatible
-  artifact byte store with separate metadata, Envoy AI Gateway as an internal LLM
-  gateway reachable only through Codegeist-authenticated and Codegeist-authorized
-  requests, and command artifacts as the first client-sync family.
+  quotas/entitlements/model allowlists, MinIO as the first local OIDC/STS-backed
+  S3-compatible artifact resource server with separate Codegeist metadata, Envoy AI
+  Gateway as an internal LLM gateway reachable only through Codegeist-authenticated
+  and Codegeist-authorized requests, and command artifacts as the first client-sync
+  family.
 - Codegeist is Java-first: Java 25, Spring Boot, Spring Shell, Spring AI,
   GraalVM, and later Vaadin, JBang, and PF4J where they fit.
 - OpenCode is a feature and behavior reference, not an implementation blueprint.
@@ -77,6 +78,17 @@
   Security route protection are deferred to later auth/API tasks.
 - T008 local cloud test posture is now authentik for OIDC, MinIO for
   S3-compatible artifact bytes, and Envoy AI Gateway for internal LLM routing.
+  `T008_04_design-s3-artifact-storage.md` is solved. It implements a local Docker
+  Compose authentik plus MinIO OIDC/STS smoke with no Java Server artifact API:
+  users can exchange external OIDC web identity tokens through MinIO STS for
+  short-lived S3 credentials, direct S3 object calls still use normal S3 Signature
+  Version 4, and later Codegeist Server artifact workflows should prefer delegated
+  short-lived user-context access over broad long-lived service-account credentials.
+  The server-local tasks are `task devenv-up` and `task devenv-smoke` from
+  `app/codegeist/server`; the smoke uses a fixture authentik app password with the
+  client-credentials grant only for non-interactive testing. Codegeist metadata
+  remains the source of truth for artifact identity, sync, sharing, quotas, and
+  product authorization.
   Envoy must not be exposed as a public unauthenticated API; Codegeist Server owns
   auth, account policy, entitlements, model allowlists, trusted identity headers,
   and durable usage records before forwarding to Envoy.
@@ -942,5 +954,5 @@
   `remote_free`; use its availability matrix before adding a provider starter or
   client code.
 - Next cloud-server work should implement focused `T008` child tasks from the
-  documented boundaries: auth/tenant foundation, MinIO-backed artifact storage,
-  Envoy AI Gateway behind Codegeist auth, first authenticated API, and CLI sync.
+  documented boundaries: auth/tenant foundation, Envoy AI Gateway behind Codegeist
+  auth, first authenticated API, and CLI sync.

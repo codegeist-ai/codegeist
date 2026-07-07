@@ -41,7 +41,8 @@ Implemented files:
 - `app/codegeist/server/pom.xml` - standalone server module under the shared Maven
   parent, including the server `native` profile.
 - `app/codegeist/server/Taskfile.yml` - server-local `test`, `build`, `native`,
-  `native-smoke`, and `run` entrypoints.
+  `native-smoke`, MinIO OIDC storage smoke, Docker environment startup, and `run`
+  entrypoints.
 - `scripts/tests/server-native-smoke.ps1` - native server smoke harness that starts
   the native executable on a temporary localhost port, polls `/health`, reports
   startup timing, and stops the process.

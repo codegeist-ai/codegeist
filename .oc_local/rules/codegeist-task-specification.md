@@ -230,9 +230,20 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   direction remains individual users before organizations, Codegeist-owned upstream
   model credentials,
   metadata-backed entitlements/quotas/usage/model allowlists, MinIO as the first
-  local S3-compatible artifact byte store with separate metadata, Envoy AI Gateway
-  as an internal LLM gateway reachable only through Codegeist-authenticated and
-  Codegeist-authorized requests, and command artifacts as the first sync family.
+  local OIDC/STS-backed S3-compatible artifact resource server with separate
+  Codegeist metadata, Envoy AI Gateway as an internal LLM gateway reachable only
+  through Codegeist-authenticated and Codegeist-authorized requests, and command
+  artifacts as the first sync family. For `T008_04`, direct user S3 access should
+  use external OIDC login, MinIO STS, and short-lived S3 Signature Version 4
+  credentials, while later Codegeist Server artifact workflows should prefer
+  delegated short-lived user-context access over broad long-lived service-account
+  credentials. The current `T008_04` implementation slice is solved and is only the
+  local Docker Compose authentik plus MinIO OIDC/STS smoke stack; use the
+  server-local `task devenv-up` and `task devenv-smoke` entrypoints from
+  `app/codegeist/server`. The smoke uses a fixture authentik app password with the
+  client-credentials grant for non-interactive testing. Do not add Java Codegeist
+  Server artifact APIs, storage clients, metadata persistence, or REST controllers in
+  that slice.
   Envoy AI Gateway may enforce gateway-level rate limits and emit token usage
   metadata from trusted Codegeist-set user/account headers, but Codegeist remains
   the source of truth for users, accounts, entitlements, sharing, quotas, and

@@ -98,7 +98,12 @@ A Codegeist user signs in and receives access to:
 
 ### S3-Compatible Artifact Storage
 
-- The first local artifact-store target is MinIO as an S3-compatible bucket.
+- The first local artifact-store target is MinIO as an OIDC/STS-backed
+  S3-compatible resource server connected to the external login provider.
+- Direct S3 clients exchange suitable OIDC web identity tokens through MinIO STS
+  for short-lived S3 credentials, then use normal S3 Signature Version 4 requests.
+- Later Codegeist Server artifact workflows should prefer delegated short-lived
+  user-context access when acting on behalf of the user.
 - Store artifact bytes in S3 and store metadata separately for lookup,
   permissions, versioning, ownership, checksums, sync state, and quotas.
 - Candidate artifact families include commands, skills, rules, agent profiles,
@@ -130,8 +135,10 @@ Create child task files before implementation work starts.
   Taskfile, health endpoint, and tests.
 - `T008_03_implement-oauth-provider-configuration.md` - implement the first static
   external OAuth2/OIDC provider configuration for Codegeist Server.
-- `T008_04_design-s3-artifact-storage.md` - define S3 bucket layout, metadata
-  records, artifact types, versioning, checksums, and local MinIO test posture.
+- `T008_04_design-s3-artifact-storage.md` - implement a local Docker Compose
+  authentik plus MinIO OIDC/STS smoke stack that proves short-lived S3 credentials,
+  command-artifact upload/download, and denied cross-account writes without Java
+  Codegeist Server implementation.
 - `T008_05_design-envoy-ai-gateway-llm-proxy.md` - define Envoy AI Gateway as the
   internal LLM gateway behind Codegeist authentication, entitlement checks, model
   allowlists, streaming, and usage accounting before live calls.
