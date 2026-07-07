@@ -611,9 +611,12 @@
   `T007_03_add-mcp-and-read-write-tools/tasks/`, not as one large runtime change.
   T007_06 was reset from the previous custom JLine/line-renderer handoff. The current
   implementation is only the smallest Spring Shell `TerminalUI` launcher: `tui` opens
-  a bordered root view with localized text and `Ctrl-Q` exit. Future TUI work should
-  add one concrete interaction at a time, starting with prompt submission through
-  `ChatHarnessService`, without restoring the removed presentation architecture.
+  a bordered root view with localized text and `Ctrl-Q` exit. The detailed T007_06
+  implementation handoff now lives at
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_06_add-terminalui-chat-harness/implementation-plan.md`.
+  It keeps the next slice on prompt submission through
+  `ChatHarnessService.ask(true, prompt)`, visible responses/errors, repeated turns,
+  and no restored presentation architecture.
   `T007_03_add-mcp-and-read-write-tools/task.md` is completed: direct `mcp:` config,
   workspace resolution, local read/list/glob/grep/write callbacks, the one-turn
   `ChatHarnessService`, MCP callback integration, Docker-backed remote MCP smoke,
@@ -653,9 +656,10 @@
   background shell process management, and structured patch semantics remain future
   work behind Codegeist-owned `codegeist_*` callbacks if they are ever needed.
   Remaining parent-level T007 children are the solved
-  `T007_05_add-agent-control-loop/task.md`, the solved
+  `T007_05_add-agent-control-loop/task.md`, the open
   `T007_06_add-terminalui-chat-harness/task.md`, and
-  `T007_07_verify-chat-file-tool-harness.md`. T007 still avoids a database,
+  `T007_07_verify-chat-file-tool-harness.md`, which should wait until the TUI chat
+  loop is implemented or explicitly split. T007 still avoids a database,
   server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory,
   and subagents.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
@@ -807,10 +811,15 @@
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
 - Continue the next T007 implementation from
-  `T007_07_verify-chat-file-tool-harness.md`; future TUI work should build on the
-  minimal `TuiCommands -> CodegeistTerminalUi` path and should not revive the removed
-  custom JLine console, line-renderer task chain, or over-broad TerminalUI
-  presentation architecture.
+  `T007_06_add-terminalui-chat-harness/task.md` and its
+  `implementation-plan.md`: the end state is a complete TUI chat loop where a user
+  can enter prompts, submit through `ChatHarnessService.ask(true, prompt)`, see
+  responses and handled harness failures, and continue chatting without restarting
+  the TUI. Build on the minimal `TuiCommands -> CodegeistTerminalUi` path and do not
+  revive the removed custom JLine console, line-renderer task chain, or over-broad
+  TerminalUI presentation architecture. Start
+  `T007_07_verify-chat-file-tool-harness.md` only after that TUI chat loop is
+  implemented or explicitly split into a later task.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`

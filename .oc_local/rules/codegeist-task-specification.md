@@ -239,9 +239,14 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `ai.codegeist.app.tui.TuiCommands`, `CodegeistTerminalUi`, app-wide
   `CodegeistMessages`, `CodegeistLocaleService`, and `messages.properties`; there is
   no chat prompt submission, Spring Shell control wrapper package, TUI smoke, or
-  `docs/developer/architecture/terminal-ui.md`. Future TUI work should add one
+  `docs/developer/architecture/terminal-ui.md`. The T007_06 end state is a complete
+  TUI chat loop through `ChatHarnessService.ask(true, prompt)`, with repeated turns,
+  visible responses, and handled harness failures. Use
+  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_06_add-terminalui-chat-harness/implementation-plan.md`
+  as the detailed handoff before coding that slice. Future TUI work should add one
   concrete interaction at a time over this minimal launcher and should not restore
-  the removed presentation architecture.
+  the removed presentation architecture. Do not treat T007_07 verification as ready
+  until the TUI chat loop is implemented or explicitly split into a later task.
 - For the first provider-backed workflow in the replacement epic, use an externally
   managed local Ollama instance started through `task ollama-start` instead of a
   fake provider. Do not use Testcontainers or pull local models from Java tests;

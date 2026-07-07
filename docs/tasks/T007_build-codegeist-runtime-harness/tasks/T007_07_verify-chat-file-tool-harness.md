@@ -10,8 +10,15 @@ Verify the complete T007 session-store tool harness and update current-state
 documentation.
 
 This child closes T007 only after resumable `ask -c/--continue`, MCP config,
-read/write tools, patch/edit, shell, Codegeist-owned agent control loop, TUI, and
-`.codegeist/session.json` storage are all proven together.
+read/write tools, patch/edit, shell, Codegeist-owned agent control loop, a usable
+TUI chat loop, and `.codegeist/session.json` storage are all proven together.
+
+Do not start this verification pass while `T007_06` is still only the minimal TUI
+launcher. Complete or explicitly split the TUI chat loop first.
+
+Use `T007_06_add-terminalui-chat-harness/implementation-plan.md` as the expected
+TUI chat-loop handoff when deciding whether the TerminalUI scope is complete enough
+for this final verification pass.
 
 ## Scope
 
@@ -29,7 +36,7 @@ read/write tools, patch/edit, shell, Codegeist-owned agent control loop, TUI, an
 - Focused MCP/read/write tool tests pass.
 - Focused patch/edit and shell tests pass.
 - Focused agent-loop tests pass.
-- Focused TerminalUI harness tests or bounded TUI smoke checks pass.
+- Focused TerminalUI chat tests or bounded TUI smoke checks pass.
 - `task test` passes from `app/codegeist/cli`.
 - Architecture docs match the implemented current state.
 - T007 parent acceptance criteria are satisfied.

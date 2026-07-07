@@ -175,7 +175,8 @@ implementation tests need them.
   Windows QEMU `final-smoke-suite`.
 - `T007_06_add-terminalui-chat-harness/task.md` - connect the existing Spring Shell
   `TerminalUI` command to `ChatHarnessService.ask(true, prompt)` without adding a
-  separate JLine console or second agent runtime.
+  separate JLine console or second agent runtime. Its detailed handoff lives in
+  `T007_06_add-terminalui-chat-harness/implementation-plan.md`.
 - `T007_07_verify-chat-file-tool-harness.md` - run focused and broad verification,
   update architecture docs, and ensure the parent acceptance criteria hold.
 
