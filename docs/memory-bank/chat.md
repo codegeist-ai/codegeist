@@ -25,6 +25,9 @@
   `.devcontainer/initialize.sh` can append it to
   `.devcontainer/Dockerfile.merged.gen`; the repository root no longer has a
   devcontainer-specific `Dockerfile`.
+- The devcontainer browser launcher uses a project-local `.chrome` profile by
+  default for visible Chrome, so the repository ignores `/.chrome/` as local
+  browser state.
 - `start.sh` has been removed. Start the devcontainer through VS Code Dev
   Containers or `devcontainer up --workspace-folder .`.
 - `app/codegeist/cli` is the only implemented Codegeist application module. It is
