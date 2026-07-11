@@ -65,7 +65,7 @@
   slice: static external OIDC provider config under `codegeist.auth.providers` plus
   a local `authentik` profile. It still has no browser login endpoint,
   user/account metadata, Codegeist API tokens, Spring Security route protection,
-  durable database, object storage, Envoy AI Gateway integration, usage accounting,
+  durable database, object storage APIs, Java model proxy, usage accounting,
   billing, or CLI/TUI sync yet. This is not a local `opencode serve` adapter.
 - `T008_01_define-cloud-product-boundaries.md` is solved as a documentation-only
   boundary decision record. It does not add Java source. Later T008 tasks own the
@@ -89,9 +89,29 @@
   client-credentials grant only for non-interactive testing. Codegeist metadata
   remains the source of truth for artifact identity, sync, sharing, quotas, and
   product authorization.
-  Envoy must not be exposed as a public unauthenticated API; Codegeist Server owns
-  auth, account policy, entitlements, model allowlists, trusted identity headers,
-  and durable usage records before forwarding to Envoy.
+  `T008_05_design-envoy-ai-gateway-llm-proxy.md` is solved as the first local
+  Envoy AI Gateway slice. It adds optional `compose.ai.yml` beside the
+  MinIO/authentik fixture to define `envoy-ai-gateway` plus the
+  `envoy-ai-auth-proxy` `oauth2-proxy` front door. The server-local
+  `task devenv-ai-smoke` starts or reuses the existing `codegeist-ollama` container
+  through `task ollama-start`, connects it to the Compose network as `ollama`,
+  bootstraps the local authentik Envoy OIDC app, proves unauthenticated
+  `/v1/chat/completions` requests are rejected, and verifies an authenticated
+  request against the fixed local `llama3.2:1b` model. `task devenv-ai-up` starts
+  the combined authentik, MinIO, Open WebUI, Envoy, OAuth proxy, and Ollama local
+  environment for manual inspection. The local Compose stack now assigns static
+  bridge IPs to every service and uses no host port forwarding; Open WebUI is
+  available at `http://172.30.198.40:8080`, signs in through authentik with
+  `codegeist-smoke` / `codegeist-smoke-password`, and uses raw Envoy only on the
+  internal Compose network as its OpenAI-compatible provider. Raw Envoy must not be
+  exposed as a public unauthenticated API; Codegeist Server owns auth, account
+  policy, entitlements, model allowlists, trusted identity headers, and durable
+  usage records before forwarding to Envoy. The disposable Open WebUI fixture
+  disables persistent config and points RAG embedding settings at the internal
+  Ollama endpoint so manual UI startup avoids unrelated local embedding-model
+  preparation. The browser flow has been verified with Playwright running inside
+  the Compose network: authentik OIDC login returns to Open WebUI, `llama3.2:1b`
+  is visible, and a prompt receives the expected Envoy-backed Ollama response.
 - `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
   through `CommandOutputService` and prints only the Spring Boot build version,
   currently `0.1.0-SNAPSHOT`.
@@ -796,6 +816,17 @@
   local models from Java tests; the Taskfile owns host container startup and
   selected-model availability. Keep runtime request options deterministic when the
   active path supports them, and keep assertions constrained enough to be stable.
+- T008 Envoy AI Gateway local smokes must use the existing local Ollama container
+  and fixed `llama3.2:1b` model, not a fake OpenAI-compatible server or hosted
+  provider call. Keep optional AI Compose services in a separate Compose file
+  instead of mixing them into the base authentik/MinIO fixture, and keep the local
+  gateway behind authentik-backed `oauth2-proxy` rather than exposing raw Envoy on
+  the host. The manual Open WebUI path is a local UI front door only: browser login
+  goes through authentik, and Open WebUI calls Envoy on the internal Compose network
+  without converting the user token into a provider credential. If the host cannot
+  route the static Docker bridge IPs directly, verify the UI with a Playwright
+  container attached to `codegeist-minio-oidc_default` instead of adding host port
+  forwards.
 - Provider chat runtime work should follow
   `docs/developer/specification/llm-provider-implementation.md`: Codegeist chat
   stays provider-neutral through `CodegeistChatService` and

@@ -1,0 +1,107 @@
+# compose.ai.yml - optional AI services for the local server stack.
+#
+# Why this exists:
+# - Lets the base authentik/MinIO Compose environment opt into AI gateway and UI
+#   services through an additional Compose file instead of mixing every optional
+#   dependency into compose.yml.
+# - oauth2-proxy validates authentik-issued bearer tokens before forwarding to
+#   Envoy AI Gateway, which runs in standalone CLI mode and targets the existing
+#   local Codegeist Ollama container through the Compose network alias `ollama`.
+# - Open WebUI is a manual local UI front door: users sign in through authentik,
+#   then Open WebUI calls Envoy AI Gateway as its OpenAI-compatible provider on the
+#   internal Compose network.
+#
+# Usage:
+# - Combine with compose.yml, for example:
+#   docker compose -f compose.yml -f compose.ai.yml up --detach envoy-ai-gateway envoy-ai-auth-proxy open-webui
+#
+# Related files:
+# - compose.yml
+# - authentik/blueprints/envoy-ai-gateway-smoke.yaml
+# - authentik/blueprints/open-webui-smoke.yaml
+# - scripts/tests/envoy-ai-gateway-smoke.ps1
+services:
+  envoy-ai-gateway:
+    image: envoyproxy/ai-gateway-cli:latest
+    environment:
+      OPENAI_BASE_URL: ${CODEGEIST_AI_GATEWAY_OPENAI_BASE_URL:-http://ollama:11434/v1}
+      OPENAI_API_KEY: ${CODEGEIST_AI_GATEWAY_OPENAI_API_KEY:-unused}
+      OTEL_AIGW_REQUEST_HEADER_ATTRIBUTES: x-codegeist-user-id:user.id,x-codegeist-account-id:account.id,x-codegeist-request-id:request.id
+    command: ["run"]
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_ENVOY_AI_GATEWAY_DEVENV_IP:-172.30.198.30}
+
+  envoy-ai-auth-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
+    depends_on:
+      authentik-server:
+        condition: service_started
+      envoy-ai-gateway:
+        condition: service_started
+    command:
+      - --http-address=0.0.0.0:4180
+      - --provider=oidc
+      - --provider-display-name=authentik
+      - --oidc-issuer-url=http://authentik-server:9000/application/o/envoy-ai-gateway-smoke/
+      - --insecure-oidc-skip-issuer-verification=true
+      - --insecure-oidc-allow-unverified-email=true
+      - --client-id=envoy-ai-gateway-smoke-client
+      - --client-secret=codegeist-smoke-envoy-ai-gateway-client-secret
+      - --redirect-url=${CODEGEIST_AI_GATEWAY_PUBLIC_URL:-http://172.30.198.31:4180}/oauth2/callback
+      - --cookie-secret=codegeist-smoke-cookie-secret-32
+      - --cookie-secure=false
+      - --email-domain=*
+      - --upstream=http://envoy-ai-gateway:1975/
+      - --reverse-proxy=true
+      - --skip-jwt-bearer-tokens=true
+      - --bearer-token-login-fallback=false
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_ENVOY_AI_AUTH_PROXY_DEVENV_IP:-172.30.198.31}
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    depends_on:
+      authentik-server:
+        condition: service_started
+      envoy-ai-gateway:
+        condition: service_started
+    environment:
+      WEBUI_NAME: Codegeist Open WebUI Smoke
+      WEBUI_URL: ${CODEGEIST_OPEN_WEBUI_URL:-http://172.30.198.40:8080}
+      WEBUI_SECRET_KEY: codegeist-smoke-open-webui-secret-key-not-for-production
+      ENABLE_PERSISTENT_CONFIG: "false"
+      ENABLE_SIGNUP: "false"
+      ENABLE_LOGIN_FORM: "false"
+      ENABLE_PASSWORD_AUTH: "false"
+      ENABLE_OAUTH_SIGNUP: "true"
+      OAUTH_AUTO_REDIRECT: "true"
+      OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
+      OAUTH_PROVIDER_NAME: authentik
+      OAUTH_CLIENT_ID: open-webui-smoke-client
+      OAUTH_CLIENT_SECRET: codegeist-smoke-open-webui-client-secret
+      OAUTH_SCOPES: openid email profile
+      OPENID_PROVIDER_URL: ${CODEGEIST_OPEN_WEBUI_OPENID_PROVIDER_URL:-http://172.30.198.10:9000/application/o/open-webui-smoke/.well-known/openid-configuration}
+      OPENID_REDIRECT_URI: ${CODEGEIST_OPEN_WEBUI_REDIRECT_URI:-http://172.30.198.40:8080/oauth/oidc/callback}
+      DEFAULT_USER_ROLE: admin
+      DEFAULT_MODELS: llama3.2:1b
+      ENABLE_OLLAMA_API: "false"
+      ENABLE_OPENAI_API: "true"
+      OPENAI_API_BASE_URLS: http://envoy-ai-gateway:1975/v1
+      OPENAI_API_KEYS: unused
+      OPENAI_API_CONFIGS: '{"0":{"enable":true,"model_ids":["llama3.2:1b"],"connection_type":"internal","provider":"envoy-ai-gateway"}}'
+      RAG_EMBEDDING_ENGINE: ollama
+      RAG_OLLAMA_BASE_URL: http://ollama:11434
+      RAG_EMBEDDING_MODEL: llama3.2:1b
+      SCARF_NO_ANALYTICS: "true"
+      DO_NOT_TRACK: "true"
+      ANONYMIZED_TELEMETRY: "false"
+    volumes:
+      - open-webui-data:/app/backend/data
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_OPEN_WEBUI_DEVENV_IP:-172.30.198.40}
+
+volumes:
+  open-webui-data:

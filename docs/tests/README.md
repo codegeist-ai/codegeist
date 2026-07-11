@@ -35,6 +35,19 @@ Test guidance for Codegeist contributors and coding agents.
   client-credentials OIDC token issuance, MinIO STS temporary S3 credentials,
   allowed command-artifact upload/download, and denied cross-account writes without
   Java Codegeist Server code.
+- `task devenv-ai-smoke` from `app/codegeist/server` is the separate
+  Docker-backed Envoy AI Gateway to local Ollama smoke. It uses the separate
+  `compose.ai.yml` file beside the authentik/MinIO fixture, starts or reuses the
+  local `codegeist-ollama` container, protects Envoy with authentik-backed
+  `oauth2-proxy`, proves unauthenticated chat-completions requests are rejected,
+  and verifies one authenticated OpenAI-compatible request through Envoy with model
+  `llama3.2:1b` and no hosted provider calls.
+- `task devenv-ai-up` from `app/codegeist/server` starts the manual local Open
+  WebUI flow. Open WebUI is available at `http://172.30.198.40:8080` through the
+  static Compose bridge IP with no host port forwarding, signs users in through
+  authentik with the fixture user
+  `codegeist-smoke` / `codegeist-smoke-password`, and uses Envoy AI Gateway as its
+  internal OpenAI-compatible provider.
 - `task server:native-smoke` from `app/codegeist` builds the Codegeist Cloud server
   native executable, starts it on a temporary localhost port, verifies `/health`,
   and reports native startup timing.
@@ -70,6 +83,7 @@ Test guidance for Codegeist contributors and coding agents.
 - `scripts/tests/mcp-remote-smoke.ps1`
 - `scripts/tests/fixtures/mcp-remote-server/`
 - `scripts/tests/minio-oidc-storage-smoke.ps1`
+- `scripts/tests/envoy-ai-gateway-smoke.ps1`
 - `scripts/tests/fixtures/minio-oidc-storage/`
 - `scripts/tests/local-linux-smoke.ps1`
 - `scripts/tests/qemu-windows-vm.sh`

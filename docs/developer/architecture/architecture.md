@@ -73,14 +73,19 @@ not implemented. The current `tui` command only starts a minimal Spring Shell
 `app/codegeist/server` is the separate Codegeist Cloud server application. The
 current server slice boots a Spring WebMVC app named `codegeist-server`, exposes
 `GET /health` with `{"status":"ok"}`, validates static external OIDC provider
-configuration under `codegeist.auth.providers`, and ships a local authentik OIDC
-profile. It still has no browser login endpoint, live external identity-provider
-call, user/account metadata, Codegeist API tokens, Spring Security route
-protection, durable database, object storage, LLM proxy, OpenRouter call, quota,
-billing, or CLI sync behavior. The planned CLI login contract is `codegeist login`,
-defaulting to `https://codegeist.cloud` when no local Codegeist server target is
-configured. That login targets a Codegeist server and later stores a
-Codegeist-issued API token for that server; it is not an LLM-provider
+configuration under `codegeist.auth.providers`, ships a local authentik OIDC
+profile, and includes an optional Docker Compose file for a local Envoy AI Gateway
+standalone service protected by `oauth2-proxy` and authentik OIDC bearer-token
+validation before routing to the existing local Ollama container. The same optional
+Compose extension can start Open WebUI as a manual authentik-login UI that uses
+Envoy as its internal OpenAI-compatible provider. It
+still has no browser login endpoint, live external identity-provider call,
+user/account metadata, Codegeist API tokens, Spring Security route protection,
+durable database, Java object-storage API, Java model-proxy endpoint, OpenRouter
+call, quota, billing, or CLI sync behavior. The planned CLI login contract is
+`codegeist login`, defaulting to `https://codegeist.cloud` when no local Codegeist
+server target is configured. That login targets a Codegeist server and later
+stores a Codegeist-issued API token for that server; it is not an LLM-provider
 configuration path.
 
 The previous source-generation contracts and T004 implementation epic were removed
@@ -109,7 +114,7 @@ module POMs under `app/codegeist/cli` and `app/codegeist/server`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | CLI Spring Boot executable jar named `target/codegeist.jar`; server Spring Boot executable jar named `target/codegeist-server.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
-| Tests | CLI Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, final local smoke suite, server context-load test, server health endpoint test, server auth config tests, local authentik profile test, and server native smoke |
+| Tests | CLI Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, final local smoke suite, server context-load test, server health endpoint test, server auth config tests, local authentik profile test, server native smoke, and optional Docker-backed authenticated Envoy AI Gateway to local Ollama smoke |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -134,6 +139,7 @@ app/codegeist/server/
   Taskfile.yml
   src/...
 scripts/tests/
+  envoy-ai-gateway-smoke.ps1
   smoke-common.ps1
   install-script-smoke.ps1
   mcp-remote-smoke.ps1
@@ -152,6 +158,9 @@ scripts/tests/
       Dockerfile
       pom.xml
       src/...
+    minio-oidc-storage/
+      compose.yml
+      compose.ai.yml
 scripts/install/
   codegeist-install-linux.sh
   codegeist-install-macos.sh
@@ -807,6 +816,8 @@ download or VM prerequisites.
 | `task mcp-remote-smoke` | Runs `scripts/tests/mcp-remote-smoke.ps1` | Docker-backed local MCP server fixture, real `streamable_http` MCP callback discovery, direct deterministic callback invocation, local Ollama-backed `ask` invocation of the remote MCP tool, session `ToolSessionPart` persistence, and container cleanup outside the default test path |
 | `task qemu-windows-smoke` | Runs `scripts/tests/qemu-windows-vm.sh smoke` | Creates or starts the Windows QEMU VM, then runs native smoke over SSH including file-edit, shell, and Windows install-script smoke checks |
 | `task server:native-smoke` from `app/codegeist` | Runs `scripts/tests/server-native-smoke.ps1 -BuildNative` | Codegeist Cloud server GraalVM native executable builds, starts on a temporary localhost port, returns `GET /health -> {"status":"ok"}`, reports `server native startup`, and terminates the temporary process |
+| `task devenv-ai-smoke` from `app/codegeist/server` | Runs `scripts/tests/envoy-ai-gateway-smoke.ps1` | Starts or reuses local Ollama through `task ollama-start`, combines `compose.yml` and `compose.ai.yml`, starts Envoy AI Gateway behind authentik-backed `oauth2-proxy`, proves unauthenticated chat-completions requests are rejected, routes one authenticated request to local Ollama `llama3.2:1b`, and avoids hosted-provider calls |
+| `task devenv-ai-up` from `app/codegeist/server` | Runs `scripts/tests/envoy-ai-gateway-smoke.ps1 -KeepRunning -StartOnly -StartAllServices` | Starts the manual local authentik, MinIO, Open WebUI, Envoy AI Gateway, oauth2-proxy, and Ollama environment with static Compose bridge IPs and no host port forwarding; Open WebUI is available at `http://172.30.198.40:8080` and uses Envoy as its internal OpenAI-compatible provider |
 | `task final-smoke-suite` | Runs `scripts/tests/final-smoke-suite.ps1` | Local Linux and Windows smoke suite; both platforms must pass by default |
 | `task ollama-start` | Starts or reuses the local `ollama/ollama` container, waits for `/api/version`, and ensures the selected model is present | External local Ollama prerequisite for focused live provider tests and the MCP remote ask smoke |
 | `task run` | `java -jar target/codegeist.jar` after `build` | Starts the packaged Spring Boot application |

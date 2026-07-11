@@ -12,6 +12,8 @@
 #
 # Related files:
 # - scripts/tests/minio-oidc-storage-smoke.ps1
+# - scripts/tests/envoy-ai-gateway-smoke.ps1
+# - compose.ai.yml
 # - authentik/blueprints/minio-oidc-smoke.yaml
 # - minio/policies/codegeist-artifacts-smoke.json
 services:
@@ -28,6 +30,9 @@ services:
       retries: 30
     volumes:
       - authentik-postgresql:/var/lib/postgresql/data
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_AUTHENTIK_POSTGRESQL_DEVENV_IP:-172.30.198.11}
 
   authentik-server:
     image: ghcr.io/goauthentik/server:2026.5.3
@@ -46,8 +51,9 @@ services:
       AUTHENTIK_BOOTSTRAP_EMAIL: smoke-admin@example.invalid
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_LOG_LEVEL: info
-    ports:
-      - "127.0.0.1:9000:9000"
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_AUTHENTIK_DEVENV_IP:-172.30.198.10}
     volumes:
       - authentik-data:/data
       - ./authentik/blueprints:/blueprints/custom:ro
@@ -73,6 +79,9 @@ services:
     volumes:
       - authentik-data:/data
       - ./authentik/blueprints:/blueprints/custom:ro
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_AUTHENTIK_WORKER_DEVENV_IP:-172.30.198.12}
 
   minio:
     image: quay.io/minio/minio:latest
@@ -88,11 +97,11 @@ services:
       MINIO_IDENTITY_OPENID_CLIENT_SECRET: codegeist-smoke-minio-client-secret
       MINIO_IDENTITY_OPENID_CLAIM_NAME: minio-policies
       MINIO_IDENTITY_OPENID_SCOPES: openid,profile,email,minio-policies
-    ports:
-      - "127.0.0.1:9002:9000"
-      - "127.0.0.1:9003:9001"
     volumes:
       - minio-data:/data
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_MINIO_DEVENV_IP:-172.30.198.20}
 
   minio-init:
     image: quay.io/minio/mc:latest
@@ -106,8 +115,21 @@ services:
       - ./minio/policies:/policies:ro
       - ./minio/init.sh:/scripts/minio-init.sh:ro
     entrypoint: ["/bin/sh", "/scripts/minio-init.sh"]
+    networks:
+      default:
+        ipv4_address: ${CODEGEIST_MINIO_INIT_DEVENV_IP:-172.30.198.21}
 
 volumes:
   authentik-data:
   authentik-postgresql:
   minio-data:
+
+networks:
+  default:
+    # Services intentionally use fixed IP addresses and no host port forwarding so
+    # browser-facing OIDC redirects and container-to-container URLs stay identical.
+    # Override the subnet and every CODEGEIST_*_DEVENV_IP value together if this
+    # disposable range conflicts locally.
+    ipam:
+      config:
+        - subnet: ${CODEGEIST_DEVENV_SUBNET:-172.30.198.0/24}

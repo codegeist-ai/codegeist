@@ -251,6 +251,20 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   real cloud storage effects, organization sharing, bring-your-own-key, or dynamic
   tenant-managed identity-provider registration unless a focused later T008 task
   explicitly allows it.
+- For T008 local Docker Compose test additions, keep optional AI gateway services in
+  a separate Compose file instead of mixing them into the base authentik/MinIO
+  fixture. The local Envoy AI Gateway smoke must use the existing
+  `codegeist-ollama` container and fixed `llama3.2:1b` model, protect raw Envoy
+  with the authentik-backed `envoy-ai-auth-proxy`, and avoid fake
+  OpenAI-compatible servers or hosted provider calls. The local Open WebUI manual
+  UI may be included in the same optional Compose file, but it is only a disposable
+  authentik-login front door that calls Envoy on the internal Compose network; do
+  not treat it as the production Codegeist Server auth, entitlement, or per-user
+  provider-token design. Keep this local stack on static Compose bridge IPs with no
+  host port forwarding unless a later focused task explicitly changes the exposure
+  model. If the host browser cannot route those static bridge IPs directly, verify
+  the UI with a Playwright container attached to the Compose network instead of
+  adding host port forwards.
 - For `T007_04`, use
   `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_04_add-patch-edit-and-shell-tools/ask-project-research.md`
   before implementation. Keep `codegeist_write` create/overwrite behavior and

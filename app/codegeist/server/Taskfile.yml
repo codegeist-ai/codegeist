@@ -26,10 +26,20 @@ tasks:
     cmds:
       - pwsh -NoProfile -File ../../../scripts/tests/minio-oidc-storage-smoke.ps1
 
+  devenv-ai-smoke:
+    desc: Run the Docker-backed authenticated Envoy AI Gateway to local Ollama smoke
+    cmds:
+      - pwsh -NoProfile -File ../../../scripts/tests/envoy-ai-gateway-smoke.ps1
+
   devenv-up:
     desc: Start the local authentik plus MinIO OIDC/STS Docker environment
     cmds:
       - docker compose --project-name codegeist-minio-oidc --file ../../../scripts/tests/fixtures/minio-oidc-storage/compose.yml up --detach
+
+  devenv-ai-up:
+    desc: Start the local authentik, MinIO, Open WebUI, Envoy AI Gateway, and Ollama Docker environment
+    cmds:
+      - pwsh -NoProfile -File ../../../scripts/tests/envoy-ai-gateway-smoke.ps1 -ProjectName codegeist-minio-oidc -KeepRunning -StartOnly -StartAllServices
 
   run:
     desc: Build and run the Codegeist server application
