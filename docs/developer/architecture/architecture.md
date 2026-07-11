@@ -35,8 +35,8 @@ docs:
   history shape, explicit callback dispatch, persistence boundary, tests, and
   non-goals.
 - `cloud-server.md` - server module source map, Maven parent layout, health API,
-  static OAuth provider configuration, planned cloud-login boundary, tests, and
-  explicit cloud-server non-goals.
+  static OAuth provider configuration, authenticated identity API, planned
+  cloud-login boundary, tests, and explicit cloud-server non-goals.
 - `edit-tool.md` - detailed `codegeist_edit` contract, planning algorithm,
   containment guard, text normalization, stale-write protection, preview settings,
   tests, and sharp edges.
@@ -74,15 +74,19 @@ not implemented. The current `tui` command only starts a minimal Spring Shell
 current server slice boots a Spring WebMVC app named `codegeist-server`, exposes
 `GET /health` with `{"status":"ok"}`, validates static external OIDC provider
 configuration under `codegeist.auth.providers`, ships a local authentik OIDC
-profile, and includes an optional Docker Compose file for a local Envoy AI Gateway
-standalone service protected by `oauth2-proxy` and authentik OIDC bearer-token
-validation before routing to the existing local Ollama container. The same optional
-Compose extension can start Open WebUI as a manual authentik-login UI that uses
-Envoy as its internal OpenAI-compatible provider. It
+profile, protects `/api/**` with Spring Security, and exposes the first
+authenticated API at `GET /api/v1/me`. That endpoint returns the Codegeist user id
+from JWT `sub`, the personal account id from JWT `codegeist_account_id`, and the
+issuer claim when present; it rejects unauthenticated requests and ignores
+client-supplied identity headers. The server also includes an optional Docker Compose
+file for a local Envoy AI Gateway standalone service protected by `oauth2-proxy` and
+authentik OIDC bearer-token validation before routing to the existing local Ollama
+container. The same optional Compose extension can start Open WebUI as a manual
+authentik-login UI that uses Envoy as its internal OpenAI-compatible provider. It
 still has no browser login endpoint, live external identity-provider call,
-user/account metadata, Codegeist API tokens, Spring Security route protection,
-durable database, Java object-storage API, Java model-proxy endpoint, OpenRouter
-call, quota, billing, or CLI sync behavior. The planned CLI login contract is
+user/account metadata store, Codegeist API token issuance, durable database, Java
+object-storage API, Java model-proxy endpoint, OpenRouter call, quota, billing, or
+CLI sync behavior. The planned CLI login contract is
 `codegeist login`, defaulting to `https://codegeist.cloud` when no local Codegeist
 server target is configured. That login targets a Codegeist server and later
 stores a Codegeist-issued API token for that server; it is not an LLM-provider
@@ -106,7 +110,8 @@ module POMs under `app/codegeist/cli` and `app/codegeist/server`.
 | Logging | Spring Boot default logging with SLF4J and Logback; application logs are file-only through `logback.xml` |
 | Spring Shell | BOM `4.0.2`, dependencies `spring-shell-starter` and `spring-shell-jline` |
 | Spring WebMVC | Server dependency `spring-boot-starter-webmvc` for the first HTTP health endpoint and future cloud API routes |
-| Server auth config | Static generic OAuth2/OIDC provider configuration under `codegeist.auth.providers`; no Spring Security route protection or live OAuth2 login yet |
+| Spring Security | Server dependency `spring-boot-starter-security-oauth2-resource-server` for protected `/api/**` routes and future JWT bearer-token validation |
+| Server auth config | Static generic OAuth2/OIDC provider configuration under `codegeist.auth.providers`; Spring Security protects `/api/**`; `GET /api/v1/me` returns the authenticated user/account identity from JWT claims; no live OAuth2 login or Codegeist API token issuance yet |
 | Jackson | `jackson-databind` plus `jackson-dataformat-yaml` for direct YAML-to-POJO config mapping |
 | Lombok | `1.18.46`, configured as an explicit annotation processor for Java 25 |
 | Spring AI | BOM `2.0.0-M6` imported for dependency management; `spring-ai-ollama` and `spring-ai-openai` are present for programmatic provider `ChatModel` creation, and `spring-ai-starter-mcp-client` is present for prompt-scoped MCP callbacks |
@@ -114,7 +119,7 @@ module POMs under `app/codegeist/cli` and `app/codegeist/server`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | CLI Spring Boot executable jar named `target/codegeist.jar`; server Spring Boot executable jar named `target/codegeist-server.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
-| Tests | CLI Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, final local smoke suite, server context-load test, server health endpoint test, server auth config tests, local authentik profile test, server native smoke, and optional Docker-backed authenticated Envoy AI Gateway to local Ollama smoke |
+| Tests | CLI Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, final local smoke suite, server context-load test, server health endpoint test, server auth config tests, local authentik profile test, authenticated server identity API test, server native smoke, and optional Docker-backed authenticated Envoy AI Gateway to local Ollama smoke |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -179,7 +184,9 @@ Implemented Java package:
 | `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write/edit/shell Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
 | `ai.codegeist.app.tui` | Minimal Spring Shell `tui` command and `CodegeistTerminalUi` root view over `TerminalUIBuilder`, without chat submission or a separate agent runtime |
 | `ai.codegeist.app.i18n` | App-wide Spring resource-bundle-backed `CodegeistMessages` helper and `CodegeistLocaleService` for user-visible text and locale selection |
-| `ai.codegeist.server` | Codegeist Cloud server entrypoint and first unauthenticated health endpoint |
+| `ai.codegeist.server` | Codegeist Cloud server entrypoint and unauthenticated health endpoint |
+| `ai.codegeist.server.api` | First authenticated Cloud API endpoint, `GET /api/v1/me`, returning user/account identity from JWT claims |
+| `ai.codegeist.server.auth` | Server API security filter chain for public health plus protected `/api/**` routes |
 | `ai.codegeist.server.auth.config` | Static generic OIDC provider configuration under `codegeist.auth.providers`, including local authentik profile validation |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
@@ -196,7 +203,9 @@ native-reachable local tool input records for Jackson binding in the native bina
 
 The server `CodegeistServerApplication` is a separate `@SpringBootApplication`
 under `app/codegeist/server`. Its first implemented web component is
-`HealthController`, which exposes only `GET /health` for the bootstrap slice.
+`HealthController`, which exposes public `GET /health` for the bootstrap slice.
+The first protected web component is `CloudIdentityController`, which exposes
+`GET /api/v1/me` behind Spring Security and derives identity from JWT claims.
 
 ```mermaid
 flowchart TD
@@ -535,7 +544,8 @@ Current behavior:
   the current prompt as a one-turn `CodegeistChatRequest`.
 - There are no implemented streaming output, provider flags, model flags, permission
   prompts, workspace or file-access policies beyond active workspace resolution,
-  server endpoints, Vaadin views, PF4J plugins, or JBang execution paths.
+  Vaadin views, PF4J plugins, or JBang execution paths. Server endpoints are limited
+  to Codegeist Cloud health plus authenticated identity.
 
 ## Test Architecture
 
@@ -686,6 +696,16 @@ provider call.
 the Spring Boot `ask` command with direct `provider.ollama` and `mcp.remote-smoke`
 config, lets local Ollama select the remote MCP tool, and asserts that the session
 store contains a completed `ToolSessionPart` for `remote_echo`.
+
+Server tests live under `app/codegeist/server/src/test/java`. `HealthControllerTest`
+uses a random local HTTP port to prove `GET /health` stays public. Server auth config
+tests prove static OIDC provider binding and local authentik profile loading.
+`CloudIdentityControllerTest` uses Boot 4 WebMVC MockMvc support plus Spring
+Security's `jwt()` request post-processor to prove `GET /api/v1/me` rejects
+unauthenticated requests, returns `sub` and `codegeist_account_id` from the
+authenticated principal, rejects missing account claims, ignores spoofed
+`x-codegeist-*` identity headers, and leaves `/health` unauthenticated without
+requiring live authentik, JWKS discovery, or token issuance.
 
 ```mermaid
 sequenceDiagram

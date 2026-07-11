@@ -69,6 +69,10 @@ A Codegeist user signs in and receives access to:
 - `codegeist login` targets a Codegeist server. The default target is
   `https://codegeist.cloud`; future `codegeist login <server-id>` support may
   select another configured Codegeist server URL.
+- The CLI must not start login against authentik, Google, Keycloak, GitHub, or any
+  other external identity provider directly. It always starts with the selected
+  Codegeist server, and that server presents or redirects to its configured external
+  OAuth2/OIDC provider for the browser step.
 - Codegeist server login is separate from local LLM provider configuration. The
   CLI should store Codegeist server URLs and Codegeist-issued API tokens for cloud
   access, not model the server as `provider: codegeist`.

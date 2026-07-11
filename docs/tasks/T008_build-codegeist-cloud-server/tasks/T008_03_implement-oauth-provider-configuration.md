@@ -10,20 +10,25 @@ Implement only the first static external OAuth2/OIDC provider configuration slic
 in `app/codegeist/server`. This task prepares the server to know which external
 identity providers it can later offer during browser login.
 
-This task intentionally does not implement users, accounts, tenants, Codegeist API
+This task intentionally did not implement users, accounts, tenants, Codegeist API
 tokens, Spring Security route protection, browser login endpoints, CLI login,
-artifact storage, hosted LLM calls, or the first authenticated product API.
+artifact storage, hosted LLM calls, or the first authenticated product API. The
+later `T008_06` slice now owns the first route-protection and authenticated identity
+endpoint implementation.
 
 ## Current Implemented State
 
 `app/codegeist/server` exposes the unauthenticated bootstrap `GET /health`
-endpoint and now has a server-local configuration model for multiple static
-generic OIDC providers under `codegeist.auth.providers`. The local test profile
+endpoint and has a server-local configuration model for multiple static generic
+OIDC providers under `codegeist.auth.providers`. The local test profile
 `local-authentik` configures `authentik` as one generic provider target without a
-client secret. The server still has no live external identity-provider calls,
-browser login flow, users, accounts, API tokens, metadata database, Spring
-Security route protection, organization support, artifact authorization,
-Codegeist server-url configuration, or CLI cloud-login behavior.
+client secret. At the end of this task, the server still had no live external
+identity-provider calls, browser login flow, users, accounts, API tokens, metadata
+database, Spring Security route protection, organization support, artifact
+authorization, Codegeist server-url configuration, or CLI cloud-login behavior.
+`T008_06` later added the first Spring Security route protection and
+`GET /api/v1/me` authenticated identity endpoint without adding browser login or
+token issuance.
 
 ## Settled OAuth Decision
 
@@ -123,7 +128,7 @@ codegeist:
 | Browser OAuth authorization-code flow, callback, state, and PKCE | Later auth/login task |
 | Validated external identity claims and user/account linking | Later auth/tenant task |
 | Codegeist-issued opaque API tokens and token validation | Later auth/token task |
-| Spring Security route protection and authenticated principal contract | Later authenticated API task |
+| Spring Security route protection and authenticated principal contract | `T008_06` implemented the first protected identity endpoint; browser login and token issuance remain later tasks |
 | CLI command `codegeist login`, default `https://codegeist.cloud`, server selection, and local token storage | `T008_07` |
 | Organizations, invitations, shared artifacts, quotas, usage, billing, and S3 artifact metadata | Later focused T008 tasks |
 
@@ -136,9 +141,9 @@ codegeist:
   passkeys, SAML, SCIM, or dynamic tenant-managed IdP registration.
 - Do not implement users, accounts, account memberships, API tokens, token
   revocation, token expiry, token hashing, or authenticated principals in this
-  slice.
-- Do not implement the first authenticated product API endpoint; that remains a
-  later task.
+  slice; `T008_06` later implements the first authenticated-principal projection.
+- Do not implement the first authenticated product API endpoint in this slice;
+  `T008_06` later implements the first identity endpoint.
 - Do not select or add a durable database schema.
 - Do not implement S3 artifact storage, object metadata persistence, model proxy
   calls, entitlements, quotas, usage accounting, billing, or CLI sync.

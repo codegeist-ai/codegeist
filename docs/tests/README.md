@@ -48,6 +48,11 @@ Test guidance for Codegeist contributors and coding agents.
   authentik with the fixture user
   `codegeist-smoke` / `codegeist-smoke-password`, and uses Envoy AI Gateway as its
   internal OpenAI-compatible provider.
+- There is no end-to-end Codegeist login smoke yet. Current authentik-related
+  smokes prove partial infrastructure paths only: MinIO OIDC/STS, oauth2-proxy in
+  front of Envoy AI Gateway, and MockMvc JWT coverage for `GET /api/v1/me`. A full
+  login smoke belongs with the later server browser-login, callback, Codegeist API
+  token issuance, CLI token storage, and `/api/v1/me` verification slice.
 - `task server:native-smoke` from `app/codegeist` builds the Codegeist Cloud server
   native executable, starts it on a temporary localhost port, verifies `/health`,
   and reports native startup timing.

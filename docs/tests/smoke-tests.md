@@ -21,6 +21,10 @@ Current smoke entrypoints:
   Docker Compose authentik plus MinIO fixture, exchange an authentik OIDC token
   through MinIO STS, verify a command-artifact S3 upload/download with temporary
   credentials, and verify a cross-account write is denied.
+- `task devenv-ai-smoke` from `app/codegeist/server` - start the optional Envoy AI
+  Gateway Compose extension, protect Envoy with authentik-backed `oauth2-proxy`,
+  reject unauthenticated chat-completions requests, and verify one authenticated
+  local Ollama-backed request without hosted provider calls.
 - `task server:native-smoke` - build the Codegeist Cloud server native executable,
   start it on a temporary localhost port, verify `GET /health`, and report native
   server startup timing.
@@ -63,6 +67,7 @@ Install status: passed|failed|skipped
 Native reason: none|<reason>
 MCP remote smoke status: passed|failed
 MinIO OIDC storage smoke status: passed|failed
+Envoy AI Gateway smoke status: started|passed|failed
 Server native smoke status: passed|failed
 ```
 
@@ -101,6 +106,7 @@ Labels should be stable and specific, for example:
 - `mcp remote smoke total`
 - `minio oidc compose up`
 - `minio oidc storage smoke total`
+- `envoy ai gateway smoke total`
 - `server native compile`
 - `server native startup`
 - `server native smoke total`
@@ -172,6 +178,17 @@ Labels should be stable and specific, for example:
   one command-artifact object with temporary S3 credentials, verifies a denied
   cross-account write, and removes containers plus volumes unless `-KeepRunning`
   is used for inspection.
+- Envoy AI Gateway smoke starts the optional `compose.ai.yml` extension beside the
+  MinIO/authentik fixture, connects the existing local `codegeist-ollama` container
+  to the Compose network as `ollama`, protects raw Envoy behind authentik-backed
+  `oauth2-proxy`, rejects unauthenticated `/v1/chat/completions` requests, verifies
+  one authenticated request against `llama3.2:1b`, and removes the disposable AI
+  services unless a start-only or keep-running mode is selected.
+- No smoke test currently proves the full Codegeist login flow end to end. That
+  future smoke should start at `codegeist login` against a Codegeist server, follow
+  the server-selected external IdP redirect, complete the callback, receive a
+  Codegeist-issued API token, store it in the CLI credential path, and verify
+  `GET /api/v1/me` with that token.
 - CLI artifact smoke logs stay under `app/codegeist/cli/target/smoke-test`.
 - Linux QEMU install-smoke assets are staged under
   `app/codegeist/cli/target/smoke-test/qemu-linux-install-assets` and served by a

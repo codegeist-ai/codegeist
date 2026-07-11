@@ -15,7 +15,10 @@
   `https://codegeist.cloud` when no local server target is configured, and is not an
   LLM-provider login. Future `codegeist login <server-id>` support should select a
   configured Codegeist server URL and store the Codegeist-issued token for that
-  server. The first cloud product boundary also targets individual users before
+  server. The CLI never starts login directly against authentik, Google, Keycloak,
+  GitHub, or similar IdPs; those are browser redirect destinations selected by the
+  Codegeist server from its configured external providers. The first cloud product
+  boundary also targets individual users before
   organizations, Codegeist-owned upstream model credentials, metadata-backed
   quotas/entitlements/model allowlists, MinIO as the first local OIDC/STS-backed
   S3-compatible artifact resource server with separate Codegeist metadata, Envoy AI
@@ -63,10 +66,16 @@
   WebMVC application for the hosted SaaS server. It exposes
   `GET /health -> {"status":"ok"}` and now has the first OAuth configuration
   slice: static external OIDC provider config under `codegeist.auth.providers` plus
-  a local `authentik` profile. It still has no browser login endpoint,
-  user/account metadata, Codegeist API tokens, Spring Security route protection,
-  durable database, object storage APIs, Java model proxy, usage accounting,
-  billing, or CLI/TUI sync yet. This is not a local `opencode serve` adapter.
+  a local `authentik` profile. `T008_06` added the first Spring Security API
+  boundary and authenticated endpoint: `/api/**` routes are protected, `/health`
+  remains public, and `GET /api/v1/me` returns the authenticated Codegeist user id,
+  personal account id, and issuer from JWT claims (`sub`, `codegeist_account_id`,
+  and issuer). The default server stays fail-closed when no real `JwtDecoder` is
+  configured; tests use MockMvc `jwt()` support rather than live authentik or JWKS.
+  It still has no browser login endpoint, live external identity-provider call,
+  Codegeist API token issuance, durable user/account metadata store, database,
+  object storage APIs, Java model proxy, usage accounting, billing, or CLI/TUI sync
+  yet. This is not a local `opencode serve` adapter.
 - `T008_01_define-cloud-product-boundaries.md` is solved as a documentation-only
   boundary decision record. It does not add Java source. Later T008 tasks own the
   exact auth model, MinIO/S3 metadata design, Envoy AI Gateway proxy contract,
@@ -74,8 +83,8 @@
 - `T008_03_implement-oauth-provider-configuration.md` is solved. The server source
   implements only the settled external-OIDC provider config in
   `ai.codegeist.server.auth.config` plus focused config tests. User/account
-  metadata, Codegeist-owned API token issuance, token validation, and Spring
-  Security route protection are deferred to later auth/API tasks.
+  metadata, Codegeist-owned API token issuance, and browser login remain deferred;
+  `T008_06` owns the first route-protection and authenticated-principal slice.
 - T008 local cloud test posture is now authentik for OIDC, MinIO for
   S3-compatible artifact bytes, and Envoy AI Gateway for internal LLM routing.
   `T008_04_design-s3-artifact-storage.md` is solved. It implements a local Docker
@@ -112,6 +121,17 @@
   preparation. The browser flow has been verified with Playwright running inside
   the Compose network: authentik OIDC login returns to Open WebUI, `llama3.2:1b`
   is visible, and a prompt receives the expected Envoy-backed Ollama response.
+  There is still no end-to-end Codegeist login smoke; current authentik-related
+  checks are partial infrastructure/API checks, not `codegeist login` through
+  server redirect, callback, Codegeist token issuance, CLI token storage, and
+  authenticated `/api/v1/me` verification.
+- `T008_06_add-first-authenticated-cloud-api.md` is solved with the minimal
+  `GET /api/v1/me` identity endpoint and Spring Security route protection. The
+  endpoint treats bearer tokens as Codegeist API tokens but does not issue them yet;
+  it derives identity from JWT claims, ignores spoofed `x-codegeist-*` identity
+  headers, returns `401` for unauthenticated requests, returns `403` when the
+  authenticated token lacks the Codegeist account claim, and keeps Envoy, MinIO,
+  storage, billing, hosted LLM calls, browser login, and CLI sync out of scope.
 - `app/codegeist/cli` implements `--version` as a Spring Shell command. It writes
   through `CommandOutputService` and prints only the Spring Boot build version,
   currently `0.1.0-SNAPSHOT`.
@@ -427,9 +447,10 @@
   the model requests the remote MCP tool and the Codegeist loop dispatches it. That
   ask smoke asserts the persisted completed `ToolSessionPart` rather than exact final
   model wording. Smoke scripts now emit stable
-  archive smoke, platform total, SSH, and QEMU wrapper timings. The latest Maven
-  reactor test from `app/codegeist` passed with 173 CLI tests, 2 server tests, 0
-  failures, 0 errors, and 6 skips. The latest `task mcp-remote-smoke` passed with
+  archive smoke, platform total, SSH, and QEMU wrapper timings. The latest
+  server-local `task test` from `app/codegeist/server` passed with 13 tests, 0
+  failures, and 0 errors after the first authenticated identity API was added. The
+  latest `task mcp-remote-smoke` passed with
   `mcp remote smoke total: 13.058s`. The latest strict `task final-smoke-suite`
   passed with `linux platform smoke total: 85.696s`,
   `windows qemu smoke total: 233.055s`, `linux-x64 native shell ask total:

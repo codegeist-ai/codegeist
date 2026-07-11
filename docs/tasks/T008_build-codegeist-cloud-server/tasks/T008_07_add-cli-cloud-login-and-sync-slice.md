@@ -27,6 +27,11 @@ the external OAuth2/OIDC provider configuration and decides whether authentik,
 Google, Keycloak, GitHub through an adapter, or another provider is offered in the
 browser flow.
 
+The CLI must always begin login with the selected Codegeist server. authentik,
+Google, Keycloak, GitHub, and other external identity providers are never direct
+`codegeist login` targets; they are browser redirect destinations chosen by the
+Codegeist server.
+
 ## Scope
 
 - Choose exactly one artifact family to sync first.
@@ -38,6 +43,7 @@ browser flow.
   local Codegeist server-url configuration.
 - Store the returned Codegeist-owned API token as a credential for the selected
   Codegeist server, not as an upstream LLM-provider credential.
+- Do not store or configure external identity-provider URLs as CLI login targets.
 - Define conflict handling only as needed for the selected slice.
 - Keep local CLI file tools, shell tools, session state, and TUI behavior local.
 
@@ -50,6 +56,8 @@ browser flow.
   configuration.
 - The browser flow authenticates against the Codegeist server, which then uses its
   own configured external OAuth2/OIDC providers.
+- authentik, Google, Keycloak, GitHub, or similar IdPs are only server-selected
+  redirect targets, not direct CLI login targets.
 - Sync transfers one artifact family through the server API.
 - Secrets are not stored in synced artifact bytes.
 - Server and CLI tests cover the selected contract without live hosted-provider calls.

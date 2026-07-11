@@ -4,16 +4,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Minimal unauthenticated liveness endpoint for the first server bootstrap.
+ * Minimal unauthenticated liveness endpoint for the server bootstrap.
  *
- * <p>Keep this endpoint deliberately small until later T008 tasks define auth,
- * tenancy, storage, model access, and operational health/readiness semantics.
+ * <p>This endpoint stays public even after Codegeist API routes are protected. Keep
+ * it deliberately small until later T008 tasks define operational
+ * health/readiness semantics beyond process liveness.
  */
 @RestController
-class HealthController {
+public class HealthController {
 
-    static final String HEALTH_PATH = "/health";
-    static final String STATUS_OK = "ok";
+    public static final String HEALTH_PATH = "/health";
+    public static final String STATUS_OK = "ok";
 
     @GetMapping(HEALTH_PATH)
     HealthResponse health() {

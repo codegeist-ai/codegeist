@@ -46,6 +46,10 @@ another configured Codegeist server URL. The server then offers its own configur
 external OAuth2/OIDC providers in the browser flow and returns a Codegeist-owned
 API token for later CLI/API calls.
 
+The CLI must not treat external identity providers as login targets. authentik,
+Google, Keycloak, GitHub through an adapter, and similar providers are redirect
+targets selected by the Codegeist server after the CLI has contacted that server.
+
 `T008_03` owns only the first implementation of settled external-OIDC provider
 configuration. Internal user/account metadata, Codegeist-owned API token storage,
 and the security baseline are deferred to later focused auth and API tasks.
@@ -123,7 +127,7 @@ the terminal TUI; local CLI/TUI clients remain clients of the SaaS control plane
 | `T008_04` | Define the S3-compatible artifact byte store and metadata records, starting from command artifacts as the first sync family. |
 | `T008_05` | Define Envoy AI Gateway as the internal LLM gateway behind Codegeist auth, including entitlement checks, quotas, usage accounting, model allowlists, trusted headers, streaming, and safe-call gates. |
 | `T008_06` | Implement one authenticated server API only after the auth, metadata, storage, and policy boundaries needed by that endpoint are specified. |
-| `T008_07` | Add the first CLI cloud login and command-sync slice using `codegeist login`, default `https://codegeist.cloud`, configured Codegeist server URLs, the server auth contract, and artifact contracts, without ad hoc credentials or live hosted-provider calls. |
+| `T008_07` | Add the first CLI cloud login and command-sync slice using `codegeist login`, default `https://codegeist.cloud`, configured Codegeist server URLs, the server-owned redirect to external IdPs, the server auth contract, and artifact contracts, without ad hoc credentials or live hosted-provider calls. |
 
 ## Non-Goals
 

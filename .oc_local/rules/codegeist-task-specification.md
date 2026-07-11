@@ -224,9 +224,19 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `https://codegeist.cloud` when no local server target is configured, and is not an
   LLM-provider login. Future `codegeist login <server-id>` support should select a
   configured Codegeist server URL and store the Codegeist-issued token for that
-  server; do not model this as `provider: codegeist`. Current server source has
-  static OIDC provider config only; user/account metadata, Codegeist-owned API
-  tokens, and Spring Security route protection are deferred. The broader cloud
+  server; do not model this as `provider: codegeist`. The CLI must never start login
+  directly against authentik, Google, Keycloak, GitHub, or another external IdP;
+  external IdPs are browser redirect destinations selected by the Codegeist server
+  from its configured providers. Current server source has
+  static OIDC provider config plus the first Spring Security API boundary:
+  `/api/**` is protected, `/health` is public, and `GET /api/v1/me` returns
+  authenticated Codegeist user/account identity from JWT claims. User/account
+  metadata stores, Codegeist-owned API token issuance, browser login, artifact APIs,
+  and model proxy endpoints are still deferred. There is no full Codegeist login
+  smoke yet; later login work should add a smoke that starts with `codegeist login`
+  against a Codegeist server, follows the server-selected IdP redirect, receives a
+  Codegeist-issued token, stores it in the CLI credential path, and verifies
+  `/api/v1/me`. The broader cloud
   direction remains individual users before organizations, Codegeist-owned upstream
   model credentials,
   metadata-backed entitlements/quotas/usage/model allowlists, MinIO as the first

@@ -39,7 +39,8 @@ image names.
 Implemented files:
 
 - `app/codegeist/server/pom.xml` - standalone server module under the shared Maven
-  parent, including the server `native` profile.
+  parent, including the Boot 4 OAuth2 resource-server starter, WebMVC test starter,
+  Spring Security test support, and the server `native` profile.
 - `app/codegeist/server/Taskfile.yml` - server-local `test`, `build`, `native`,
   `native-smoke`, MinIO OIDC storage smoke, Envoy AI Gateway to local Ollama smoke,
   Docker environment startup, and `run` entrypoints.
@@ -68,6 +69,14 @@ Implemented files:
 - `ai.codegeist.server.auth.config` - static external OAuth2/OIDC provider
   configuration model under `codegeist.auth.providers`, with Bean Validation for
   provider ids, supported `oidc` type, issuer URI, and client id.
+- `ai.codegeist.server.auth.CodegeistServerSecurityConfiguration` - first API
+  security filter chain. It permits `/health`, protects `/api/**`, disables form
+  login and HTTP Basic, returns `401 Unauthorized` for unauthenticated API calls,
+  and enables JWT bearer-token validation only when a deployment supplies a
+  `JwtDecoder` bean.
+- `ai.codegeist.server.api.CloudIdentityController` - first authenticated API:
+  `GET /api/v1/me` returns the authenticated Codegeist user id, personal account id,
+  and issuer from JWT claims.
 - `application-local-authentik.yaml` - non-secret local authentik OIDC provider
   profile used as the first local test posture.
 - `CodegeistServerApplicationTests` - proves the Spring context loads.
@@ -75,10 +84,14 @@ Implemented files:
   local HTTP port.
 - `CodegeistAuthPropertiesTest` and `LocalAuthentikProfileTest` - prove static
   OIDC provider config binding, validation, and the local authentik profile.
+- `CloudIdentityControllerTest` - proves `GET /api/v1/me` rejects unauthenticated
+  requests, returns identity from authenticated JWT claims, ignores spoofed identity
+  headers, rejects missing account claims, and keeps `/health` public.
 
-The server uses `spring-boot-starter-webmvc`, validation, and focused Spring Boot
-tests. It does not add Actuator yet; the `/health` endpoint is a small bootstrap
-contract, not a final operational readiness API.
+The server uses `spring-boot-starter-webmvc`,
+`spring-boot-starter-security-oauth2-resource-server`, validation, WebMVC test
+support, and focused Spring Boot tests. It does not add Actuator yet; the `/health`
+endpoint is a small bootstrap contract, not a final operational readiness API.
 
 ## OAuth Provider Configuration
 
@@ -92,6 +105,37 @@ without an additional normalization step.
 `application-local-authentik.yaml` is the first local OIDC posture. It configures
 `authentik` as one generic external OIDC provider without making authentik a
 hard-coded product dependency.
+
+## Authenticated Identity API
+
+The first protected Codegeist API route is:
+
+```text
+GET /api/v1/me
+```
+
+`CodegeistServerSecurityConfiguration` permits `GET /health` and requires
+authentication for `/api/**`. Form login, HTTP Basic, logout, and CSRF are disabled
+for this API slice. The filter chain enables OAuth2 resource-server JWT handling only
+when a `JwtDecoder` bean is available, which lets later deployments use Spring Boot
+resource-server properties while keeping the default server fail-closed when no real
+token validator has been configured.
+
+`CloudIdentityController` reads the authenticated `Jwt` principal and returns:
+
+- `userId` from JWT `sub`
+- `accountId` from JWT `codegeist_account_id`
+- `issuer` from the JWT issuer claim when present
+
+Missing `sub` or `codegeist_account_id` fails with `403 Forbidden`. Unauthenticated
+requests fail with `401 Unauthorized`. Client-supplied identity headers such as
+`x-codegeist-user-id` and `x-codegeist-account-id` are ignored because the endpoint
+derives identity only from the security principal.
+
+This endpoint treats bearer tokens as Codegeist API tokens, but the current server
+does not issue those tokens yet. Browser login, external identity linking,
+Codegeist-token creation, refresh/revocation, and CLI token storage remain later
+auth/login work.
 
 ## Local Envoy AI Gateway Test Environment
 
@@ -153,21 +197,27 @@ is configured, it uses `https://codegeist.cloud`. A later
 URL. The configuration for those targets should store Codegeist server URLs, not
 LLM-provider settings.
 
+The CLI always starts login with the selected Codegeist server. External identity
+providers such as authentik, Google, Keycloak, or GitHub through an adapter are not
+CLI login targets; they are browser redirect destinations selected by that
+Codegeist server from its static OAuth2/OIDC provider configuration.
+
 The selected Codegeist server owns browser authentication. It uses its own static
 external OAuth2/OIDC provider configuration, such as the local authentik test
 provider or later Google, Keycloak, GitHub through an adapter, or another provider.
 After a later successful browser login, the server should issue a Codegeist-owned
-API token for CLI/API calls to that server. Provider access and refresh tokens from
-the external identity provider are not Codegeist API credentials.
+API token carrying the identity claims expected by `/api/v1/me`, including `sub` and
+`codegeist_account_id`, for CLI/API calls to that server. Provider access and refresh
+tokens from the external identity provider are not Codegeist API credentials.
 
 ## Non-Goals In Current Source
 
 - No live external identity-provider calls or browser login endpoints.
-- No users, accounts, external-identity metadata, Codegeist API tokens, token
-  validation, Spring Security route protection, or authenticated principals.
+- No users, accounts, external-identity metadata, Codegeist API token issuance,
+  token storage, token refresh, or token revocation.
 - No organizations, entitlements, quotas, usage accounting, or billing.
-- No durable database-backed metadata store, S3 client, MinIO/AWS test harness, or
-  object-store side effects.
+- No durable database-backed metadata store, Java S3 client, Java object-storage API,
+  or server-side object-store side effects.
 - No Java Codegeist Server model proxy endpoint, OpenRouter call, hosted-provider
   credentials, cloud-user model routing, streaming API, usage accounting, or live
   remote provider calls.
@@ -208,6 +258,12 @@ Run the optional local Envoy AI Gateway to Ollama smoke from
 ```bash
 task devenv-ai-smoke
 ```
+
+There is no complete Codegeist login smoke yet. The current auth-related checks are
+partial: MockMvc JWT coverage for `/api/v1/me`, the MinIO OIDC/STS smoke, and the
+authentik-backed `oauth2-proxy` smoke in front of Envoy AI Gateway. A full login
+smoke belongs with the later browser-login, callback, Codegeist API token issuance,
+CLI token storage, and authenticated `/api/v1/me` verification slice.
 
 Start the optional Open WebUI manual UI from `app/codegeist/server`:
 
