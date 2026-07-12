@@ -160,6 +160,19 @@ versioned validation source branch, and the candidate branch name. For a release
 work branch, promote the versioned validation source diff through a fresh candidate
 branch instead of merging the work branch directly to `main`.
 
+Before creating validation branches or triggering GitHub Actions, run the complete
+local Linux release gate with native smoke required and the inferred Maven release
+version:
+
+```bash
+pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1 -RequireNative -ReleaseVersion 0.1.1
+```
+
+This gate runs the full Maven suite, jar packaging, native-image compilation, native
+archive smoke, and deterministic file-edit plus shell-tool native smokes. It is the
+local guard for release-artifact stdout/stderr regressions before the remote release
+matrix starts.
+
 ```bash
 git fetch origin
 git switch -c release/v0.1.1-github-release-build <source-commit>

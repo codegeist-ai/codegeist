@@ -26,6 +26,8 @@ param(
 
     [string]$SmokeRoot = "",
 
+    [string]$ReleaseVersion = "",
+
     [int]$NativeTimeoutSeconds = 0,
 
     [int]$FileEditTimeoutSeconds = 0,
@@ -100,6 +102,10 @@ if (-not $SmokeRoot) {
 $SmokeRoot = [System.IO.Path]::GetFullPath($SmokeRoot)
 
 $nativeTimeout = Get-SmokeSeconds $NativeTimeoutSeconds "CODEGEIST_NATIVE_SMOKE_TIMEOUT_SECONDS" "CODEGEIST_NATIVE_SMOKE_TIMEOUT" 5
+$mavenRevisionArgs = @()
+if ($ReleaseVersion) {
+    $mavenRevisionArgs += "-Drevision=$ReleaseVersion"
+}
 if ($FileEditTimeoutSeconds -le 0) {
     $fileEditTimeout = [int](${env:CODEGEIST_FILE_EDIT_SMOKE_TIMEOUT_SECONDS} ?? "90")
 }
@@ -116,16 +122,18 @@ else {
 Push-Location -LiteralPath $CliDir
 try {
     if ($BuildNative) {
+        $nativeCompileCommand = (@("mvn", "--batch-mode", "--no-transfer-progress") + $mavenRevisionArgs + @("-DskipTests", "-Pnative", "clean", "native:compile")) -join " "
         Invoke-TimedCommand `
-            "mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile" `
+            $nativeCompileCommand `
             "linux native compile" `
-            { & mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile }
+            { & mvn --batch-mode --no-transfer-progress @mavenRevisionArgs -DskipTests -Pnative clean native:compile }
     }
 
     Write-Host "Command: pwsh scripts/tests/artifact-smoke.ps1 -Platform linux-x64"
     & (Join-Path $PSScriptRoot "artifact-smoke.ps1") `
         -Platform linux-x64 `
         -CliDir $CliDir `
+        -ExpectedVersion $ReleaseVersion `
         -SmokeRoot $SmokeRoot `
         -NativeTimeoutSeconds $nativeTimeout `
         -FileEditTimeoutSeconds $fileEditTimeout `

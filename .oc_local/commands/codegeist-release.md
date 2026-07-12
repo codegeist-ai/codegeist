@@ -87,6 +87,16 @@ git diff <last-release-tag>..<source-commit>
     example `v0.1.1` and `0.1.1`. If `--tag` was supplied, it must exactly match
     the inferred `release_tag`; otherwise stop and report the last tag, source
     commit, inferred bump, inferred tag, and supplied tag.
+    Before continuing to release mode selection, branch creation, or GitHub Actions,
+    run the complete local Linux release gate with required native smoke and the
+    inferred Maven version:
+
+```bash
+pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1 -RequireNative -ReleaseVersion <release-version>
+```
+
+    Stop if this gate fails. Do not create validation branches, candidates, tags, or
+    remote workflow runs before it passes.
 13. Determine the release mode:
     - If the source ref is the local base branch, normally `main`, or the matching
       upstream ref such as `origin/main`, and the source commit matches the

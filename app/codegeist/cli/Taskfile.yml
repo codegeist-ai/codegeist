@@ -39,7 +39,7 @@ tasks:
   local-linux-smoke:
     desc: Run local Linux build gates and native smoke checks
     cmds:
-      - pwsh -NoProfile -File ../../../scripts/tests/local-linux-smoke.ps1
+      - pwsh -NoProfile -File ../../../scripts/tests/local-linux-smoke.ps1 {{if .RELEASE_VERSION}}-ReleaseVersion {{.RELEASE_VERSION}}{{end}}
 
   qemu-linux-install-smoke:
     desc: Run the Linux install script in a fresh Linux QEMU guest

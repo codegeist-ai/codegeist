@@ -394,7 +394,11 @@
   verification, and the `latest` GitHub Release mirror. `/codegeist-release` may
   also release directly from synchronized `main`; in that mode it infers SemVer
   from `last-tag..main`, skips validation-source and candidate branch creation, and
-  starts at pre-tag validation.
+  starts at pre-tag validation. Before either path creates release branches or
+  triggers GitHub Actions, it must run the complete local Linux release gate with
+  required native smoke and the inferred Maven release version, for example
+  `pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1 -RequireNative
+  -ReleaseVersion 0.4.0`.
 - The release workflow builds and uploads `codegeist-jvm.jar` without artifact
   smoke. The native matrix calls `scripts/tests/artifact-smoke.ps1`; the harness
   packages Linux, Windows, and macOS native archives, unpacks each native archive

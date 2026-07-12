@@ -27,31 +27,42 @@ verification.
 
 1. Infer the release version from the diff between the latest reachable SemVer tag
    and the release source commit, following `.opencode/rules/semver.md`.
-2. If the source commit is synchronized `main`, run the direct-main path: skip
+2. Before creating validation branches, candidate branches, tags, or remote GitHub
+   workflow runs, run the complete local Linux release gate with the inferred Maven
+   release version and native smoke required:
+
+   ```bash
+   pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1 -RequireNative -ReleaseVersion <version>
+   ```
+
+   Stop if this gate fails. This local gate must catch release-artifact stdout,
+   stderr, native-image, archive, file-edit, and shell-smoke issues before the
+   GitHub release workflow is triggered.
+3. If the source commit is synchronized `main`, run the direct-main path: skip
    validation-source and squash-candidate creation, then run pre-tag validation
    from `main` before tagging.
-3. Otherwise, validate the source commit on a matching `release/v<version>-github-release-build`
+4. Otherwise, validate the source commit on a matching `release/v<version>-github-release-build`
    branch. If the original source branch is not already a matching `release/v*`
    branch, create that validation branch from the source commit after version
    inference. Branch runs must build, smoke, checksum, and upload workflow artifacts
    without publishing a GitHub Release.
-4. Create a fresh `release/v<version>-codegeist-rc-<n>` branch from current
+5. Create a fresh `release/v<version>-codegeist-rc-<n>` branch from current
    `main` and squash the entire validated source diff into exactly one
    candidate commit.
-5. Validate the candidate branch with the release workflow. If validation fails,
+6. Validate the candidate branch with the release workflow. If validation fails,
    fix the source or validation branch and create a new candidate such as `rc-2`; do not
    rewrite the failed candidate.
-6. Advance `main` from the passing candidate branch by fast-forward only. Do not
+7. Advance `main` from the passing candidate branch by fast-forward only. Do not
    use a merge commit, GitHub merge button, or force-push.
-7. Run pre-tag validation from `main` with `workflow_dispatch` and
+8. Run pre-tag validation from `main` with `workflow_dispatch` and
    `release_version=<version>`.
-8. Create and push the annotated `v*` tag only after pre-tag validation passes.
-9. Let the tag-triggered workflow publish the GitHub Release automatically.
-10. Verify the published release assets and checksums after the tag run passes.
-11. Move the lightweight `latest` tag to the verified `v*` release commit.
-12. Create or update the GitHub Release for `latest` by reusing the already
-    downloaded and checksum-verified assets from the `v*` release. Do not run
-    another build.
+9. Create and push the annotated `v*` tag only after pre-tag validation passes.
+10. Let the tag-triggered workflow publish the GitHub Release automatically.
+11. Verify the published release assets and checksums after the tag run passes.
+12. Move the lightweight `latest` tag to the verified `v*` release commit.
+13. Create or update the GitHub Release for `latest` by reusing the already
+     downloaded and checksum-verified assets from the `v*` release. Do not run
+     another build.
 
 ## Candidate Promotion Policy
 
@@ -142,6 +153,9 @@ release as complete.
 - Run `gh auth status` before using `gh workflow`, `gh run`, or `gh release`.
 - Start release execution only from a clean worktree. If uncommitted changes are
   present, stop before fetch, branch creation, tagging, or workflow dispatch.
+- Do not trigger remote release validation, create release branches, or create tags
+  until the complete local Linux release gate has passed with the inferred release
+  version and required native smoke.
 - Confirm the tag does not already exist locally, remotely, or as a GitHub Release
   before creating it.
 - Keep the worktree clean before tagging.

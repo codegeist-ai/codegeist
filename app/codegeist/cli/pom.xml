@@ -168,6 +168,9 @@
                         <extensions>true</extensions>
                         <configuration>
                             <imageName>${project.build.finalName}</imageName>
+                            <buildArgs>
+                                <buildArg>--enable-native-access=ALL-UNNAMED</buildArg>
+                            </buildArgs>
                         </configuration>
                     </plugin>
                 </plugins>

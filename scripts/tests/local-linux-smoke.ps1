@@ -24,6 +24,8 @@ param(
 
     [string]$SmokeRoot = "",
 
+    [string]$ReleaseVersion = "",
+
     [string]$StatusFile = $env:CODEGEIST_SMOKE_STATUS_FILE,
 
     [switch]$RequireNative
@@ -45,6 +47,10 @@ if (-not $SmokeRoot) {
 $SmokeRoot = Resolve-SmokePath $SmokeRoot
 
 $requireNative = $RequireNative.IsPresent -or (Test-SmokeEnvFlag "CODEGEIST_SMOKE_REQUIRE_NATIVE")
+$mavenRevisionArgs = @()
+if ($ReleaseVersion) {
+    $mavenRevisionArgs += "-Drevision=$ReleaseVersion"
+}
 
 function Write-LocalLinuxStatus {
     param(
@@ -77,15 +83,17 @@ try {
         Write-Host "Platform: linux"
         Write-Host "Artifact: build"
 
+        $mavenTestCommand = (@("mvn", "--batch-mode", "--no-transfer-progress") + $mavenRevisionArgs + @("test")) -join " "
         Invoke-SmokeStep `
-            "mvn --batch-mode --no-transfer-progress test" `
+            $mavenTestCommand `
             "linux maven tests" `
-            { & mvn --batch-mode --no-transfer-progress test }
+            { & mvn --batch-mode --no-transfer-progress @mavenRevisionArgs test }
 
+        $mavenPackageCommand = (@("mvn", "--batch-mode", "--no-transfer-progress") + $mavenRevisionArgs + @("-DskipTests", "clean", "package")) -join " "
         Invoke-SmokeStep `
-            "mvn --batch-mode --no-transfer-progress -DskipTests clean package" `
+            $mavenPackageCommand `
             "linux jar package" `
-            { & mvn --batch-mode --no-transfer-progress -DskipTests clean package }
+            { & mvn --batch-mode --no-transfer-progress @mavenRevisionArgs -DskipTests clean package }
 
         Remove-Item -Recurse -Force -LiteralPath $SmokeRoot -ErrorAction SilentlyContinue
         New-SmokeDirectory $SmokeRoot
@@ -96,6 +104,7 @@ try {
             & (Join-Path $PSScriptRoot "native-smoke.ps1") `
                 -CliDir $CliDir `
                 -SmokeRoot $SmokeRoot `
+                -ReleaseVersion $ReleaseVersion `
                 -BuildNative
             $nativeStatus = 'passed'
             $nativeReason = 'none'
