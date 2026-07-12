@@ -24,6 +24,18 @@ tasks:
     cmds:
       - pwsh -NoProfile -File ../../../scripts/tests/native-smoke.ps1 -BuildNative
 
+  tui-capture-smoke:
+    desc: Build the native executable and generate TUI capture smoke artifacts
+    cmds:
+      - pwsh -NoProfile -File ../../../scripts/tests/tui-capture-smoke.ps1 -BuildNative
+
+  docs:
+    desc: Generate local documentation preview artifacts
+    deps:
+      - tui-capture-smoke
+    cmds:
+      - pwsh -NoProfile -Command "Write-Host 'Documentation preview artifacts generated under target/smoke-test/tui-capture'"
+
   local-linux-smoke:
     desc: Run local Linux build gates and native smoke checks
     cmds:
@@ -138,6 +150,8 @@ tasks:
       - java -jar target/codegeist.jar {{.CLI_ARGS}}
 
   tui:
-    desc: Run the already-built Codegeist TUI jar
+    desc: Build and run the Codegeist TUI jar
+    deps:
+      - build
     cmds:
       - java -jar target/codegeist.jar tui

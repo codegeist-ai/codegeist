@@ -235,18 +235,17 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   containment for side-effecting file targets; missing paths and non-regular files
   still fail before mutation.
 - The previous over-broad `T007_06` TerminalUI runtime was reduced to the smallest
-  direct Spring Shell `TerminalUI` launcher. Current source has
+  direct Spring Shell `TerminalUI` chat loop. Current source has
   `ai.codegeist.app.tui.TuiCommands`, `CodegeistTerminalUi`, app-wide
-  `CodegeistMessages`, `CodegeistLocaleService`, and `messages.properties`; there is
-  no chat prompt submission, Spring Shell control wrapper package, TUI smoke, or
-  `docs/developer/architecture/terminal-ui.md`. The T007_06 end state is a complete
-  TUI chat loop through `ChatHarnessService.ask(true, prompt)`, with repeated turns,
-  visible responses, and handled harness failures. Use
-  `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_06_add-terminalui-chat-harness/implementation-plan.md`
-  as the detailed handoff before coding that slice. Future TUI work should add one
+  `CodegeistMessages`, `CodegeistLocaleService`, and `messages.properties`; it
+  submits prompts through `ChatHarnessService.ask(true, prompt)`, supports repeated
+  turns, shows visible responses, and handles harness failures. There is no Spring
+  Shell control wrapper package, generic `task tui-smoke`, or
+  `docs/developer/architecture/terminal-ui.md`. Use the documentation-specific
+  `task cli:tui-capture-smoke` only when TUI docs need VHS-rendered native preview
+  captures under `target/smoke-test/tui-capture/`. Future TUI work should add one
   concrete interaction at a time over this minimal launcher and should not restore
-  the removed presentation architecture. Do not treat T007_07 verification as ready
-  until the TUI chat loop is implemented or explicitly split into a later task.
+  the removed presentation architecture.
 - For the first provider-backed workflow in the replacement epic, use an externally
   managed local Ollama instance started through `task ollama-start` instead of a
   fake provider. Do not use Testcontainers or pull local models from Java tests;

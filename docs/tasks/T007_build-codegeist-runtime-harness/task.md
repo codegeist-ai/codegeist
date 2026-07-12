@@ -11,10 +11,11 @@ Implement a resumable Codegeist chat harness centered on a portable
 
 T007 targets a practical local coding-agent loop: one directory-local session store
 with multiple chat sessions, optional MCP, Codegeist tools, patch/edit, shell,
-TerminalUI, and file-based storage. This target is not complete yet because the
-TerminalUI chat-harness integration and final verification slices remain open. The
-current implemented chat harness owns a synchronous model/tool/model control loop
-over prompt-scoped callbacks. Do not add a database or server runtime for this task.
+TerminalUI, and file-based storage. The feature set is implemented through the TUI
+chat-harness slice; the parent remains open only for final focused and broad
+verification. The current implemented chat harness owns a synchronous
+model/tool/model control loop over prompt-scoped callbacks. Do not add a database
+or server runtime for this task.
 
 ## Current Codegeist Baseline
 
@@ -23,7 +24,8 @@ over prompt-scoped callbacks. Do not add a database or server runtime for this t
   `2.0.0-M6`, Spring AI Agent Utils `0.7.0`, Lombok, and GraalVM native build
   tooling.
 - Implemented commands are `--version`, `--show-config`, provider-backed `ask`, and
-  a minimal `tui` command that starts a Spring Shell `TerminalUI`.
+  a `tui` command that starts a Spring Shell `TerminalUI` chat loop over the existing
+  chat harness.
 - `ask` selects the first configured provider through `CodegeistConfig`, uses the
   provider config's `defaultModel()`, calls `CodegeistChatService`, and prints the
   response text.
@@ -58,7 +60,8 @@ T007 is complete only when these features are implemented and tested:
 - `.codegeist/session.json` stores only session-relevant information needed to
   resume and save chats: schema version, working directory, store timestamps,
   sessions, session timestamps, messages, assistant responses, tool calls/results,
-  patch/edit/shell summaries, and TUI-renderable state.
+  and bounded patch/edit/shell summaries that terminal or future UI surfaces can
+  render.
 - `.codegeist/session.json` does not store provider config, selected provider,
   selected model, MCP client definitions, enabled tool definitions, or runtime
   status.
@@ -173,10 +176,11 @@ implementation tests need them.
   `implementation-plan.md`. Final verification included broad JVM tests,
   `native-smoke`, `local-linux-smoke`, `mcp-remote-smoke`, and the Linux plus
   Windows QEMU `final-smoke-suite`.
-- `T007_06_add-terminalui-chat-harness/task.md` - connect the existing Spring Shell
-  `TerminalUI` command to `ChatHarnessService.ask(true, prompt)` without adding a
-  separate JLine console or second agent runtime. Its detailed handoff lives in
-  `T007_06_add-terminalui-chat-harness/implementation-plan.md`.
+- `T007_06_add-terminalui-chat-harness/task.md` - solved: connected the existing
+  Spring Shell `TerminalUI` command to `ChatHarnessService.ask(true, prompt)`, with
+  in-memory transcript display, repeated turns, handled harness errors, and no
+  separate JLine console, second agent runtime, or persisted UI state. Its detailed
+  handoff lives in `T007_06_add-terminalui-chat-harness/implementation-plan.md`.
 - `T007_07_verify-chat-file-tool-harness.md` - run focused and broad verification,
   update architecture docs, and ensure the parent acceptance criteria hold.
 

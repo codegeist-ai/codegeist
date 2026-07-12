@@ -30,6 +30,9 @@ Test guidance for Codegeist contributors and coding agents.
   It builds and runs a local fixture container, checks the direct MCP callback path,
   then checks the `ask` plus local Ollama path. It is intentionally not part of
   `task test`.
+- `task tui-capture-smoke` is the native TUI documentation-capture smoke. It runs
+  the native `codegeist tui` command through VHS with a deterministic fixture
+  provider and writes ignored preview artifacts under `target/smoke-test`.
 - Report command duration when a check is slow, platform-specific, or part of a
   smoke-test workflow.
 - Keep smoke scripts non-interactive and make their status plus duration easy to
@@ -55,6 +58,7 @@ Test guidance for Codegeist contributors and coding agents.
 - `scripts/tests/install-script-smoke.ps1`
 - `scripts/tests/file-edit-ask-smoke.ps1`
 - `scripts/tests/shell-ask-smoke.ps1`
+- `scripts/tests/tui-capture-smoke.ps1`
 - `scripts/tests/native-smoke.ps1`
 - `scripts/tests/smoke-common.ps1`
 - `scripts/tests/qemu-linux-install-smoke.sh`
@@ -66,3 +70,4 @@ Test guidance for Codegeist contributors and coding agents.
 - `scripts/tests/windows-smoke.ps1`
 - `scripts/tests/final-smoke-suite.ps1`
 - `docs/developer/specification/testing-strategy-and-agent-rules.md`
+- `docs/user/codegeist-tui.md`

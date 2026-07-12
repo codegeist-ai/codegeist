@@ -21,7 +21,7 @@ class TuiCommandsTest {
         private boolean ran;
 
         FakeTerminalUi() {
-            super(null, null);
+            super(null, null, null);
         }
 
         @Override

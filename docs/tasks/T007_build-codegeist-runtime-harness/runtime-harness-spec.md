@@ -555,21 +555,28 @@ classDiagram
 
 ## 5. TerminalUI Chat Harness
 
-T007_06 now has a minimal Spring Shell `TerminalUI` launcher, not a chat harness.
+T007_06 now has a minimal Spring Shell `TerminalUI` chat loop.
 `ai.codegeist.app.tui.TuiCommands` exposes the `tui` command and delegates to
-`CodegeistTerminalUi`. `CodegeistTerminalUi` builds a `TerminalUI` from
-`TerminalUIBuilder`, configures one bordered `BoxView` root, renders localized text
-from `CodegeistMessages`, binds `Ctrl-Q` to interrupt the loop, and enters
-`TerminalUI.run()`.
+`CodegeistTerminalUi`. `CodegeistTerminalUi` builds `TerminalUI` instances from
+`TerminalUIBuilder`, configures a bordered `GridView` root with transcript
+`BoxView` and prompt `InputView`, focuses the prompt, binds `Ctrl-Q` to interrupt
+the loop, and preserves the local transcript across normal `TerminalUI.run()`
+returns.
+
+Pressing Enter on a non-blank prompt submits exactly one turn through
+`ChatHarnessService.ask(true, prompt)`, appends returned response text or handled
+harness failures to an in-memory transcript, rebuilds the prompt input after each
+submission, and supports repeated turns without restarting the Codegeist process.
 
 `CodegeistLocaleService` uses optional app-wide `codegeist.locale` and otherwise
-falls back to the JVM default locale for message lookup. There is still no prompt submission,
+falls back to the JVM default locale for message lookup. There is still no stored
 session projection, streaming output, permission prompt, tool transcript view,
 presenter, view factory, responsive layout service, Spring Shell control wrapper
-package, virtual-terminal smoke, or `task tui-smoke` entrypoint.
+package, or generic `task tui-smoke` entrypoint. The documentation-specific
+`task tui-capture-smoke` path is a VHS-rendered native capture smoke that writes local
+preview artifacts under `target/smoke-test/tui-capture/`; it is not a separate TUI
+runtime architecture.
 
-Future TUI work should add one concrete interaction at a time, starting with prompt
-submission through `ChatHarnessService.ask(true, prompt)` if chat is the next target.
 Keep provider selection, MCP/tool callbacks, the model/tool/model continuation loop,
 and `.codegeist/session.json` persistence behind `ChatHarnessService` and existing
 runtime services.
@@ -587,6 +594,6 @@ Keep this specification synchronized with the active child task:
 - `T007_03` should refine sections 3.1, 3.2, 3.3, and 4.1.
 - `T007_04` should refine sections 4.2 and 4.3.
 - `T007_05` should add the Codegeist-owned model/tool/model loop contract.
-- `T007_06` should refine section 5 around the minimal Spring Shell `TerminalUI`
-  launcher and any next focused prompt-submission slice.
+- `T007_06` refined section 5 around the minimal Spring Shell `TerminalUI` chat
+  loop.
 - `T007_07` should reconcile all diagrams with the implemented source.

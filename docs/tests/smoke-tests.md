@@ -12,6 +12,9 @@ Current smoke entrypoints:
 - `task native-smoke` - build Linux native executable, package it, and smoke the
   extracted native archive, including deterministic ask-driven file-edit encoding
   checks and shell-tool checks.
+- `task tui-capture-smoke` - build the native executable, drive `codegeist tui`
+  through VHS with a deterministic fixture provider, verify persisted session text,
+  and generate local PNG preview artifacts under `target/`.
 - `task local-linux-smoke` - run JVM tests, build the jar as a build gate, and run
   native checks when required or available. The jar is not smoke-tested.
 - `task mcp-remote-smoke` - build a local Docker MCP server fixture, start it on a
@@ -42,6 +45,11 @@ matching runner.
 `artifact-smoke.ps1` for deterministic ask-driven native file-edit side effects.
 `scripts/tests/shell-ask-smoke.ps1` is the focused sub-harness for deterministic
 ask-driven native shell-tool side effects through `codegeist_shell`.
+`scripts/tests/tui-capture-smoke.ps1` is the native TUI documentation-capture
+smoke. It uses Charmbracelet VHS to drive the real native TUI through a terminal
+renderer, capture PNG screenshots, and write a manifest for local documentation
+previews. VHS requires `vhs`, `ffmpeg`, and `ttyd` on `PATH`; the shared
+`.devcontainer` release kit provides those tools after a rebuild.
 
 ## Output Contract
 
@@ -55,6 +63,7 @@ Native status: passed|failed|skipped
 Install status: passed|failed|skipped
 Native reason: none|<reason>
 MCP remote smoke status: passed|failed
+TUI capture smoke status: passed|failed
 ```
 
 Smoke output must also include duration lines for every meaningful subcheck. Use
@@ -90,6 +99,10 @@ Labels should be stable and specific, for example:
 - `mcp remote ollama start`
 - `mcp remote ask ollama test`
 - `mcp remote smoke total`
+- `tui capture native compile`
+- `tui capture native run`
+- `tui capture artifact generation`
+- `tui capture smoke total`
 - `windows native compile`
 - `windows native archive smoke`
 - `windows native version smoke`
@@ -132,6 +145,18 @@ Labels should be stable and specific, for example:
   -NonInteractive -Command` as the cross-platform shell wrapper, then verifies the
   created workspace file and a completed persisted
   `ToolSessionPart(tool=codegeist_shell)` whose preview includes `Exit code: 0`.
+- TUI capture smoke runs through `scripts/tests/tui-capture-smoke.ps1`. The script
+  starts a deterministic Ollama-compatible fixture provider, writes a temporary
+  direct `codegeist.yml`, generates a `drive-tui.tape`, drives the native
+  `codegeist tui` command with VHS, submits one prompt, waits for the fixture
+  response, uses an invisible blank-space prompt key to advance TerminalUI's
+  asynchronous repaint before the response screenshot, exits with `Ctrl-Q`, verifies
+  the session store contains the prompt and response, and generates local preview artifacts under
+  `app/codegeist/cli/target/smoke-test/tui-capture/`. Expected artifacts are
+  `drive-tui.tape`, `01-initial.png`, `02-prompt.png`, `03-response.png`,
+  `vhs-output.log`, and `manifest.md`. These artifacts are ignored build output;
+  selected screenshots promoted for the TUI user guide live under
+  `docs/user/assets/tui/`.
 - Local Linux and Windows platform smokes do not run a provider-only native ask
   check. The native ask coverage stays on deterministic fixture-backed file-edit and
   shell harnesses so smoke results do not depend on local model wording when no tool

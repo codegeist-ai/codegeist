@@ -3,13 +3,17 @@
 Detailed implementation handoff for turning the current minimal Spring Shell
 `TerminalUI` launcher into the first usable Codegeist TUI chat loop.
 
+Status: implemented. This file is retained as the API research and implementation
+handoff record. Use `task.md` and `docs/developer/architecture/architecture.md` for
+the current source state after implementation.
+
 ## Purpose
 
 This plan documents the next implementation pass for
 `T007_06_add-terminalui-chat-harness/task.md`. The target is a small, tested TUI
 interaction that lets a terminal user enter a prompt, submit it through
 `ChatHarnessService.ask(true, prompt)`, see the returned response text, and repeat
-the interaction without restarting the TUI.
+the interaction without restarting the Codegeist process.
 
 The plan is intentionally implementation-focused, not a replacement architecture.
 It must stay inside the existing Spring Shell `TerminalUI` approach and must not
@@ -23,10 +27,11 @@ Implemented source today:
 - `ai.codegeist.app.tui.TuiCommands` exposes the Spring Shell `tui` command.
 - `TuiCommands.tui()` delegates directly to `CodegeistTerminalUi.run()`.
 - `CodegeistTerminalUi` injects `TerminalUIBuilder` and `CodegeistMessages`.
-- `CodegeistTerminalUi.run()` builds a `TerminalUI`, configures one bordered
-  `BoxView`, sets that root, binds `Ctrl-Q` to an interrupt message, and enters
-  `TerminalUI.run()`.
-- `CodegeistMessages` resolves `tui.title` and `tui.quit.hint` from
+- `CodegeistTerminalUi.run()` builds `TerminalUI` instances, configures one
+  bordered `GridView` root with transcript and prompt views, binds `Ctrl-Q` to an
+  interrupt message, and preserves local chat state across normal
+  `TerminalUI.run()` returns.
+- `CodegeistMessages` resolves the current TUI surface keys from
   `messages.properties` through `CodegeistLocaleService`.
 - `ChatHarnessService.ask(boolean continueSession, String prompt)` already owns
   provider selection, default model selection, prompt-scoped local/MCP tools,
@@ -34,20 +39,21 @@ Implemented source today:
 
 Current tests:
 
-- `CodegeistTerminalUiTest` only proves the minimal root view has a border and draw
-  function.
-- `TuiCommandsTest` only proves command delegation.
+- `CodegeistTerminalUiTest` proves the root view, focused prompt input, prompt
+  submission, repeated turns, handled failures, blank prompts, transcript windowing,
+  prompt reset, and non-quit terminal interrupt behavior.
+- `TuiCommandsTest` proves command delegation.
 - `CodegeistMessagesTest` and `CodegeistLocaleServiceTest` cover i18n lookup and
   locale selection.
 
-Not implemented yet:
+Still not implemented after this slice:
 
-- Prompt input.
-- Prompt submission.
-- Response rendering.
-- Repeated prompt/response turns in one TUI session.
-- Handled harness failure display.
-- Any provider-backed TUI smoke or virtual-terminal smoke.
+- Streaming output.
+- Permission prompts.
+- Tool transcript projection.
+- Stored session-history replay on TUI startup.
+- Generic `task tui-smoke`; the existing `tui-capture-smoke` path is only for
+  documentation-preview captures through the native command.
 
 ## Target Behavior
 
@@ -67,7 +73,7 @@ The implementation should satisfy these user-visible contracts:
 - On a handled harness failure, the TUI appends a concise terminal-facing error
   line instead of letting the TUI die from an uncaught exception.
 - The user can submit another prompt after a success or failure without restarting
-  the TUI.
+  the Codegeist process.
 - `Ctrl-Q` keeps interrupting the TUI loop.
 - Existing noninteractive command behavior for `--version`, `--show-config`, and
   `ask` remains unchanged.
@@ -127,8 +133,10 @@ Keep the state local to the running TUI:
 - Store transcript entries in memory while `TerminalUI.run()` is active.
 - Store the currently active `InputView` in memory so global `ViewDoneEvent`
   handling can ignore stale replaced inputs.
-- Rebuild the root surface after a submission to get a fresh empty `InputView`
-  without using reflection or a custom console.
+- Rebuild the prompt input after a submission to get a fresh empty `InputView`
+  without using reflection or a custom console. If Spring Shell returns normally
+  after a submitted turn, rebuild the `TerminalUI` around the same local transcript
+  state instead of letting the `tui` command exit.
 - Reconfigure every newly built view through `TerminalUI.configure(...)` before it
   receives focus or events.
 
@@ -136,12 +144,13 @@ Recommended method shape:
 
 ```text
 run()
-  build TerminalUI
   create initial TuiChatState
-  installChatSurface(terminalUI, state)
-  subscribe Ctrl-Q key handling
-  subscribe ViewDoneEvent handling for the active prompt input
-  terminalUI.run()
+  while quit is not requested
+    build TerminalUI
+    installChatSurface(terminalUI, state)
+    subscribe Ctrl-Q key handling
+    subscribe ViewDoneEvent handling for the active prompt input
+    terminalUI.run()
 
 installChatSurface(terminalUI, state)
   create GridView root, transcript BoxView, prompt InputView
@@ -155,7 +164,7 @@ submitPrompt(terminalUI, state, promptText)
   call chatHarnessService.ask(true, prompt)
   append assistant transcript entry on success
   append localized error entry on failure
-  installChatSurface(terminalUI, state)
+  resetPromptInput(terminalUI, state)
   redraw
 ```
 
@@ -183,10 +192,9 @@ Add only message keys needed by the current TUI surface and tests. Candidate key
 - `tui.blank.prompt.hint` only if blank submissions should visibly explain why
   nothing happened.
 
-Keep the existing keys:
+Keep the existing key:
 
 - `tui.title`
-- `tui.quit.hint`
 
 Avoid adding a parallel Java defaults catalog. `messages.properties` remains the
 English source of user-facing text.
@@ -379,7 +387,7 @@ The implementation is complete when all of these are true:
 - The TUI includes prompt input and response display.
 - Enter on a non-blank prompt calls `ChatHarnessService.ask(true, prompt)`.
 - Returned `CodegeistChatResponse.content()` is visible in the TerminalUI surface.
-- Repeated prompt/response turns work without restarting the TUI.
+- Repeated prompt/response turns work without restarting the Codegeist process.
 - Harness failures are visible as handled errors.
 - TUI-only state is not persisted in `.codegeist/session.json`.
 - Provider, tool/MCP, agent-loop, and session-store behavior remain harness-owned.

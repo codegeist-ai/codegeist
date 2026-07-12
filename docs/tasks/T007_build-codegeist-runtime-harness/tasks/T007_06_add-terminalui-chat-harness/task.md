@@ -2,49 +2,53 @@
 
 Parent: `T007_build-codegeist-runtime-harness`
 
-Status: open
+Status: solved
 
 ## Current Outcome
 
-Codegeist now has the smallest useful Spring Shell `TerminalUI` launcher. The
-`tui` command lives in `ai.codegeist.app.tui.TuiCommands` and delegates to
-`CodegeistTerminalUi`. `CodegeistTerminalUi` builds a Spring Shell `TerminalUI`,
-configures one bordered `BoxView` root, renders localized text from `CodegeistMessages`,
-binds `Ctrl-Q` to interrupt the TUI loop, and enters `TerminalUI.run()`.
+Codegeist now has a minimal Spring Shell `TerminalUI` chat loop. The `tui` command
+lives in `ai.codegeist.app.tui.TuiCommands` and delegates to `CodegeistTerminalUi`.
+`CodegeistTerminalUi` builds Spring Shell `TerminalUI` instances, installs a
+bordered `GridView` root with a transcript `BoxView` and prompt `InputView`,
+focuses the prompt, binds `Ctrl-Q` to interrupt the TUI loop, and preserves the
+local transcript across normal `TerminalUI.run()` returns.
 
-This is not a chat harness yet. There is no prompt submission, session projection,
-streaming output, permission prompt, tool transcript view, virtual-terminal smoke,
-or `task tui-smoke` entrypoint. The previous presenter, view factory, responsive
-layout service, Spring Shell control wrapper package, custom JLine console, and
-line-renderer pipeline remain removed.
+Pressing Enter on a non-blank prompt submits exactly one turn through
+`ChatHarnessService.ask(true, prompt)`. The TUI appends user and assistant lines to
+an in-memory transcript, displays handled harness failures as `Error: Command
+failed: ...`, rebuilds the prompt input after each submission because `InputView`
+has no public clear API, and supports repeated turns without restarting the
+Codegeist process.
+
+Provider selection, local/MCP tools, the Codegeist agent loop, and
+`.codegeist/session.json` persistence remain owned by `ChatHarnessService` and the
+runtime services behind it. The TUI does not store prompt drafts, focus, layout,
+scroll, runtime status, provider config, tool config, or any other UI-only state.
+
+There is still no streaming output, permission prompt, tool transcript view, or
+generic `task tui-smoke` entrypoint. The later documentation-specific
+`tui-capture-smoke` workflow is a VHS-rendered native capture smoke for local preview
+artifacts; it does not add a second TUI runtime. The previous presenter, view
+factory, responsive layout service, Spring Shell control wrapper package, custom
+JLine console, and line-renderer pipeline remain removed.
 
 `CodegeistLocaleService` uses optional app-wide `codegeist.locale` and otherwise
 falls back to the JVM default locale for message lookup.
 
 ## Next Scope
 
-The end state for this task is a usable chat loop through the TUI: a user should be
-able to enter prompts, submit them through `ChatHarnessService.ask(true, prompt)`,
-see returned `CodegeistChatResponse.content()` values in the TerminalUI surface,
-and continue the conversation from the same TUI session.
-
-Work toward that end state one concrete interaction at a time. The next slice should
-connect prompt input to `ChatHarnessService.ask(true, prompt)` and display the
-returned response text. Follow-up slices can add repeated-turn ergonomics, visible
-errors, prompt clearing, focus behavior, and transcript projection only when the
-current behavior and tests require them.
-
-Keep provider, tool/MCP, agent-loop, and session-store behavior behind
-`ChatHarnessService` and existing runtime services. Add Codegeist-owned wrappers,
-layout services, or long-lived view state only when a current test or behavior
-requires them.
+`T007_06` is complete enough for `T007_07_verify-chat-file-tool-harness.md` to run
+the final focused and broad T007 verification pass. Future TUI slices can add
+streaming, cancellation, permission prompts, tool transcript projection, richer
+focus controls, or session browsing only behind focused tasks.
 
 ## Implementation Plan
 
-Use `implementation-plan.md` as the detailed implementation handoff for this task.
-It records the target behavior, Spring Shell `TerminalUI` API facts, proposed source
-changes, test plan, verification commands, documentation updates, and risks. Keep
-that plan current if the implementation approach changes before code is written.
+`implementation-plan.md` is retained as the detailed implementation handoff and API
+research record for this task. The implemented source follows the plan's small
+Spring Shell `TerminalUI` approach: no custom JLine console, no second agent
+runtime, no persisted UI state, and prompt submission through
+`ChatHarnessService.ask(true, prompt)`.
 
 ## Non-Goals
 
@@ -59,14 +63,18 @@ that plan current if the implementation approach changes before code is written.
 
 ## Completion Criteria
 
-- A user can complete at least one provider-backed prompt/response turn from the TUI.
-- Repeated prompt/response turns can happen without restarting the TUI.
-- TUI prompt submission goes through `ChatHarnessService.ask(true, prompt)`.
-- Provider, tool/MCP, agent-loop, and session-store behavior remain harness-owned.
-- The TUI surfaces returned response text and handled harness failures clearly enough
-  for a terminal user.
-- Focused tests cover the TUI command, root view, i18n lookup, prompt submission, and
-  response/error display contracts.
+- Done: a user can complete provider-backed prompt/response turns from the TUI when
+  the existing chat harness is configured with a provider.
+- Done: repeated prompt/response turns can happen without restarting the Codegeist
+  process.
+- Done: TUI prompt submission goes through `ChatHarnessService.ask(true, prompt)`.
+- Done: provider, tool/MCP, agent-loop, and session-store behavior remain
+  harness-owned.
+- Done: the TUI surfaces returned response text and handled harness failures clearly
+  enough for a terminal user.
+- Done: focused tests cover the TUI command, root view, i18n lookup, prompt
+  submission, repeated response display, blank prompts, transcript capping, and
+  handled error display contracts.
 
 ## Verification
 
@@ -77,4 +85,12 @@ task test TEST=CodegeistTerminalUiTest,TuiCommandsTest,CodegeistLocaleServiceTes
 task test TEST=VersionCommandsTests,CodegeistConfigCommandTest,AskCommandsSessionStoreTest
 ```
 
-Do not run or document `task tui-smoke`; that Taskfile entrypoint does not exist.
+Do not run or document a generic `task tui-smoke`; use `task tui-capture-smoke`
+only for documentation-preview capture artifacts.
+
+Implementation verification:
+
+- `task cli:test TEST=CodegeistTerminalUiTest,TuiCommandsTest,CodegeistLocaleServiceTest,CodegeistMessagesTest`
+  passed from the repository root with 14 tests, 0 failures, 0 errors, and 0 skipped.
+- `task test TEST=VersionCommandsTests,CodegeistConfigCommandTest,AskCommandsSessionStoreTest`
+  passed with 6 tests, 0 failures, 0 errors, and 0 skipped.

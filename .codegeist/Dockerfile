@@ -1,18 +1,16 @@
-# Dockerfile - project-local devcontainer extension for smoke and GPU tooling
+# Dockerfile - project-local devcontainer extension for GPU tooling
 #
 # Why this exists:
 # - `.devcontainer/initialize.sh` appends this file to the shared kit Dockerfile
 #   when it writes `.devcontainer/Dockerfile.merged.gen`.
-# - The devcontainer can then run shared PowerShell smoke scripts and Docker GPU
-#   workloads such as Ollama from its inner Docker daemon while keeping the shared
-#   devcontainer kit unchanged.
+# - The shared kit owns generic development tools, including terminal-capture
+#   rendering. This local extension adds NVIDIA user-space and container-runtime
+#   packages so Docker GPU workloads such as Ollama can run from the inner daemon.
 # - The NVIDIA user-space driver package version should match the host driver;
 #   the kernel driver still runs on the host and GPU devices are exposed at
 #   runtime through `.codegeist/compose.local.yml`.
 #
 # Inputs:
-# - Microsoft Debian package feed for PowerShell 7, used by cross-platform smoke
-#   scripts under `scripts/tests/`.
 # - NVIDIA_DRIVER_VERSION defaults to the currently validated host driver package
 #   version for this workstation.
 # - NVIDIA_CONTAINER_TOOLKIT_VERSION selects the inner Docker GPU runtime support.

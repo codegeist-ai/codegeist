@@ -17,7 +17,17 @@ public class CodegeistMessages {
 
     public static final String TUI_TITLE_KEY = "tui.title";
 
-    public static final String TUI_QUIT_HINT_KEY = "tui.quit.hint";
+    public static final String TUI_TRANSCRIPT_TITLE_KEY = "tui.transcript.title";
+
+    public static final String TUI_PROMPT_TITLE_KEY = "tui.prompt.title";
+
+    public static final String TUI_EMPTY_TRANSCRIPT_KEY = "tui.empty.transcript";
+
+    public static final String TUI_USER_LABEL_KEY = "tui.user.label";
+
+    public static final String TUI_ASSISTANT_LABEL_KEY = "tui.assistant.label";
+
+    public static final String TUI_ERROR_LABEL_KEY = "tui.error.label";
 
     private final MessageSource messageSource;
 

@@ -61,10 +61,13 @@ local or MCP tool activity, and final provider response to the newest session in
 read/list/glob/grep/write/edit/shell callbacks and lazily opened MCP callbacks to
 provider calls, inspects assistant tool-call messages itself, dispatches callbacks
 through `CodegeistToolRun`, appends Spring AI `ToolResponseMessage` values, and calls
-the model again until final assistant text is returned. Streaming events, permission
-prompts, prompt history, TerminalUI prompt submission, and a broader agent driver are
-not implemented. The current `tui` command only starts a minimal Spring Shell
-`TerminalUI` root view with localized Codegeist text and a `Ctrl-Q` quit binding.
+the model again until final assistant text is returned. The current `tui` command
+starts a minimal Spring Shell `TerminalUI` chat loop over the same harness: users can
+enter prompts, submit them through `ChatHarnessService.ask(true, prompt)`, see
+returned response text or handled harness failures in an in-memory transcript, and
+continue chatting without restarting the Codegeist process. Streaming events,
+permission prompts, prompt history reconstruction, tool transcript projection, and a
+broader agent driver are not implemented.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -89,7 +92,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused minimal `tui` command/root-view tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused `tui` chat-surface and prompt-submission tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, native TUI capture smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -102,6 +105,7 @@ runtime utility is wired into the app yet.
 ```text
 .github/workflows/
   release.yml
+Taskfile.yml
 app/codegeist/cli/
   pom.xml
   Taskfile.yml
@@ -111,6 +115,7 @@ scripts/tests/
   install-script-smoke.ps1
   mcp-remote-smoke.ps1
   native-smoke.ps1
+  tui-capture-smoke.ps1
   local-linux-smoke.ps1
   qemu-linux-install-smoke.sh
   qemu-windows-vm.sh
@@ -129,6 +134,8 @@ scripts/install/
   codegeist-install-linux.sh
   codegeist-install-macos.sh
   codegeist-install-windows.ps1
+docs/user/
+  codegeist-tui.md
 ```
 
 Implemented Java package:
@@ -141,7 +148,7 @@ Implemented Java package:
 | `ai.codegeist.app.mcp` | Lazy MCP adapter, prompt-scoped MCP run handle, Spring AI/MCP client factory, and closeable client handle for configured `stdio` and `streamable_http` clients |
 | `ai.codegeist.app.session` | Versioned session-store model defaulting to `.codegeist/session.json`, JSON mapper, clock component, and service for loading, saving, selecting the newest session, and appending text exchanges |
 | `ai.codegeist.app.tool` | Active workspace resolution, deterministic tool-output bounds, scoped tool runs, Codegeist-owned local read/list/glob/grep/write/edit/shell Spring AI callbacks, and recording wrappers for externally supplied MCP callbacks |
-| `ai.codegeist.app.tui` | Minimal Spring Shell `tui` command and `CodegeistTerminalUi` root view over `TerminalUIBuilder`, without chat submission or a separate agent runtime |
+| `ai.codegeist.app.tui` | Spring Shell `tui` command and `CodegeistTerminalUi` chat surface over `TerminalUIBuilder`, with prompt submission through `ChatHarnessService` and no separate agent runtime |
 | `ai.codegeist.app.i18n` | App-wide Spring resource-bundle-backed `CodegeistMessages` helper and `CodegeistLocaleService` for user-visible text and locale selection |
 
 No other `ai.codegeist.*` application packages currently exist in source code.
@@ -425,12 +432,24 @@ Current behavior:
   example `0.1.0-SNAPSHOT`. Its debug log is file-only and does not pollute
   command stdout.
 - `tui` is implemented as a Spring Shell command in `ai.codegeist.app.tui.TuiCommands`.
-  It delegates to `CodegeistTerminalUi`, which builds a Spring Shell `TerminalUI`
-  from `TerminalUIBuilder`, configures one bordered `BoxView` root, renders a
-  localized quit hint from `CodegeistMessages`, binds `Ctrl-Q` to an interrupt message,
-  and enters `TerminalUI.run()`. The current TUI does not submit prompts, stream
-  chat, show sessions, render tool activity, request permissions, or use a presenter,
-  layout service, custom JLine console, or Spring Shell control wrapper layer.
+  It delegates to `CodegeistTerminalUi`, which builds Spring Shell `TerminalUI`
+  instances from `TerminalUIBuilder`, configures a bordered `GridView` root with
+  transcript `BoxView` and prompt `InputView`, focuses the prompt, binds `Ctrl-Q` to
+  an interrupt message, and preserves the local transcript across normal
+  `TerminalUI.run()` returns or non-quit terminal interrupts. Pressing Enter on a
+  non-blank prompt calls
+  `ChatHarnessService.ask(true, prompt)`, appends returned
+  `CodegeistChatResponse.content()` values to the in-memory transcript, displays
+  handled harness failures as terminal-facing error lines, rebuilds the prompt input
+  after each submission, and allows repeated turns without restarting the Codegeist
+  process. The TUI does not stream chat, show stored sessions, render tool activity,
+  request permissions, persist UI-only state, or use a presenter, layout service,
+  custom JLine console, or Spring Shell control wrapper layer. Native TUI documentation
+  capture is covered by `scripts/tests/tui-capture-smoke.ps1`, which drives the real
+  native `tui` command through VHS with a fixture provider, uses a harmless blank
+  prompt key to advance TerminalUI's asynchronous repaint before the response
+  screenshot, and writes ignored preview artifacts under
+  `target/smoke-test/tui-capture/`.
 - `logback.xml` writes logs only to `${LOG_FILE:-logs/codegeist.log}`. Console
   output is reserved for command output, so jar `--version` smokes print only the
   version and packaged native `--show-config` smokes print only direct YAML.
@@ -580,10 +599,12 @@ checks the continue flag delegation, and checks Spring Shell parsing for both
 
 `TuiCommandsTest`, `CodegeistTerminalUiTest`, `CodegeistLocaleServiceTest`, and
 `CodegeistMessagesTest` are the focused TUI-adjacent unit tests. They verify command
-delegation, minimal root-view creation, default-locale fallback, configured locale
-selection, default resource-bundle lookup from `messages.properties`, and message
-lookup through the configured locale. The blocking `TerminalUI.run()` loop is not
-entered by unit tests.
+delegation, chat-surface creation, prompt focus, prompt submission through
+`ChatHarnessService.ask(true, prompt)`, repeated response display, handled error
+display, blank prompt behavior, transcript capping, default-locale fallback,
+configured locale selection, default resource-bundle lookup from
+`messages.properties`, and message lookup through the configured locale. The
+blocking `TerminalUI.run()` loop is not entered by unit tests.
 
 `ChatHarnessServiceTest` is the focused provider-free harness test. It uses
 hand-written fakes for provider config, agent loop service, tool run, and workspace
@@ -686,6 +707,11 @@ sequenceDiagram
 
 ## Taskfile Verification Flow
 
+The repository root `Taskfile.yml` includes `app/codegeist/cli/Taskfile.yml` under
+the `cli` namespace without aliases or flattening. Root-level task commands therefore
+use names such as `task cli:test`, while the included tasks still run from
+`app/codegeist/cli`.
+
 `app/codegeist/cli/Taskfile.yml` provides the current developer and local smoke
 entrypoints. Test and smoke helper scripts live under `scripts/tests/`.
 
@@ -710,6 +736,19 @@ plus `--show-config`.
 `task native-smoke` and the Linux smoke entrypoint. The wrapper optionally builds
 the native executable and calls `artifact-smoke.ps1 -Platform linux-x64`; ask
 coverage stays on the deterministic fixture-backed file-edit and shell harnesses.
+
+`scripts/tests/tui-capture-smoke.ps1` is the native TUI documentation-capture
+smoke used by `task tui-capture-smoke` and `task docs`. It optionally builds the
+native executable, starts a localhost-only Ollama-compatible fixture provider,
+writes a temporary direct `codegeist.yml`, generates a VHS tape, drives
+`codegeist tui` through VHS, submits one prompt, waits for the fixture response,
+uses a blank-space key on the reset prompt to advance TerminalUI's asynchronous
+read/display loop, exits with `Ctrl-Q`, verifies the persisted session text,
+renders local PNG previews through VHS, and writes ignored preview artifacts under
+`target/smoke-test/tui-capture/`. Selected screenshots copied from a passing
+capture run live under `docs/user/assets/tui/` for the user guide; generated
+`drive-tui.tape`, `vhs-output.log`, and `manifest.md` remain local docs preview
+output.
 
 `scripts/tests/smoke-common.ps1` is the shared helper layer for smoke status
 files, duration output, environment overrides, command steps, and readiness
@@ -759,12 +798,19 @@ Default mode requires Linux and Windows to pass and makes native checks required
 by default. `-AllowSkips` is the developer-only mode for machines without ISO
 download or VM prerequisites.
 
+The table below names tasks from `app/codegeist/cli/Taskfile.yml`; from the
+repository root, run the same commands with the `cli:` namespace, for example
+`task cli:test` or `task cli:tui-capture-smoke`.
+
 | Task | Command | Proves |
 | --- | --- | --- |
 | `task test` | Runs `ollama-start` with `OLLAMA_ENTER=false`, then `mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test` | Taskfile-managed Ollama startup, Maven test lifecycle, Spring context-load test, version output test, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and optional focused selector such as `task test TEST=CodegeistApplicationTests` |
 | `task build` | `mvn --batch-mode --no-transfer-progress -DskipTests clean package` | Executable jar packaging |
+| `task tui` | Runs `build`, then `java -jar target/codegeist.jar tui` | Starts the packaged TUI from the latest local source build |
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
 | `task native-smoke` | Runs `scripts/tests/native-smoke.ps1 -BuildNative` | Linux native archive is checked through the shared artifact harness: package, unpack, packaged `--version`, packaged `--show-config`, command logs, ask-driven file-edit side effects, and ask-driven shell side effects |
+| `task tui-capture-smoke` | Runs `scripts/tests/tui-capture-smoke.ps1 -BuildNative` | Native `tui` command renders through VHS, submits one deterministic fixture-backed prompt, persists session text, and generates ignored local TUI preview artifacts |
+| `task docs` | Runs `tui-capture-smoke`, then reports the generated artifact path | Current local documentation preview gate; no static docs site build exists yet |
 | `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.ps1` | Local Linux Maven tests, jar packaging as a build gate, and shared artifact-harness native smoke when native-image is available |
 | `task qemu-linux-install-smoke` | Runs `task native`, then `scripts/tests/qemu-linux-install-smoke.sh smoke` | Fresh Linux QEMU guest verifies the curl-downloadable Linux install script against local release-shaped assets and checks the installed command |
 | `task mcp-remote-smoke` | Runs `scripts/tests/mcp-remote-smoke.ps1` | Docker-backed local MCP server fixture, real `streamable_http` MCP callback discovery, direct deterministic callback invocation, local Ollama-backed `ask` invocation of the remote MCP tool, session `ToolSessionPart` persistence, and container cleanup outside the default test path |
@@ -850,7 +896,7 @@ Java source:
   are explicit host-side argv prefixes, not a Codegeist-owned sandbox policy.
 - Storage ports or adapters beyond local `.codegeist/session.json` persistence.
 - CLI/Spring Shell commands beyond `--version`, `--show-config`, `ask`, and the
-  minimal `tui` launcher.
+  `tui` chat loop.
 - Headless server endpoints.
 - Vaadin client.
 - PF4J plugin loading.

@@ -6,6 +6,8 @@ User-facing usage notes for Codegeist.
 
 - `install-from-github-releases.md` - install Codegeist from GitHub Release assets
   on Linux, macOS, or Windows.
+- `codegeist-tui.md` - start and use the current terminal UI with screenshots,
+  controls, session behavior, and local documentation-preview capture notes.
 
 ## Ask Command Sessions
 

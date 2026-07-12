@@ -13,12 +13,14 @@ This child closes T007 only after resumable `ask -c/--continue`, MCP config,
 read/write tools, patch/edit, shell, Codegeist-owned agent control loop, a usable
 TUI chat loop, and `.codegeist/session.json` storage are all proven together.
 
-Do not start this verification pass while `T007_06` is still only the minimal TUI
-launcher. Complete or explicitly split the TUI chat loop first.
+`T007_06` now implements the minimal TUI chat loop, so this verification pass can
+start from the current source instead of waiting on another TUI implementation
+slice.
 
-Use `T007_06_add-terminalui-chat-harness/implementation-plan.md` as the expected
-TUI chat-loop handoff when deciding whether the TerminalUI scope is complete enough
-for this final verification pass.
+Use `T007_06_add-terminalui-chat-harness/task.md` as the current-state TUI contract
+and `T007_06_add-terminalui-chat-harness/implementation-plan.md` as the historical
+API and implementation handoff when checking whether the TerminalUI scope remains
+inside the intended small Spring Shell approach.
 
 ## Scope
 
@@ -59,6 +61,7 @@ task test TEST=<mcp-and-readwrite-tools-test-selector>
 task test TEST=<patch-shell-tools-test-selector>
 task test TEST=<agent-loop-test-selector>
 task test TEST=<terminalui-harness-test-selector>
+task tui-capture-smoke
 task test
 ```
 
