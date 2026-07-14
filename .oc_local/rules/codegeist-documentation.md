@@ -30,6 +30,12 @@ documentation, documentation preview artifacts, or docs-related Taskfile entries
 - Generated TUI preview artifacts stay under
   `app/codegeist/cli/target/smoke-test/tui-capture/` until a future task explicitly
   promotes selected assets into committed documentation paths.
+- `task tui-hello-world-smoke` is the explicit README-preview exception: it records
+  MP4/WebM smoke evidence under `target/smoke-test/tui-hello-world/` and regenerates
+  the committed `docs/user/assets/tui/tui-hello-world.gif` preview from the recorded
+  MP4. Keep the README embedding on that GIF because GitHub strips inline HTML
+  `<video>` tags from repository README rendering; do not link the local smoke MP4
+  from `README.md` unless a future task explicitly changes that policy.
 - Do not add or resurrect a generic `task tui-smoke`; use the documentation-specific
   `tui-capture-smoke` name for this workflow.
 - Do not create `docs/user/assets/` or copy generated images into committed docs

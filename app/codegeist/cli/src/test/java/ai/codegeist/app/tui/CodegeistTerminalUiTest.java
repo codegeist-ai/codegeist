@@ -7,6 +7,8 @@ import ai.codegeist.app.chat.ChatHarnessService;
 import ai.codegeist.app.chat.CodegeistChatResponse;
 import ai.codegeist.app.i18n.CodegeistLocaleService;
 import ai.codegeist.app.i18n.CodegeistMessages;
+import ai.codegeist.app.session.ToolSessionPart;
+import ai.codegeist.app.session.ToolSessionPart.ToolSessionPartStatus;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,16 +64,41 @@ class CodegeistTerminalUiTest {
     }
 
     @Test
-    void typedCharactersReachFocusedPromptInputThroughRootHandler() throws IOException {
+    void typedCharactersAndSpacesReachFocusedPromptInputThroughRootHandler() throws IOException {
         CodegeistTerminalUi terminalUi = new CodegeistTerminalUi(null, messages(), new StubChatHarnessService());
         TerminalUI springTerminalUi = terminalUi();
         CodegeistTerminalUi.TuiChatState state = new CodegeistTerminalUi.TuiChatState();
         CodegeistTerminalUi.TuiChatSurface surface = terminalUi.installChatSurface(springTerminalUi, state);
 
         surface.root().getKeyHandler().handle(KeyHandler.argsOf(KeyEvent.of('h')));
+        surface.root().getKeyHandler().handle(KeyHandler.argsOf(KeyEvent.of(' ')));
         surface.root().getKeyHandler().handle(KeyHandler.argsOf(KeyEvent.of('i')));
 
-        assertThat(surface.promptInput().getInputText()).isEqualTo("hi");
+        assertThat(surface.promptInput().getInputText()).isEqualTo("h i");
+    }
+
+    @Test
+    void displaysToolPartsBeforeAssistantResponse() throws IOException {
+        StubChatHarnessService chatHarnessService = new StubChatHarnessService();
+        chatHarnessService.respondWith(new CodegeistChatResponse(
+                "Done",
+                List.of(toolPart("codegeist_shell", "Command: sh hello-world.sh\nExit code: 0\nOutput:\nHello World\n"))));
+        CodegeistTerminalUi terminalUi = new CodegeistTerminalUi(null, messages(), chatHarnessService);
+        TerminalUI springTerminalUi = terminalUi();
+        CodegeistTerminalUi.TuiChatState state = new CodegeistTerminalUi.TuiChatState();
+        terminalUi.installChatSurface(springTerminalUi, state);
+
+        terminalUi.submitPrompt(springTerminalUi, state, "Run hello world");
+
+        assertThat(terminalUi.renderTranscriptLines(state, 20, 120))
+                .containsExactly(
+                        "You: Run hello world",
+                        "Tool: codegeist_shell completed",
+                        "Command: sh hello-world.sh",
+                        "Exit code: 0",
+                        "Output:",
+                        "Hello World",
+                        "Codegeist: Done");
     }
 
     @Test
@@ -190,7 +217,16 @@ class CodegeistTerminalUiTest {
         messageSource.addMessage(CodegeistMessages.TUI_USER_LABEL_KEY, locale, "You");
         messageSource.addMessage(CodegeistMessages.TUI_ASSISTANT_LABEL_KEY, locale, "Codegeist");
         messageSource.addMessage(CodegeistMessages.TUI_ERROR_LABEL_KEY, locale, "Error");
+        messageSource.addMessage(CodegeistMessages.TUI_TOOL_LABEL_KEY, locale, "Tool");
         return new CodegeistMessages(messageSource, localeService);
+    }
+
+    private static ToolSessionPart toolPart(String toolName, String outputPreview) {
+        ToolSessionPart part = new ToolSessionPart();
+        part.setTool(toolName);
+        part.setStatus(ToolSessionPartStatus.completed);
+        part.setOutputPreview(outputPreview);
+        return part;
     }
 
     private static final class StubChatHarnessService extends ChatHarnessService {
@@ -204,6 +240,10 @@ class CodegeistTerminalUiTest {
         }
 
         private void respondWith(String response) {
+            respondWith(new CodegeistChatResponse(response));
+        }
+
+        private void respondWith(CodegeistChatResponse response) {
             outcomes.add(response);
         }
 
@@ -219,7 +259,7 @@ class CodegeistTerminalUiTest {
             if (outcome instanceof RuntimeException exception) {
                 throw exception;
             }
-            return new CodegeistChatResponse((String) outcome);
+            return (CodegeistChatResponse) outcome;
         }
     }
 }

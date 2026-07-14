@@ -92,7 +92,7 @@ The current application build is defined by `app/codegeist/cli/pom.xml`.
 | GraalVM | Native Maven profile using `native-maven-plugin` `0.10.6` |
 | Packaging | Spring Boot executable jar named `target/codegeist.jar` |
 | Release CI | `.github/workflows/release.yml` validates versioned JVM and native artifacts on GitHub-hosted Linux, Windows, and macOS runners, runs matching install-script smokes on native runners, stages install scripts, and publishes GitHub Releases only from `v*` tags |
-| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused `tui` chat-surface and prompt-submission tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, native TUI capture smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
+| Tests | Spring Boot context-load test, Spring-context command tests, focused version output test, focused config command test, focused `tui` chat-surface and prompt-submission tests, focused `CodegeistMessages` resource-bundle and locale test, focused config service test, focused provider dispatch test, focused config SpEL test, focused workspace/tools config, resolver, output-bound, and local file/shell-tool tests, focused edit-tool tests, focused MCP adapter and tool-service tests, focused session store tests, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, focused real local Ollama `ask` command test, focused local Ollama provider integration test behind an explicit selector, Docker-backed MCP remote smoke, native version/config/ask smoke, native file-edit encoding smoke, native shell-tool ask smoke, native TUI capture smoke, native TUI hello-world video smoke, release-runner install-script smoke, local Linux smoke, opt-in Linux QEMU install smoke, Windows QEMU smoke, and final local smoke suite |
 
 Spring AI provider starters are not present. The Ollama and OpenAI provider
 dependencies are used programmatically instead of through global Spring AI
@@ -116,6 +116,7 @@ scripts/tests/
   mcp-remote-smoke.ps1
   native-smoke.ps1
   tui-capture-smoke.ps1
+  tui-hello-world-smoke.ps1
   local-linux-smoke.ps1
   qemu-linux-install-smoke.sh
   qemu-windows-vm.sh
@@ -434,17 +435,19 @@ Current behavior:
 - `tui` is implemented as a Spring Shell command in `ai.codegeist.app.tui.TuiCommands`.
   It delegates to `CodegeistTerminalUi`, which builds Spring Shell `TerminalUI`
   instances from `TerminalUIBuilder`, configures a bordered `GridView` root with
-  transcript `BoxView` and prompt `InputView`, focuses the prompt, binds `Ctrl-Q` to
-  an interrupt message, and preserves the local transcript across normal
+  transcript `BoxView` and a prompt `InputView` wrapper that preserves typed ASCII
+  spaces, focuses the prompt, binds `Ctrl-Q` to an interrupt message, and preserves
+  the local transcript across normal
   `TerminalUI.run()` returns or non-quit terminal interrupts. Pressing Enter on a
   non-blank prompt calls
   `ChatHarnessService.ask(true, prompt)`, appends returned
   `CodegeistChatResponse.content()` values to the in-memory transcript, displays
   handled harness failures as terminal-facing error lines, rebuilds the prompt input
-  after each submission, and allows repeated turns without restarting the Codegeist
-  process. The TUI does not stream chat, show stored sessions, render tool activity,
-  request permissions, persist UI-only state, or use a presenter, layout service,
-  custom JLine console, or Spring Shell control wrapper layer. Native TUI documentation
+  after each submission, renders bounded `ToolSessionPart` previews for tools used
+  during the prompt, and allows repeated turns without restarting the Codegeist
+  process. The TUI does not stream chat, show stored sessions, request permissions,
+  persist UI-only state, or use a presenter, layout service, custom JLine console,
+  or Spring Shell control wrapper layer. Native TUI documentation
   capture is covered by `scripts/tests/tui-capture-smoke.ps1`, which drives the real
   native `tui` command through VHS with a fixture provider, uses a harmless blank
   prompt key to advance TerminalUI's asynchronous repaint before the response
@@ -489,7 +492,8 @@ Current behavior:
   session, message, and existing part model entries stay records or Jackson-bound
   classes as implemented. The JSON mapper registers Java time support, emits ISO
   instants, omits null fields, and writes inspectable JSON. Native reflection
-  metadata includes the session model types and part implementations.
+  metadata includes the session model types, part implementations, and local tool
+  input records used by native fixture-backed tool-call smokes.
   `CodegeistSpringAppProperties` binds Spring application configuration under
   `codegeist.*`. It owns the built-in default `.codegeist/session.json` path and
   the optional app-wide `codegeist.locale` setting used by
@@ -749,6 +753,19 @@ renders local PNG previews through VHS, and writes ignored preview artifacts und
 capture run live under `docs/user/assets/tui/` for the user guide; generated
 `drive-tui.tape`, `vhs-output.log`, and `manifest.md` remain local docs preview
 output.
+
+`scripts/tests/tui-hello-world-smoke.ps1` is the native TUI hello-world video smoke
+used by `task tui-hello-world-smoke`. It optionally builds the native executable,
+starts a deterministic Ollama-compatible fixture provider, writes a temporary direct
+`codegeist.yml`, generates a VHS tape, records MP4/WebM output from the real
+`codegeist tui` surface, submits a prompt that asks Codegeist to create
+`hello-world.sh` with `echo` and run `sh hello-world.sh`, then verifies the workspace
+file, rerun shell output, visible transcript output including `Exit code: 0`,
+completed `codegeist_write` and `codegeist_shell` session tool parts, and absence
+of representative runtime/config fields in the session store. It also regenerates
+`docs/user/assets/tui/tui-hello-world.gif` from the MP4 for the README preview. Its
+other artifacts stay under `target/smoke-test/tui-hello-world/` as raw demo
+evidence, not storyboard or narration content.
 
 `scripts/tests/smoke-common.ps1` is the shared helper layer for smoke status
 files, duration output, environment overrides, command steps, and readiness

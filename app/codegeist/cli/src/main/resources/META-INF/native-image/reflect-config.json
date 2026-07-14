@@ -100,6 +100,36 @@
     "allPublicMethods": true
   },
   {
+    "name": "ai.codegeist.app.tool.CodegeistReadFileTool$ReadToolInput",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.tool.CodegeistListFileTool$ListToolInput",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.tool.CodegeistGlobFileTool$GlobToolInput",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.tool.CodegeistGrepFileTool$GrepToolInput",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "ai.codegeist.app.tool.CodegeistWriteFileTool$WriteToolInput",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  },
+  {
     "name": "ai.codegeist.app.tool.CodegeistEditFileTool$EditToolInput",
     "allDeclaredConstructors": true,
     "allDeclaredFields": true,

@@ -15,6 +15,11 @@ Current smoke entrypoints:
 - `task tui-capture-smoke` - build the native executable, drive `codegeist tui`
   through VHS with a deterministic fixture provider, verify persisted session text,
   and generate local PNG preview artifacts under `target/`.
+- `task tui-hello-world-smoke` - build the native executable, start a deterministic
+  Ollama-compatible fixture provider, drive `codegeist tui` through VHS, record
+  MP4/WebM output, ask the TUI to create and run `hello-world.sh`, and verify the
+  resulting workspace, visible shell transcript output, and session store tool
+  activity.
 - `task local-linux-smoke` - run JVM tests, build the jar as a build gate, and run
   native checks when required or available. The jar is not smoke-tested.
 - `task mcp-remote-smoke` - build a local Docker MCP server fixture, start it on a
@@ -50,6 +55,88 @@ smoke. It uses Charmbracelet VHS to drive the real native TUI through a terminal
 renderer, capture PNG screenshots, and write a manifest for local documentation
 previews. VHS requires `vhs`, `ffmpeg`, and `ttyd` on `PATH`; the shared
 `.devcontainer` release kit provides those tools after a rebuild.
+`scripts/tests/tui-hello-world-smoke.ps1` is the native TUI hello-world video
+smoke. It uses VHS to record MP4/WebM output from a real native TUI session while a
+deterministic Ollama-compatible fixture provider selects `codegeist_write` and
+`codegeist_shell`, then derives the README GIF preview from the recorded MP4. The
+script verifies the created `hello-world.sh`, reruns `sh hello-world.sh`, waits for
+visible `Exit code: 0` output in the recorded TUI, and checks completed
+`codegeist_write` plus `codegeist_shell` `ToolSessionPart` entries.
+
+## Creating The TUI Hello World Video
+
+Use the smoke entrypoint when you need to create or refresh the native TUI demo
+video. Run it from `app/codegeist/cli`:
+
+```bash
+task tui-hello-world-smoke
+```
+
+The task builds the native executable, starts a localhost-only Ollama-compatible
+fixture provider, writes a temporary `codegeist.yml`, generates a VHS tape, drives
+the real `codegeist tui` command, creates the primary MP4 video artifact, writes a
+secondary WebM variant, regenerates the README GIF preview from the MP4, and then
+verifies the workspace plus session-store side effects. The recorded prompt asks
+Codegeist to create `hello-world.sh` with `echo`, run `sh hello-world.sh`, and
+display the shell result in the TUI transcript. A passing run has already waited
+for visible `Exit code: 0` output before VHS stops recording.
+
+Generated artifacts are ignored build output under:
+
+```text
+app/codegeist/cli/target/smoke-test/tui-hello-world/
+```
+
+Important files in that directory:
+
+- `tui-hello-world.mp4` - primary video artifact.
+- `tui-hello-world.webm` - browser-friendly video artifact.
+- `gif-output.log` - FFmpeg palette and GIF conversion log.
+- `drive-tui-hello-world.tape` - generated VHS script for the recorded run.
+- `vhs-output.log` - VHS command trace and render log.
+- `workspace/hello-world.sh` - script created by the recorded TUI session.
+- `session/session.json` - persisted prompt, tool parts, and assistant response.
+- `run-summary.md` - compact run evidence for local review.
+
+To watch the latest MP4 locally:
+
+```bash
+xdg-open app/codegeist/cli/target/smoke-test/tui-hello-world/tui-hello-world.mp4
+```
+
+To watch the WebM variant:
+
+```bash
+xdg-open app/codegeist/cli/target/smoke-test/tui-hello-world/tui-hello-world.webm
+```
+
+Do not treat `drive-tui-hello-world.tape` as a standalone durable source file. The
+tape is generated for the current smoke run and depends on the temporary
+localhost fixture URL written into the generated `codegeist.yml`. After the smoke
+stops, that fixture provider is gone. To refresh the video reliably, rerun
+`task tui-hello-world-smoke` so the fixture provider, config, tape, recordings,
+workspace, and session evidence are recreated together.
+
+For quick script iteration after a native binary already exists, run the script
+without rebuilding from `app/codegeist/cli`:
+
+```bash
+pwsh -NoProfile -File ../../../scripts/tests/tui-hello-world-smoke.ps1
+```
+
+Use `task tui-hello-world-smoke` again before handing off a video, because that path
+proves the current source builds into the native executable used for the recording.
+
+The flow also refreshes the repo-owned README preview GIF:
+
+```text
+docs/user/assets/tui/tui-hello-world.gif
+```
+
+GitHub README rendering does not support inline HTML `<video>` playback for this
+repository asset path; GitHub's Markdown renderer strips the tag. Use that GIF as
+the inline README preview. The MP4 stays useful as a local smoke artifact, but the
+README intentionally does not link to it.
 
 ## Output Contract
 
@@ -64,6 +151,7 @@ Install status: passed|failed|skipped
 Native reason: none|<reason>
 MCP remote smoke status: passed|failed
 TUI capture smoke status: passed|failed
+TUI hello-world smoke status: passed|failed
 ```
 
 Smoke output must also include duration lines for every meaningful subcheck. Use
@@ -103,6 +191,12 @@ Labels should be stable and specific, for example:
 - `tui capture native run`
 - `tui capture artifact generation`
 - `tui capture smoke total`
+- `tui hello-world native compile`
+- `tui hello-world fixture start`
+- `tui hello-world native recording`
+- `tui hello-world gif generation`
+- `tui hello-world assertions`
+- `tui hello-world smoke total`
 - `windows native compile`
 - `windows native archive smoke`
 - `windows native version smoke`
@@ -157,6 +251,22 @@ Labels should be stable and specific, for example:
   `vhs-output.log`, and `manifest.md`. These artifacts are ignored build output;
   selected screenshots promoted for the TUI user guide live under
   `docs/user/assets/tui/`.
+- TUI hello-world smoke runs through `scripts/tests/tui-hello-world-smoke.ps1`. The
+  script builds or uses the native executable, starts a deterministic
+  Ollama-compatible fixture provider, writes a temporary direct `codegeist.yml`,
+  generates a VHS tape, records the native `codegeist tui` session as
+  `tui-hello-world.mp4` and `tui-hello-world.webm`, regenerates
+  `docs/user/assets/tui/tui-hello-world.gif` from the MP4, asks Codegeist to create
+  `hello-world.sh` with `echo` and run `sh hello-world.sh`, waits for visible
+  `Exit code: 0` output in the transcript, then verifies the script output and
+  persisted tool parts.
+  Expected artifacts live under
+  `app/codegeist/cli/target/smoke-test/tui-hello-world/` and include
+  `drive-tui-hello-world.tape`, `tui-hello-world.mp4`, `tui-hello-world.webm`,
+  `vhs-output.log`, `gif-output.log`, `workspace/`, `session/session.json`, and
+  `run-summary.md`. These artifacts are ignored build output and are intended as raw
+  reproducible evidence for later demo or video-generation work, not as a storyboard
+  or narration script.
 - Local Linux and Windows platform smokes do not run a provider-only native ask
   check. The native ask coverage stays on deterministic fixture-backed file-edit and
   shell harnesses so smoke results do not depend on local model wording when no tool

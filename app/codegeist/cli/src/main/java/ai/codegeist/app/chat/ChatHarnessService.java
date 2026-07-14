@@ -3,10 +3,12 @@ package ai.codegeist.app.chat;
 import ai.codegeist.app.config.CodegeistConfig;
 import ai.codegeist.app.config.ProviderConfig;
 import ai.codegeist.app.session.SessionStoreService;
+import ai.codegeist.app.session.ToolSessionPart;
 import ai.codegeist.app.tool.CodegeistToolRun;
 import ai.codegeist.app.tool.CodegeistToolService;
 import ai.codegeist.app.tool.WorkspaceResolver;
 import java.nio.file.Path;
+import java.util.List;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,12 +49,13 @@ public class ChatHarnessService {
                     providerConfig,
                     new CodegeistChatRequest(model, prompt),
                     toolRun.executionContext());
+            List<ToolSessionPart> completedToolParts = toolRun.completedToolParts();
             sessionStoreService.saveExchangeToCurrentSession(
                     continueSession,
                     prompt,
                     response.content(),
-                    toolRun.completedToolParts());
-            return response;
+                    completedToolParts);
+            return new CodegeistChatResponse(response.content(), completedToolParts);
         }
     }
 }

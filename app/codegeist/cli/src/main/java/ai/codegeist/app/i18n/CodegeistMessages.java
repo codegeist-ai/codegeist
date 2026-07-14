@@ -29,6 +29,8 @@ public class CodegeistMessages {
 
     public static final String TUI_ERROR_LABEL_KEY = "tui.error.label";
 
+    public static final String TUI_TOOL_LABEL_KEY = "tui.tool.label";
+
     private final MessageSource messageSource;
 
     private final CodegeistLocaleService localeService;

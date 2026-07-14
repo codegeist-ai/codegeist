@@ -1,4 +1,4 @@
-# T007_07 Verify Session Store Tool Harness
+# T007_07 Verify Native TUI Hello World Tool Harness
 
 Parent: `T007_build-codegeist-runtime-harness`
 
@@ -6,68 +6,115 @@ Status: open
 
 ## Goal
 
-Verify the complete T007 session-store tool harness and update current-state
-documentation.
+Verify the native Codegeist TUI path with one small, video-recordable local coding
+task:
 
-This child closes T007 only after resumable `ask -c/--continue`, MCP config,
-read/write tools, patch/edit, shell, Codegeist-owned agent control loop, a usable
-TUI chat loop, and `.codegeist/session.json` storage are all proven together.
+```text
+Create a shell script named hello-world.sh that prints Hello World using echo, then
+run it with sh hello-world.sh.
+```
 
-`T007_06` now implements the minimal TUI chat loop, so this verification pass can
-start from the current source instead of waiting on another TUI implementation
-slice.
+This task is intentionally smaller than a complete application-development demo. It
+exists to prove that the native `codegeist tui` command can accept a prompt through
+the real Spring Shell `TerminalUI`, let a deterministic Ollama-compatible fixture
+provider select tools, create a file, run a shell command, show the tool preview and
+final assistant response, and persist tool activity in `.codegeist/session.json`.
 
-Use `T007_06_add-terminalui-chat-harness/task.md` as the current-state TUI contract
-and `T007_06_add-terminalui-chat-harness/implementation-plan.md` as the historical
-API and implementation handoff when checking whether the TerminalUI scope remains
-inside the intended small Spring Shell approach.
+The capture should also be useful as reproducible evidence for a later
+AI-generated video. This task must not create a storyboard, voiceover, YouTube
+script, subtitle file, thumbnail prompt, or other video-production content.
+
+## Implemented Entry Point
+
+The smoke entrypoint is:
+
+```bash
+task tui-hello-world-smoke
+```
+
+Run it from `app/codegeist/cli`. The task builds the native executable and then
+runs `scripts/tests/tui-hello-world-smoke.ps1 -BuildNative`.
+
+The script drives the native app through Charmbracelet VHS and writes ignored build
+artifacts under:
+
+```text
+app/codegeist/cli/target/smoke-test/tui-hello-world/
+```
+
+Expected artifacts include:
+
+- `drive-tui-hello-world.tape` - generated VHS script.
+- `tui-hello-world.mp4` - MP4 terminal recording.
+- `tui-hello-world.webm` - WebM terminal recording.
+- `vhs-output.log` - VHS stdout/stderr.
+- `workspace/hello-world.sh` - file created by the TUI-guided tool run.
+- `session/session.json` - persisted Codegeist session store.
+- `run-summary.md` - compact run evidence for later demo review.
 
 ## Scope
 
-- Run focused tests from `T007_02` through `T007_06`.
-- Run the broader `task test` entrypoint from `app/codegeist/cli`.
-- Add local-provider smoke only if the implementation needs a real local Ollama call.
-- Update `docs/developer/architecture/architecture.md` with implemented session
-  store, MCP, tools, patch/edit, shell, agent loop, and TUI behavior.
-- Confirm no database, server runtime, remote sync, API/SDK, Vaadin, PF4J, JBang,
-  LSP, skills, memory, or subagents were introduced accidentally.
+- Use the native executable, not the JVM `java -jar` path.
+- Drive the real `codegeist tui` command through VHS.
+- Use a deterministic localhost Ollama-compatible fixture provider so tool selection
+  stays reproducible.
+- Prompt the model to use `codegeist_write` to create `hello-world.sh`.
+- Prompt the model to use `codegeist_shell` to run `sh hello-world.sh`.
+- Assert the workspace side effects after the TUI recording finishes.
+- Assert the session store contains completed `codegeist_write` and
+  `codegeist_shell` `ToolSessionPart` entries.
+- Wait for visible `Exit code: 0` shell output in the recorded TUI transcript.
+- Keep generated recordings and workspace/session evidence under ignored
+  `target/smoke-test/` output.
 
 ## Acceptance Criteria
 
-- Focused session-store tests pass.
-- Focused MCP/read/write tool tests pass.
-- Focused patch/edit and shell tests pass.
-- Focused agent-loop tests pass.
-- Focused TerminalUI chat tests or bounded TUI smoke checks pass.
-- `task test` passes from `app/codegeist/cli`.
-- Architecture docs match the implemented current state.
-- T007 parent acceptance criteria are satisfied.
+- `task tui-hello-world-smoke` builds or uses the native executable and records the
+  TUI run through VHS.
+- The recorded TUI prompt asks Codegeist to create `hello-world.sh` with `echo` and
+  run it with `sh hello-world.sh`.
+- `workspace/hello-world.sh` exists after the run.
+- `sh hello-world.sh` prints exactly `Hello World` with exit code 0 when run from
+  the smoke workspace.
+- `.codegeist/session.json` is written under the smoke session directory.
+- The session store contains the submitted TUI prompt.
+- The session store contains a completed `ToolSessionPart` for `codegeist_write`.
+- The session store contains a completed `ToolSessionPart` for `codegeist_shell`
+  whose preview includes `Hello World`.
+- The recorded TUI transcript shows the completed shell command, exit code, and
+  `Hello World` output instead of only the final assistant message.
+- The session store does not persist provider config, selected provider/model,
+  enabled tool definitions, or runtime status.
+- The smoke writes MP4/WebM recording artifacts that can be used later as raw demo
+  evidence.
 
 ## Non-Goals
 
-- Do not add new runtime features during final verification.
-- Do not run hosted provider tests unless a future task explicitly opts into a safe
-  remote provider category.
-- Do not add native or Windows smoke requirements unless packaging or command runtime
-  behavior changed in a way that requires them.
+- Do not implement a complete app-development scenario in this task.
+- Do not include MCP in this smoke. `task mcp-remote-smoke` remains the separate MCP
+  verification path.
+- Do not add hosted-provider calls.
+- Do not add a new TUI architecture, tool timeline, streaming UI, permission UI,
+  session browser, or persisted TUI state.
+- Do not generate storyboard, voiceover, subtitles, thumbnail prompts, or YouTube
+  script files.
 
 ## Verification
 
-Candidate commands from `app/codegeist/cli`:
+Primary command from `app/codegeist/cli`:
 
 ```bash
-task test TEST=<session-store-test-selector>
-task test TEST=<mcp-and-readwrite-tools-test-selector>
-task test TEST=<patch-shell-tools-test-selector>
-task test TEST=<agent-loop-test-selector>
-task test TEST=<terminalui-harness-test-selector>
-task tui-capture-smoke
-task test
+task tui-hello-world-smoke
 ```
 
-Use local provider verification only when the implementation needs a real local
-Ollama call:
+Useful focused JVM regression checks after script or TUI changes:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=<local-session-store-harness-selector>
+task test TEST=CodegeistTerminalUiTest,TuiCommandsTest,ChatHarnessServiceTest,CodegeistAgentLoopServiceTest,CodegeistLocalToolsTest
+```
+
+The broader suite remains:
+
+```bash
+task test
 ```

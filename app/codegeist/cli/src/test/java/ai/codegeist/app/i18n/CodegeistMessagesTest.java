@@ -22,6 +22,7 @@ class CodegeistMessagesTest {
         assertThat(messages.get(CodegeistMessages.TUI_USER_LABEL_KEY)).isEqualTo("You");
         assertThat(messages.get(CodegeistMessages.TUI_ASSISTANT_LABEL_KEY)).isEqualTo("Codegeist");
         assertThat(messages.get(CodegeistMessages.TUI_ERROR_LABEL_KEY)).isEqualTo("Error");
+        assertThat(messages.get(CodegeistMessages.TUI_TOOL_LABEL_KEY)).isEqualTo("Tool");
     }
 
     @Test

@@ -67,16 +67,18 @@
 - `app/codegeist/cli` now has a minimal `tui` Spring Shell chat loop in
   `ai.codegeist.app.tui.TuiCommands`. It delegates to `CodegeistTerminalUi`, which
   builds Spring Shell `TerminalUI` instances, configures a bordered `GridView` root
-  with a transcript `BoxView` and prompt `InputView`, focuses the prompt, binds
-  `Ctrl-Q` to interrupt the TUI loop, and preserves local chat state across normal
+  with a transcript `BoxView` and a prompt `InputView` wrapper that preserves typed
+  ASCII spaces, focuses the prompt, binds `Ctrl-Q` to interrupt the TUI loop, and
+  preserves local chat state across normal
   `TerminalUI.run()` returns. Pressing Enter on a non-blank prompt calls
   `ChatHarnessService.ask(true, prompt)`, appends returned
   `CodegeistChatResponse.content()` values or handled harness failures to an
-  in-memory transcript, rebuilds the prompt input after each submission, and supports
+  in-memory transcript, renders bounded `ToolSessionPart` previews for tools used
+  during the prompt, rebuilds the prompt input after each submission, and supports
   repeated turns without restarting the Codegeist process. It does not stream chat,
-  project stored sessions, render tool activity, request permissions, persist
-  UI-only state, or use a presenter, layout service, custom JLine console, Spring
-  Shell control wrapper package, virtual-terminal smoke, `task tui-smoke`,
+  project stored sessions, request permissions, persist UI-only state, or use a
+  presenter, layout service, custom JLine console, Spring Shell control wrapper
+  package, virtual-terminal smoke, `task tui-smoke`,
   `docs/developer/architecture/terminal-ui.md`, or editable TerminalUI sketch.
   `CodegeistLocaleService` uses optional app-wide `codegeist.locale` and otherwise
   falls back to the JVM default locale.
@@ -327,8 +329,8 @@
 - The repository root `Taskfile.yml` includes `app/codegeist/cli/Taskfile.yml`
   under the `cli` namespace without aliases or flattening, so root commands use
   `task cli:<name>`. The CLI Taskfile provides `test`, `build`, `run`, `tui`,
-  `native`, `native-smoke`, `tui-capture-smoke`, `docs`, `local-linux-smoke`,
-  `mcp-remote-smoke`, `qemu-windows-smoke`, `final-smoke-suite`, and
+  `native`, `native-smoke`, `tui-capture-smoke`, `tui-hello-world-smoke`, `docs`,
+  `local-linux-smoke`, `mcp-remote-smoke`, `qemu-windows-smoke`, `final-smoke-suite`, and
   `ollama-start`. `task cli:tui` builds the jar before launching the TUI so the
   prompt surface is not stale.
   Local smoke scripts live under `scripts/tests/`. `task test` delegates to Maven
@@ -348,11 +350,12 @@
   native, Windows QEMU native, and release CI smokes use the same artifact harness
   without a provider-only native ask check. Native ask smokes require GraalVM
   reflection metadata for object-valued tool inputs such as
-  `CodegeistEditFileTool$EditToolInput`, `$EditEntryInput`, and
-  `CodegeistShellTool$ShellToolInput`; without it, the native binary records
-  `Invalid tool input JSON` for object-valued fixture tool arguments. The current
-  `task native-smoke` path passes with the edit and shell metadata. Ask-driven
-  native coverage stays on deterministic fixture-backed file-edit and shell paths
+  `CodegeistReadFileTool$ReadToolInput`, `CodegeistListFileTool$ListToolInput`,
+  `CodegeistGlobFileTool$GlobToolInput`, `CodegeistGrepFileTool$GrepToolInput`,
+  `CodegeistWriteFileTool$WriteToolInput`, `CodegeistEditFileTool$EditToolInput`,
+  `$EditEntryInput`, and `CodegeistShellTool$ShellToolInput`; without it, the native
+  binary records `Invalid tool input JSON` for object-valued fixture tool arguments.
+  Ask-driven native coverage stays on deterministic fixture-backed local tool paths
   where tool use is expected.
   `tui-capture-smoke` runs `scripts/tests/tui-capture-smoke.ps1`: it builds the
   native binary, drives the real native `codegeist tui` command through
@@ -366,6 +369,16 @@
   rebuild, and there is no docs-site build yet. The latest focused TUI/i18n test
   selector passed with 14 tests after removing the stale `tui.quit.hint` message
   key and keeping the visible quit hint in `tui.empty.transcript`.
+  `tui-hello-world-smoke` runs `scripts/tests/tui-hello-world-smoke.ps1`: it builds
+  the native binary, starts a deterministic Ollama-compatible fixture provider,
+  records the real native `codegeist tui` surface through VHS as MP4/WebM, submits a
+  prompt to create `hello-world.sh` with `echo` and run `sh hello-world.sh`, then
+  verifies visible transcript output including `Exit code: 0`, the workspace file,
+  shell output, and completed `codegeist_write` plus `codegeist_shell` session tool
+  parts. It also regenerates `docs/user/assets/tui/tui-hello-world.gif` from the MP4
+  for the README preview. Its generated smoke artifacts stay under
+  `app/codegeist/cli/target/smoke-test/tui-hello-world/` as raw demo evidence, not
+  storyboard, voiceover, subtitle, or narration-script content.
   `mcp-remote-smoke` builds the local MCP fixture Docker image, verifies the direct
   `streamable_http` callback path, then verifies an Ollama-backed `ask` call where
   the model requests the remote MCP tool and the Codegeist loop dispatches it. That
@@ -693,10 +706,12 @@
   background shell process management, and structured patch semantics remain future
   work behind Codegeist-owned `codegeist_*` callbacks if they are ever needed.
   Remaining parent-level T007 work is `T007_07_verify-chat-file-tool-harness.md`,
-  which should now run final focused and broad verification for the implemented
-  session store, MCP/read/write tools, edit/shell tools, agent loop, and TUI chat
-  loop. T007 still avoids a database, server runtime, remote sync, API/SDK, Vaadin,
-  PF4J, JBang, LSP, skills, memory, and subagents.
+  now rescoped to the native TUI hello-world tool smoke: prove the real native TUI
+  can take the prompt, create `hello-world.sh` through `codegeist_write`, run it
+  through `codegeist_shell`, record MP4/WebM evidence through VHS, and persist the
+  tool activity in `.codegeist/session.json`. T007 still avoids a database, server
+  runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, and
+  subagents.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -845,12 +860,12 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- Continue T007 from `T007_07_verify-chat-file-tool-harness.md`. The TUI chat loop
-  from `T007_06_add-terminalui-chat-harness/task.md` is implemented enough for final
-  harness verification: prompt input, `ChatHarnessService.ask(true, prompt)`, visible
-  responses, handled harness failures, and repeated turns are in source without the
-  removed custom JLine console, line-renderer task chain, or over-broad TerminalUI
-  presentation architecture.
+- T007_07 now has a native TUI hello-world smoke that records MP4/WebM evidence,
+  regenerates `docs/user/assets/tui/tui-hello-world.gif` for the README preview,
+  and verifies visible `codegeist_write` plus `codegeist_shell` transcript output.
+  Future TUI work should add one concrete interaction at a time over the current
+  `CodegeistTerminalUi` loop, not restore the removed custom JLine console,
+  line-renderer task chain, or over-broad TerminalUI presentation architecture.
 - Source-close third-party questions should use
   `/ask-project <project> "<question>"`. `/ask-project` consumes the analyzed
   project workspace and delegates broad packed-source questions to the `@repomix`

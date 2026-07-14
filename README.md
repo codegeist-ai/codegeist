@@ -5,6 +5,10 @@
 It is being built with a strong focus on customization, adaptable workflows,
 and project-local control over behavior, prompts, and developer tooling.
 
+## Demo
+
+![Codegeist TUI creates and runs hello-world.sh](docs/user/assets/tui/tui-hello-world.gif)
+
 ## Vision
 
 - Provide one coding agent experience across CLI, TUI, and web surfaces.

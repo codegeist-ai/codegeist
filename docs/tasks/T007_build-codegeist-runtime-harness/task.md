@@ -181,8 +181,10 @@ implementation tests need them.
   in-memory transcript display, repeated turns, handled harness errors, and no
   separate JLine console, second agent runtime, or persisted UI state. Its detailed
   handoff lives in `T007_06_add-terminalui-chat-harness/implementation-plan.md`.
-- `T007_07_verify-chat-file-tool-harness.md` - run focused and broad verification,
-  update architecture docs, and ensure the parent acceptance criteria hold.
+- `T007_07_verify-chat-file-tool-harness.md` - verify the native TUI path with a
+  VHS-recorded hello-world shell-script task that uses `codegeist_write` and
+  `codegeist_shell`, records MP4/WebM evidence, and checks workspace plus session
+  store side effects.
 
 ## Parent Acceptance Criteria
 
@@ -202,6 +204,10 @@ implementation tests need them.
   persistence foundation for that loop.
 - The TerminalUI path uses the existing chat harness and does not create a second
   persistence model.
+- The native TUI hello-world smoke can record a real `codegeist tui` run through VHS,
+  create `hello-world.sh`, run it with `sh hello-world.sh`, show the shell exit and
+  output in the TUI transcript, and persist completed `codegeist_write` plus
+  `codegeist_shell` tool parts.
 - `docs/developer/architecture/architecture.md` documents the implemented session
   store, MCP, tools, patch/edit, shell, agent loop, and TUI behavior.
 

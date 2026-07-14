@@ -75,6 +75,11 @@ class ChatHarnessServiceTest {
         CodegeistChatResponse response = harnessService.ask(true, PROMPT);
 
         assertThat(response.content()).isEqualTo(RESPONSE);
+        assertThat(response.toolParts()).singleElement().satisfies(part -> {
+            assertThat(part.getTool()).isEqualTo(TOOL_NAME);
+            assertThat(part.getStatus()).isEqualTo(ToolSessionPartStatus.completed);
+            assertThat(part.getOutputPreview()).isEqualTo(TOOL_OUTPUT);
+        });
         assertThat(agentLoopService.providerConfig).isSameAs(config.providerConfig);
         assertThat(agentLoopService.request).isEqualTo(new CodegeistChatRequest(MODEL, PROMPT));
         assertThat(agentLoopService.context.workingDirectory()).isEqualTo(tempDir.toAbsolutePath().normalize());

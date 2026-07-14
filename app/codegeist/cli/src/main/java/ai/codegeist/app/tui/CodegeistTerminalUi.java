@@ -3,6 +3,7 @@ package ai.codegeist.app.tui;
 import ai.codegeist.app.chat.ChatHarnessService;
 import ai.codegeist.app.chat.CodegeistChatResponse;
 import ai.codegeist.app.i18n.CodegeistMessages;
+import ai.codegeist.app.session.ToolSessionPart;
 import java.io.IOError;
 import java.io.InterruptedIOException;
 import java.util.ArrayList;
@@ -16,7 +17,9 @@ import org.springframework.shell.jline.tui.component.view.control.GridView;
 import org.springframework.shell.jline.tui.component.view.control.InputView;
 import org.springframework.shell.jline.tui.component.view.control.InputView.InputViewTextChangeEvent;
 import org.springframework.shell.jline.tui.component.view.control.ViewDoneEvent;
+import org.springframework.shell.jline.tui.component.view.event.KeyEvent;
 import org.springframework.shell.jline.tui.component.view.event.KeyEvent.Key;
+import org.springframework.shell.jline.tui.component.view.event.KeyHandler;
 import org.springframework.shell.jline.tui.geom.HorizontalAlign;
 import org.springframework.shell.jline.tui.geom.Rectangle;
 import org.springframework.shell.jline.tui.geom.VerticalAlign;
@@ -42,6 +45,10 @@ class CodegeistTerminalUi {
     private static final String LABEL_SEPARATOR = ": ";
 
     private static final String COMMAND_FAILED_PREFIX = "Command failed: ";
+
+    private static final String INPUT_SPACE_SENTINEL = String.valueOf((char) 0x00A0);
+
+    private static final String SPACE = " ";
 
     private final TerminalUIBuilder terminalUIBuilder;
 
@@ -143,12 +150,22 @@ class CodegeistTerminalUi {
         state.addTranscriptLine(label(CodegeistMessages.TUI_USER_LABEL_KEY, promptText));
         try {
             CodegeistChatResponse response = chatHarnessService.ask(CONTINUE_TUI_SESSION, promptText);
+            addToolTranscriptLines(state, response.toolParts());
             state.addTranscriptLine(label(CodegeistMessages.TUI_ASSISTANT_LABEL_KEY, response.content()));
         }
         catch (RuntimeException exception) {
             state.addTranscriptLine(label(CodegeistMessages.TUI_ERROR_LABEL_KEY, commandFailureMessage(exception)));
         }
         resetPromptInput(terminalUI, state);
+    }
+
+    private void addToolTranscriptLines(TuiChatState state, List<ToolSessionPart> toolParts) {
+        for (ToolSessionPart toolPart : toolParts) {
+            state.addTranscriptLine(toolLabel(toolPart));
+            if (StringUtils.hasText(toolPart.getOutputPreview())) {
+                state.addTranscriptLine(toolPart.getOutputPreview());
+            }
+        }
     }
 
     List<String> renderTranscriptLines(TuiChatState state, int height, int width) {
@@ -202,7 +219,7 @@ class CodegeistTerminalUi {
     }
 
     private InputView createPromptInputView() {
-        InputView promptInput = new InputView();
+        InputView promptInput = new PromptInputView();
         promptInput.setShowBorder(true);
         promptInput.setTitle(messages.get(CodegeistMessages.TUI_PROMPT_TITLE_KEY));
         return promptInput;
@@ -210,6 +227,10 @@ class CodegeistTerminalUi {
 
     private String label(String labelKey, String text) {
         return messages.get(labelKey) + LABEL_SEPARATOR + text;
+    }
+
+    private String toolLabel(ToolSessionPart part) {
+        return label(CodegeistMessages.TUI_TOOL_LABEL_KEY, part.getTool() + SPACE + part.getStatus());
     }
 
     private String commandFailureMessage(RuntimeException exception) {
@@ -296,5 +317,32 @@ class CodegeistTerminalUi {
     }
 
     record TuiChatSurface(GridView root, BoxView transcriptView, InputView promptInput) {
+    }
+
+    /**
+     * Preserves ASCII spaces in prompts while delegating the rest of input editing to
+     * Spring Shell's {@link InputView}. The upstream view drops plain spaces because
+     * its private insertion path only accepts text with {@code StringUtils.hasText}; a
+     * non-breaking-space sentinel survives that path and is normalized before any
+     * prompt text leaves this view.
+     */
+    private static final class PromptInputView extends InputView {
+
+        @Override
+        public KeyHandler getKeyHandler() {
+            KeyHandler baseHandler = super.getKeyHandler();
+            return args -> {
+                if (args.event().isKey(Key.Space)) {
+                    baseHandler.handle(KeyHandler.argsOf(KeyEvent.of(INPUT_SPACE_SENTINEL)));
+                    return KeyHandler.resultOf(args.event(), true, null);
+                }
+                return baseHandler.handle(args);
+            };
+        }
+
+        @Override
+        public String getInputText() {
+            return super.getInputText().replace(INPUT_SPACE_SENTINEL, SPACE);
+        }
     }
 }

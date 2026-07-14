@@ -29,6 +29,11 @@ tasks:
     cmds:
       - pwsh -NoProfile -File ../../../scripts/tests/tui-capture-smoke.ps1 -BuildNative
 
+  tui-hello-world-smoke:
+    desc: Build the native executable and record the TUI hello-world tool smoke
+    cmds:
+      - pwsh -NoProfile -File ../../../scripts/tests/tui-hello-world-smoke.ps1 -BuildNative
+
   docs:
     desc: Generate local documentation preview artifacts
     deps:

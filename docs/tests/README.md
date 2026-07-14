@@ -33,6 +33,12 @@ Test guidance for Codegeist contributors and coding agents.
 - `task tui-capture-smoke` is the native TUI documentation-capture smoke. It runs
   the native `codegeist tui` command through VHS with a deterministic fixture
   provider and writes ignored preview artifacts under `target/smoke-test`.
+- `task tui-hello-world-smoke` is the native TUI hello-world video smoke. It builds
+  the native executable, starts a deterministic Ollama-compatible fixture provider,
+  records the real `codegeist tui` surface through VHS as MP4/WebM, asks the TUI to
+  create and run `hello-world.sh`, then verifies the workspace and session-store side
+  effects plus visible transcript output from the completed shell command, and
+  regenerates `docs/user/assets/tui/tui-hello-world.gif` for the README preview.
 - Report command duration when a check is slow, platform-specific, or part of a
   smoke-test workflow.
 - Keep smoke scripts non-interactive and make their status plus duration easy to
@@ -59,6 +65,7 @@ Test guidance for Codegeist contributors and coding agents.
 - `scripts/tests/file-edit-ask-smoke.ps1`
 - `scripts/tests/shell-ask-smoke.ps1`
 - `scripts/tests/tui-capture-smoke.ps1`
+- `scripts/tests/tui-hello-world-smoke.ps1`
 - `scripts/tests/native-smoke.ps1`
 - `scripts/tests/smoke-common.ps1`
 - `scripts/tests/qemu-linux-install-smoke.sh`
