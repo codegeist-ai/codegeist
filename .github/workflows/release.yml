@@ -115,7 +115,7 @@ jobs:
       RELEASE_VERSION: ${{ needs.metadata.outputs.release_version }}
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up GraalVM
         uses: graalvm/setup-graalvm@v1
@@ -145,7 +145,7 @@ jobs:
           cp -p target/codegeist.jar target/dist/codegeist-jvm.jar
 
       - name: Upload JVM jar artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codegeist-jvm
           if-no-files-found: error
@@ -174,7 +174,7 @@ jobs:
       RELEASE_VERSION: ${{ needs.metadata.outputs.release_version }}
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up GraalVM
         uses: graalvm/setup-graalvm@v1
@@ -242,7 +242,7 @@ jobs:
             -InstallScriptDir (Resolve-Path "../../../scripts/install").Path
 
       - name: Upload native artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codegeist-${{ matrix.platform }}
           if-no-files-found: error
@@ -253,7 +253,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Stage install script assets
         shell: bash
@@ -282,7 +282,7 @@ jobs:
           done
 
       - name: Upload install script artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codegeist-install-scripts
           if-no-files-found: error
@@ -298,7 +298,7 @@ jobs:
       - stage-install-scripts
     steps:
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -343,7 +343,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload checksum artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codegeist-checksums
           if-no-files-found: error
@@ -360,7 +360,7 @@ jobs:
       contents: write
     steps:
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
