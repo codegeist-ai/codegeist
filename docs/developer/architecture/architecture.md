@@ -14,8 +14,8 @@ For future direction, use only the compact, current specification set under
 - `java-generation-guidance.md` - iterative Java/Spring implementation rules.
 - `llm-provider-implementation.md` - provider-neutral `CodegeistChatModel<T>`
   pattern for mapping selected provider config into Spring AI chat models.
-- `runtime-harness-implementation.md` - planned T007 runtime harness package,
-  class, event, tool, permission, tool-callback, and storage implementation shape.
+- `runtime-harness-implementation.md` - final T007 scope and implementation-slice
+  record; current class behavior stays in this architecture directory.
 - `testing-strategy-and-agent-rules.md` - test-first workflow and timing rules.
 - `runtime-vocabulary.md` - vocabulary only, not package or class requirements.
 - `build-release-and-binary-smoke-strategy.md` and `native-packaging-posture.md` -
@@ -64,10 +64,10 @@ through `CodegeistToolRun`, appends Spring AI `ToolResponseMessage` values, and 
 the model again until final assistant text is returned. The current `tui` command
 starts a minimal Spring Shell `TerminalUI` chat loop over the same harness: users can
 enter prompts, submit them through `ChatHarnessService.ask(true, prompt)`, see
-returned response text or handled harness failures in an in-memory transcript, and
-continue chatting without restarting the Codegeist process. Streaming events,
-permission prompts, prompt history reconstruction, tool transcript projection, and a
-broader agent driver are not implemented.
+bounded completed-tool previews followed by returned response text, or handled
+harness failures in an in-memory transcript, and continue chatting without restarting
+the Codegeist process. Streaming events, live tool progress, permission prompts,
+prompt history reconstruction, and a broader agent driver are not implemented.
 
 The previous source-generation contracts and T004 implementation epic were removed
 because they encouraged placeholder classes. Future implementation should start
@@ -604,11 +604,12 @@ checks the continue flag delegation, and checks Spring Shell parsing for both
 `TuiCommandsTest`, `CodegeistTerminalUiTest`, `CodegeistLocaleServiceTest`, and
 `CodegeistMessagesTest` are the focused TUI-adjacent unit tests. They verify command
 delegation, chat-surface creation, prompt focus, prompt submission through
-`ChatHarnessService.ask(true, prompt)`, repeated response display, handled error
-display, blank prompt behavior, transcript capping, default-locale fallback,
-configured locale selection, default resource-bundle lookup from
-`messages.properties`, and message lookup through the configured locale. The
-blocking `TerminalUI.run()` loop is not entered by unit tests.
+`ChatHarnessService.ask(true, prompt)`, ASCII-space preservation, ordered write and
+shell tool previews before the final assistant response, repeated response display,
+handled error display, blank prompt behavior, transcript capping, default-locale
+fallback, configured locale selection, default resource-bundle lookup from
+`messages.properties`, and message lookup through the configured locale. The blocking
+`TerminalUI.run()` loop is not entered by unit tests.
 
 `ChatHarnessServiceTest` is the focused provider-free harness test. It uses
 hand-written fakes for provider config, agent loop service, tool run, and workspace
@@ -618,7 +619,8 @@ before the assistant text.
 
 `CodegeistAgentLoopServiceTest` proves the owned loop runs a second model turn after
 an assistant tool call, feeds the bounded tool result back through a
-`ToolResponseMessage`, returns missing tools as model-visible results, rejects
+`ToolResponseMessage`, preserves execution and response order for multiple tool calls
+from one assistant message, returns missing tools as model-visible results, rejects
 duplicate callback names, and stops at the max-round guard.
 
 `CodegeistChatServiceTest` proves the public chat overload adapts
@@ -760,11 +762,13 @@ starts a deterministic Ollama-compatible fixture provider, writes a temporary di
 `codegeist.yml`, generates a VHS tape, records MP4/WebM output from the real
 `codegeist tui` surface, submits a prompt that asks Codegeist to create
 `hello-world.sh` with `echo` and run `sh hello-world.sh`, then verifies the workspace
-file, rerun shell output, visible transcript output including `Exit code: 0`,
-completed `codegeist_write` and `codegeist_shell` session tool parts, and absence
-of representative runtime/config fields in the session store. It also regenerates
-`docs/user/assets/tui/tui-hello-world.gif` from the MP4 for the README preview. Its
-other artifacts stay under `target/smoke-test/tui-hello-world/` as raw demo
+file, exact rerun stdout/stderr, and visible transcript output including both tool
+labels, the shell command, `Exit code: 0`, `Hello World`, and the final assistant
+response. It structurally verifies the prompt plus ordered completed
+`codegeist_write` and `codegeist_shell` session tool parts and enforces exact allowed
+properties for the stored session objects. It regenerates a local GIF from the MP4 and
+replaces `docs/user/assets/tui/tui-hello-world.gif` only after behavioral assertions
+pass. Other artifacts stay under `target/smoke-test/tui-hello-world/` as raw demo
 evidence, not storyboard or narration content.
 
 `scripts/tests/smoke-common.ps1` is the shared helper layer for smoke status
@@ -827,6 +831,7 @@ repository root, run the same commands with the `cli:` namespace, for example
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
 | `task native-smoke` | Runs `scripts/tests/native-smoke.ps1 -BuildNative` | Linux native archive is checked through the shared artifact harness: package, unpack, packaged `--version`, packaged `--show-config`, command logs, ask-driven file-edit side effects, and ask-driven shell side effects |
 | `task tui-capture-smoke` | Runs `scripts/tests/tui-capture-smoke.ps1 -BuildNative` | Native `tui` command renders through VHS, submits one deterministic fixture-backed prompt, persists session text, and generates ignored local TUI preview artifacts |
+| `task tui-hello-world-smoke` | Runs `scripts/tests/tui-hello-world-smoke.ps1 -BuildNative` | Native `tui` executes ordered write and shell calls, renders their completed previews, persists the prompt and tool parts, and records MP4/WebM evidence |
 | `task docs` | Runs `tui-capture-smoke`, then reports the generated artifact path | Current local documentation preview gate; no static docs site build exists yet |
 | `task local-linux-smoke` | Runs `scripts/tests/local-linux-smoke.ps1` | Local Linux Maven tests, jar packaging as a build gate, and shared artifact-harness native smoke when native-image is available |
 | `task qemu-linux-install-smoke` | Runs `task native`, then `scripts/tests/qemu-linux-install-smoke.sh smoke` | Fresh Linux QEMU guest verifies the curl-downloadable Linux install script against local release-shaped assets and checks the installed command |

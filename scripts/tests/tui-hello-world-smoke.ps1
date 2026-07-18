@@ -6,8 +6,8 @@
 # - Uses a deterministic localhost Ollama-compatible fixture provider so the native
 #   TUI, agent loop, local tools, video capture, and assertions are reproducible.
 # - Verifies the concrete side effects after recording: `hello-world.sh` exists,
-#   `sh hello-world.sh` prints `Hello World`, and `.codegeist/session.json` records
-#   completed `codegeist_write` and `codegeist_shell` tool parts.
+#   `sh hello-world.sh` prints `Hello World`, and the configured session store
+#   records completed `codegeist_write` and `codegeist_shell` tool parts.
 #
 # Inputs:
 # - Run from anywhere in the repository checkout.
@@ -322,7 +322,7 @@ function Write-CodegeistConfig {
         "  codegeist-shell:",
         "    default-timeout-seconds: 15"
     )
-    [System.IO.File]::WriteAllText($ConfigPath, ($lines -join "`n") + "`n", [System.Text.Encoding]::ASCII)
+    [System.IO.File]::WriteAllText($ConfigPath, ($lines -join "`n") + "`n", $Utf8NoBom)
 }
 
 function Write-VhsTape {
@@ -366,12 +366,18 @@ function Write-VhsTape {
         "Type $(ConvertTo-VhsDoubleQuotedString $PromptText)",
         "Sleep 250ms",
         "Enter",
+        "Wait+Screen@$($script:ResolvedTimeoutSeconds)s /Tool: codegeist_write completed/",
+        "Wait+Screen@$($script:ResolvedTimeoutSeconds)s /Created file: hello-world\.sh/",
+        "Wait+Screen@$($script:ResolvedTimeoutSeconds)s /Tool: codegeist_shell completed/",
+        "Wait+Screen@$($script:ResolvedTimeoutSeconds)s /Command: sh hello-world\.sh/",
         "Wait+Screen@$($script:ResolvedTimeoutSeconds)s /Exit code: 0/",
+        "Wait+Screen@$($script:ResolvedTimeoutSeconds)s /Hello World +[^A-Za-z0-9 ]/",
+        "Wait+Screen@$($script:ResolvedTimeoutSeconds)s /$CompletionMessage/",
         "Sleep 1500ms",
         "Ctrl+Q",
         "Sleep 500ms"
     )
-    [System.IO.File]::WriteAllText($Path, ($lines -join "`n") + "`n", [System.Text.Encoding]::ASCII)
+    [System.IO.File]::WriteAllText($Path, ($lines -join "`n") + "`n", $Utf8NoBom)
 }
 
 function Invoke-NativeTuiRecording {
@@ -410,7 +416,7 @@ function Assert-VideoArtifacts {
 
 }
 
-function Invoke-ReadmeGifGeneration {
+function Invoke-GifGeneration {
     param(
         [string]$SourceMp4Path,
         [string]$GifPath,
@@ -454,17 +460,22 @@ function Assert-HelloWorldWorkspace {
     $process.StartInfo.RedirectStandardOutput = $true
     $process.StartInfo.RedirectStandardError = $true
     [void]$process.Start()
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
     if (-not $process.WaitForExit(10000)) {
         $process.Kill($true)
         $process.WaitForExit()
+        $process.Dispose()
         Fail-Smoke "Timed out while verifying sh $ScriptFileName"
     }
+    $stdout = $stdoutTask.GetAwaiter().GetResult()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
+    $exitCode = $process.ExitCode
+    $process.Dispose()
 
-    $actual = ($stdout + $stderr).TrimEnd("`r", "`n")
-    if ($process.ExitCode -ne 0 -or $actual -ne $ExpectedShellOutput) {
-        Fail-Smoke "Expected sh $ScriptFileName to print $ExpectedShellOutput with exit 0, got exit $($process.ExitCode): $actual"
+    $expectedStdout = $ExpectedShellOutput + [Environment]::NewLine
+    if ($exitCode -ne 0 -or $stdout -ne $expectedStdout -or $stderr) {
+        Fail-Smoke "Expected sh $ScriptFileName to print exactly $ExpectedShellOutput on stdout with exit 0 and empty stderr, got exit ${exitCode}, stdout: $stdout, stderr: $stderr"
     }
 }
 
@@ -477,25 +488,102 @@ function Assert-SessionStoreToolParts {
     }
 
     $store = Get-Content -LiteralPath $storePath -Raw | ConvertFrom-Json
-    $messages = @($store.sessions) | ForEach-Object { @($_.messages) }
-    $serializedStore = Get-Content -LiteralPath $storePath -Raw
+    $sessions = @($store.sessions)
+    if ($sessions.Count -ne 1) {
+        Fail-Smoke "Session store should contain exactly one TUI smoke session"
+    }
+    Assert-JsonObjectProperties `
+        -Object $store `
+        -ExpectedProperties @("schemaVersion", "workingDir", "createdAt", "updatedAt", "sessions") `
+        -Description "session store"
+    Assert-JsonObjectProperties `
+        -Object $sessions[0] `
+        -ExpectedProperties @("id", "title", "createdAt", "updatedAt", "messages") `
+        -Description "session"
 
-    if (-not $serializedStore.Contains($PromptText)) {
-        Fail-Smoke "Session store does not contain the submitted TUI prompt"
+    $messages = @(@($store.sessions) | ForEach-Object { @($_.messages) })
+    if ($messages.Count -ne 2) {
+        Fail-Smoke "Session store should contain exactly one user and one assistant message"
+    }
+    $userMessages = @($messages | Where-Object { $_.role -eq "user" })
+    $assistantMessages = @($messages | Where-Object { $_.role -eq "assistant" })
+    if ($userMessages.Count -ne 1 -or $assistantMessages.Count -ne 1) {
+        Fail-Smoke "Session store should contain exactly one user and one assistant role"
+    }
+    Assert-JsonObjectProperties `
+        -Object $userMessages[0] `
+        -ExpectedProperties @("id", "role", "createdAt", "parts") `
+        -Description "user message"
+    Assert-JsonObjectProperties `
+        -Object $assistantMessages[0] `
+        -ExpectedProperties @("id", "role", "createdAt", "completedAt", "parentMessageId", "parts") `
+        -Description "assistant message"
+
+    $userParts = @($userMessages[0].parts)
+    if ($userParts.Count -ne 1 -or $userParts[0].type -ne "text") {
+        Fail-Smoke "User message should contain exactly one text session part"
+    }
+    $userTextParts = @($userParts |
+        Where-Object { $_.type -eq "text" -and $_.text -eq $PromptText })
+    if ($userTextParts.Count -ne 1) {
+        Fail-Smoke "Session store should contain exactly one user text part with the submitted TUI prompt"
     }
 
-    $toolParts = $messages |
-        Where-Object { $_.role -eq "ASSISTANT" } |
-        ForEach-Object { @($_.parts) } |
-        Where-Object { $_.type -eq "tool" }
+    $assistantParts = @($assistantMessages[0].parts)
+    if ($assistantParts.Count -ne 3 -or
+        $assistantParts[0].type -ne "tool" -or
+        $assistantParts[1].type -ne "tool" -or
+        $assistantParts[2].type -ne "text") {
+        Fail-Smoke "Assistant message should contain exactly two tool parts followed by one text part"
+    }
+    $toolParts = @($assistantParts | Where-Object { $_.type -eq "tool" })
 
-    Assert-CompletedToolPart $toolParts $WriteToolName $ScriptFileName
-    Assert-CompletedToolPart $toolParts $ShellToolName $ExpectedShellOutput
+    if ($toolParts.Count -ne 2 -or
+        $toolParts[0].tool -ne $WriteToolName -or
+        $toolParts[1].tool -ne $ShellToolName) {
+        Fail-Smoke "Session store should contain ordered $WriteToolName then $ShellToolName tool parts"
+    }
 
-    foreach ($forbidden in @("base-url", "enabledTools", "runtimeStatus", "selectedModel", "selectedProvider")) {
-        if ($serializedStore.Contains($forbidden)) {
-            Fail-Smoke "Session store should not contain runtime/config field: $forbidden"
-        }
+    Assert-CompletedToolPart $toolParts $WriteToolName @($ScriptFileName)
+    Assert-CompletedToolPart $toolParts $ShellToolName @(
+        "Command: sh $ScriptFileName",
+        "Exit code: 0",
+        $ExpectedShellOutput)
+
+    $assistantTextParts = @($assistantParts |
+        Where-Object { $_.type -eq "text" -and $_.text -eq $CompletionMessage })
+    if ($assistantTextParts.Count -ne 1) {
+        Fail-Smoke "Session store should contain exactly one final assistant text part"
+    }
+
+    foreach ($textPart in @($userTextParts) + @($assistantTextParts)) {
+        Assert-JsonObjectProperties `
+            -Object $textPart `
+            -ExpectedProperties @("type", "id", "text") `
+            -Description "text session part"
+    }
+    foreach ($toolPart in $toolParts) {
+        Assert-JsonObjectProperties `
+            -Object $toolPart `
+            -ExpectedProperties @("type", "id", "tool", "status", "outputPreview") `
+            -Description "tool session part"
+    }
+}
+
+function Assert-JsonObjectProperties {
+    param(
+        [object]$Object,
+        [string[]]$ExpectedProperties,
+        [string]$Description
+    )
+
+    $actualProperties = @($Object.PSObject.Properties.Name | Sort-Object)
+    $sortedExpectedProperties = @($ExpectedProperties | Sort-Object)
+    $differences = @(Compare-Object $sortedExpectedProperties $actualProperties)
+    if ($differences.Count -gt 0) {
+        $actualText = $actualProperties -join ", "
+        $expectedText = $sortedExpectedProperties -join ", "
+        Fail-Smoke "Unexpected $Description properties. Expected: $expectedText. Actual: $actualText"
     }
 }
 
@@ -503,7 +591,7 @@ function Assert-CompletedToolPart {
     param(
         [object[]]$ToolParts,
         [string]$ToolName,
-        [string]$ExpectedPreviewText
+        [string[]]$ExpectedPreviewText
     )
 
     $matchingParts = @($ToolParts) | Where-Object { $_.tool -eq $ToolName -and $_.status -eq "completed" }
@@ -512,8 +600,10 @@ function Assert-CompletedToolPart {
     }
 
     $preview = [string]$matchingParts[0].outputPreview
-    if (-not $preview.Contains($ExpectedPreviewText)) {
-        Fail-Smoke "$ToolName ToolSessionPart preview did not contain $ExpectedPreviewText. Preview: $preview"
+    foreach ($expectedText in $ExpectedPreviewText) {
+        if (-not $preview.Contains($expectedText)) {
+            Fail-Smoke "$ToolName ToolSessionPart preview did not contain $expectedText. Preview: $preview"
+        }
     }
 }
 
@@ -544,7 +634,7 @@ $PromptText
 - The fixture Ollama provider selected $ShellToolName to run sh $ScriptFileName.
 - The recorded TUI transcript displayed the completed shell command and exit code.
 - $ScriptFileName prints exactly $ExpectedShellOutput when run with sh.
-- .codegeist/session.json contains completed tool parts for $WriteToolName and $ShellToolName.
+- The configured session/session.json store contains completed tool parts for $WriteToolName and $ShellToolName.
 - The README GIF preview was regenerated from the recorded MP4.
 
 ## Artifacts
@@ -586,6 +676,7 @@ $Mp4Path = Join-Path $CaptureRoot "tui-hello-world.mp4"
 $WebmPath = Join-Path $CaptureRoot "tui-hello-world.webm"
 $VhsOutput = Join-Path $CaptureRoot "vhs-output.log"
 $GifPalettePath = Join-Path $CaptureRoot "tui-hello-world-palette.png"
+$GeneratedGifPath = Join-Path $CaptureRoot "tui-hello-world.gif"
 $GifOutput = Join-Path $CaptureRoot "gif-output.log"
 if (-not $ReadmeGifPath) {
     $ReadmeGifPath = Join-Path $RepoRoot "docs/user/assets/tui/tui-hello-world.gif"
@@ -657,17 +748,19 @@ try {
     Write-SmokeDuration "tui hello-world native recording" $recordingStopwatch
 
     $gifStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    Invoke-ReadmeGifGeneration `
+    Invoke-GifGeneration `
         -SourceMp4Path $Mp4Path `
-        -GifPath $ReadmeGifPath `
+        -GifPath $GeneratedGifPath `
         -PalettePath $GifPalettePath `
         -LogPath $GifOutput
     Write-SmokeDuration "tui hello-world gif generation" $gifStopwatch
 
     $assertionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    Assert-VideoArtifacts $TapePath $Mp4Path $WebmPath $VhsOutput $ReadmeGifPath
+    Assert-VideoArtifacts $TapePath $Mp4Path $WebmPath $VhsOutput $GeneratedGifPath
     Assert-HelloWorldWorkspace $WorkspaceDirectory
     Assert-SessionStoreToolParts $SessionDirectory
+    New-SmokeDirectory ([System.IO.Path]::GetDirectoryName($ReadmeGifPath))
+    Copy-Item -LiteralPath $GeneratedGifPath -Destination $ReadmeGifPath -Force
     Write-RunSummary $CaptureRoot $WorkspaceDirectory $SessionDirectory $Mp4Path $WebmPath $ReadmeGifPath
     Write-SmokeDuration "tui hello-world assertions" $assertionStopwatch
 }

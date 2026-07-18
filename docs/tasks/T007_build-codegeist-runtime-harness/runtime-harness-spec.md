@@ -1,8 +1,15 @@
 # Runtime Harness Specification
 
-Planned class model for the T007 chat-file tool harness. This document is an
-iterative specification: refine the model slice by slice, and create Java classes
-only when the focused implementation task introduces tested source.
+Historical planning model for the completed T007 runtime harness. The diagrams
+preserve the vocabulary considered while the task was being split into tested
+slices; they are not a current Java API or source map.
+
+Use `docs/developer/architecture/architecture.md` and its focused session, tool,
+agent-loop, and TUI documents for implemented behavior. The final runtime uses
+`.codegeist/session.json`, `ChatHarnessService`, `CodegeistAgentLoopService`,
+prompt-scoped `CodegeistToolRun` callbacks, exact edit, shell, MCP, and the Spring
+Shell `TerminalUI`. Planned names below that do not exist in source must not be
+treated as implementation requirements.
 
 ## Diagram Layout
 
@@ -569,13 +576,13 @@ harness failures to an in-memory transcript, rebuilds the prompt input after eac
 submission, and supports repeated turns without restarting the Codegeist process.
 
 `CodegeistLocaleService` uses optional app-wide `codegeist.locale` and otherwise
-falls back to the JVM default locale for message lookup. There is still no stored
-session projection, streaming output, permission prompt, tool transcript view,
-presenter, view factory, responsive layout service, Spring Shell control wrapper
-package, or generic `task tui-smoke` entrypoint. The documentation-specific
-`task tui-capture-smoke` path is a VHS-rendered native capture smoke that writes local
-preview artifacts under `target/smoke-test/tui-capture/`; it is not a separate TUI
-runtime architecture.
+falls back to the JVM default locale for message lookup. The final T007_07 slice added
+bounded completed-tool previews but not stored-session projection, streaming output,
+live tool progress, permission prompts, a presenter, view factory, responsive layout
+service, Spring Shell control wrapper package, or generic `task tui-smoke` entrypoint.
+The documentation-specific `task tui-capture-smoke` path is a VHS-rendered native
+capture smoke that writes local preview artifacts under
+`target/smoke-test/tui-capture/`; it is not a separate TUI runtime architecture.
 
 Keep provider selection, MCP/tool callbacks, the model/tool/model continuation loop,
 and `.codegeist/session.json` persistence behind `ChatHarnessService` and existing
@@ -586,14 +593,9 @@ second agent runtime unless a future task explicitly replaces the Spring Shell
 approach. Streaming, cancellation, patch review UI, shell review panes, session
 browsers, and richer transcript projection remain future work.
 
-## Iteration Rule
+## Completion Note
 
-Keep this specification synchronized with the active child task:
-
-- `T007_02` should refine sections 1, 2.1, 2.2, 2.3, and 2.4.
-- `T007_03` should refine sections 3.1, 3.2, 3.3, and 4.1.
-- `T007_04` should refine sections 4.2 and 4.3.
-- `T007_05` should add the Codegeist-owned model/tool/model loop contract.
-- `T007_06` refined section 5 around the minimal Spring Shell `TerminalUI` chat
-  loop.
-- `T007_07` should reconcile all diagrams with the implemented source.
+T007 completed on 2026-07-18 after current-worktree focused tests, the native
+VHS-recorded hello-world tool smoke, and the broad JVM suite passed. This file is
+retained as task-planning history rather than being rewritten into a duplicate of
+the current architecture documentation.

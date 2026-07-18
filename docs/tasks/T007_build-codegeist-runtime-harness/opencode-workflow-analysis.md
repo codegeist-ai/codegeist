@@ -4,6 +4,11 @@ Source-backed analysis of how OpenCode implements resumable chat, tool execution
 MCP, permissions, and TUI updates. Use this document as behavior evidence for the
 Codegeist T007 chat-file tool harness, not as an architecture blueprint to copy.
 
+Historical scope note: OpenCode source evidence remains useful, but Codegeist
+target-shape notes in this analysis predate the completed T007 session-store and TUI
+contracts. Use the T007 parent task and current architecture docs for implemented
+Codegeist names and behavior.
+
 ## Scope
 
 This document describes the implemented OpenCode workflow that is relevant to

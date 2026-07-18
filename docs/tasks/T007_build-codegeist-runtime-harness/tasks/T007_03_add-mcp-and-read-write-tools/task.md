@@ -89,9 +89,10 @@ tools for resumable chats.
   run with bounded recording, MCP resources close with the run, and
   `task mcp-remote-smoke` verifies the real `streamable_http` path against a local
   Docker fixture.
-- Final docs and broad T007_03 verification are complete. Remaining runtime work for
-  the parent T007 harness now moves to `T007_04` patch/edit and shell tools,
-  `T007_05` agent control loop, and `T007_06` TerminalUI chat-harness integration.
+- Final docs and broad T007_03 verification are complete. At T007_03 completion,
+  remaining runtime work moved to T007_04 exact edit and shell tools, T007_05 agent
+  control loop, and T007_06 TerminalUI integration; those later slices are now also
+  complete.
 
 ## Child Tasks
 

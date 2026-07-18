@@ -2,6 +2,11 @@
 
 Source-backed answers for the T007 chat-file tool harness question catalog.
 
+Historical scope note: Codegeist target-shape recommendations in this research
+predate the completed `.codegeist/session.json`, `ask -c/--continue`, agent-loop,
+tool, and TerminalUI implementation. Keep the third-party evidence, but use the T007
+parent task and current architecture docs for implemented Codegeist contracts.
+
 Related current TUI task: `tasks/T007_06_add-terminalui-chat-harness/task.md`.
 
 ## Scope And Evidence Notes

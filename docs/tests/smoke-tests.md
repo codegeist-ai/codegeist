@@ -59,9 +59,12 @@ previews. VHS requires `vhs`, `ffmpeg`, and `ttyd` on `PATH`; the shared
 smoke. It uses VHS to record MP4/WebM output from a real native TUI session while a
 deterministic Ollama-compatible fixture provider selects `codegeist_write` and
 `codegeist_shell`, then derives the README GIF preview from the recorded MP4. The
-script verifies the created `hello-world.sh`, reruns `sh hello-world.sh`, waits for
-visible `Exit code: 0` output in the recorded TUI, and checks completed
-`codegeist_write` plus `codegeist_shell` `ToolSessionPart` entries.
+script verifies the created `hello-world.sh`, reruns `sh hello-world.sh` with an
+exact stdout/stderr contract, and waits for both tool labels, the shell command,
+`Exit code: 0`, `Hello World`, and the final assistant response in the recorded TUI.
+It then checks the structured prompt, ordered completed `codegeist_write` plus
+`codegeist_shell` `ToolSessionPart` entries, final text, and absence of forbidden
+runtime/config properties through exact stored-object property allowlists.
 
 ## Creating The TUI Hello World Video
 
@@ -91,6 +94,7 @@ Important files in that directory:
 
 - `tui-hello-world.mp4` - primary video artifact.
 - `tui-hello-world.webm` - browser-friendly video artifact.
+- `tui-hello-world.gif` - locally generated GIF staged before the README copy.
 - `gif-output.log` - FFmpeg palette and GIF conversion log.
 - `drive-tui-hello-world.tape` - generated VHS script for the recorded run.
 - `vhs-output.log` - VHS command trace and render log.
@@ -127,7 +131,8 @@ pwsh -NoProfile -File ../../../scripts/tests/tui-hello-world-smoke.ps1
 Use `task tui-hello-world-smoke` again before handing off a video, because that path
 proves the current source builds into the native executable used for the recording.
 
-The flow also refreshes the repo-owned README preview GIF:
+After the behavioral assertions pass, the flow refreshes the repo-owned README
+preview GIF:
 
 ```text
 docs/user/assets/tui/tui-hello-world.gif
@@ -255,18 +260,19 @@ Labels should be stable and specific, for example:
   script builds or uses the native executable, starts a deterministic
   Ollama-compatible fixture provider, writes a temporary direct `codegeist.yml`,
   generates a VHS tape, records the native `codegeist tui` session as
-  `tui-hello-world.mp4` and `tui-hello-world.webm`, regenerates
-  `docs/user/assets/tui/tui-hello-world.gif` from the MP4, asks Codegeist to create
-  `hello-world.sh` with `echo` and run `sh hello-world.sh`, waits for visible
-  `Exit code: 0` output in the transcript, then verifies the script output and
-  persisted tool parts.
+  `tui-hello-world.mp4` and `tui-hello-world.webm`, regenerates an intermediate
+  `tui-hello-world.gif` from the MP4, asks Codegeist to create `hello-world.sh` with
+  `echo` and run `sh hello-world.sh`, waits for the complete
+  write/shell/final-response transcript, then verifies exact script output and the
+  structured persisted exchange. Only after those checks pass does it replace
+  `docs/user/assets/tui/tui-hello-world.gif`.
   Expected artifacts live under
   `app/codegeist/cli/target/smoke-test/tui-hello-world/` and include
   `drive-tui-hello-world.tape`, `tui-hello-world.mp4`, `tui-hello-world.webm`,
-  `vhs-output.log`, `gif-output.log`, `workspace/`, `session/session.json`, and
-  `run-summary.md`. These artifacts are ignored build output and are intended as raw
-  reproducible evidence for later demo or video-generation work, not as a storyboard
-  or narration script.
+  `tui-hello-world.gif`, `vhs-output.log`, `gif-output.log`, `workspace/`,
+  `session/session.json`, and `run-summary.md`. These artifacts are ignored build
+  output and are intended as raw reproducible evidence for later demo or
+  video-generation work, not as a storyboard or narration script.
 - Local Linux and Windows platform smokes do not run a provider-only native ask
   check. The native ask coverage stays on deterministic fixture-backed file-edit and
   shell harnesses so smoke results do not depend on local model wording when no tool

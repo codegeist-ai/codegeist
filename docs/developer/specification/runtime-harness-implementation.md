@@ -1,17 +1,19 @@
-# Session Store Tool Harness Implementation Specification
+# Session Store Tool Harness Implementation Record
 
-Planned implementation specification for the current T007 session-store tool harness.
+Final scope and slice record for the completed T007 session-store tool harness.
 
 ## Purpose
 
-This document defines the planned implementation after T007 was expanded from a
+This document records the implementation contract used after T007 expanded from a
 minimal MCP-only chat into a resumable local coding-agent harness. The central
-artifact is `.codegeist/session.json`: `ask -c/--continue <prompt>` and the
-terminal TUI both load, update, and save the same directory-local session store.
+artifact is `.codegeist/session.json`: `ask -c/--continue <prompt>` and the terminal
+TUI both update the same directory-local session store through `ChatHarnessService`.
+Current class-level behavior belongs in `docs/developer/architecture/`.
 
-T007 should implement TUI, tools, patch/edit, shell, MCP, and file-based chat
-storage. It should not implement a database, server-side session runtime, remote
-sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or subagents.
+T007 delivered TUI, read/write/exact-edit/shell tools, MCP, the owned agent loop,
+and file-based chat storage. It did not implement a database, server-side session
+runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, subagents,
+or a separate structured `codegeist_patch` callback.
 
 ## Sources
 
@@ -19,7 +21,7 @@ sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or subagents.
   parent epic, completion feature set, child tasks, acceptance criteria, and
   non-goals.
 - `docs/tasks/T007_build-codegeist-runtime-harness/tasks/T007_01_define-chat-file-tool-harness-scope.md`
-  records the current feature scope.
+  records the superseded original feature scope.
 - `docs/developer/specification/llm-provider-implementation.md` defines the existing
   provider-neutral chat seam that this work must reuse.
 - Spring AI `2.0.0-M6` MCP documentation identifies `spring-ai-starter-mcp-client`
@@ -54,11 +56,11 @@ sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, or subagents.
 | `T007_04` | Bounded patch/edit and shell tools recorded into `.codegeist/session.json`. | Unbounded shell, server runtime, database. |
 | `T007_05` | Codegeist-owned model/tool/model agent control loop. | TUI, streaming UI events, permission prompts, subagents. |
 | `T007_06` | Minimum usable terminal coding-agent TUI over the same `.codegeist/session.json`. | Second persistence model, server, Vaadin, desktop. |
-| `T007_07` | Focused and broad verification plus architecture docs. | New feature scope beyond T007. |
+| `T007_07` | Native VHS hello-world tool smoke, focused and broad verification, and current documentation. | New feature scope beyond T007. |
 
 ## Component Direction
 
-Introduce only classes needed by focused tests.
+The conceptual ownership direction used during implementation was:
 
 ```mermaid
 flowchart TD
@@ -154,10 +156,11 @@ mcp:
 Rules:
 
 - `mcp` is a map keyed by Codegeist MCP client id.
-- The first supported client type is `stdio`.
-- The first `stdio` fields are `type`, `command`, and `args`.
-- Add environment, timeout, enablement, SSE, HTTP, OAuth, or dynamic discovery only
-  when a focused task needs them.
+- Supported client types are `stdio` and `streamable_http`.
+- `stdio` fields are `type`, `command`, and optional `args`.
+- `streamable_http` fields are `type`, `url`, and optional `endpoint`.
+- Add environment, timeout, enablement, SSE, OAuth, or dynamic discovery only when a
+  focused task needs them.
 - Do not expose Spring AI's `spring.ai.mcp.client.*` tree as the Codegeist user
   config contract for T007.
 

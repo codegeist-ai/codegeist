@@ -2,7 +2,7 @@
 
 Parent: `T007_build-codegeist-runtime-harness`
 
-Status: open
+Status: solved
 
 ## Goal
 
@@ -23,6 +23,20 @@ final assistant response, and persist tool activity in `.codegeist/session.json`
 The capture should also be useful as reproducible evidence for a later
 AI-generated video. This task must not create a storyboard, voiceover, YouTube
 script, subtitle file, thumbnail prompt, or other video-production content.
+
+## Current Outcome
+
+The native TUI hello-world smoke is implemented and verified. The deterministic
+fixture returns ordered `codegeist_write` and `codegeist_shell` calls in one model
+turn; Codegeist executes them in order, continues the model turn, persists both
+completed tool parts, and projects their bounded previews before the final assistant
+response in the TUI.
+
+The VHS capture now waits for the visible write and shell labels, created file,
+shell command, exit code, `Hello World` output, and final assistant response. The
+post-run checks parse the session store structurally, rerun the generated script with
+an exact stdout/stderr contract, and replace the committed README GIF only after the
+behavioral assertions pass.
 
 ## Implemented Entry Point
 
@@ -47,6 +61,7 @@ Expected artifacts include:
 - `drive-tui-hello-world.tape` - generated VHS script.
 - `tui-hello-world.mp4` - MP4 terminal recording.
 - `tui-hello-world.webm` - WebM terminal recording.
+- `tui-hello-world.gif` - generated GIF staged before the README asset is replaced.
 - `vhs-output.log` - VHS stdout/stderr.
 - `workspace/hello-world.sh` - file created by the TUI-guided tool run.
 - `session/session.json` - persisted Codegeist session store.
@@ -76,7 +91,8 @@ Expected artifacts include:
 - `workspace/hello-world.sh` exists after the run.
 - `sh hello-world.sh` prints exactly `Hello World` with exit code 0 when run from
   the smoke workspace.
-- `.codegeist/session.json` is written under the smoke session directory.
+- `session/session.json` is written under the smoke artifact directory through the
+  smoke-specific session-directory override.
 - The session store contains the submitted TUI prompt.
 - The session store contains a completed `ToolSessionPart` for `codegeist_write`.
 - The session store contains a completed `ToolSessionPart` for `codegeist_shell`
@@ -110,7 +126,7 @@ task tui-hello-world-smoke
 Useful focused JVM regression checks after script or TUI changes:
 
 ```bash
-task test TEST=CodegeistTerminalUiTest,TuiCommandsTest,ChatHarnessServiceTest,CodegeistAgentLoopServiceTest,CodegeistLocalToolsTest
+task test TEST=CodegeistTerminalUiTest,TuiCommandsTest,ChatHarnessServiceTest,CodegeistAgentLoopServiceTest,CodegeistLocalToolsTest,SessionStoreServiceTest
 ```
 
 The broader suite remains:
@@ -118,3 +134,19 @@ The broader suite remains:
 ```bash
 task test
 ```
+
+## Verification Results
+
+Verification completed on 2026-07-18 from `app/codegeist/cli`:
+
+- The focused selector passed with 71 tests, 0 failures, 0 errors, and 0 skipped.
+- `task tui-hello-world-smoke` passed against a newly compiled native executable.
+  Native compile took `113.575s`; native recording took `15.626s`; the smoke total
+  after compilation took `16.410s`.
+- The generated MP4 and WebM both decode as `4.24s` videos. Final-frame review shows
+  the ordered write and shell previews, `Exit code: 0`, `Hello World`, and the final
+  assistant response.
+- The TUI documentation gate passed through `task cli:docs`; native compile took
+  `114.700s`, native capture took `6.586s`, and capture smoke total took `7.013s`.
+- The full `task test` suite passed with 191 tests, 0 failures, 0 errors, and 6
+  skipped provider-gated tests.

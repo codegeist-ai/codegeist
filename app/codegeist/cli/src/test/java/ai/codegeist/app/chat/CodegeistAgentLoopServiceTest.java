@@ -28,6 +28,10 @@ class CodegeistAgentLoopServiceTest {
     private static final String TOOL_NAME = "fake_tool";
     private static final String TOOL_ARGUMENTS = "{\"path\":\"README.md\"}";
     private static final String TOOL_OUTPUT = "README contents";
+    private static final String SECOND_TOOL_CALL_ID = "call-2";
+    private static final String SECOND_TOOL_NAME = "fake_shell";
+    private static final String SECOND_TOOL_ARGUMENTS = "{\"command\":\"sh hello-world.sh\"}";
+    private static final String SECOND_TOOL_OUTPUT = "Hello World";
     private static final String FINAL_RESPONSE = "The README was read.";
 
     @Test
@@ -49,6 +53,45 @@ class CodegeistAgentLoopServiceTest {
         assertThat(response.content()).isEqualTo(FINAL_RESPONSE);
         assertThat(providerConfig.chatModel.requests).hasSize(2);
         assertThat(callback.inputs).containsExactly(TOOL_ARGUMENTS);
+    }
+
+    @Test
+    void dispatchesMultipleToolCallsInOrderAndFeedsTheirResultsToContinuation() {
+        List<String> invocationOrder = new ArrayList<>();
+        FakeToolCallback firstCallback = new FakeToolCallback(TOOL_NAME, TOOL_OUTPUT, invocationOrder);
+        FakeToolCallback secondCallback = new FakeToolCallback(SECOND_TOOL_NAME, SECOND_TOOL_OUTPUT, invocationOrder);
+        StubProviderConfig providerConfig = new StubProviderConfig(
+                request -> toolCallResponse(List.of(
+                        new AssistantMessage.ToolCall(
+                                TOOL_CALL_ID, TOOL_CALL_TYPE, TOOL_NAME, TOOL_ARGUMENTS),
+                        new AssistantMessage.ToolCall(
+                                SECOND_TOOL_CALL_ID, TOOL_CALL_TYPE, SECOND_TOOL_NAME, SECOND_TOOL_ARGUMENTS))),
+                request -> {
+                    assertThat(request.messages()).hasSize(3);
+                    AssistantMessage assistantMessage = (AssistantMessage) request.messages().get(1);
+                    assertThat(assistantMessage.getToolCalls())
+                            .extracting(AssistantMessage.ToolCall::name)
+                            .containsExactly(TOOL_NAME, SECOND_TOOL_NAME);
+                    ToolResponseMessage toolResponseMessage = (ToolResponseMessage) request.messages().get(2);
+                    assertThat(toolResponseMessage.getResponses())
+                            .extracting(ToolResponseMessage.ToolResponse::name)
+                            .containsExactly(TOOL_NAME, SECOND_TOOL_NAME);
+                    assertThat(toolResponseMessage.getResponses())
+                            .extracting(ToolResponseMessage.ToolResponse::responseData)
+                            .containsExactly(TOOL_OUTPUT, SECOND_TOOL_OUTPUT);
+                    return finalResponse(FINAL_RESPONSE);
+                });
+        CodegeistAgentLoopService service = service(providerConfig);
+
+        CodegeistChatResponse response = service.run(
+                providerConfig,
+                new CodegeistChatRequest(MODEL, PROMPT),
+                new CodegeistChatExecutionContext(Path.of("."), List.of(firstCallback, secondCallback)));
+
+        assertThat(response.content()).isEqualTo(FINAL_RESPONSE);
+        assertThat(invocationOrder).containsExactly(TOOL_NAME, SECOND_TOOL_NAME);
+        assertThat(firstCallback.inputs).containsExactly(TOOL_ARGUMENTS);
+        assertThat(secondCallback.inputs).containsExactly(SECOND_TOOL_ARGUMENTS);
     }
 
     @Test
@@ -146,9 +189,13 @@ class CodegeistAgentLoopServiceTest {
     }
 
     private static ChatResponse toolCallResponse(String id, String name, String arguments) {
+        return toolCallResponse(List.of(new AssistantMessage.ToolCall(id, TOOL_CALL_TYPE, name, arguments)));
+    }
+
+    private static ChatResponse toolCallResponse(List<AssistantMessage.ToolCall> toolCalls) {
         return new ChatResponse(List.of(new Generation(AssistantMessage.builder()
                 .content("")
-                .toolCalls(List.of(new AssistantMessage.ToolCall(id, TOOL_CALL_TYPE, name, arguments)))
+                .toolCalls(toolCalls)
                 .build())));
     }
 
@@ -217,10 +264,16 @@ class CodegeistAgentLoopServiceTest {
         private final String name;
         private final String output;
         private final List<String> inputs = new ArrayList<>();
+        private final List<String> invocationOrder;
 
         private FakeToolCallback(String name, String output) {
+            this(name, output, new ArrayList<>());
+        }
+
+        private FakeToolCallback(String name, String output, List<String> invocationOrder) {
             this.name = name;
             this.output = output;
+            this.invocationOrder = invocationOrder;
         }
 
         @Override
@@ -240,6 +293,7 @@ class CodegeistAgentLoopServiceTest {
         @Override
         public String call(String toolInput) {
             inputs.add(toolInput);
+            invocationOrder.add(name);
             return output;
         }
 

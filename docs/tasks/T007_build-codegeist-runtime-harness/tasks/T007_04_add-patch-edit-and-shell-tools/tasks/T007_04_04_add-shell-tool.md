@@ -88,7 +88,7 @@ Results:
 
 ## Source Notes
 
-- Depends on `T007_04_01_add-working-directory-guard.md`.
+- Reuses `CodegeistWorkingDirectoryGuard`, implemented with the exact-edit slice.
 - Use `../shell-tool-question-catalog.md`, `../shell-tool-research.md`,
   `../opencode-shell-tool-comparison.md`, `../ask-project-research.md`, and
   `../shell-tool-implementation-plan.md` before implementation.

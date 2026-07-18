@@ -36,6 +36,10 @@ documentation, documentation preview artifacts, or docs-related Taskfile entries
   MP4. Keep the README embedding on that GIF because GitHub strips inline HTML
   `<video>` tags from repository README rendering; do not link the local smoke MP4
   from `README.md` unless a future task explicitly changes that policy.
+- Keep the hello-world smoke evidence tied to behavior: wait for unique visible
+  write, shell, output, and final-response markers; validate raw session message/part
+  order and allowed properties; and replace the committed GIF only after workspace,
+  session, and media assertions pass.
 - Do not add or resurrect a generic `task tui-smoke`; use the documentation-specific
   `tui-capture-smoke` name for this workflow.
 - Do not create `docs/user/assets/` or copy generated images into committed docs

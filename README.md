@@ -24,11 +24,16 @@ vision:
 - a compose-based devcontainer setup mounted from the `.devcontainer/` submodule
 - a Spring Boot CLI application under `app/codegeist/cli` built in the devcontainer with Java 25 and GraalVM Community 25
 - Spring Shell commands for `--version`, direct `codegeist.yml` `--show-config`,
-  and one-shot `ask`
+  resumable `ask -c/--continue`, and a minimal `tui` chat loop
 - direct `codegeist.yml` parsing for typed `provider:` entries and the first
   `mcp:` client catalog shape
-- prompt-scoped local read/list/glob/grep/write callbacks plus lazy MCP callback
-  bridging for configured `stdio` and `streamable_http` clients
+- `.codegeist/session.json` persistence for multiple local sessions, chat text, and
+  bounded tool activity
+- a Codegeist-owned model/tool/model loop with prompt-scoped local
+  read/list/glob/grep/write/exact-edit/shell callbacks plus lazy MCP callback bridging
+  for configured `stdio` and `streamable_http` clients
+- a native VHS-recorded TUI hello-world smoke that verifies write and shell tool
+  previews, workspace side effects, session state, and MP4/WebM evidence
 - a GraalVM native-image Maven profile and local native smoke check
 - local Linux, Windows, and Docker-backed MCP remote smoke scripts under
   `scripts/tests/`
@@ -106,7 +111,7 @@ Implementation notes:
 - Java 25 is the current project baseline
 - the Maven build includes a `native` profile with the GraalVM native build tools
 - the application implements Spring Shell commands such as `--version`,
-  `--show-config`, and `ask`
+  `--show-config`, `ask`, and `tui`
 - `application.yaml` is only Spring Boot/Shell configuration; Codegeist runtime
   config is loaded from explicit `codegeist.yml` paths
 
@@ -282,7 +287,7 @@ If an older checkout is missing nested submodules, initialize them with
 
 ## Status
 
-The repository is still early, but it now has a real application entrypoint, an
-end-to-end local build/run workflow in the devcontainer, prompt-scoped chat tool
-callbacks, local Linux/Windows/MCP smoke-test entrypoints, and GitHub-hosted
+The repository is still early, but it now has a real application entrypoint, a
+resumable session store, an owned chat tool loop, a native TUI with completed-tool
+previews, local Linux/Windows/MCP/TUI smoke-test entrypoints, and GitHub-hosted
 release automation for the current artifact family.

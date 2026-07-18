@@ -50,8 +50,8 @@ Test guidance for Codegeist contributors and coding agents.
   guidance for config-only, local, `remote_free`, and paid-capable provider checks.
 - `codegeist-test-guidelines.md` - Java, Spring, provider, and task-verification
   test conventions.
-- `smoke-tests.md` - Linux, Windows, release install, and MCP remote smoke-test
-  status and duration-output contract.
+- `smoke-tests.md` - Linux, Windows, release install, MCP remote, and native TUI
+  smoke-test status, artifact, and duration-output contracts.
 
 ## Related Files
 

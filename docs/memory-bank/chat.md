@@ -373,10 +373,11 @@
   the native binary, starts a deterministic Ollama-compatible fixture provider,
   records the real native `codegeist tui` surface through VHS as MP4/WebM, submits a
   prompt to create `hello-world.sh` with `echo` and run `sh hello-world.sh`, then
-  verifies visible transcript output including `Exit code: 0`, the workspace file,
-  shell output, and completed `codegeist_write` plus `codegeist_shell` session tool
-  parts. It also regenerates `docs/user/assets/tui/tui-hello-world.gif` from the MP4
-  for the README preview. Its generated smoke artifacts stay under
+  verifies unique visible write, shell, output, and final-response markers, exact
+  shell stdout/stderr, the workspace file, and ordered raw session parts with exact
+  allowed properties. It stages a GIF from the MP4 and replaces
+  `docs/user/assets/tui/tui-hello-world.gif` only after behavioral assertions pass.
+  Its generated smoke artifacts stay under
   `app/codegeist/cli/target/smoke-test/tui-hello-world/` as raw demo evidence, not
   storyboard, voiceover, subtitle, or narration-script content.
   `mcp-remote-smoke` builds the local MCP fixture Docker image, verifies the direct
@@ -386,7 +387,7 @@
   model wording. Smoke scripts now emit stable
   `Duration: <label>: <seconds>s` lines for Maven, package, native compile,
   archive smoke, platform total, SSH, and QEMU wrapper timings. The latest full
-  JVM suite passed with 173 tests, 0 failures, 0 errors, and 6 skips. The latest
+  JVM suite passed with 191 tests, 0 failures, 0 errors, and 6 skips. The latest
   `task mcp-remote-smoke` passed with `mcp remote smoke total: 13.058s`. The latest
   strict `task final-smoke-suite` passed with `linux platform smoke total: 85.696s`,
   `windows qemu smoke total: 233.055s`, `linux-x64 native shell ask total:
@@ -611,8 +612,8 @@
   low-cost OpenAI models `gpt-image-1-mini`, `tts-1`, and
   `gpt-4o-mini-transcribe`; the speech-to-text test generates its default English
   `espeak-ng` fixture under `target/provider-tests/` when needed.
-- `docs/tasks/T007_build-codegeist-runtime-harness/` is open as the session-store
-  tool harness epic. T007 now means `.codegeist/session.json`, `ask -c/--continue`,
+- `docs/tasks/T007_build-codegeist-runtime-harness/` is solved as the session-store
+  tool harness epic. T007 delivered `.codegeist/session.json`, `ask -c/--continue`,
   resumable file-based session state with multiple sessions per working directory,
   Codegeist-owned `codegeist.yml` `mcp:` client config, MCP/read/write tools where
   `write` is focused create/overwrite behavior, patch/edit, shell, and a minimum
@@ -632,8 +633,8 @@
   Third-party research prompts and synthesized answers live in
   `docs/tasks/T007_build-codegeist-runtime-harness/third-party-question-catalog.md`
   and `docs/tasks/T007_build-codegeist-runtime-harness/third-party-question-answers.md`.
-  Current T007 planning docs also include
-  `runtime-harness-spec.md` for planned grouped class diagrams,
+  T007 research and historical planning docs also include
+  `runtime-harness-spec.md` for the original grouped class diagrams,
   `opencode-workflow-analysis.md` for source-backed OpenCode workflow evidence,
   `java-workflow-implementation.md` for the Java/Spring implementation guide, and
   `mcp-and-readwrite-tools-spec.md` as the specification-first handoff for
@@ -655,10 +656,11 @@
   `T007_06_add-terminalui-chat-harness/task.md` is solved with the first minimal
   Spring Shell `TerminalUI` chat loop: `tui` opens a bordered chat surface, focuses
   an `InputView` prompt, submits non-blank prompts through
-  `ChatHarnessService.ask(true, prompt)`, shows returned response text and handled
-  harness errors in an in-memory transcript, rebuilds the prompt input after
-  submission because `InputView` has no public clear API, and allows repeated turns.
-  `docs/user/codegeist-tui.md` is the current user Bedienanleitung for the TUI. It
+  `ChatHarnessService.ask(true, prompt)`, shows bounded completed-tool previews,
+  returned response text, and handled harness errors in an in-memory transcript,
+  rebuilds the prompt input after submission because `InputView` has no public clear
+  API, and allows repeated turns. `docs/user/codegeist-tui.md` is the current user
+  guide for the TUI. It
   uses committed screenshots under `docs/user/assets/tui/`, copied from a passing
   VHS-rendered native capture run; generated `target/smoke-test/tui-capture/`
   artifacts remain ignored preview output.
@@ -705,13 +707,13 @@
   `ShellTools`, MCP filesystem internals, permission prompts, command scanning,
   background shell process management, and structured patch semantics remain future
   work behind Codegeist-owned `codegeist_*` callbacks if they are ever needed.
-  Remaining parent-level T007 work is `T007_07_verify-chat-file-tool-harness.md`,
-  now rescoped to the native TUI hello-world tool smoke: prove the real native TUI
-  can take the prompt, create `hello-world.sh` through `codegeist_write`, run it
-  through `codegeist_shell`, record MP4/WebM evidence through VHS, and persist the
-  tool activity in `.codegeist/session.json`. T007 still avoids a database, server
-  runtime, remote sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, and
-  subagents.
+  `T007_07_verify-chat-file-tool-harness.md` is solved with the native TUI hello-world
+  tool smoke. Current-worktree verification passed with 71 focused tests, a newly built
+  native VHS recording that visibly shows ordered write and shell previews, and the
+  191-test broad JVM suite. The smoke records MP4/WebM evidence, verifies exact shell
+  output and structured session parts, and refreshes the README GIF only after its
+  behavioral assertions pass. T007 still avoids a database, server runtime, remote
+  sync, API/SDK, Vaadin, PF4J, JBang, LSP, skills, memory, and subagents.
 - The previous T003 source-generation child tasks `T003_05` through `T003_12`
   were removed with their generated specification documents because they
   encouraged placeholder Java instead of tested behavior.
@@ -860,7 +862,7 @@
 - When behavior is not already present in Java or covered by Spring AI Agent
   Utils, use `/ask-project opencode ...` to inspect OpenCode behavior before
   translating it into Codegeist's Java-first architecture.
-- T007_07 now has a native TUI hello-world smoke that records MP4/WebM evidence,
+- T007_07 has a verified native TUI hello-world smoke that records MP4/WebM evidence,
   regenerates `docs/user/assets/tui/tui-hello-world.gif` for the README preview,
   and verifies visible `codegeist_write` plus `codegeist_shell` transcript output.
   Future TUI work should add one concrete interaction at a time over the current

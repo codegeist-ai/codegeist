@@ -25,21 +25,20 @@ Provider selection, local/MCP tools, the Codegeist agent loop, and
 runtime services behind it. The TUI does not store prompt drafts, focus, layout,
 scroll, runtime status, provider config, tool config, or any other UI-only state.
 
-There is still no streaming output, permission prompt, tool transcript view, or
-generic `task tui-smoke` entrypoint. The later documentation-specific
-`tui-capture-smoke` workflow is a VHS-rendered native capture smoke for local preview
-artifacts; it does not add a second TUI runtime. The previous presenter, view
-factory, responsive layout service, Spring Shell control wrapper package, custom
-JLine console, and line-renderer pipeline remain removed.
+There is still no streaming output, permission prompt, live tool timeline, or generic
+`task tui-smoke` entrypoint. T007_07 later added bounded completed-tool previews over
+this same surface and a focused `tui-hello-world-smoke`; it did not add a second TUI
+runtime. The previous presenter, view factory, responsive layout service, Spring
+Shell control wrapper package, custom JLine console, and line-renderer pipeline
+remain removed.
 
 `CodegeistLocaleService` uses optional app-wide `codegeist.locale` and otherwise
 falls back to the JVM default locale for message lookup.
 
 ## Next Scope
 
-`T007_06` is complete enough for `T007_07_verify-chat-file-tool-harness.md` to run
-the final focused and broad T007 verification pass. Future TUI slices can add
-streaming, cancellation, permission prompts, tool transcript projection, richer
+`T007_06` and the later T007_07 native verification are complete. Future TUI slices
+can add streaming, cancellation, permission prompts, live tool progress, richer
 focus controls, or session browsing only behind focused tasks.
 
 ## Implementation Plan
@@ -58,8 +57,8 @@ runtime, no persisted UI state, and prompt submission through
 - Do not persist prompt drafts, layout, focus, scroll, or other UI-only state into
   `.codegeist/session.json`.
 - Do not add streaming, cancellation, permission prompts, patch review UI, shell
-  review panes, session browsers, or richer transcript projection without a focused
-  task.
+  review panes, session browsers, or richer live transcript projection without a
+  focused task.
 
 ## Completion Criteria
 

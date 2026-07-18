@@ -3,6 +3,11 @@
 Deep design model for what a coding agent harness is and how Codegeist should use
 that concept for T007 and later runtime work.
 
+Historical scope note: the harness concepts remain useful, but T007's old chat-file
+examples were superseded by the completed `.codegeist/session.json`,
+`ask -c/--continue`, `ChatHarnessService`, and TerminalUI contracts. Use the parent
+task and current architecture docs for implemented names and behavior.
+
 ## Purpose
 
 This document defines a coding agent harness at system-design depth. Use it before

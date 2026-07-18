@@ -5,7 +5,8 @@ session instead of separate one-shot `codegeist ask` commands.
 
 The current TUI is intentionally small: it opens a transcript panel, keeps focus
 in a prompt field, submits prompts through the same chat harness as `codegeist
-ask`, and writes successful turns to the normal local session store.
+ask`, displays bounded completed-tool previews, and writes successful turns to the
+normal local session store.
 
 ## Prerequisites
 
@@ -75,9 +76,10 @@ do not call the provider.
 
 ## Read The Response
 
-After Codegeist receives the provider response, the transcript shows the user
-prompt followed by the assistant response. The prompt field is reset for the next
-turn.
+After Codegeist finishes the provider/tool loop, the transcript shows the user
+prompt, each completed or failed tool label with its bounded output preview, and the
+final assistant response. The prompt field is reset for the next turn. Tool previews
+can include file paths, shell commands, exit codes, and bounded command output.
 
 ![Codegeist TUI assistant response](assets/tui/assistant-response.png)
 
@@ -102,10 +104,10 @@ enabled tool definitions, permission rules, runtime status, or TUI layout state.
 
 ## Current Limits
 
-The current TUI does not yet stream responses, render tool activity, show stored
+The current TUI does not yet stream responses or live tool progress, show stored
 session history on startup, ask permission questions, or persist TUI-only layout
-state. It only shows the in-memory transcript for the currently running TUI
-process.
+state. Completed tool previews appear only after the harness finishes and saves the
+turn. The TUI shows the in-memory transcript for the currently running process.
 
 ## Troubleshooting
 
@@ -143,3 +145,23 @@ app/codegeist/cli/target/smoke-test/tui-capture/
 
 The committed screenshots in `docs/user/assets/tui/` are selected documentation
 assets copied from a passing capture run.
+
+## Hello World Tool Demo
+
+Maintainers can rebuild the native executable and record the deterministic
+write-plus-shell demo with:
+
+```bash
+task cli:tui-hello-world-smoke
+```
+
+The smoke asks Codegeist to create `hello-world.sh`, runs it with
+`sh hello-world.sh`, waits for the complete visible tool transcript, verifies the
+workspace and configured session store, and writes ignored MP4/WebM evidence under:
+
+```text
+app/codegeist/cli/target/smoke-test/tui-hello-world/
+```
+
+It also refreshes `docs/user/assets/tui/tui-hello-world.gif` from the passing MP4
+for the repository README preview.

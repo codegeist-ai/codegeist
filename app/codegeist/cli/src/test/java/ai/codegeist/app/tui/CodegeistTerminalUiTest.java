@@ -82,7 +82,11 @@ class CodegeistTerminalUiTest {
         StubChatHarnessService chatHarnessService = new StubChatHarnessService();
         chatHarnessService.respondWith(new CodegeistChatResponse(
                 "Done",
-                List.of(toolPart("codegeist_shell", "Command: sh hello-world.sh\nExit code: 0\nOutput:\nHello World\n"))));
+                List.of(
+                        toolPart("codegeist_write", "Created file: hello-world.sh\nCharacters: 19"),
+                        toolPart(
+                                "codegeist_shell",
+                                "Command: sh hello-world.sh\nExit code: 0\nOutput:\nHello World\n"))));
         CodegeistTerminalUi terminalUi = new CodegeistTerminalUi(null, messages(), chatHarnessService);
         TerminalUI springTerminalUi = terminalUi();
         CodegeistTerminalUi.TuiChatState state = new CodegeistTerminalUi.TuiChatState();
@@ -93,6 +97,9 @@ class CodegeistTerminalUiTest {
         assertThat(terminalUi.renderTranscriptLines(state, 20, 120))
                 .containsExactly(
                         "You: Run hello world",
+                        "Tool: codegeist_write completed",
+                        "Created file: hello-world.sh",
+                        "Characters: 19",
                         "Tool: codegeist_shell completed",
                         "Command: sh hello-world.sh",
                         "Exit code: 0",

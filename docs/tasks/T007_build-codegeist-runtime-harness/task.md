@@ -1,6 +1,6 @@
 # T007 Build Session Store Tool Harness
 
-Status: open
+Status: solved
 
 ## Goal
 
@@ -11,11 +11,11 @@ Implement a resumable Codegeist chat harness centered on a portable
 
 T007 targets a practical local coding-agent loop: one directory-local session store
 with multiple chat sessions, optional MCP, Codegeist tools, patch/edit, shell,
-TerminalUI, and file-based storage. The feature set is implemented through the TUI
-chat-harness slice; the parent remains open only for final focused and broad
-verification. The current implemented chat harness owns a synchronous
-model/tool/model control loop over prompt-scoped callbacks. Do not add a database
-or server runtime for this task.
+TerminalUI, and file-based storage. The feature set and final native TUI verification
+are complete. The implemented chat harness owns a synchronous model/tool/model
+control loop over prompt-scoped callbacks. Exact edit is the current structured file
+mutation path; the broader `codegeist_patch` callback remains intentionally deferred.
+T007 does not add a database or server runtime.
 
 ## Current Codegeist Baseline
 
@@ -29,9 +29,9 @@ or server runtime for this task.
 - `ask` selects the first configured provider through `CodegeistConfig`, uses the
   provider config's `defaultModel()`, calls `CodegeistChatService`, and prints the
   response text.
-- Provider config currently supports typed config-only `ollama` and `openai`
-  entries. Runtime provider calls are implemented only for local Ollama through
-  `OllamaChatModel`.
+- Provider config supports typed `ollama` and `openai` entries. Runtime chat adapters
+  are implemented through `OllamaChatModel` and `OpenAiChatModel`; provider tests
+  keep local and hosted calls behind explicit category gates.
 - Direct `codegeist.yml` loading can parse the top-level `mcp:` client catalog as a
   YAML object keyed by client id. `stdio` clients use `type`, `command`, and `args`;
   `streamable_http` clients use `type`, `url`, and optional `endpoint`. The completed
@@ -150,7 +150,7 @@ implementation tests need them.
 - `T007_01_define-chat-file-tool-harness-scope.md` - completed original scope
   definition; this parent now supersedes the old chat-file naming with the
   session-store contract.
-- `T007_02_add-session-store-and-continue-option.md` - add
+- `T007_02_add-session-store-and-continue-option.md` - completed
   `.codegeist/session.json` and `ask -c/--continue` behavior.
 - `T007_03_add-mcp-and-read-write-tools/task.md` - completed the first MCP and
   read/list/glob/grep/write tool path through focused child tasks; the minimal
@@ -160,12 +160,13 @@ implementation tests need them.
   `mcp-and-readwrite-tools-spec.md`, `mcp-and-readwrite-tools-research.md`,
   `mcp-and-readwrite-tools-implementation-plan.md`, and
   `coding-agent-harness-implementations.md`.
-- `T007_04_add-patch-edit-and-shell-tools/task.md` - add bounded patch/edit and
-  shell tools that persist tool activity into `.codegeist/session.json`. Its
+- `T007_04_add-patch-edit-and-shell-tools/task.md` - completed bounded exact-edit
+  and shell tools that persist tool activity into `.codegeist/session.json`. Its
   research docs live in the same directory, including
   `ask-project-question-catalog.md`, `ask-project-research.md`, and
   `opencode-shell-tool-comparison.md`. Its child tasks split the work into exact
-  edit, structured patch, shell, and final documentation/verification slices.
+  edit, deferred structured patch, shell, and final documentation/verification
+  slices.
 - `T007_05_add-agent-control-loop/task.md` - solved: added the first
   Codegeist-owned model/tool/model control loop so tool results drive model
   continuation instead of relying on a single provider call with hidden Spring AI
@@ -181,10 +182,10 @@ implementation tests need them.
   in-memory transcript display, repeated turns, handled harness errors, and no
   separate JLine console, second agent runtime, or persisted UI state. Its detailed
   handoff lives in `T007_06_add-terminalui-chat-harness/implementation-plan.md`.
-- `T007_07_verify-chat-file-tool-harness.md` - verify the native TUI path with a
-  VHS-recorded hello-world shell-script task that uses `codegeist_write` and
-  `codegeist_shell`, records MP4/WebM evidence, and checks workspace plus session
-  store side effects.
+- `T007_07_verify-chat-file-tool-harness.md` - solved with a VHS-recorded native TUI
+  hello-world task that uses `codegeist_write` and `codegeist_shell`, records
+  MP4/WebM evidence, checks the visible transcript, and verifies workspace plus
+  session-store side effects.
 
 ## Parent Acceptance Criteria
 
@@ -196,7 +197,8 @@ implementation tests need them.
 - `CodegeistConfig` can load the minimal `mcp:` client map from direct
   `codegeist.yml`.
 - Configured MCP callbacks can be made available to chat calls.
-- Codegeist-owned tools include read/list/glob/grep/write plus patch/edit and shell.
+- Codegeist-owned tools include read/list/glob/grep/write, exact edit, and shell;
+  broader structured patch semantics remain deferred.
 - Tool calls and results are persisted in the active `.codegeist/session.json` with
   bounded output.
 - Codegeist owns an iterative model/tool/model control loop for coding-agent turns;
@@ -247,3 +249,12 @@ CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=<test-selector>
 Do not document direct `mvn test` commands for new implementation tasks. Use
 `task native-smoke`, `task qemu-windows-smoke`, or `task final-smoke-suite` only
 when command runtime, packaging, native behavior, or smoke contracts change.
+
+Final parent verification completed on 2026-07-18:
+
+- Focused TUI, harness, agent-loop, local-tool, and session tests passed with 71
+  tests, 0 failures, 0 errors, and 0 skipped.
+- `task tui-hello-world-smoke` passed with a current native build and complete
+  visible transcript, workspace, media, and session-store evidence.
+- The full JVM suite passed with 191 tests, 0 failures, 0 errors, and 6 skipped
+  provider-gated tests.

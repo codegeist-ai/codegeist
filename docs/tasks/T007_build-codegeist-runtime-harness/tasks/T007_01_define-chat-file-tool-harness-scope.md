@@ -4,6 +4,10 @@ Parent: `T007_build-codegeist-runtime-harness`
 
 Status: completed
 
+Historical note: this scope snapshot predates the parent task's final
+`.codegeist/session.json`, `ask -c/--continue`, and TUI contracts. Use the parent
+`task.md` and current architecture docs for implemented behavior.
+
 ## Goal
 
 Record the current T007 scope and the underlying coding-agent harness design before
