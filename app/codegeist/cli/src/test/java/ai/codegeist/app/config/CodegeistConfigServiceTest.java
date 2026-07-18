@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
@@ -21,6 +22,7 @@ import org.springframework.context.ApplicationContext;
 class CodegeistConfigServiceTest {
 
     private static final String CONFIG_FILE_NAME = "codegeist.yml";
+    private static final String INJECTED_CONFIG_PATH = "src/test/resources/codegeist-current-config-test.yml";
     private static final String OLLAMA_PROVIDER_ID = "ollama";
     private static final String OPENAI_PROVIDER_ID = "openai";
     @Autowired
@@ -91,6 +93,75 @@ class CodegeistConfigServiceTest {
         assertThat(openai.getApiKey()).isEqualTo("local-openai-key");
         assertThat(openai.getOrganizationId()).isEqualTo("org-local");
         assertThat(openai.getProjectId()).isEqualTo("project-local");
+    }
+
+    @Test
+    void loadsCurrentConfigFromWorkingDirectoryWhenPropertyIsBlank() throws IOException {
+        Files.writeString(tempDir.resolve(CONFIG_FILE_NAME), """
+            provider:
+              ollama:
+                type: ollama
+                base-url: http://localhost:11434
+                model: qwen3:4b-instruct
+            """);
+
+        CodegeistConfig config = loadCurrentConfig("", tempDir);
+        OllamaProviderConfig ollama = (OllamaProviderConfig) provider(config);
+
+        assertThat(ollama.getModel()).isEqualTo("qwen3:4b-instruct");
+        assertThat(ollama.defaultModel()).isEqualTo("qwen3:4b-instruct");
+        assertThat(service.toYaml(config)).contains("model: \"qwen3:4b-instruct\"");
+    }
+
+    @Test
+    void explicitConfigPathOverridesWorkingDirectoryConfig() throws IOException {
+        Path explicitConfig = tempDir.resolve("explicit.yml");
+        Path workingDirectory = Files.createDirectory(tempDir.resolve("workspace"));
+        Files.writeString(explicitConfig, """
+            provider:
+              explicit:
+                type: ollama
+                base-url: http://explicit.example
+            """);
+        Files.writeString(workingDirectory.resolve(CONFIG_FILE_NAME), """
+            provider:
+              local:
+                type: ollama
+                base-url: http://working-directory.example
+            """);
+
+        ProviderConfig selected = provider(loadCurrentConfig(explicitConfig.toString(), workingDirectory));
+
+        assertThat(selected.getBaseUrl()).isEqualTo("http://explicit.example");
+    }
+
+    @Test
+    void missingWorkingDirectoryConfigReturnsEmptyConfig() {
+        CodegeistConfig config = loadCurrentConfig("", tempDir);
+
+        assertThat(config.defaultProvider()).isEmpty();
+        assertThat(service.toYaml(config).trim()).isEqualTo("{}");
+    }
+
+    @Test
+    void missingExplicitConfigDoesNotFallBackToWorkingDirectory() throws IOException {
+        Files.writeString(tempDir.resolve(CONFIG_FILE_NAME), """
+            provider:
+              ollama:
+                type: ollama
+                base-url: http://localhost:11434
+            """);
+
+        assertThatThrownBy(() -> loadCurrentConfig(tempDir.resolve("missing.yml").toString(), tempDir))
+                .isInstanceOf(IOException.class);
+    }
+
+    @Test
+    void workingDirectoryConfigDirectoryFailsInsteadOfReturningEmpty() throws IOException {
+        Files.createDirectory(tempDir.resolve(CONFIG_FILE_NAME));
+
+        assertThatThrownBy(() -> loadCurrentConfig("", tempDir))
+                .isInstanceOf(IOException.class);
     }
 
     @Test
@@ -362,5 +433,21 @@ class CodegeistConfigServiceTest {
 
     private Map<?, ?> renderedYaml(CodegeistConfig config) throws IOException {
         return new YAMLMapper().readValue(service.toYaml(config), Map.class);
+    }
+
+    private CodegeistConfig loadCurrentConfig(String path, Path workingDirectory) {
+        Object originalConfigPath = ReflectionTestUtils.getField(service, "configPath");
+        Object originalWorkingDir = ReflectionTestUtils.getField(service, "workingDir");
+        try {
+            ReflectionTestUtils.setField(service, "configPath", path);
+            ReflectionTestUtils.setField(service, "workingDir", workingDirectory.toString());
+            return service.loadCurrentConfig();
+        }
+        finally {
+            ReflectionTestUtils.setField(service, "configPath", originalConfigPath == null
+                    ? INJECTED_CONFIG_PATH
+                    : originalConfigPath);
+            ReflectionTestUtils.setField(service, "workingDir", originalWorkingDir);
+        }
     }
 }

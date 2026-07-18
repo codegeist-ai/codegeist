@@ -217,6 +217,20 @@ jobs:
               exit $LASTEXITCODE
           }
 
+          $environmentCommand = "`"$vsDevCmd`" -arch=x64 >nul && set VCToolsRedistDir"
+          $environmentOutput = & cmd /d /s /c $environmentCommand
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to resolve VCToolsRedistDir from the MSVC environment."
+          }
+          $redistSetting = $environmentOutput |
+              Where-Object { $_ -like "VCToolsRedistDir=*" } |
+              Select-Object -First 1
+          if (-not $redistSetting) {
+              throw "VCToolsRedistDir was not available after activating MSVC."
+          }
+          $vcToolsRedistDir = $redistSetting.Substring("VCToolsRedistDir=".Length)
+          "CODEGEIST_WINDOWS_VC_REDIST_DIR=$vcToolsRedistDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Package and smoke native archive
         working-directory: app/codegeist/cli
         shell: pwsh
@@ -228,7 +242,8 @@ jobs:
             -SmokeRoot (Join-Path (Get-Location).Path "target/smoke-test") `
             -NativeTimeoutSeconds ([int]$env:NATIVE_SMOKE_TIMEOUT_SECONDS) `
             -FileEditTimeoutSeconds ([int]$env:FILE_EDIT_SMOKE_TIMEOUT_SECONDS) `
-            -ShellAskTimeoutSeconds ([int]$env:SHELL_ASK_SMOKE_TIMEOUT_SECONDS)
+            -ShellAskTimeoutSeconds ([int]$env:SHELL_ASK_SMOKE_TIMEOUT_SECONDS) `
+            -WindowsVcRedistDir $env:CODEGEIST_WINDOWS_VC_REDIST_DIR
 
       - name: Smoke platform install script
         working-directory: app/codegeist/cli

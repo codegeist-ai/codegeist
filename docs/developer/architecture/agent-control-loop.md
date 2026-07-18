@@ -467,8 +467,9 @@ message turn. The loop uses `rawChat(...)` so it can inspect the raw Spring AI
 `CodegeistChatModel<T extends ProviderConfig>` is the provider implementation
 contract. Concrete providers receive the selected config in their constructor, then
 receive runtime model selection and message history through `CodegeistChatTurnRequest`
-at call time. This keeps provider config access-only and keeps runtime state out of
-`ProviderConfig`.
+at call time. This keeps per-turn runtime state out of `ProviderConfig`; an optional
+provider-owned default such as Ollama `model` is resolved before the turn request is
+created.
 
 `OllamaChatModel` and `OpenAiChatModel` are currently the implemented provider
 adapters. Each adapter:

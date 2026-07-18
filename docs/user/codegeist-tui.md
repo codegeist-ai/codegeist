@@ -20,10 +20,15 @@ provider:
   ollama:
     type: ollama
     base-url: http://localhost:11434
+    model: qwen3:4b-instruct
 ```
 
-The current Ollama fallback model is `llama3.2:1b`. Make sure the local Ollama
-server is already running and the model exists before opening the TUI.
+Codegeist loads `codegeist.yml` from the process working directory by default.
+The optional Ollama `model` value selects the runtime model used by `ask` and the
+TUI; it is useful when tool calls need a model stronger than the compatibility
+fallback. If `model` is omitted, the current fallback remains `llama3.2:1b`.
+Make sure the local Ollama server is already running and the configured model
+exists before opening the TUI.
 
 If the config file is not in the working directory, pass it with a Spring
 application property:
@@ -116,10 +121,10 @@ working directory or that `-Dcodegeist.config=<path>` points at the intended
 file.
 
 If local Ollama calls fail, verify that Ollama is reachable at the configured
-`base-url` and that the fallback model exists:
+`base-url` and that the configured model exists:
 
 ```bash
-ollama show llama3.2:1b
+ollama show qwen3:4b-instruct
 ```
 
 If a response is slow, wait for the provider call to complete. The current TUI

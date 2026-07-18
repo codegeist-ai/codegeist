@@ -45,8 +45,8 @@ docs:
 
 Codegeist currently contains one Java/Spring Boot CLI application under
 `app/codegeist/cli`. Implemented runtime behavior is Spring Boot application
-startup, typed access-only provider config loading and validation, trusted local
-SpEL preprocessing for explicit `codegeist.yml` files, direct workspace, tools, and
+startup, typed provider config loading and validation from an explicit path or
+working-directory `codegeist.yml`, trusted local SpEL preprocessing, direct workspace, tools, and
 MCP config loading, active workspace resolution, provider-neutral chat execution
 through `ChatHarnessService` and `CodegeistAgentLoopService`, a lazily created
 Codegeist chat model that wraps Spring AI Ollama and uses the runtime model name
@@ -230,15 +230,17 @@ Current behavior:
   shared base field, while runtime/output type is still returned by each concrete
   provider config's `getType()` constant. Broader provider-matrix and
   OpenCode-only types remain unsupported in this task.
-  Provider classes validate only local config completeness; they do not store model
-  names, create Spring AI clients, or call providers.
+  Provider classes validate only local config completeness; they do not create
+  Spring AI clients or call providers. Ollama alone currently stores optional
+  `model`, which overrides its `llama3.2:1b` compatibility fallback for commands
+  without a model selector.
 - `CodegeistChatRequest` and `CodegeistChatResponse` are provider-neutral records
   for one runtime model name, prompt, and text response. `CodegeistChatRequest` does
   not carry message history, selected provider, selected tools, or session state;
   callers pass the validated `ProviderConfig` separately to the chat path, and
-  prompt-scoped tools travel through `CodegeistChatExecutionContext`. Model names,
-  generation options, enablement, and completion-path routing are not part of
-  `ProviderConfig`.
+  prompt-scoped tools travel through `CodegeistChatExecutionContext`. Generic model
+  catalogs, generation options, enablement, and completion-path routing are not part
+  of `ProviderConfig`.
 - `CodegeistChatTurnRequest` is the internal provider-call request for one model
   turn. It carries the runtime model plus the Spring AI `Message` history for that
   call, allowing the agent loop to send the original `UserMessage`, an assistant
@@ -280,7 +282,7 @@ Current behavior:
   `CodegeistChatExecutionContext` before invoking the model through a one-message
   turn request.
 - `OllamaChatModel` and `OpenAiChatModel` are the concrete provider models. Each
-  receives its typed access-only provider config, maps the runtime model and
+  receives its typed provider config, maps the runtime model and
   prompt-scoped tool callbacks into provider-specific Spring AI options when a turn
   is called, disables Spring AI internal tool execution with
   `internalToolExecutionEnabled(false)`, and delegates a list-message `Prompt` to
@@ -729,14 +731,17 @@ deterministic ask-driven file-edit checks to `scripts/tests/file-edit-ask-smoke.
 and delegates deterministic ask-driven shell checks to
 `scripts/tests/shell-ask-smoke.ps1`. The artifact harness intentionally avoids a
 provider-only native `ask` check so smoke results do not depend on local model
-wording when no tool call is needed.
+wording when no tool call is needed. Windows packaging additionally copies the
+complete app-local `Microsoft.VC*.CRT` DLL set from `VCToolsRedistDir` and verifies
+`VCRUNTIME140.dll`, `VCRUNTIME140_1.dll`, and `MSVCP140.dll` after extraction.
 
 `scripts/tests/install-script-smoke.ps1` is the shared install-script smoke harness
 used by release runners and the Windows QEMU smoke. It stages the matching install
 script beside the archive already produced by the artifact harness, writes local
 checksums, serves release-shaped assets over localhost, runs the platform installer
 in an isolated install root, and verifies the installed wrapper with `--version`
-plus `--show-config`.
+plus `--show-config`. Its Windows path also verifies the three required app-local
+MSVC CRT DLLs after installation.
 
 `scripts/tests/native-smoke.ps1` is the Linux native smoke wrapper used by
 `task native-smoke` and the Linux smoke entrypoint. The wrapper optionally builds

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Map;
@@ -23,12 +25,20 @@ import org.springframework.shell.core.command.annotation.Command;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+/**
+ * Loads and validates one direct Codegeist YAML source. An explicit
+ * {@code codegeist.config} path always wins; otherwise the service loads
+ * {@code codegeist.yml} from {@code user.dir} when present and returns an empty
+ * config only when that default path is absent. Existing but invalid or unreadable
+ * paths propagate their load or validation failure instead of being ignored.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CodegeistConfigService {
 
     static final String SHOW_CONFIG_COMMAND = "--show-config";
+    static final String DEFAULT_CONFIG_FILE_NAME = "codegeist.yml";
 
     public static final String CONFIG_PROPERTY = CodegeistConfig.CONFIGURATION_PREFIX + ".config";
 
@@ -48,6 +58,9 @@ public class CodegeistConfigService {
     @Value("${" + CONFIG_PROPERTY + ":}")
     private String configPath;
 
+    @Value("${user.dir}")
+    private String workingDir;
+
     @Bean
     @Primary
     public CodegeistConfig loadCurrentConfig() {
@@ -56,8 +69,17 @@ public class CodegeistConfigService {
             return loadConfig(configPath);
         }
 
-        log.debug("Using empty default Codegeist config");
-        return new CodegeistConfig();
+        Path workingConfig = Path.of(workingDir)
+                .toAbsolutePath()
+                .normalize()
+                .resolve(DEFAULT_CONFIG_FILE_NAME);
+        if (Files.notExists(workingConfig, LinkOption.NOFOLLOW_LINKS)) {
+            log.debug("Codegeist config not found in working directory: {}", workingConfig);
+            return new CodegeistConfig();
+        }
+
+        log.debug("Using Codegeist config from working directory: {}", workingConfig);
+        return loadConfig(workingConfig.toString());
     }
 
     @SneakyThrows(IOException.class)

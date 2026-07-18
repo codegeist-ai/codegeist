@@ -43,9 +43,10 @@
   to the user-facing message `No session to continue`.
 - `app/codegeist/cli` implements `--show-config` as a Spring Shell command in
   `ai.codegeist.app.config.CodegeistConfigService`. The service resolves the
-  current global config policy, including `-Dcodegeist.config=<path>`, and prints
-  only direct `codegeist.yml` YAML with no `codegeist:` wrapper and no YAML document
-  marker.
+  current global config policy: explicit `-Dcodegeist.config=<path>` wins, otherwise
+  `${user.dir}/codegeist.yml` loads when present, and only a missing default path
+  yields empty config. It prints direct YAML with no `codegeist:` wrapper or YAML
+  document marker.
 - `app/codegeist/cli` implements `ask` as a Spring Shell prompt command in
   `ai.codegeist.app.chat.AskCommands`. Plain `ask <prompt>` accepts a single
   positional prompt parameter, delegates the turn to `ChatHarnessService`, prints
@@ -105,7 +106,7 @@
   for typed root entries. The provider root is
   `provider:`; there is no `providers:` alias. `CodegeistConfigRootParser` supplies
   the explicit provider class registry plus provider type constants to select
-  concrete access-only provider config classes. MCP entries dispatch through an
+  concrete provider config classes. MCP entries dispatch through an
   explicit transport config registry to `StdioMcpClientConfig` or
   `StreamableHttpMcpClientConfig`. `provider:` and `mcp:` roots now store
   `ProvidersConfig` and `McpClientsConfig`, both list-backed
@@ -125,7 +126,9 @@
   runtime; `reflect-config.json` includes root element, MCP, workspace, tools, and
   provider config POJOs for native images. Supported provider classes are currently
   only `ollama` and `openai`; each concrete provider config owns a provider-specific
-  `defaultModel()` without adding YAML model fields or chat adapter factory methods.
+  `defaultModel()`. Ollama accepts optional validated `model` and otherwise keeps the
+  `llama3.2:1b` compatibility fallback. Provider config does not own chat adapter
+  factory methods.
   The broader provider matrix and OpenCode-only provider types remain unsupported in
   this slice.
 - Provider-neutral chat runtime code lives under `ai.codegeist.app.chat`.
@@ -134,8 +137,8 @@
   Commands without a model selector use the selected provider config's
   `defaultModel()` before creating the request. `CodegeistChatService` maps the
   selected provider config subclass to the matching
-  `CodegeistChatModel<T extends ProviderConfig>` without storing the runtime model in
-  provider config.
+  `CodegeistChatModel<T extends ProviderConfig>` after resolving the runtime model
+  from the provider-owned default selection.
   Public `chat(...)` calls adapt a `CodegeistChatRequest` to an internal
   `CodegeistChatTurnRequest` with one `UserMessage`; the package-private raw seam
   returns Spring AI `ChatResponse` values for the agent loop. Tool-aware calls pass
@@ -149,7 +152,7 @@
   missing tool requests to the model as `Unknown tool requested: <name>`, and stops
   after eight tool-dispatch rounds with `Agent tool loop exceeded 8 rounds`.
   `OllamaChatModel` and `OpenAiChatModel` are the concrete provider models. They map
-  typed access-only provider config plus the request model into provider-specific
+  typed provider config plus the request model into provider-specific
   Spring AI options, pass prompt-scoped tool callbacks as tool definitions at call
   time, disable Spring AI internal tool execution, and delegate a message-history
   `Prompt` to the matching Spring AI model.
@@ -240,7 +243,10 @@
   Local Linux, Windows QEMU, and GitHub release jobs use this one PowerShell 7
   native-only harness for native package creation, archive unpacking, `--version`,
   native `--show-config`, command-log assertions, file-edit smoke delegation, and
-  shell-tool smoke delegation.
+  shell-tool smoke delegation. Windows archive packaging additionally copies the
+  complete app-local `Microsoft.VC*.CRT` set from `VCToolsRedistDir` and verifies
+  `VCRUNTIME140.dll`, `VCRUNTIME140_1.dll`, and `MSVCP140.dll` after extraction and
+  installation.
   The focused `scripts/tests/file-edit-ask-smoke.ps1` sub-harness starts a
   deterministic local Ollama-compatible fixture provider, runs the artifact's real
   `ask` command, lets the Codegeist loop dispatch `codegeist_edit`, then asserts
@@ -418,7 +424,8 @@
   packages Linux, Windows, and macOS native archives, unpacks each native archive
   into a fresh temp directory, smoke-tests `--version`, native `--show-config`, logs,
   deterministic file-edit side effects, and deterministic shell-tool side effects
-  before upload. The same native jobs then run
+  before upload. Windows also packages and verifies the app-local MSVC CRT. The same
+  native jobs then run
   `scripts/tests/install-script-smoke.ps1` so Linux, Windows, and macOS install
   scripts install from local release-shaped assets on their matching runners before
   upload. A separate install-script staging job syntax-checks and uploads
@@ -489,8 +496,9 @@
 - Native release artifacts should be platform archives, not true single executable
   files: Linux uses `codegeist-linux-x64.tar.gz`, Windows uses
   `codegeist-windows-x64.zip`, and each archive keeps the executable next to
-  GraalVM sidecar libraries. This preserves fast first startup by avoiding a
-  self-extracting runtime wrapper. The local Linux and Windows native smokes now
+  GraalVM sidecar libraries. Windows also carries the complete app-local MSVC CRT so
+  no system VC Redistributable is required. This preserves fast first startup by
+  avoiding a self-extracting runtime wrapper. The local Linux and Windows native smokes now
   package these archives, unpack them into fresh temp directories, and test the
   packaged executable rather than raw `target/` binaries.
 - `docs/developer/release/native-distribution-packaging.md` documents the archive
@@ -539,8 +547,9 @@
   release assets with downloaded checksum verification.
 - `docs/tasks/T006_build-provider-configuration-feature/` is open as the provider
   configuration feature epic. `T006_01` is solved with the minimal provider config
-  model; the later current implementation now loads only explicit `codegeist.yml`
-  paths through the central root parser instead of direct
+  model; the current implementation loads one direct `codegeist.yml` source from an
+  explicit path or the process working directory through the central root parser
+  instead of direct
   `@ConfigurationProperties` binding on `CodegeistConfig` or Codegeist roots in
   `application.yaml`.
   `T006_02` is solved with a Spring AI `2.0.0-M6` provider matrix, source evidence,
@@ -590,8 +599,9 @@
   model-list preflight before the selected chat call. `T006_06` is solved as
   provider feature-test categories plus the one-shot `ask` command and real
   Ollama-backed smoke coverage:
-  `ProviderConfig` is free of stored YAML model fields, options, enablement, and
-  completions-path routing; runtime model names now flow through
+  `ProviderConfig` is free of generic model catalogs, generation options,
+  enablement, and completions-path routing; Ollama now supports one optional
+  command-default `model`, resolved before runtime model names flow through
   `CodegeistChatRequest`, and provider
   feature tests run through `task test` with method- or class-level
   `CODEGEIST_TEST_PROVIDER_CATEGORY` gating. The category default is `none`, so
@@ -754,16 +764,16 @@
   method with the same inputs, requires a small refactoring check for touched Java
   classes and packages, requires focused developer documentation for each new
   implemented feature,
-  keeps provider config access-only, centralizes optional default
+  keeps provider config focused, centralizes optional default
   provider selection in `CodegeistConfig.defaultProvider()`, uses
   `ProviderConfig.defaultModel()` for provider-owned runtime fallbacks, keeps
   provider config separate from `CodegeistChatRequest`, and keeps chat model adapter
   creation in `CodegeistChatService` instead of provider config.
 - Codegeist provider configuration currently has typed `ollama` and `openai`
-  provider entries used by concrete chat adapters. Provider config has no stored YAML model fields;
-  explicit model selection belongs to the coding agent, session, command, request,
-  or provider feature test method, while concrete provider configs own their default
-  runtime model fallback.
+  provider entries used by concrete chat adapters. Ollama stores optional `model` as
+  its validated command-default override and otherwise uses `llama3.2:1b`; concrete
+  providers still own their runtime fallback and per-turn model names stay in the
+  request.
   `CodegeistConfig` should stay a root-element container; new top-level config
   sections should extend the central `CodegeistConfigRootParser` dispatch and return
   plain `CodegeistConfigRootElement` model objects instead of adding one field per
@@ -772,8 +782,8 @@
   mapping framework for `codegeist.yml`. Current direct YAML loading evaluates a
   minimal Spring SpEL phase before mapping string scalar values containing `#{`.
   current direct YAML loading validates configured `base-url` and ordinary scalar
-  credential fields. Provider enablement, completion-path routing, models,
-  generation options, feature capabilities, inheritance, runtime source
+  credential fields. Provider enablement, completion-path routing, generic model
+  catalogs, generation options, feature capabilities, inheritance, runtime source
   orchestration beyond the task scope, provider starters, and additional provider
   calls stay deferred to later T006 child tasks.
 - Do not create placeholder classes, ids, ports, enums, records, package layers,

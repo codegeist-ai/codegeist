@@ -187,6 +187,9 @@ Rules:
 - Keep model names as runtime strings selected by the caller, agent, session,
   command, or provider feature test method unless a provider SDK requires a
   stronger type for a tested path.
+- A provider may expose one optional validated command-default model string when a
+  focused workflow needs it. Ollama currently uses `model` for that purpose and
+  resolves it before creating `CodegeistChatRequest`.
 - Do not create Java enums, catalogs, or fallback policies for model names before a
   focused workflow needs them.
 - Each concrete `CodegeistChatModel` must pass the runtime-selected model value
@@ -373,8 +376,9 @@ Rules:
   other configured providers.
 - Keep provider-selection and enablement policy outside `ProviderConfig` until a
   focused task makes that behavior observable.
-- Keep stored YAML model fields out of provider config; `defaultModel()` is a
-  provider-owned runtime fallback, not persisted config state.
+- Keep generic model catalogs out of provider config. A focused provider may store
+  one optional command-default model; `defaultModel()` must resolve that value or a
+  provider-owned compatibility fallback before the runtime request is created.
 - It should stay simple until there is a tested need for richer diagnostics or
   status objects.
 

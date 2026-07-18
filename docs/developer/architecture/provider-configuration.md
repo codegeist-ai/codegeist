@@ -8,13 +8,14 @@ configuration slice under `app/codegeist/cli`.
 This document describes implemented config loading and rendering behavior plus the
 current provider category policy boundary. It does not describe provider client
 creation beyond the already implemented local Ollama chat seam, account setup,
-local daemon startup, model pulls, home-path discovery, or service-level
-multi-source loading orchestration.
+local daemon startup, model pulls, home-path discovery, or model-level multi-source
+combination.
 
 The current slice solves these problems:
 
 - Bind Codegeist provider config from Spring application properties.
-- Load an explicit direct `codegeist.yml` path with Jackson YAML.
+- Load direct `codegeist.yml` from an explicit path or the process working
+  directory with Jackson YAML.
 - Resolve the Spring `codegeist.config` property as the current global CLI config
   source when it is set, commonly through `-Dcodegeist.config=<path>` at startup.
 - Evaluate trusted local Spring SpEL only in direct YAML string scalar values.
@@ -27,11 +28,11 @@ The current slice solves these problems:
   Codegeist-owned local tool settings.
 - Validate config locally with Bean Validation after mapping.
 - Render `--show-config` YAML directly, including configured sensitive values.
-- Keep provider config free of models, generation options, enablement, and
-  completion-path routing; those are runtime selections made by a caller, coding
-  agent, session, command, or provider-feature test method.
+- Keep provider config free of generation options, enablement, and completion-path
+  routing. Ollama alone currently accepts an optional `model` that overrides its
+  compatibility fallback for commands without a separate model selector.
 - Let each concrete provider config own a provider-specific default runtime model
-  through `ProviderConfig.defaultModel()` without storing model names in YAML.
+  through `ProviderConfig.defaultModel()`.
 
 ## Source Map
 
@@ -59,7 +60,7 @@ The current slice solves these problems:
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistEditToolConfig.java` | `tools.codegeist-edit:` payload for edit diff preview line and character limits. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/CodegeistShellToolConfig.java` | `tools.codegeist-shell:` payload for shell wrapper argv and default timeout seconds. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/ProviderConfig.java` | Abstract base class for provider map values. Holds common access fields, exposes read-only output `type` through concrete constants, and declares provider-owned `defaultModel()`. |
-| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Access config class for local Ollama settings and the `llama3.2:1b` default runtime model. |
+| `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OllamaProviderConfig.java` | Config class for local Ollama access, optional `model`, and the `llama3.2:1b` compatibility fallback. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/config/OpenAiProviderConfig.java` | Access config class for OpenAI settings and the `gpt-5-mini` default runtime model. |
 | `app/codegeist/cli/src/main/java/ai/codegeist/app/chat/OpenAiChatModel.java` | OpenAI chat adapter that exposes Codegeist tool callbacks as Spring AI OpenAI tool definitions while keeping internal tool execution disabled. |
 | `app/codegeist/cli/src/main/resources/META-INF/native-image/reflect-config.json` | GraalVM reflection metadata that lets Jackson instantiate config root, provider, MCP, workspace, and tools POJOs in native images. |
@@ -90,8 +91,9 @@ public class CodegeistConfig {
 }
 ```
 
-`CodegeistConfigService` builds this container only from explicit direct
-`codegeist.yml` files by delegating each top-level YAML field to
+`CodegeistConfigService` builds this container from the explicit
+`codegeist.config` path when set, otherwise from `codegeist.yml` in `${user.dir}`
+when that file exists, by delegating each top-level YAML field to
 `CodegeistConfigRootParser`. Each top-level YAML field must match one root name
 supported by that parser. `application.yaml` is not a Codegeist config source.
 
@@ -237,6 +239,7 @@ classDiagram
       <<provider ollama>>
       String PROVIDER_TYPE
       String DEFAULT_MODEL
+      String model
       getType() String
       defaultModel() String
     }
@@ -346,13 +349,14 @@ serialization time.
 callers that require a provider choose the failure policy at their boundary.
 
 Concrete provider classes add provider-specific data fields and own a
-provider-specific `defaultModel()` runtime fallback. `OpenAiProviderConfig` adds
+provider-specific `defaultModel()` runtime selection. `OpenAiProviderConfig` adds
 `api-key`, `organization-id`, and `project-id`, and returns `gpt-5-mini` as its
-default runtime model. `OllamaProviderConfig` relies on the common access fields and
-returns `llama3.2:1b`. `CodegeistChatService` owns the narrow runtime dispatch from
-those config subclasses to `OpenAiChatModel` or `OllamaChatModel`. Stored provider
-config remains an access data contract and does not contain YAML model names,
-generation options, enablement, chat adapter factories, or completion-path routing.
+default runtime model. `OllamaProviderConfig` adds optional `model`, returns that
+value when configured, and otherwise returns `llama3.2:1b`. Blank configured model
+values fail Bean Validation. `CodegeistChatService` owns the narrow runtime dispatch
+from those config subclasses to `OpenAiChatModel` or `OllamaChatModel`. Provider
+config still does not contain generation options, enablement, chat adapter factories,
+or completion-path routing.
 
 ```mermaid
 classDiagram
@@ -481,6 +485,7 @@ classDiagram
     class OllamaProviderConfig {
       <<provider ollama>>
       String DEFAULT_MODEL
+      String model
       isBaseUrlConfigured() boolean
       defaultModel() String
     }
@@ -582,9 +587,12 @@ public CodegeistConfig loadCurrentConfig() {
 ```
 
 The primary bean loads the direct YAML path from the injected `codegeist.config`
-value when it is set and otherwise returns the empty default config. Command paths
-that need the active global CLI source call `loadCurrentConfig()`, which uses the
-same policy.
+value when it is set. Otherwise it checks `${user.dir}/codegeist.yml`: an absent
+path returns the empty default config, while an existing file is loaded and any
+directory, unreadable file, malformed YAML, or validation problem is propagated.
+An explicit path never falls back to the working-directory file. Command paths that
+need the active global CLI source call `loadCurrentConfig()`, which uses the same
+policy.
 
 ## Direct YAML Loading Flow
 
@@ -721,13 +729,13 @@ marker. Empty default config has no synthetic roots and renders as:
 `api-key`, `authorization`, `password`, `token`, `credentials`, or other sensitive
 fields, those values are printed as YAML. Treat command output as sensitive.
 
-## Multi-Source Status
+## Config Source Status
 
-The current slice has no model-level multi-source combination API. The primary
-config bean is empty, `loadConfig(String)` returns the single explicit YAML file it
-parses, and `loadCurrentConfig()` chooses that explicit file only when the injected
-`codegeist.config` value is set. Later home-path work must define its own discovery
-and combination semantics before adding additional sources.
+The current slice does not merge config files. `loadConfig(String)` returns one
+parsed YAML file, and `loadCurrentConfig()` selects exactly one source: the explicit
+`codegeist.config` path first, then `${user.dir}/codegeist.yml`, then an empty config
+only when neither path is configured or present. Later home-path work must define
+its own precedence and combination semantics before adding another source.
 
 ## Validation Strategy
 
@@ -740,12 +748,12 @@ objects:
   constant in `ProvidersRootElement`.
 - Provider `name` remains optional, but when present it must contain a non-blank
   character.
-- `ollama` requires `base-url`.
+- `ollama` requires `base-url`; optional `model` must be non-blank when set.
 - `openai` requires `api-key`; `base-url`, `organization-id`, and `project-id`
   remain optional config data.
-- Model selection, generation options, enablement, and completion-path routing are
-  intentionally not part of provider validation because they vary by coding agent,
-  session, command, or provider feature test method.
+- Generation options, enablement, and completion-path routing are intentionally not
+  part of provider validation because they vary by coding agent, session, command,
+  or provider feature test method.
 - Validation never checks network availability, model existence, account balance,
   billing status, local daemon state, or remote credentials.
 
@@ -761,6 +769,9 @@ lives in `docs/tests/provider-feature-tests.md`.
 | --- | --- |
 | Unqualified `CodegeistConfig` injection receives the parsed `codegeist.config` file when configured | `@Primary` targets normal app injection without treating `application.yaml` as Codegeist config. |
 | Explicit YAML path loads provider-specific fields | Direct Jackson YAML loading maps into typed `CodegeistConfig`. |
+| Blank property loads `${user.dir}/codegeist.yml` when present | Normal CLI startup discovers project-local config without a Spring property. |
+| Explicit path overrides a working-directory file and missing explicit paths fail | Config precedence is deterministic and never silently falls back. |
+| Missing working-directory file alone returns `{}` | Existing no-config startup behavior remains compatible. |
 | Explicit YAML path loads MCP client fields | Direct root iteration reaches `McpClientsRootElement` and maps the first MCP provider-style YAML object into a list-backed model. |
 | Multiple MCP clients can use the same `type` | Client identity comes from the YAML object key, not from transport type values such as `stdio`. |
 | `-Dcodegeist.config=<path>` resolves current CLI config | Command paths can share one global explicit config source instead of per-command config options. |
@@ -769,6 +780,7 @@ lives in `docs/tests/provider-feature-tests.md`.
 | Every supported `type` maps to its concrete class | The explicit provider registry is complete for `ollama` and `openai`. |
 | Unsupported provider types fail | Broader provider-matrix and OpenCode-only types remain unsupported in this task. |
 | Provider-specific missing fields fail validation | Bean Validation and narrow grouped checks protect config completeness locally. |
+| Ollama `model` overrides `llama3.2:1b` and blank values fail | Commands receive a validated configurable model while omitted config stays compatible. |
 | `--show-config` prints parseable direct YAML with configured values unchanged | Spring Shell command wiring and YAML rendering work together. |
 | Packaged native `--show-config` prints `{}` for empty default config | Native image command mode and default empty rendering stay aligned with smoke scripts. |
 | Provider feature tests run through `task test` with method-level categories | `CODEGEIST_TEST_PROVIDER_CATEGORY` defaults to `none`; local calls require `local`, while hosted calls require explicit `remote_free` or `remote_paid` selection. |

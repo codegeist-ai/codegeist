@@ -42,6 +42,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $ChecksumName = "SHA256SUMS.txt"
+$RequiredWindowsVcRuntimeFiles = @("VCRUNTIME140.dll", "VCRUNTIME140_1.dll", "MSVCP140.dll")
 
 function Fail-Smoke {
     param([string]$Message)
@@ -495,6 +496,15 @@ $server = $null
 try {
     $server = Start-AssetServer
     $installedCommand = Invoke-Installer $spec $server
+    if ($Platform -eq "windows-x64") {
+        $installedCurrentDir = Join-Path $SmokeRoot "install-root/current"
+        foreach ($runtimeFile in $RequiredWindowsVcRuntimeFiles) {
+            $runtimePath = Join-Path $installedCurrentDir $runtimeFile
+            if (-not (Test-Path -LiteralPath $runtimePath -PathType Leaf)) {
+                Fail-Smoke "Installed app-local MSVC runtime library not found: $runtimePath"
+            }
+        }
+    }
     Write-SmokeLog "Command: $installedCommand --version"
     Invoke-InstalledCommand `
         -CommandPath $installedCommand `
