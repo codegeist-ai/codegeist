@@ -10,6 +10,8 @@
 # Inputs:
 # - Platform: `linux-x64`, `windows-x64`, or `macos-x64`.
 # - CliDir: app/codegeist/cli directory containing target/ build outputs.
+# - WindowsVcRedistDir: MSVC `VCToolsRedistDir`; required for Windows archives
+#   so the app-local CRT is packaged beside codegeist.exe.
 # - Ask-driven tool smokes use deterministic fixture providers so real model wording
 #   never decides whether side-effecting tool checks pass.
 #
@@ -48,13 +50,16 @@ param(
 
     [int]$ShellAskTimeoutSeconds = 90,
 
-    [string]$OllamaBaseUrl = "http://localhost:11434"
+    [string]$OllamaBaseUrl = "http://localhost:11434",
+
+    [string]$WindowsVcRedistDir = $env:CODEGEIST_WINDOWS_VC_REDIST_DIR
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $ExpectedDefaultConfig = "{}"
+$RequiredWindowsVcRuntimeFiles = @("VCRUNTIME140.dll", "VCRUNTIME140_1.dll", "MSVCP140.dll")
 
 function Fail-Smoke {
     param([string]$Message)
@@ -261,6 +266,54 @@ function Copy-NativeSidecars {
     }
 }
 
+function Copy-WindowsVcRuntime {
+    param([string]$PackageDir)
+
+    if ($Platform -ne "windows-x64") {
+        return
+    }
+    if (-not $WindowsVcRedistDir) {
+        Fail-Smoke "WindowsVcRedistDir is required to package the app-local MSVC runtime"
+    }
+
+    $x64Dir = Join-Path $WindowsVcRedistDir "x64"
+    if (-not (Test-Path -LiteralPath $x64Dir -PathType Container)) {
+        Fail-Smoke "MSVC x64 redist directory was not found: $x64Dir"
+    }
+
+    $runtimeDir = Get-ChildItem -LiteralPath $x64Dir -Directory -Filter "Microsoft.VC*.CRT" |
+        Where-Object {
+            $candidate = $_.FullName
+            @($RequiredWindowsVcRuntimeFiles | Where-Object {
+                -not (Test-Path -LiteralPath (Join-Path $candidate $_) -PathType Leaf)
+            }).Count -eq 0
+        } |
+        Select-Object -First 1
+    if (-not $runtimeDir) {
+        Fail-Smoke "No complete Microsoft.VC*.CRT directory was found under $x64Dir"
+    }
+
+    $runtimeFiles = @(Get-ChildItem -LiteralPath $runtimeDir.FullName -File -Filter "*.dll")
+    foreach ($runtimeFile in $runtimeFiles) {
+        Copy-Item -LiteralPath $runtimeFile.FullName -Destination $PackageDir -Force
+    }
+    Write-SmokeLog "Packaged $($runtimeFiles.Count) app-local MSVC runtime libraries from $($runtimeDir.FullName)"
+}
+
+function Assert-WindowsVcRuntime {
+    param([string]$Directory)
+
+    if ($Platform -ne "windows-x64") {
+        return
+    }
+    foreach ($runtimeFile in $RequiredWindowsVcRuntimeFiles) {
+        $path = Join-Path $Directory $runtimeFile
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            Fail-Smoke "Required app-local MSVC runtime library was not packaged: $path"
+        }
+    }
+}
+
 function New-NativeArchive {
     $binaryName = Get-NativeBinaryName
     $native = if ($NativeExecutable) { Resolve-SmokePath $NativeExecutable } else { Join-Path $CliDir "target/$binaryName" }
@@ -288,6 +341,7 @@ function New-NativeArchive {
     }
 
     Copy-NativeSidecars $packageDir
+    Copy-WindowsVcRuntime $packageDir
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     if ($extension -eq "zip") {
@@ -341,6 +395,7 @@ function Invoke-NativeArtifactSmoke {
         if (-not (Test-Path -LiteralPath $native)) {
             Fail-Smoke "Packaged native executable was not found after unpack: $native"
         }
+        Assert-WindowsVcRuntime $runDir
 
         Write-SmokeLog "Command: $native --version"
         Invoke-SmokeProcess `

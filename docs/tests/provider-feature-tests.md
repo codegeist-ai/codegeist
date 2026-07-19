@@ -22,17 +22,18 @@ methods run or are skipped.
 
 The current provider implementation is intentionally small:
 
-- `ProviderConfig` stores access data only, such as `name`, `base-url`, and
-  provider-specific credential fields.
-- Provider config does not store model names, generation options, enablement,
-  provider routing, or completion paths.
+- `ProviderConfig` stores provider access data such as `name`, `base-url`, and
+  provider-specific credential fields. Ollama also accepts optional `model` as the
+  command-default override returned by `defaultModel()`.
+- Provider config does not store generic model catalogs, generation options,
+  enablement, provider routing, or completion paths.
 - YAML `provider.<id>.type` is a dispatch-only input. Runtime/output type is
   returned by each concrete provider config's `getType()` constant.
 - `ProvidersRootElement` uses an explicit Java registry to map registered provider
   type constants to config classes. It maps the raw YAML object into the matching
   class without branching on JVM versus native-image runtime.
 - `CodegeistChatService` creates the implemented local Ollama and OpenAI chat models
-  from the selected access-only provider config. OpenAI provider feature tests still
+  from the selected typed provider config. OpenAI provider feature tests still
   call selected media/model HTTP endpoints directly when they do not need the
   Codegeist chat runtime.
 - `CodegeistChatRequest` carries the runtime model and prompt. The selected

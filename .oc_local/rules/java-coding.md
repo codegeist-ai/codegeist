@@ -127,12 +127,14 @@ Use this rule when adding or changing Java source in Codegeist.
 
 ## Provider Config And Chat Models
 
-- Keep `ProviderConfig` access-only. Do not add stored YAML model fields,
-  generation options, enablement flags, or completions-path routing to provider
-  config unless a focused runtime task explicitly changes that contract.
+- Keep `ProviderConfig` focused on provider access and command-default selection.
+  `OllamaProviderConfig` may store its current optional YAML `model` override because
+  commands without a model flag resolve it through `defaultModel()`. Do not add
+  generic model catalogs, generation options, enablement flags, or completions-path
+  routing without another focused runtime task.
 - Let each concrete `ProviderConfig` implement `defaultModel()` for the
-  provider-owned runtime fallback, but do not add stored YAML model fields or
-  command-owned hardcoded model defaults.
+  provider-owned runtime selection. Ollama returns its configured model or the
+  `llama3.2:1b` compatibility fallback; do not add command-owned hardcoded defaults.
 - Put optional first-provider selection in `CodegeistConfig.defaultProvider()`.
   Callers that require a provider should choose the failure behavior at their
   boundary instead of duplicating provider-map iteration in command classes.

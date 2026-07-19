@@ -285,10 +285,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   alone is never permission to call a remote provider.
 - For Codegeist provider config, follow OpenCode's useful shape only as behavior
   evidence: providers live under the `provider` map, but Codegeist `ProviderConfig`
-  stays access-only for now. The first parser slice uses unrestricted Spring SpEL
-  evaluation instead of a separate credential-reference schema. Defer model and
-  generation-option selection until a focused runtime or provider-feature task
-  needs it.
+  stays focused on access and command-default selection. Ollama currently supports
+  optional `model`; defer model catalogs for other providers and all generation
+  options until another focused runtime or provider-feature task needs them. The
+  parser uses unrestricted Spring SpEL evaluation instead of a separate
+  credential-reference schema.
 - For `T006_04`, keep provider-specific Java config classes limited to config-only
   `ollama` and `openai` data contracts. All other provider types from the T006_03
   availability matrix stay deferred until a focused provider-specific task needs
@@ -305,11 +306,11 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   require the needed config fields and safety gate, and create only the selected
   provider's Spring AI client on demand instead of instantiating all configured
   providers at startup.
-- For Codegeist chat model implementation, keep provider configs access-only. Use
+- For Codegeist chat model implementation, keep provider configs focused. Use
   `CodegeistChatModel<T extends ProviderConfig>` as the abstract base, let each
   concrete provider model such as `OllamaChatModel` extend it with the matching
-  config type, and keep `ProviderConfig` limited to access data plus
-  `defaultModel()`. `CodegeistChatService` owns the narrow dispatch from the selected
+  config type, and keep `ProviderConfig` limited to access data plus command-default
+  model selection. `CodegeistChatService` owns the narrow dispatch from the selected
   `ProviderConfig` subclass to the matching chat adapter; do not add a broader
   factory, registry, or strategy layer unless a focused task needs it. Explicit
   runtime model selection stays in `CodegeistChatRequest` and is mapped to
@@ -323,12 +324,12 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `CodegeistAgentLoopService`, append tool-result messages, and continue the model
   turn itself. Do not add a config flag that re-enables hidden Spring AI or provider
   tool execution.
-- Keep `ProviderConfig` free of stored YAML model fields, options, enablement, and
-  completions-path routing. Provider config stores access, endpoint, and
-  credentials; enablement, routing, explicit model selection, and generation-option
-  selection belong to the coding agent, session, command, request, or provider
-  feature test method. Commands should use `ProviderConfig.defaultModel()` when they
-  intentionally do not expose a model selector.
+- Keep `ProviderConfig` free of generic model catalogs, generation options,
+  enablement, and completions-path routing. `OllamaProviderConfig` currently owns an
+  optional validated YAML `model` override; its `defaultModel()` returns that value
+  or the `llama3.2:1b` compatibility fallback. Commands should use
+  `ProviderConfig.defaultModel()` when they intentionally do not expose a model
+  selector.
 - Keep provider discriminator fields such as YAML `type` dispatch-only, not stored
   as mutable `ProviderConfig` state. Validate the incoming YAML discriminator in
   `ProvidersRootElement`, derive runtime/output provider type from concrete

@@ -93,6 +93,18 @@ class CodegeistProviderConfigTest {
         assertThat(config.defaultProvider()).isEmpty();
     }
 
+    @Test
+    void configuredOllamaModelOverridesFallback() {
+        OllamaProviderConfig ollama = (OllamaProviderConfig) loadSingleProvider("""
+            type: ollama
+            base-url: http://localhost:11434
+            model: qwen3:4b-instruct
+            """);
+
+        assertThat(ollama.getModel()).isEqualTo("qwen3:4b-instruct");
+        assertThat(ollama.defaultModel()).isEqualTo("qwen3:4b-instruct");
+    }
+
     @ParameterizedTest
     @MethodSource("invalidProviderConfigs")
     void validatesRequiredProviderFields(String yamlBody, String expectedMessage) {
@@ -122,7 +134,12 @@ class CodegeistProviderConfigTest {
                     """, "apiKey"),
                 Arguments.of("""
                     type: ollama
-                    """, "base-url"));
+                    """, "base-url"),
+                Arguments.of("""
+                    type: ollama
+                    base-url: http://localhost:11434
+                    model: "   "
+                    """, "model must not be blank when set"));
     }
 
     private ProviderConfig loadSingleProvider(String providerBody) {

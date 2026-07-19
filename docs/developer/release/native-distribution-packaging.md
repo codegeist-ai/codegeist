@@ -10,7 +10,7 @@ Use one downloadable archive per platform and architecture:
 | Platform | Release artifact | Runtime layout inside artifact |
 | --- | --- | --- |
 | Linux x64 | `codegeist-linux-x64.tar.gz` | `codegeist` plus required `.so` libraries in one directory. |
-| Windows x64 | `codegeist-windows-x64.zip` | `codegeist.exe` plus required `.dll` libraries in one directory. |
+| Windows x64 | `codegeist-windows-x64.zip` | `codegeist.exe`, GraalVM sidecars, and the app-local MSVC CRT `.dll` libraries in one directory. |
 | macOS x64 | `codegeist-macos-x64.tar.gz` | Native binary plus required dynamic libraries in one directory. |
 | macOS arm64 | `codegeist-macos-aarch64.tar.gz` | Future native binary plus required dynamic libraries in one directory. |
 
@@ -69,6 +69,13 @@ java.dll
 jvm.dll
 management_ext.dll
 ```
+
+The Windows executable and GraalVM sidecars also import the MSVC runtime. The
+release packager therefore copies every DLL from the matching
+`%VCToolsRedistDir%\x64\Microsoft.VC*.CRT` directory. At minimum, the archive must
+contain `VCRUNTIME140.dll`, `VCRUNTIME140_1.dll`, and `MSVCP140.dll`. Requiring end
+users to install the Visual C++ Redistributable is not part of the portable archive
+contract.
 
 The exact sidecar set is controlled by the GraalVM version, JDK modules reachable
 from the application, and platform toolchain behavior. Packaging scripts should
@@ -257,7 +264,7 @@ empty default config, `--show-config` must print exactly `{}`.
 
 ## Windows Package Shape
 
-Planned Windows x64 package:
+Current Windows x64 package:
 
 ```text
 codegeist-windows-x64.zip
@@ -266,7 +273,11 @@ codegeist-windows-x64.zip
     ├── awt.dll
     ├── java.dll
     ├── jvm.dll
-    └── management_ext.dll
+    ├── management_ext.dll
+    ├── VCRUNTIME140.dll
+    ├── VCRUNTIME140_1.dll
+    ├── MSVCP140.dll
+    └── other Microsoft.VC*.CRT DLLs
 ```
 
 Windows smoke should unzip the package into a clean temporary directory and run:
@@ -304,6 +315,8 @@ Required package smoke for each native platform:
 - Build the native executable on the target operating system and architecture.
 - Create the platform archive from the executable and required sidecar libraries.
 - Extract the archive into a fresh temporary directory.
+- For Windows, assert the required app-local MSVC CRT DLLs are present after
+  extraction and after the install script copies the package.
 - Run the executable from the extracted package directory.
 - Assert exact `--version` output and exit code `0`.
 - Assert exact `--show-config` output and exit code `0` for the current default

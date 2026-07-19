@@ -309,6 +309,8 @@ Important files include:
 - `C:\codegeist\app\codegeist\cli\target\codegeist.exe`
 - `C:\codegeist\app\codegeist\cli\target\dist\codegeist-windows-x64.zip`
 - Native support DLLs in the same `target` directory, such as `awt.dll`, `java.dll`, and `jvm.dll`.
+- App-local MSVC CRT DLLs inside the packaged zip, including `VCRUNTIME140.dll`,
+  `VCRUNTIME140_1.dll`, and `MSVCP140.dll`.
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native.log`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native-show-config.log`
 - `C:\codegeist\app\codegeist\cli\target\smoke-test\codegeist-windows-native.out`
@@ -326,7 +328,9 @@ The raw `target/codegeist.exe` is only a build output. Copy the adjacent DLLs to
 when you need to test that raw executable outside the VM.
 
 The release artifact should be `codegeist-windows-x64.zip`, containing
-`codegeist.exe` and the required DLLs in one directory. See
+`codegeist.exe`, GraalVM sidecars, and the complete app-local MSVC CRT DLL set in
+one directory. The archive and install-script smokes assert the three critical CRT
+files explicitly even though the build VM also has MSVC installed. See
 `native-distribution-packaging.md` for the full archive layout and why a true
 single-file Windows executable is not the supported release contract.
 

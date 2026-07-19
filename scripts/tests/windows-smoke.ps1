@@ -121,6 +121,31 @@ function Find-MsvcCommand {
     return ""
 }
 
+function Resolve-MsvcRedistDir {
+    param([string]$MsvcCommand)
+
+    if ($env:VCToolsRedistDir) {
+        return $env:VCToolsRedistDir
+    }
+    if (-not $MsvcCommand) {
+        return ""
+    }
+
+    $environmentCommand = "$MsvcCommand >nul && set VCToolsRedistDir"
+    $environmentOutput = & cmd /d /s /c $environmentCommand
+    if ($LASTEXITCODE -ne 0) {
+        Fail-Smoke "Failed to resolve VCToolsRedistDir from the MSVC environment"
+    }
+
+    $setting = $environmentOutput |
+        Where-Object { $_ -like "VCToolsRedistDir=*" } |
+        Select-Object -First 1
+    if (-not $setting) {
+        return ""
+    }
+    return $setting.Substring("VCToolsRedistDir=".Length)
+}
+
 $cliDir = Join-Path $RepoDir "app/codegeist/cli"
 $script:artifactSmokeScript = Join-Path $RepoDir "scripts/tests/artifact-smoke.ps1"
 $script:installSmokeScript = Join-Path $RepoDir "scripts/tests/install-script-smoke.ps1"
@@ -164,6 +189,11 @@ if ($NativeMode -ne "skip") {
             }
         }
         else {
+            $vcRedistDir = Resolve-MsvcRedistDir $msvc
+            if (-not $vcRedistDir) {
+                Fail-Smoke "VCToolsRedistDir was not available for Windows archive packaging"
+            }
+
             Write-Host "Artifact: native"
             if ($clAvailable -and -not $msvc) {
                 Invoke-Step "mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile" "windows native compile" {
@@ -188,7 +218,8 @@ if ($NativeMode -ne "skip") {
                 -SmokeRoot $smokeDir `
                 -NativeTimeoutSeconds $NativeTimeoutSeconds `
                 -FileEditTimeoutSeconds $FileEditTimeoutSeconds `
-                -ShellAskTimeoutSeconds $ShellAskTimeoutSeconds
+                -ShellAskTimeoutSeconds $ShellAskTimeoutSeconds `
+                -WindowsVcRedistDir $vcRedistDir
 
             $nativeStatus = "passed"
             $nativeReason = "none"

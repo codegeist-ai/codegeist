@@ -176,6 +176,7 @@ function Install-VsBuildTools {
         "--nocache",
         "--installPath", "C:\BuildTools",
         "--add", "Microsoft.VisualStudio.Workload.VCTools",
+        "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest",
         "--includeRecommended"
     )
 

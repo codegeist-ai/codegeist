@@ -76,9 +76,11 @@ immutable `v*` tag carry the version, so filenames intentionally omit it:
 | `codegeist-install-windows.ps1` | Install script staging job | `scripts/tests/install-script-smoke.ps1 -Platform windows-x64` in the native Windows job, plus parser and checksum coverage |
 | `SHA256SUMS.txt` | Checksum job | `sha256sum -c` before upload |
 
-Native archives keep the executable and required GraalVM sidecar libraries in one
-directory. See `native-distribution-packaging.md` for the archive layout and
-sidecar-library rationale.
+Native archives keep the executable and required native sidecar libraries in one
+directory. Windows also packages the complete app-local `Microsoft.VC*.CRT` set
+resolved from the activated MSVC environment. See
+`native-distribution-packaging.md` for the archive layout and sidecar-library
+rationale.
 
 ## Workflow Gates
 
@@ -89,7 +91,8 @@ The implemented jobs run these gates in order:
 3. Build the executable JVM jar and stage it as `codegeist-jvm.jar` without smoke.
 4. Build native executables on GitHub-hosted Linux, Windows, and macOS runners.
 5. Activate the MSVC tools environment on Windows before Maven native compile.
-6. Package native archives with sidecar libraries.
+6. Package native archives with sidecar libraries, including the app-local MSVC CRT
+   on Windows.
 7. Run `scripts/tests/artifact-smoke.ps1` for each native platform; it packages,
    unpacks, verifies `--version`, verifies `--show-config`, checks logs, and runs
    deterministic file-edit plus shell-tool side effects.
