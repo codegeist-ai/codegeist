@@ -83,8 +83,29 @@ tasks:
           model="${OLLAMA_MODEL:-llama3.2:1b}"
           enter_mode="${OLLAMA_ENTER:-auto}"
           gpu_mode="${OLLAMA_GPU:-auto}"
+          external_url="${OLLAMA_EXTERNAL_URL:-}"
           health_host="$bind_address"
           docker_gpu_args=()
+
+          if [ -n "$external_url" ]; then
+            external_url="${external_url%/}"
+            if ! curl -fsS "$external_url/api/version" >/dev/null; then
+              printf "External Ollama is unavailable at %s\n" "$external_url" >&2
+              exit 1
+            fi
+
+            model_payload="$(jq -nc --arg model "$model" "{model:\$model}")"
+            if ! curl -fsS \
+              --header "Content-Type: application/json" \
+              --data "$model_payload" \
+              "$external_url/api/show" >/dev/null; then
+              printf "External Ollama at %s does not provide model %s\n" "$external_url" "$model" >&2
+              exit 1
+            fi
+
+            printf "Using external Ollama at %s with model %s\n" "$external_url" "$model"
+            exit 0
+          fi
 
           if [ "$health_host" = "0.0.0.0" ]; then
             health_host="127.0.0.1"

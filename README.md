@@ -56,8 +56,8 @@ Key properties:
 - a `.devcontainer/` submodule that tracks the devcontainer kit `release` branch
 - local runtime values in `.codegeist/.local.env`, generated from the kit example
   when missing and ignored by Git
-- local Compose overrides in `.codegeist/compose.local.yml`, generated from the kit
-  example when missing and ignored by Git
+- optional repository-specific Compose and image extensions under `.codegeist/`;
+  the default contributor workspace does not require a GPU extension
 
 ## Repository Layout
 
@@ -128,6 +128,20 @@ Run the local Linux smoke from the repository root:
 ```bash
 pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1
 ```
+
+`task cli:test` starts a local Ollama container by default. To reuse an Ollama
+service that already runs outside the workspace container, set its base URL and
+the model that must already exist on that service:
+
+```bash
+OLLAMA_EXTERNAL_URL=http://10.0.2.2:11434 \
+  OLLAMA_MODEL=llama3.2:1b \
+  task cli:test
+```
+
+External mode verifies the Ollama API and selected model without starting or
+modifying a local Ollama container. The `10.0.2.2` address is the QEMU user-mode
+network host address; use the appropriate reachable URL in other environments.
 
 Run the Docker-backed MCP `streamable_http` smoke from `app/codegeist/cli`:
 

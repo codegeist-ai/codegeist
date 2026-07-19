@@ -16,15 +16,10 @@
   `release` branch of `codegeist-devcontainer-kit`.
 - `docs/memory-bank/chat.md` is the canonical lightweight project memory. The
   legacy root-level `chat.md` pointer has been removed.
-- `.devcontainer` now uses `.codegeist/.local.env` and
-  `.codegeist/compose.local.yml` for local runtime overrides. The legacy root
-  `compose.local.yml` file is removed; `initialize.sh` can copy older local root
-  files into `.codegeist/` when needed.
-- Devcontainer image extensions now live in `.codegeist/Dockerfile`. The former
-  root `Dockerfile` NVIDIA/GPU extension was moved there so
-  `.devcontainer/initialize.sh` can append it to
-  `.devcontainer/Dockerfile.merged.gen`; the repository root no longer has a
-  devcontainer-specific `Dockerfile`.
+- `.devcontainer` uses `.codegeist/.local.env` for ignored local runtime values
+  and supports optional repository-specific Compose and image extensions under
+  `.codegeist/`. Codegeist no longer checks in a mandatory NVIDIA extension, so
+  the default contributor devcontainer can start without guest GPU hardware.
 - The devcontainer browser launcher uses a project-local `.chrome` profile by
   default for visible Chrome, so the repository ignores `/.chrome/` as local
   browser state.
@@ -349,7 +344,10 @@
   Docker flags only when `OLLAMA_GPU=true` or `OLLAMA_GPU=auto` detects NVIDIA
   support, so CPU-only Docker hosts can still start the local service. It now
   ensures the selected model, default `llama3.2:1b`, exists before reporting
-  readiness. In an interactive terminal it enters the default model session; set
+  readiness. Set `OLLAMA_EXTERNAL_URL` to verify and reuse an already running
+  external Ollama API without starting or modifying a local container; the
+  selected `OLLAMA_MODEL` must already exist there. In an interactive terminal
+  the local-container path enters the default model session; set
   `OLLAMA_ENTER=false` for non-interactive starts.
   `native-smoke` runs `scripts/tests/native-smoke.ps1`; that thin Linux wrapper
   delegates native archive checks to `scripts/tests/artifact-smoke.ps1`. Linux
