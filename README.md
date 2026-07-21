@@ -5,9 +5,23 @@
 It is being built with a strong focus on customization, adaptable workflows,
 and project-local control over behavior, prompts, and developer tooling.
 
+<p align="center">
+  <a href="https://codegeist.ai"><img alt="Website" src="https://img.shields.io/badge/%F0%9F%8C%90-codegeist.ai-0A0A0A"></a>
+  <a href="https://x.com/codegeist_ai"><img alt="X" src="https://img.shields.io/badge/@codegeist_ai-000000?logo=x&logoColor=white"></a>
+  <a href="https://www.youtube.com/@codegeist_ai"><img alt="YouTube" src="https://img.shields.io/badge/Codegeist_AI-FF0000?logo=youtube&logoColor=white"></a>
+  <a href="https://discord.gg/nh7XUkmsW7"><img alt="Discord" src="https://img.shields.io/badge/Join-5865F2?logo=discord&logoColor=white"></a>
+</p>
+
 ## Demo
 
+[![Codegeist Ubuntu contributor setup tutorial](https://img.youtube.com/vi/pEnjYSGHeQ8/maxresdefault.jpg)](https://youtu.be/pEnjYSGHeQ8)
+
+Watch the Ubuntu contributor setup tutorial on YouTube: <https://youtu.be/pEnjYSGHeQ8>
+
 ![Codegeist TUI creates and runs hello-world.sh](docs/user/assets/tui/tui-hello-world.gif)
+
+Use GitHub for code, issues, roadmap, and durable technical decisions. Use
+Discord for quick developer help, feedback, and sharing Codegeist workflows.
 
 ## Vision
 
