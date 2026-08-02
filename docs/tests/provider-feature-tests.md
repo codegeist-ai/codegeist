@@ -13,10 +13,11 @@ Provider tests prove three different contracts without mixing their risk levels:
 - Hosted provider checks prove remote provider features only after an explicit
   category selection and account or cost decision.
 
-All provider verification runs through `task test` from `app/codegeist/cli`. There
-is no separate provider-specific Taskfile entrypoint, no JUnit provider tag, and no
-Maven group exclusion. Method-level provider categories decide whether provider-call
-methods run or are skipped.
+Config-only provider verification can run through `task cli:test-jvm` from the
+repository root without provider setup. Live provider verification uses the
+explicit `task cli:test` path. There is no provider-specific Taskfile entrypoint,
+JUnit provider tag, or Maven group exclusion; method-level provider categories
+decide whether provider-call methods run or are skipped.
 
 ## Implemented Feature Shape
 
@@ -85,9 +86,9 @@ because they do not call local services or hosted APIs.
 | `OpenAiProviderTest` | Runs config binding and missing-API-key validation. | `remote_free` for model listing; `remote_paid` for image generation, text-to-speech, and speech-to-text. |
 | `OllamaProviderTest` | Runs config binding and missing-base-url validation. | `local` for one local Ollama chat call. |
 | `AskCommandsTest` | Skips the whole class. | `local` at class level for one Spring Boot command test backed by local Ollama. |
-| `AskCommandsMcpRemoteSmokeIT` | Not included by the default Surefire test name patterns; run only by `task mcp-remote-smoke`. | `local` at class level for one Spring Boot `ask` command test backed by local Ollama plus the Docker MCP fixture. |
+| `AskCommandsMcpRemoteSmokeIT` | Not included by the default Surefire test name patterns; run only by `task cli:mcp-remote-smoke`. | `local` at class level for one Spring Boot `ask` command test backed by local Ollama plus the Docker MCP fixture. |
 | `AskCommandsOpenAiToolSmokeIT` | Not included by the default Surefire test name patterns; run only by explicit selector. | `remote_paid` at class level for one Spring Boot `ask` command test backed by OpenAI plus local `codegeist_write`. |
-| `LocalOllamaProviderIT` | Not included by the default Surefire test name patterns; run only by explicit selector. | No category gate; it is an explicit live integration test. |
+| `LocalOllamaProviderIT` | Not included by the default Surefire test name patterns; an explicit `test-jvm` selector skips it. | `local` at class level; use the provider-capable `cli:test` path to run it. |
 
 ## Why These Tests Exist
 
@@ -96,7 +97,7 @@ Provider tests are split by risk because provider work has different failure mod
 | Risk | Test policy |
 | --- | --- |
 | Config mapping can break ordinary startup or `--show-config`. | Config-only checks run by default under `none`. |
-| Local Ollama may be unavailable, slow, or missing `llama3.2:1b`. | `task test` starts Ollama before Maven; local provider-call methods still require `CODEGEIST_TEST_PROVIDER_CATEGORY=local` or higher. |
+| Local Ollama may be unavailable, slow, or missing `llama3.2:1b`. | `task cli:test` starts Ollama before Maven; local provider-call methods still require `CODEGEIST_TEST_PROVIDER_CATEGORY=local` or higher. |
 | Hosted APIs can consume quota, require account setup, or bill. | Hosted calls require `remote_free` or `remote_paid`; API-key presence alone is never enough. |
 | Paid-capable endpoints can create direct cost. | Paid-capable calls require `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid`. |
 
@@ -105,7 +106,7 @@ provider checks easy to run when their prerequisites are intentionally available
 
 ## When To Run Which Command
 
-Run commands from `app/codegeist/cli`.
+Run commands from the repository root.
 
 ### Ordinary Code Or Config Changes
 
@@ -113,20 +114,21 @@ Use this for most implementation work and final JVM verification when live provi
 calls are not part of the task:
 
 ```bash
-task test
+task cli:check
 ```
 
-Why: this runs provider config checks and skips annotated provider-call methods
-because the default category is `none`. It does not require Ollama, hosted
-credentials, audio fixtures, or paid account confirmation.
+Why: this forces provider category `none`, runs provider config checks while
+skipping annotated provider-call methods, packages the JVM jar, and smokes its
+real `--version` command. It does not require Ollama, Docker, hosted credentials,
+audio fixtures, or paid account confirmation.
 
 ### Provider Config Parser Or Validation Changes
 
 Use focused config checks first:
 
 ```bash
-task test TEST=CodegeistProviderConfigTest,CodegeistConfigServiceTest,CodegeistConfigSpelEvaluationTest
-CODEGEIST_TEST_PROVIDER_CATEGORY=none task test TEST=OpenAiProviderTest,OllamaProviderTest
+task cli:test-jvm TEST=CodegeistProviderConfigTest,CodegeistConfigServiceTest,CodegeistConfigSpelEvaluationTest
+task cli:test-jvm TEST=OpenAiProviderTest,OllamaProviderTest
 ```
 
 Why: this proves typed provider dispatch, direct YAML loading, SpEL preprocessing,
@@ -139,11 +141,12 @@ Use this when the task changes `OllamaProviderConfig`, `OllamaChatModel`,
 `CodegeistChatService`, `CodegeistChatRequest`, or local Ollama provider behavior:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest
+CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test TEST=OllamaProviderTest
 ```
 
-Why: `task test` automatically runs `ollama-start` with `OLLAMA_ENTER=false` before
-Maven. `ollama-start` starts or reuses the local `codegeist-ollama` container and
+Why: `task cli:test` automatically runs `ollama-start` with
+`OLLAMA_ENTER=false` before Maven. `ollama-start` starts or reuses the local
+`codegeist-ollama` container and
 ensures the selected model is present, while the focused test proves config loading
 plus the provider feature chat method. The Java test uses fixed values and does not
 pull models itself:
@@ -157,7 +160,7 @@ Use this broader local check only when local provider behavior should be include
 in the whole JVM suite:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=local task test
+CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test
 ```
 
 Why: `local` also allows every lower category, so it runs unannotated config checks
@@ -169,15 +172,18 @@ Use this when the task specifically changes the provider-neutral chat seam or Sp
 application context path used by local provider calls:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=LocalOllamaProviderIT
+CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test TEST=LocalOllamaProviderIT
 ```
 
-Why: `task test` starts Ollama first, and the `local` category documents that this
+Why: `task cli:test` starts Ollama first, and the `local` category documents that this
 selector intentionally exercises the local provider path. `LocalOllamaProviderIT`
 starts `CodegeistApplication` through a manual Spring application builder, loads a
 temporary `codegeist.yml`, and calls `CodegeistChatService` with a selected
 `ProviderConfig` plus runtime model and prompt. It is intentionally selector-only
-and not part of broad `task test`.
+and not part of `task cli:check`.
+
+Selecting this class through `task cli:test-jvm TEST=LocalOllamaProviderIT` keeps
+the forced `none` category and skips the class without contacting Ollama.
 
 ### Ask Plus Remote MCP Smoke
 
@@ -186,7 +192,7 @@ Use this when the task changes MCP callback wiring, local Ollama tool-calling, o
 Docker MCP fixture URL and local Ollama startup are prepared together:
 
 ```bash
-task mcp-remote-smoke
+task cli:mcp-remote-smoke
 ```
 
 Why: this first proves the direct `streamable_http` MCP callback path, then runs
@@ -201,7 +207,7 @@ Use this only after recording or confirming that the selected account, endpoint,
 model, and route are no-cost for the current run:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=remote_free task test TEST=OpenAiProviderTest#testListModels
+CODEGEIST_TEST_PROVIDER_CATEGORY=remote_free task cli:test TEST=OpenAiProviderTest#testListModels
 ```
 
 Why: `remote_free` is for explicitly selected no-cost hosted calls. It still
@@ -215,9 +221,9 @@ Use this only after an explicit cost and rate-limit decision for the selected
 account and endpoint:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=OpenAiProviderTest#testImageGeneration
-CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=OpenAiProviderTest#testTextToSpeech
-CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=OpenAiProviderTest#testSpeechToText
+CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task cli:test TEST=OpenAiProviderTest#testImageGeneration
+CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task cli:test TEST=OpenAiProviderTest#testTextToSpeech
+CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task cli:test TEST=OpenAiProviderTest#testSpeechToText
 ```
 
 Why: `remote_paid` allows paid-capable calls. Prefer method selectors so the run is
@@ -232,7 +238,7 @@ Use this only after an explicit cost and rate-limit decision for the selected Op
 account and model:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=AskCommandsOpenAiToolSmokeIT
+CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task cli:test TEST=AskCommandsOpenAiToolSmokeIT
 ```
 
 Why: this runs one Spring Boot `ask` command through `OpenAiChatModel`, exposes the
@@ -250,7 +256,7 @@ implemented OpenAI provider feature test:
 ```bash
 CODEGEIST_TEST_OPENAI_APIKEY=... \
 CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid \
-task test TEST=OpenAiProviderTest
+task cli:test TEST=OpenAiProviderTest
 ```
 
 Why: this runs all six `OpenAiProviderTest` methods: two unannotated config checks,
@@ -270,7 +276,7 @@ environment:
 ```text
 CODEGEIST_TEST_OPENAI_APIKEY=<set in the environment>
 CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid
-task test TEST=AskCommandsOpenAiToolSmokeIT
+task cli:test TEST=AskCommandsOpenAiToolSmokeIT
 ```
 
 Result:
@@ -351,11 +357,11 @@ Provider tests intentionally produce skipped methods in safe runs:
 
 | Command | Expected provider-call behavior |
 | --- | --- |
-| `task test` | Starts Ollama before Maven, then skips annotated provider-call methods because the category is `none`. |
-| `CODEGEIST_TEST_PROVIDER_CATEGORY=none task test TEST=OpenAiProviderTest,OllamaProviderTest` | Same as broad default, but limited to provider feature classes. |
-| `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest` | Ollama config checks and local chat run; no methods should be skipped in this class when Ollama is ready. |
-| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_free task test TEST=OpenAiProviderTest#testListModels` | The selected method runs; missing required hosted inputs fail the test. |
-| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task test TEST=OpenAiProviderTest#testSpeechToText` | The selected paid-capable method runs; missing credentials fail the test, and the audio fixture is generated if missing. |
+| `task cli:check` | Forces category `none`, runs no provider calls, packages the jar, and smokes `--version` without Ollama or Docker. |
+| `task cli:test-jvm TEST=OpenAiProviderTest,OllamaProviderTest` | Runs config-only methods and skips provider-call methods without starting Ollama. |
+| `CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test TEST=OllamaProviderTest` | Ollama config checks and local chat run; no methods should be skipped in this class when Ollama is ready. |
+| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_free task cli:test TEST=OpenAiProviderTest#testListModels` | The selected method runs; missing required hosted inputs fail the test. |
+| `CODEGEIST_TEST_PROVIDER_CATEGORY=remote_paid task cli:test TEST=OpenAiProviderTest#testSpeechToText` | The selected paid-capable method runs; missing credentials fail the test, and the audio fixture is generated if missing. |
 
 Skipped provider-call methods under `none` are not failures. They are the safety
 contract that keeps ordinary verification free from local-provider calls and
@@ -406,7 +412,7 @@ Use this checklist when adding future provider feature tests:
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/OllamaProviderTest.java` | Config checks and local Ollama provider feature test. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/OpenAiProviderTest.java` | Config checks and hosted OpenAI provider feature tests. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/AskCommandsTest.java` | Spring Boot command test gated as a local provider-call class. |
-| `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/AskCommandsMcpRemoteSmokeIT.java` | Explicit local Ollama plus Docker MCP fixture command smoke driven by `task mcp-remote-smoke`. |
+| `app/codegeist/cli/src/test/java/ai/codegeist/app/provider/AskCommandsMcpRemoteSmokeIT.java` | Explicit local Ollama plus Docker MCP fixture command smoke driven by `task cli:mcp-remote-smoke`. |
 | `app/codegeist/cli/src/test/java/ai/codegeist/app/chat/LocalOllamaProviderIT.java` | Explicit local provider-neutral integration seam test. |
 | `docs/developer/architecture/provider-configuration.md` | Current-state provider config architecture. |
 | `docs/developer/specification/llm-provider-implementation.md` | Provider runtime and future provider implementation guidance. |

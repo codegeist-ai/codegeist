@@ -7,6 +7,8 @@ import ai.codegeist.app.config.CodegeistConfig;
 import ai.codegeist.app.config.CodegeistConfigService;
 import ai.codegeist.app.config.OllamaProviderConfig;
 import ai.codegeist.app.config.ProviderConfig;
+import ai.codegeist.app.provider.ProviderCategory;
+import ai.codegeist.app.provider.ProviderTestCategory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
+@ProviderCategory(ProviderTestCategory.local)
 class LocalOllamaProviderIT {
 
     private static final String OLLAMA_BASE_URL = "http://localhost:11434";

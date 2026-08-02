@@ -826,11 +826,13 @@ download or VM prerequisites.
 
 The table below names tasks from `app/codegeist/cli/Taskfile.yml`; from the
 repository root, run the same commands with the `cli:` namespace, for example
-`task cli:test` or `task cli:tui-capture-smoke`.
+`task cli:check` or `task cli:tui-capture-smoke`.
 
 | Task | Command | Proves |
 | --- | --- | --- |
-| `task test` | Runs `ollama-start` with `OLLAMA_ENTER=false`, then `mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test` | Taskfile-managed Ollama startup, Maven test lifecycle, Spring context-load test, version output test, provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and optional focused selector such as `task test TEST=CodegeistApplicationTests` |
+| `task test-jvm` | Runs Maven tests with `CODEGEIST_TEST_PROVIDER_CATEGORY=none` and an optional `TEST` selector | Deterministic JVM coverage without Ollama, Docker, model downloads, credentials, or provider calls |
+| `task check` | Forces the full provider-none Maven suite independently of ambient `TEST`, packages `target/codegeist.jar`, asserts `META-INF/LICENSE`, then invokes its real `--version` command | Canonical contributor and CI gate covering tests, licensing, JVM packaging, and non-empty artifact startup output |
+| `task test` | Runs `ollama-start` with `OLLAMA_ENTER=false`, then Maven tests with an optional `TEST` selector | Explicit provider-capable path with Taskfile-managed Ollama startup and provider categories |
 | `task build` | `mvn --batch-mode --no-transfer-progress -DskipTests clean package` | Executable jar packaging |
 | `task tui` | Runs `build`, then `java -jar target/codegeist.jar tui` | Starts the packaged TUI from the latest local source build |
 | `task native` | `mvn --batch-mode --no-transfer-progress -DskipTests -Pnative clean native:compile` | GraalVM command-mode native posture when practical |
@@ -858,18 +860,18 @@ path. It accepts three trigger shapes:
 
 The workflow resolves a non-SNAPSHOT SemVer release version, passes it to Maven as
 `-Drevision=<version>`, runs Maven tests before packaging, builds and stages a JVM
-jar release asset without artifact smoke, then builds native archives on
+jar release asset with canonical `META-INF/LICENSE` but without runtime artifact smoke, then builds native archives on
 GitHub-hosted Linux x64, Windows x64, and macOS x64 runners. Native artifact smoke
 runs `scripts/tests/artifact-smoke.ps1`, so release CI uses the same harness as
-local platform wrappers for native packaging, archive unpacking, `--version`,
-native `--show-config`, command-log assertions, deterministic file-edit side
+local platform wrappers for native packaging, archive unpacking, exact `LICENSE`
+comparison, `--version`, native `--show-config`, command-log assertions, deterministic file-edit side
 effects, and deterministic shell-tool side effects. The same native job then runs
 `scripts/tests/install-script-smoke.ps1` for the matching platform, including the
 macOS install script on the GitHub macOS x64 runner. The Windows native job
 activates the MSVC tools environment before running Maven native compilation. A
 separate staging job uploads Linux, macOS, and Windows install scripts as release
-assets. The checksum job generates and verifies `SHA256SUMS.txt`; the release job
-uploads the jar, native archives, install scripts, and checksum file to a published
+assets together with the standalone `LICENSE`. The checksum job generates and verifies `SHA256SUMS.txt`; the release job
+uploads the license, jar, native archives, install scripts, and checksum file to a published
 GitHub Release only for matching `v*` tags.
 
 Release workflow changes are promoted through `/codegeist-release --source
@@ -897,6 +899,7 @@ The implemented release artifact names are:
 - `codegeist-install-linux.sh`
 - `codegeist-install-macos.sh`
 - `codegeist-install-windows.ps1`
+- `LICENSE`
 - `SHA256SUMS.txt`
 
 ## Not Implemented Yet

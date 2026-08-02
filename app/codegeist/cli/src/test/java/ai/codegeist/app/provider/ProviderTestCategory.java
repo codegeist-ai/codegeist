@@ -1,6 +1,6 @@
 package ai.codegeist.app.provider;
 
-enum ProviderTestCategory {
+public enum ProviderTestCategory {
 
     none,
     local,

@@ -9,10 +9,10 @@ Use one downloadable archive per platform and architecture:
 
 | Platform | Release artifact | Runtime layout inside artifact |
 | --- | --- | --- |
-| Linux x64 | `codegeist-linux-x64.tar.gz` | `codegeist` plus required `.so` libraries in one directory. |
-| Windows x64 | `codegeist-windows-x64.zip` | `codegeist.exe`, GraalVM sidecars, and the app-local MSVC CRT `.dll` libraries in one directory. |
-| macOS x64 | `codegeist-macos-x64.tar.gz` | Native binary plus required dynamic libraries in one directory. |
-| macOS arm64 | `codegeist-macos-aarch64.tar.gz` | Future native binary plus required dynamic libraries in one directory. |
+| Linux x64 | `codegeist-linux-x64.tar.gz` | `codegeist`, `LICENSE`, and required `.so` libraries in one directory. |
+| Windows x64 | `codegeist-windows-x64.zip` | `codegeist.exe`, `LICENSE`, GraalVM sidecars, and the app-local MSVC CRT `.dll` libraries in one directory. |
+| macOS x64 | `codegeist-macos-x64.tar.gz` | Native binary, `LICENSE`, and required dynamic libraries in one directory. |
+| macOS arm64 | `codegeist-macos-aarch64.tar.gz` | Future native binary, `LICENSE`, and required dynamic libraries in one directory. |
 
 The archive is the single download artifact. The extracted directory is the runtime
 unit. Users should run the executable from inside that extracted directory so the
@@ -87,7 +87,7 @@ for the current platform, then smoke the unpacked archive.
 ```mermaid
 flowchart TD
     Build[Native build on target OS]
-    Output[Executable plus GraalVM sidecar libraries]
+    Output[Executable, LICENSE, and GraalVM sidecar libraries]
     Package{Platform package}
     Linux[codegeist-linux-x64.tar.gz]
     Windows[codegeist-windows-x64.zip]
@@ -242,6 +242,7 @@ Planned Linux x64 package:
 codegeist-linux-x64.tar.gz
 └── codegeist-linux-x64/
     ├── codegeist
+    ├── LICENSE
     ├── libawt.so
     ├── libawt_headless.so
     ├── libawt_xawt.so
@@ -270,6 +271,7 @@ Current Windows x64 package:
 codegeist-windows-x64.zip
 └── codegeist-windows-x64\
     ├── codegeist.exe
+    ├── LICENSE
     ├── awt.dll
     ├── java.dll
     ├── jvm.dll

@@ -52,7 +52,7 @@ files they changed.
 
 | Step | Command | Proves | Required when |
 | --- | --- | --- | --- |
-| Compile and tests | `task test` from `app/codegeist/cli` | Maven test lifecycle and current Spring context load. | Java, dependency, build, or runtime wiring changes. |
+| Compile, tests, and JVM smoke | `task cli:check` from the repository root | Provider-free Maven tests, executable jar packaging, and real jar `--version`. | Java, dependency, build, or runtime wiring changes. |
 | JVM package | `task build` from `app/codegeist/cli` | Executable Spring Boot jar is created as `target/codegeist.jar` for release upload. It is not smoke-tested. | Release candidates and build-layout changes. |
 | Native compile | `task native` from `app/codegeist/cli` | GraalVM native-image can compile the current dependency graph. | Native posture tasks when the toolchain is available and time budget allows. |
 | Native archive artifact smoke | `scripts/tests/artifact-smoke.ps1 -Platform <platform>` | The shared harness packages the native executable under `target/dist/`, unpacks the archive into a fresh temp directory, runs packaged `--version` and `--show-config`, verifies logs, and runs deterministic file-edit plus shell side effects through `ask`. | Release candidates after a successful native compile. |
@@ -82,7 +82,7 @@ Command: task native
 Blocker: PF4J dynamic class loading requires explicit native-image configuration
 Evidence: shortest useful native-image error excerpt or issue link
 Owner: future extension readiness or packaging task
-JVM status: passed with task test and task build
+JVM status: passed with task cli:check
 ```
 
 ## Blocker Categories
@@ -120,9 +120,9 @@ keeps native work from becoming an unbounded rewrite.
 ```mermaid
 flowchart TD
     Change[Implementation or release task]
-    Tests[task test]
-    Jar[task build]
-    JarSmoke[java -jar target/codegeist.jar]
+    Tests[task cli:check]
+    Jar[packaged target/codegeist.jar]
+    JarSmoke[real jar --version]
     Native[task native]
     NativePackage[package target/dist archive]
     NativeSmoke[unpack archive and run packaged binary]

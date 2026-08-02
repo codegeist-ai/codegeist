@@ -228,8 +228,9 @@ Labels should be stable and specific, for example:
 
 - Native archive smokes run through `scripts/tests/artifact-smoke.ps1`. The harness
   packages native artifacts as `target/dist/codegeist-<platform>.<extension>`,
-  unpacks native archives into a temporary directory, verifies `--version`, verifies
-  native `--show-config`, and checks non-empty command logs.
+  copies the canonical root `LICENSE`, unpacks native archives into a temporary
+  directory, hash-compares the packaged license with the source, verifies
+  `--version`, verifies native `--show-config`, and checks non-empty command logs.
 - File-edit artifact smokes are invoked by `artifact-smoke.ps1` through
   `scripts/tests/file-edit-ask-smoke.ps1`. The sub-harness starts a deterministic
   local Ollama-compatible fixture provider, runs the artifact's real `ask` command,

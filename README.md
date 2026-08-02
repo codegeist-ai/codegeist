@@ -20,8 +20,10 @@ Watch the Ubuntu contributor setup tutorial on YouTube: <https://youtu.be/pEnjYS
 
 ![Codegeist TUI creates and runs hello-world.sh](docs/user/assets/tui/tui-hello-world.gif)
 
-Use GitHub for code, issues, roadmap, and durable technical decisions. Use
-Discord for quick developer help, feedback, and sharing Codegeist workflows.
+Use GitHub for code, [issues](https://github.com/codegeist-ai/codegeist/issues),
+the [Codegeist Roadmap](https://github.com/users/codegeist-ai/projects/1), and
+durable technical decisions. Use Discord for quick developer help, feedback, and
+sharing Codegeist workflows.
 
 ## Vision
 
@@ -49,8 +51,12 @@ vision:
 - a native VHS-recorded TUI hello-world smoke that verifies write and shell tool
   previews, workspace side effects, session state, and MP4/WebM evidence
 - a GraalVM native-image Maven profile and local native smoke check
+- a deterministic `task cli:check` contributor gate that tests, packages, and
+  smokes the JVM jar without Docker or provider calls
+- parser-checked Ollama, OpenAI, and MCP configuration examples under `examples/`
 - local Linux, Windows, and Docker-backed MCP remote smoke scripts under
   `scripts/tests/`
+- GitHub Actions contributor CI for pull requests and pushes to source `main`
 - a GitHub Actions release workflow for branch validation, pre-tag validation,
   tag-triggered published releases, checksums, and Linux/Windows/macOS native
   plus install-script smokes
@@ -59,7 +65,9 @@ vision:
 
 ## Development Environment
 
-The checked-in devcontainer is the current development workspace.
+The checked-in devcontainer is the current development workspace. Code changes
+start from the source `main` branch; the `release` branches of the shared kits are
+generated distribution content, not Codegeist implementation branches.
 
 Key properties:
 
@@ -72,15 +80,25 @@ Key properties:
   when missing and ignored by Git
 - optional repository-specific Compose and image extensions under `.codegeist/`;
   the default contributor workspace does not require a GPU extension
+- generated `.devcontainer/.env`, `.devcontainer/Dockerfile.merged.gen`,
+  `.devcontainer/compose.local.gen.yml`, and
+  `.devcontainer/compose.user.gen.yml` files that should not be edited directly
 
 ## Repository Layout
 
 - `.devcontainer/` - development container image and runtime setup from `codegeist-devcontainer-kit`
+- `.opencode/` - shared OpenCode commands, rules, skills, and integrations from
+  `codegeist-agent-kit`
+- `.oc_local/` - tracked Codegeist-specific OpenCode overlays
 - `app/codegeist/cli/` - Spring Boot CLI bootstrap application, Maven project files, and local `Taskfile.yml`
+- `examples/` - safe parser-checked `codegeist.yml` starting points
 - `scripts/install/` - curl-downloadable release install scripts for Linux,
   macOS, and Windows
 - `scripts/tests/` - local Linux, Windows QEMU, native, MCP remote, and final smoke-suite scripts
+- `docs/tasks/README.md` - local task status and public issue/task linkage guide
 - `docs/memory-bank/chat.md` - lightweight project memory for the repository
+- `CONTRIBUTING.md` - repository-specific contributor setup and verification
+- `LICENSE` - Zero Clause BSD (`0BSD`) terms for Codegeist-owned material
 - `README.md` - project overview
 
 ## Application Bootstrap
@@ -95,7 +113,7 @@ task run
 From the repository root, the equivalent command is:
 
 ```bash
-task -t app/codegeist/cli/Taskfile.yml run
+task cli:run
 ```
 
 To build a GraalVM native executable instead, use:
@@ -107,7 +125,7 @@ task native
 From the repository root:
 
 ```bash
-task -t app/codegeist/cli/Taskfile.yml native
+task cli:native
 ```
 
 What this does:
@@ -128,6 +146,31 @@ Implementation notes:
   `--show-config`, `ask`, and `tui`
 - `application.yaml` is only Spring Boot/Shell configuration; Codegeist runtime
   config is loaded from explicit `codegeist.yml` paths
+
+## Contributor Check
+
+Run the canonical normal check from the repository root:
+
+```bash
+task cli:check
+```
+
+This runs the JVM test suite with provider category `none`, packages
+`app/codegeist/cli/target/codegeist.jar`, and invokes the built jar's real
+`--version` command with a non-empty-output assertion. The jar carries the root
+license at `META-INF/LICENSE`. The check is deterministic and noninteractive,
+ignores ambient `TEST` and provider-category values, and does not start Ollama,
+use Docker, download a model, read provider credentials, or call a provider.
+
+Use a focused selector without provider setup when iterating:
+
+```bash
+task cli:test-jvm TEST=CodegeistExamplesTest
+```
+
+Native-image, local/hosted provider, Docker-backed MCP, QEMU, documentation
+capture, and release checks are stronger opt-in gates. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for when to run them.
 
 ## Local Smoke Tests
 
@@ -187,10 +230,10 @@ toolchain, artifact, installer, and troubleshooting guide.
 The MCP remote smoke starts a deterministic local Docker fixture, verifies the real
 `streamable_http` callback path directly, then starts local Ollama and verifies that
 `ask` can make the model invoke the remote MCP tool. It stays outside the default
-`task test` path.
+`task cli:check` path.
 
-Native release downloads are planned as platform archives, not true single-file
-executables. See `docs/developer/release/native-distribution-packaging.md` for the
+Native releases use platform archives, not true single-file executables. See
+`docs/developer/release/native-distribution-packaging.md` for the
 Linux `tar.gz`, Windows `zip`, sidecar-library, and no-single-executable rationale.
 
 Run the Linux install-script smoke in a fresh Linux QEMU guest from
@@ -248,10 +291,12 @@ It validates release artifacts on GitHub-hosted runners:
 - `codegeist-install-linux.sh`
 - `codegeist-install-macos.sh`
 - `codegeist-install-windows.ps1`
+- `LICENSE`
 - `SHA256SUMS.txt`
 
-The native runner jobs build and smoke the platform archive, then run the matching
-install script against local release-shaped assets. This includes
+The native runner jobs build and smoke the platform archive, including an exact
+copy of the root `LICENSE`, then run the matching install script against local
+release-shaped assets. This includes
 `codegeist-install-macos.sh` on the GitHub-hosted macOS x64 runner.
 
 Release work may start on an unversioned work branch. When the work branch is
@@ -273,19 +318,28 @@ See `docs/developer/release/github-release-build.md` for the full operator flow.
 
 ## Getting Started
 
-1. Clone the repository with `git clone --recurse-submodules <repo-url>` so the nested `.opencode` and `.devcontainer` checkouts are available from the start.
-2. Open the repository root in VS Code and choose `Reopen in Container`, or run
-   `devcontainer up --workspace-folder .` from the repository root.
-3. Let `.devcontainer/initialize.sh` create `.codegeist/.local.env`,
-   `.codegeist/compose.local.yml`, and the generated compose overlay when they are
-   missing.
-4. Verify that `java -version` and `native-image --version` work inside the workspace.
-5. Run `task -t app/codegeist/cli/Taskfile.yml run` from the repo root, or `task run` inside `app/codegeist/cli/`.
-6. Run `java -jar app/codegeist/cli/target/codegeist.jar --version` to verify the current command path.
+Host prerequisites are Git, Docker, and either VS Code with Dev Containers or the
+Dev Containers CLI. Ordinary contributors need only the two shared workspace
+submodules; recursively initializing the large `docs/third-party/*/source`
+research references is unnecessary.
 
-If the repository was cloned without `--recurse-submodules`, Git does not let the
-repository force that clone behavior afterward. Run
-`git submodule update --init --recursive` before opening the devcontainer.
+```bash
+git clone https://github.com/codegeist-ai/codegeist.git
+cd codegeist
+git submodule update --init .devcontainer .opencode
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . task cli:check
+devcontainer exec --workspace-folder . task cli:run -- --version
+```
+
+VS Code users can open the repository root and choose `Reopen in Container`
+instead of running `devcontainer up`; from a terminal in that container, run
+`task cli:check` and `task cli:run -- --version` directly. During startup,
+`.devcontainer/initialize.sh` creates `.codegeist/.local.env`, local worktree and
+OpenCode directories when needed, and ignored generated files under
+`.devcontainer/`. It does not create an optional
+`.codegeist/compose.local.yml` or `.codegeist/Dockerfile`; add either only for an
+intentional local/repository override.
 
 ## Git Worktrees
 
@@ -297,21 +351,69 @@ Recommended workflow:
 2. Open the repository root directly through VS Code Dev Containers.
 3. To open a managed worktree, start VS Code or the Dev Containers CLI with
    `BRANCH=<branch>` in the environment. The kit's `initializeCommand` creates
-   or reuses `.worktrees/<branch>` and mounts it as `/workspace`.
-4. Keep root `.local.env` in the repository root; managed worktrees link back to
-   it automatically when `.devcontainer/initialize.sh` prepares them.
+   or reuses `.worktrees/<branch>` and mounts the selected checkout at its
+   host-matching absolute path inside the container.
+4. Keep `.codegeist/.local.env` in the repository root; managed worktrees link
+   back to it automatically when `.devcontainer/initialize.sh` prepares them.
 
-The devcontainer kit generates `.devcontainer/.gen.env` and
-`.devcontainer/compose.local.gen.yml` on startup. These files keep the container
-hostname, user, UID, and GID aligned with the selected checkout without a
-repo-local launcher script.
+The devcontainer kit generates `.devcontainer/.env`,
+`.devcontainer/Dockerfile.merged.gen`,
+`.devcontainer/compose.local.gen.yml`, and
+`.devcontainer/compose.user.gen.yml` on startup. These files keep the container
+hostname, user, UID, GID, workspace, image extension, and optional Compose bridge
+aligned with the selected checkout without a repo-local launcher script.
 
 Each worktree uses the `.devcontainer/` files from its own Git state. If you
 change the devcontainer setup in the repository root and want the same setup in
 an existing worktree, update that worktree to the newer commit first.
 
-If an older checkout is missing nested submodules, initialize them with
-`git submodule update --init --recursive` before opening the devcontainer.
+If an older checkout is missing the workspace submodules, initialize only
+`.devcontainer` and `.opencode` with
+`git submodule update --init .devcontainer .opencode` before opening the
+devcontainer.
+
+## Configuration And Trust
+
+Safe starting points for the current direct `codegeist.yml` parser are in
+[`examples/`](examples/). The examples are parser-tested without opening provider
+or MCP connections and contain no usable credentials.
+
+Review local configuration before running provider-backed commands:
+
+- Codegeist evaluates `#{...}` string values in trusted local YAML with an
+  unrestricted Spring SpEL context.
+- `--show-config` prints configured values without secret redaction.
+- Local tools can read, write, edit, and run host processes. Current workspace
+  settings and path checks do not provide a sandbox or permission-prompt system.
+- MCP stdio configuration can launch child processes, and package-runner commands
+  can download dependencies.
+
+Do not put credentials in tracked examples, issues, pull requests, logs, or
+configuration output.
+
+## Contributing And Community
+
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) for Java/core ownership, selective
+workspace setup, checks, and pull-request expectations. Public work is discovered
+and discussed in [Issues](https://github.com/codegeist-ai/codegeist/issues), with
+cross-repository planning in the
+[Codegeist Roadmap](https://github.com/users/codegeist-ai/projects/1). The
+[`docs/tasks/README.md`](docs/tasks/README.md) guide explains how accepted issues
+link to canonical local task specifications; historical tasks are not automatically
+ready work.
+
+The T010 rollout targets these account-wide policy locations:
+[Code of Conduct](https://github.com/codegeist-ai/.github/blob/main/CODE_OF_CONDUCT.md),
+[Security Policy](https://github.com/codegeist-ai/.github/blob/main/SECURITY.md),
+and [Support Guide](https://github.com/codegeist-ai/.github/blob/main/SUPPORT.md).
+Repository-specific contribution details live here; the shared policies are not
+duplicated locally. T010 remains open until the shared files and related GitHub
+settings are published. Never report vulnerabilities through a public issue.
+
+Codegeist-owned source and documentation are available under the
+[Zero Clause BSD License (`0BSD`)](LICENSE). Contributions are accepted under the
+same terms without a CLA or DCO requirement; third-party licenses and notices keep
+their original terms.
 
 ## Status
 

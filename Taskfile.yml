@@ -1,7 +1,7 @@
 # Taskfile.yml - root entrypoint for repo task shortcuts.
 #
 # Includes the CLI module Taskfile without flattening or aliases so commands stay
-# namespaced, for example `task cli:test` from the repository root.
+# namespaced, for example `task cli:check` from the repository root.
 
 version: '3'
 
