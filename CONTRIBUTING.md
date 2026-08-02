@@ -2,9 +2,10 @@
 
 This guide provides the Java/core ownership, setup, and verification details for
 `codegeist-ai/codegeist`. Account-wide contribution policy is maintained in the
-[Codegeist community repository](https://github.com/codegeist-ai/.github/blob/main/CONTRIBUTING.md);
-the coordinating T010 rollout remains open until those shared defaults and public
-GitHub settings are published across every Codegeist repository.
+[Codegeist community repository](https://github.com/codegeist-ai/.github/blob/main/CONTRIBUTING.md).
+The complete ownership, policy, planning, release, and account-repository model is
+documented in
+[`GITHUB_ACCOUNT_MODEL.md`](https://github.com/codegeist-ai/.github/blob/main/GITHUB_ACCOUNT_MODEL.md).
 
 ## Repository Ownership
 
@@ -98,6 +99,11 @@ verification. See [`docs/tasks/README.md`](docs/tasks/README.md) before selectin
 work; historical task records and an `open` task status do not by themselves mean
 the work is ready for an external contributor.
 
+A small unplanned fix may proceed without creating a new local task when a
+maintainer confirms that the Issue and pull request provide enough durable scope.
+The pull request must state `No local task needed:` and the reason. Always link an
+existing task when one already defines the work.
+
 ## Contribution Terms
 
 Codegeist-owned source and documentation are licensed under
@@ -106,9 +112,8 @@ is provided under the same `0BSD` terms. This project does not require a CLA or
 DCO sign-off. Preserve third-party licenses, notices, vendored material, and
 submodule ownership.
 
-The T010 rollout targets the shared
+The effective shared policies are the
 [Code of Conduct](https://github.com/codegeist-ai/.github/blob/main/CODE_OF_CONDUCT.md),
 [Security Policy](https://github.com/codegeist-ai/.github/blob/main/SECURITY.md),
 and [Support Guide](https://github.com/codegeist-ai/.github/blob/main/SUPPORT.md).
-These links become the effective account policies when published. Do not report
-vulnerabilities or credentials in public issues while that rollout is pending.
+Do not report vulnerabilities or credentials in public issues.
