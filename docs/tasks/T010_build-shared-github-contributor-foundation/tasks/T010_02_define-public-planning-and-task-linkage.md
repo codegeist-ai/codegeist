@@ -71,9 +71,9 @@ Account Project -> repository Issue -> canonical local task file -> branch -> PR
   how Project, issue, task, and PR states stay synchronized.
 - Existing historical task records are not presented as ready public work.
 - The account-level Project can filter and group work by repository.
-- A sample ready issue/task pair in each current source repository proves
-  bidirectional links before public backlog publication.
-- A cross-repository sample proves that coordinating links do not replace local
+- When a source repository has accepted ready work, a real issue/task pair proves
+  bidirectional links. The rollout does not create sample or placeholder work.
+- Real cross-repository work uses coordinating links without replacing local
   implementation tasks.
 - Shared labels have the same meaning across repositories without requiring every
   repository to use irrelevant area labels.
@@ -104,8 +104,8 @@ Account Project -> repository Issue -> canonical local task file -> branch -> PR
 - `codegeist-ai/codegeist-ai` personal profile repository
 - Common repository labels
 - Repository-specific milestones only where useful
-- One sample issue/task pair per source repository
-- One sample cross-repository relationship
+- Real issue/task pairs and cross-repository relationships when accepted work
+  requires them
 
 ## Non-Goals
 
@@ -121,6 +121,6 @@ Account Project -> repository Issue -> canonical local task file -> branch -> PR
 
 - Open the new-issue and pull-request flows in each current source repository.
 - Verify shared inheritance and every justified local override.
-- Inspect Project repository/status fields and sample relationships.
-- Confirm all sample issue/task links in both directions.
+- Inspect Project repository/status fields.
+- Confirm issue/task links in both directions when accepted ready work exists.
 - Run each changed repository's documentation checks and `git diff --check`.

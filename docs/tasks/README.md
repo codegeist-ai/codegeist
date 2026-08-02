@@ -9,8 +9,8 @@ Codegeist also uses the account-wide
 [Code of Conduct](https://github.com/codegeist-ai/.github/blob/main/CODE_OF_CONDUCT.md),
 [Security Policy](https://github.com/codegeist-ai/.github/blob/main/SECURITY.md),
 and [Support Guide](https://github.com/codegeist-ai/.github/blob/main/SUPPORT.md).
-The T010 account rollout is still open, so do not assume a shared policy or GitHub
-setting has been published merely because its target link is recorded here.
+The T010 account rollout is complete. Shared policy, CI, repository metadata,
+private reporting, and branch-protection settings are published and verified.
 
 ## Statuses
 
@@ -65,17 +65,9 @@ or merely open task records as ready work.
   rollout tracked by
   [codegeist-ai/codegeist#2](https://github.com/codegeist-ai/codegeist/issues/2).
   Shared policy and profile repositories, the Roadmap, source-repository pull
-  request checks, licensed kit releases, public ready-work issues, metadata,
-  private vulnerability reporting, branch protection, and the final
-  community-profile audit are complete.
-- `T011_refresh-provider-implementation-specification.md` is a confirmed unmet
-  intermediate documentation task linked from
-  [issue #4](https://github.com/codegeist-ai/codegeist/issues/4).
-- `T012_add-workspace-tools-configuration-example.md` is a confirmed unmet,
-  beginner-safe example/test task linked from
-  [issue #6](https://github.com/codegeist-ai/codegeist/issues/6).
-- `T013_add-native-reflection-metadata-consistency-test.md` is a confirmed unmet
-  intermediate static-test task linked from
-  [issue #5](https://github.com/codegeist-ai/codegeist/issues/5).
+  request checks, licensed kit releases, metadata, private vulnerability reporting,
+  branch protection, and the final community-profile audit are complete.
 
-These three tasks are publicly ready and labeled by contribution level and effort.
+No contributor task is currently advertised as ready. New public tasks should be
+created only after maintainers accept concrete repository work, not to populate the
+Roadmap or meet an issue-count target.

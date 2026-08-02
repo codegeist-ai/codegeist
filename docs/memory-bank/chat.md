@@ -22,10 +22,10 @@
   license-complete JVM/native release packaging. Shared community defaults in
   `codegeist-ai/.github`, personal profile content in `codegeist-ai/codegeist-ai`,
   the public Roadmap `https://github.com/users/codegeist-ai/projects/1`, T010
-  coordination issue `codegeist-ai/codegeist#2`, and nine ready contributor issues
-  are published. All five repositories have complete metadata, private vulnerability
-  reporting, protected `main` branches, GitHub-detected `0BSD`, and 100 percent
-  community profiles.
+  coordination issue `codegeist-ai/codegeist#2`, and the issue/task linkage model
+  are published. No placeholder contributor backlog is retained. All five
+  repositories have complete metadata, private vulnerability reporting, protected
+  `main` branches, GitHub-detected `0BSD`, and 100 percent community profiles.
 - `.devcontainer` uses `.codegeist/.local.env` for ignored local runtime values
   and supports optional repository-specific Compose and image extensions under
   `.codegeist/`. Codegeist no longer checks in a mandatory NVIDIA extension, so
