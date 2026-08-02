@@ -19,8 +19,9 @@ authoritative implementation specification for accepted work, whether that task
 uses the flat `TNNN_slug.md` form or nested `TNNN_slug/task.md` form.
 
 The completed foundation should let a contributor understand how the repositories
-fit together, select the correct repository, find ready work, run that repository's
-fast validation command, and submit a pull request with automatic feedback.
+fit together, select the correct repository, find accepted ready work when it
+exists, run that repository's fast validation command, and submit a pull request
+with automatic feedback.
 
 ## Repository Scope
 
@@ -41,8 +42,8 @@ This task also creates two account infrastructure repositories:
   root `README.md`.
 
 These account repositories provide community and discovery infrastructure. They do
-not expand the set of source repositories that require implementation tasks,
-normal source checks, ready issue backlogs, or protected source branches.
+not require placeholder implementation tasks, normal source checks, or protected
+source branches merely because they support the account.
 
 The rollout must include public repositories added before T010 completes. Future
 non-archived public repositories must follow the checklist established by this task.
@@ -114,8 +115,8 @@ The source repositories already provide useful implementation foundations:
   check and pull-request CI to each source repository.
 - `tasks/T010_04_fix-onboarding-and-add-repository-examples.md` - explain the
   repository map, correct onboarding, and add repository-specific examples.
-- `tasks/T010_05_publish-contributor-backlogs-and-protect-main.md` - publish work
-  across repositories, complete metadata, and protect each `main` branch.
+- `tasks/T010_05_complete-metadata-and-protect-main.md` - complete metadata,
+  establish the accepted-work publication policy, and protect each `main` branch.
 
 ## Parent Acceptance Criteria
 
@@ -146,9 +147,6 @@ The source repositories already provide useful implementation foundations:
   rejects force pushes and branch deletion.
 - Contributor-facing documentation explains repository ownership, source versus
   generated release branches, cross-repository changes, and where tasks belong.
-- At least two ready public issues exist in each current source repository, with at
-  least eight total and at least one realistic `good first issue` per source
-  repository.
 - Repository descriptions, homepages, and topics are complete and consistent
   across the three source and two account infrastructure repositories.
 - All current repository community profiles reach the highest practical completion
@@ -171,9 +169,8 @@ The source repositories already provide useful implementation foundations:
 - The Agent Kit and Devcontainer Kit generated `release` branches include the
   canonical license, and all source repositories pin those licensed releases.
 - The public [Codegeist Roadmap](https://github.com/users/codegeist-ai/projects/1)
-  contains the coordinating issue plus nine `Ready` issues across the three source
-  repositories. Each ready issue links its canonical local task and each task links
-  back to the issue.
+  provides the shared fields and status model. Issues enter it only after concrete
+  work is accepted; the rollout does not retain placeholder contributor work.
 - Every public `main` branch requires its proven CI context and a pull request,
   enforces linear history and conversation resolution, and rejects force pushes and
   deletion without requiring another maintainer's approval.
@@ -187,8 +184,8 @@ The source repositories already provide useful implementation foundations:
 3. Complete `T010_03` and prove each source repository's normal check before
    protecting its branch.
 4. Complete `T010_04` and verify each source repository from a fresh checkout.
-5. Complete `T010_05`, publish ready work across repositories, protect default
-   branches, and perform the final account-wide audit.
+5. Complete `T010_05`, establish the accepted-work publication policy, protect
+   default branches, and perform the final account-wide audit.
 
 ## Non-Goals
 
@@ -213,10 +210,11 @@ additionally requires an account-wide audit that confirms:
 - the public `.github` defaults are inherited where expected;
 - the root `README.md` in `codegeist-ai/codegeist-ai` renders the account profile;
 - each repository has local `0BSD` license detection;
-- issue and task links include the repository and path and work in both directions;
+- issue and task links include the repository and path and work in both directions
+  whenever accepted ready work is published;
 - each source repository's fast check passes from a fresh source checkout;
 - a test pull request receives the required CI check in each source repository;
-- the Codegeist Roadmap project contains work from all current source repositories;
+- the Codegeist Roadmap project provides the intended fields and status model;
 - all current `main` branches have the intended protection without impossible
   self-approval requirements;
 - private vulnerability and conduct-reporting routes are usable; and
@@ -235,7 +233,7 @@ additionally requires an account-wide audit that confirms:
 - Shared kit changes must start on each kit's source `main`, pass that repository's
   tests, build its generated `release` branch through the existing workflow, and
   update consuming gitlinks separately.
-- Prefer small public issues with observable acceptance criteria and explicit
-  repository ownership.
+- Create public issues only for accepted concrete work with observable acceptance
+  criteria and explicit repository ownership.
 - Treat permission, workspace-containment, secret-redaction, release mutation, and
   other security-sensitive work as maintainer-led rather than beginner work.

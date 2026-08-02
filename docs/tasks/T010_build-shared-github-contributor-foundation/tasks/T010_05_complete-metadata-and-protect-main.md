@@ -1,4 +1,4 @@
-# T010_05 Publish Contributor Backlogs And Protect Main
+# T010_05 Complete Metadata And Protect Main
 
 Parent: `T010_build-shared-github-contributor-foundation`
 
@@ -8,22 +8,19 @@ Roadmap: https://github.com/users/codegeist-ai/projects/1
 
 ## Goal
 
-Finish the account-wide contributor rollout by publishing real scoped work in every
-current source repository, completing discovery metadata, and protecting each
-`main` branch with its proven CI gate.
+Finish the account-wide contributor rollout by defining how accepted work is
+published, completing discovery metadata, and protecting each `main` branch with
+its proven CI gate.
 
 ## Scope
 
 - Set accurate descriptions, homepages, and topics for `.github`, `codegeist-ai`,
   `codegeist`, `codegeist-agent-kit`, and `codegeist-devcontainer-kit`.
-- Populate the account-level Codegeist Roadmap Project with work from every current
-  source repository.
 - Add repository, status, area, effort, and contribution-level Project fields.
-- Create at least two ready public issues in each current source repository, at
-  least eight meaningful issues overall across the three source repositories, and
-  at least one realistic `good first issue` in each source repository.
-- Create or link the matching repository-local task specification for every issue
-  marked `Ready`.
+- Publish repository Issues and Roadmap items only after maintainers accept concrete
+  work for implementation.
+- Create or link a matching repository-local task specification for every accepted
+  issue marked `Ready`.
 - Use `help wanted` only for sufficiently specified intermediate work.
 - Keep security, permission, secret handling, generated-release mutation, and broad
   architecture decisions maintainer-led.
@@ -35,39 +32,15 @@ current source repository, completing discovery metadata, and protecting each
   is created.
 - Run a final account-wide public-state and community-profile review.
 
-## Candidate Issue Areas
+## Work Publication Policy
 
-Confirm each candidate is still unmet before publishing it.
-
-### Codegeist
-
-- Split `CodegeistLocalToolsTest` into focused per-tool test classes.
-- Add native-image reflection metadata consistency coverage.
-- Add architecture-boundary tests for provider, MCP, chat, and tool packages.
-- Add a Maven Wrapper and enforce supported Java and Maven versions.
-- Refresh stale provider implementation specifications against current architecture.
-- Design maintainer-led permission and workspace-containment behavior.
-
-### Codegeist Agent Kit
-
-- Validate cross-references between commands, rules, skills, plugins, and config.
-- Expand release-bundle manifest checks for required and forbidden paths.
-- Add focused schema or structural validation for shared OpenCode configuration.
-- Improve contributor documentation for generic versus repository-local behavior.
-- Audit mutable tool/version references and propose reproducible pins where useful.
-
-### Codegeist Devcontainer Kit
-
-- Add focused shell syntax and generated-release manifest checks.
-- Document image-extension, Compose-override, and consuming-repository boundaries.
-- Add deterministic tests for release-copy path completeness.
-- Audit mutable installer and package inputs and propose reproducibility improvements.
-- Improve contributor guidance for browser, Docker, worktree, and environment setup.
-
-The first `good first issue` in each repository should come from documentation,
-small deterministic tests, or safe structural validation. Do not label runtime
-security policy, release publication, broad image builds, or provider work as
-beginner work.
+- Do not require a minimum number of open Issues, Roadmap items, or beginner tasks.
+- Do not create work only to populate the Roadmap or demonstrate the contribution
+  workflow.
+- Open an Issue after maintainers accept a concrete problem and repository owner.
+- Add `status:ready` only after scope and verification are sufficiently specified.
+- Use `good first issue` only for genuinely beginner-safe work, not to satisfy an
+  account-wide quota.
 
 ## Metadata Targets
 
@@ -86,12 +59,11 @@ beginner work.
 
 - Every current public repository has a non-empty accurate description, homepage
   where applicable, and focused topics.
-- The account Roadmap contains ready work from all current source repositories.
-- Each current source repository has at least two ready scoped issues and one
-  realistic `good first issue`.
-- At least eight issues are open across the three source repositories and no issue
-  exists only to meet the count.
-- Every ready issue links a canonical local task file, and the task links back.
+- The account Roadmap provides the intended repository, status, area, effort, and
+  contribution-level fields.
+- No Issue or task exists only to meet a rollout count or populate a Project view.
+- Every accepted ready issue links a canonical local task file, and the task links
+  back.
 - Project views can group work by repository and status.
 - Each current source repository's `main` requires its proven CI check and rejects
   force pushes and deletion.
@@ -115,7 +87,6 @@ beginner work.
 - `codegeist-ai/.github/README.md` when documenting default-community ownership
 - Each source repository's `README.md`
 - Each source repository's local task guide
-- New repository-local task specifications for ready issues
 - Relevant repository memory files
 - `docs/tasks/T010_build-shared-github-contributor-foundation/`
 
@@ -139,8 +110,8 @@ beginner work.
 
 ## Verification
 
-- Use GitHub UI or authenticated `gh` queries to verify metadata, issue labels,
-  Project membership, task links, and branch rules in every current repository.
+- Use GitHub UI or authenticated `gh` queries to verify metadata, Project fields,
+  accepted-work linkage, and branch rules in every current repository.
 - Open a disposable test pull request in each source repository before enabling its
   required check.
 - Verify that failing CI blocks merge and successful CI permits the sole-maintainer
