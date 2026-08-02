@@ -2,7 +2,7 @@
 
 Status: open
 
-Public Tracking: pending issue creation.
+Public Tracking: https://github.com/codegeist-ai/codegeist/issues/5
 
 Roadmap: https://github.com/users/codegeist-ai/projects/1
 

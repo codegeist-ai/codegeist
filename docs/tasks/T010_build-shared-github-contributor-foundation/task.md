@@ -2,10 +2,9 @@
 
 Status: open
 
-Public tracking: create an item in the
-[Codegeist Roadmap](https://github.com/users/codegeist-ai/projects/1) when the
-public planning workflow from `T010_02` is available, then link this coordinating
-task from the Project item.
+Public tracking: [codegeist-ai/codegeist#2](https://github.com/codegeist-ai/codegeist/issues/2)
+
+Roadmap: [Codegeist Roadmap](https://github.com/users/codegeist-ai/projects/1)
 
 ## Goal
 

@@ -2,7 +2,7 @@
 
 Status: open
 
-Public Tracking: pending issue creation.
+Public Tracking: https://github.com/codegeist-ai/codegeist/issues/6
 
 Contribution Level: beginner (`good first issue` candidate)
 
