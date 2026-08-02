@@ -2,7 +2,7 @@
 
 Parent: `T010_build-shared-github-contributor-foundation`
 
-Status: open
+Status: finalized
 
 Roadmap: https://github.com/users/codegeist-ai/projects/1
 
@@ -124,5 +124,4 @@ Codegeist GitHub repository and provide inherited defaults for future repositori
 
 ## Open Input
 
-Confirm whether `dev@codegeist.ai` is the monitored private address for conduct and
-security reports. Do not publish an unmonitored contact.
+`dev@codegeist.ai` was confirmed as the monitored private address before publication.

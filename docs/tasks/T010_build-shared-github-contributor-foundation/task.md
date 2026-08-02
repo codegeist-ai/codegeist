@@ -1,6 +1,6 @@
 # T010 Build Shared GitHub Contributor Foundation
 
-Status: open
+Status: finalized
 
 Public tracking: [codegeist-ai/codegeist#2](https://github.com/codegeist-ai/codegeist/issues/2)
 
@@ -156,6 +156,28 @@ The source repositories already provide useful implementation foundations:
 - A reusable checklist defines the contributor baseline for future public Codegeist
   repositories.
 
+## Completion Evidence
+
+- `codegeist-ai/.github` publishes inherited community policies, issue forms, the
+  pull-request template, and the future-repository checklist.
+- `codegeist-ai/codegeist-ai` supplies the personal account profile and repository
+  map required by GitHub for a user account.
+- GitHub detects `0BSD` and reports a 100 percent community profile for all five
+  public repositories.
+- Private vulnerability reporting is enabled for all five repositories, with
+  confirmed fallback contact `dev@codegeist.ai`.
+- Pull requests proved `JVM check`, `test`, and `Check` on the three source
+  repositories; both account repositories proved their `check` workflow on `main`.
+- The Agent Kit and Devcontainer Kit generated `release` branches include the
+  canonical license, and all source repositories pin those licensed releases.
+- The public [Codegeist Roadmap](https://github.com/users/codegeist-ai/projects/1)
+  contains the coordinating issue plus nine `Ready` issues across the three source
+  repositories. Each ready issue links its canonical local task and each task links
+  back to the issue.
+- Every public `main` branch requires its proven CI context and a pull request,
+  enforces linear history and conversation resolution, and rejects force pushes and
+  deletion without requiring another maintainer's approval.
+
 ## Implementation Order
 
 1. Complete `T010_01` and create the shared `.github` plus personal profile
@@ -202,8 +224,8 @@ additionally requires an account-wide audit that confirms:
 
 ## Planning Notes
 
-- The candidate private contact is `dev@codegeist.ai`; confirm that the mailbox is
-  monitored before publishing it.
+- `dev@codegeist.ai` was confirmed as the monitored private contact before the
+  conduct and security policies were published.
 - The `.github` repository reduces policy duplication but does not render this
   personal account's profile. Profile content belongs in the root `README.md` of
   `codegeist-ai/codegeist-ai`.
