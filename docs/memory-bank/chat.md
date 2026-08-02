@@ -16,15 +16,16 @@
   `release` branch of `codegeist-devcontainer-kit`.
 - `docs/memory-bank/chat.md` is the canonical lightweight project memory. The
   legacy root-level `chat.md` pointer has been removed.
-- The open T010 contributor baseline on `main` adds root `0BSD`, repository-local
+- The finalized T010 contributor baseline on `main` adds root `0BSD`, repository-local
   contribution/task guidance, selective workspace-submodule onboarding,
   credential-free parser examples, `task cli:check`, pull-request CI, and
   license-complete JVM/native release packaging. Shared community defaults in
   `codegeist-ai/.github`, personal profile content in `codegeist-ai/codegeist-ai`,
   the public Roadmap `https://github.com/users/codegeist-ai/projects/1`, T010
   coordination issue `codegeist-ai/codegeist#2`, and nine ready contributor issues
-  are published. T010 remains open for final metadata, branch protection, private
-  vulnerability reporting, and the account-wide community-profile audit.
+  are published. All five repositories have complete metadata, private vulnerability
+  reporting, protected `main` branches, GitHub-detected `0BSD`, and 100 percent
+  community profiles.
 - `.devcontainer` uses `.codegeist/.local.env` for ignored local runtime values
   and supports optional repository-specific Compose and image extensions under
   `.codegeist/`. Codegeist no longer checks in a mandatory NVIDIA extension, so

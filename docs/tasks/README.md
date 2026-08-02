@@ -61,12 +61,13 @@ or merely open task records as ready work.
 
 ## Current Contributor Foundation Work
 
-- `T010_build-shared-github-contributor-foundation/` is the open account-wide
+- `T010_build-shared-github-contributor-foundation/` is the finalized account-wide
   rollout tracked by
   [codegeist-ai/codegeist#2](https://github.com/codegeist-ai/codegeist/issues/2).
   Shared policy and profile repositories, the Roadmap, source-repository pull
-  request checks, and public ready-work issues are published. Final metadata,
-  branch protection, and account-wide community-profile verification remain.
+  request checks, licensed kit releases, public ready-work issues, metadata,
+  private vulnerability reporting, branch protection, and the final
+  community-profile audit are complete.
 - `T011_refresh-provider-implementation-specification.md` is a confirmed unmet
   intermediate documentation task linked from
   [issue #4](https://github.com/codegeist-ai/codegeist/issues/4).
