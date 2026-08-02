@@ -142,6 +142,8 @@ jobs:
           set -euo pipefail
 
           mkdir -p target/dist
+          jar --list --file target/codegeist.jar | grep --fixed-strings --line-regexp 'META-INF/LICENSE'
+          unzip -p target/codegeist.jar META-INF/LICENSE | cmp - ../../../LICENSE
           cp -p target/codegeist.jar target/dist/codegeist-jvm.jar
 
       - name: Upload JVM jar artifact
@@ -263,14 +265,14 @@ jobs:
           if-no-files-found: error
           path: app/codegeist/cli/target/dist/codegeist-${{ matrix.platform }}.${{ matrix.extension }}
 
-  stage-install-scripts:
-    name: Stage install scripts
+  stage-release-support:
+    name: Stage release support assets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
 
-      - name: Stage install script assets
+      - name: Stage release support assets
         shell: bash
         run: |
           set -euo pipefail
@@ -295,13 +297,16 @@ jobs:
             fi
             cp -p "$source" "dist/$script"
           done
+          cp -p LICENSE dist/LICENSE
 
-      - name: Upload install script artifact
+      - name: Upload release support artifact
         uses: actions/upload-artifact@v7
         with:
-          name: codegeist-install-scripts
+          name: codegeist-release-support
           if-no-files-found: error
-          path: dist/codegeist-install-*
+          path: |
+            dist/codegeist-install-*
+            dist/LICENSE
 
   checksums:
     name: Generate and verify checksums
@@ -310,7 +315,7 @@ jobs:
       - metadata
       - build-jvm
       - build-native
-      - stage-install-scripts
+      - stage-release-support
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v8
@@ -324,6 +329,7 @@ jobs:
 
           mkdir -p dist
           expected_assets=(
+            LICENSE
             codegeist-jvm.jar
             codegeist-linux-x64.tar.gz
             codegeist-windows-x64.zip
@@ -388,6 +394,7 @@ jobs:
 
           mkdir -p release-assets
           expected_assets=(
+            LICENSE
             codegeist-jvm.jar
             codegeist-linux-x64.tar.gz
             codegeist-windows-x64.zip
@@ -415,10 +422,10 @@ jobs:
           Validation completed in this workflow run before upload:
 
           - Maven test suite passed before packaging.
-          - JVM jar was packaged as a release asset without artifact smoke.
-          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with --version, --show-config, and ask-driven file-edit plus shell-tool side effects.
+          - JVM jar was packaged with the canonical license at META-INF/LICENSE and staged as a release asset without runtime artifact smoke.
+          - Linux x64, Windows x64, and macOS x64 native archives were built, unpacked, and smoke-tested with the canonical LICENSE, --version, --show-config, and ask-driven file-edit plus shell-tool side effects.
           - Linux, macOS, and Windows install scripts were run against local release-shaped assets on their matching release runners, then staged as release assets for curl-based downloads.
-          - The SHA-256 checksum file was generated and verified before upload.
+          - The standalone LICENSE release asset and all executable assets are covered by the SHA-256 checksum file, which was generated and verified before upload.
 
           Install scripts are bootstrap helpers for the native archives. This release intentionally excludes package-manager publishing, signing, notarization, SBOM, and SLSA provenance.
           EOF

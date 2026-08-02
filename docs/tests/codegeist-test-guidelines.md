@@ -15,33 +15,38 @@ How Codegeist tests should be shaped and reported.
 
 ## Commands
 
-Run commands from `app/codegeist/cli` unless the task says otherwise:
+Run normal contributor commands from the repository root:
 
 ```bash
-task test TEST=CodegeistApplicationTests
-task test TEST=CodegeistApplicationTests#contextLoads
-task test
+task cli:test-jvm TEST=CodegeistApplicationTests
+task cli:test-jvm TEST=CodegeistApplicationTests#contextLoads
+task cli:check
 ```
 
-Use task-specific selectors in active task docs and final reports. Keep broad
-`task test` as the final JVM verification once focused tests pass.
+Use task-specific selectors in active task docs and final reports. Keep
+`task cli:check` as the final normal verification once focused tests pass.
 
 ## Provider Tests
 
 - Use `provider-feature-tests.md` as the detailed provider feature test reference.
-- Keep live provider tests individually executable with `task test TEST=<selector>`
-  so local or hosted prerequisites remain easy to isolate.
-- Broad `task test` uses the provider category default, which is `none`, and skips
-  annotated provider calls. It still starts the Taskfile-managed local Ollama
-  service before Maven.
+- Keep live provider tests individually executable with
+  `task cli:test TEST=<selector>` so local or hosted prerequisites remain easy to
+  isolate.
+- `task cli:test-jvm` and `task cli:check` use command-local provider category
+  `none`, overriding ambient values, and do not start Ollama. `task cli:check`
+  also ignores ambient `TEST` so it always runs the complete suite. `task cli:test`
+  is the explicit provider-capable path and starts the Taskfile-managed local
+  Ollama service before Maven.
 - Provider feature tests that can call providers must use method-level categories:
   `local`, `remote_free`, or `remote_paid`. Config-only checks stay unannotated.
 - `CODEGEIST_TEST_PROVIDER_CATEGORY` selects the highest provider category to
   run. The default is `none`; `remote_paid` is the explicit cost and rate-limit
   opt-in and runs all provider categories.
-- Local Ollama verification uses the Taskfile-managed local Ollama instance; `task
-  test` starts it before every Maven test run with `OLLAMA_ENTER=false`.
+- Local Ollama verification uses the Taskfile-managed local Ollama instance;
+  `task cli:test` starts it before Maven with `OLLAMA_ENTER=false`.
 - Live local Ollama tests must not pull, download, create, or delete models.
+- Every provider-calling integration test, including selector-only `*IT` classes,
+  must carry a provider category so `test-jvm` can safely skip it under `none`.
 - Hosted provider calls require explicit no-cost confirmation and an opt-in task
   or selector. API-key presence alone is not permission to call a hosted provider.
 

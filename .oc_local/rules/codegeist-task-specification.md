@@ -1,14 +1,14 @@
 # Codegeist Task Workflow Overlay
 
-Use the shared task phase commands from `.opencode` for task workflow phases:
+Use the shared `/task` workflow from `.opencode`:
 
-- `/specify-task <task-ref> [context/instructions]`
-- `/plan-task <task-ref> [context/instructions]`
-- `/solve-task <task-ref> [context/instructions]`
-- `/work-task <task-ref> [context/instructions]`
+- `/task spec "<title/context>"`
+- `/task impl <task-ref> [instructions]`
+- `/task cancel <task-ref>`
+- `/task backlog <title>`
 
-This overlay adds only Codegeist-specific guidance. Keep generic phase behavior in
-`.opencode/rules/task-phases.md` and `.opencode/rules/task-workflow.md`.
+This overlay adds only Codegeist-specific guidance. Keep generic task behavior in
+`.opencode/rules/task-workflow.md`.
 
 ## Codegeist Guidance
 
@@ -136,14 +136,14 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   `.codegeist/Dockerfile` instead. Keep Ollama models under
   `${OLLAMA_MODELS_DIR:-$HOME/.ollama/models}` and use `OLLAMA_ENTER=false task
   ollama-start` for non-interactive automation.
-- For Codegeist implementation verification, prefer the Taskfile entrypoint from
-  `app/codegeist/cli`: run `task test`, and use `task test TEST=<test-selector>`
-  for focused test selectors. Do not document direct `mvn test` commands for new
-  implementation tasks. `task test` starts the shared host Ollama container with
-  `OLLAMA_ENTER=false` and ensures the selected model exists before Maven. For local
-  Ollama provider verification, run one command such as
-  `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=<selector>` to enable the
-  local provider-call methods.
+- For normal Codegeist implementation verification, use
+  `task cli:test-jvm TEST=<test-selector>` for focused tests and `task cli:check`
+  for the final contributor gate. Both force provider category `none` and avoid
+  Ollama and Docker. Do not document direct `mvn test` commands for new
+  implementation tasks. For intentional local Ollama verification, use the
+  separate provider-capable path, for example
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test TEST=<selector>`; that task
+  starts Ollama and ensures the selected model exists before Maven.
 - For Codegeist test or smoke-script work, read `docs/tests/README.md` first.
   Smoke scripts must keep scan-friendly status lines and emit stable
   `Duration: <label>: <seconds>s` lines for meaningful Maven, package,
@@ -339,7 +339,8 @@ This overlay adds only Codegeist-specific guidance. Keep generic phase behavior 
   guard each non-config feature method with an explicit category: `local`,
   `remote_free`, or `remote_paid`. Do not let API-key presence or Maven's default
   test lifecycle trigger remote provider calls.
-- Run provider feature tests through `task test`; `CODEGEIST_TEST_PROVIDER_CATEGORY`
-  is the only provider category gate and defaults to `none`. Config-only checks stay
+- Run config-only provider tests through `task cli:test-jvm` and intentional live
+  provider tests through `task cli:test`; `CODEGEIST_TEST_PROVIDER_CATEGORY` is the
+  only provider category gate and defaults to `none`. Config-only checks stay
   unannotated; use `local` for local provider calls, and treat `remote_paid` as the
   explicit cost and rate-limit opt-in.

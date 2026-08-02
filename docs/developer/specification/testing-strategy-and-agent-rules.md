@@ -17,7 +17,7 @@ The implemented application is currently small:
   provider config binding and validation, SpEL preprocessing,
   provider feature tests gated by `CODEGEIST_TEST_PROVIDER_CATEGORY`, and
   `LocalOllamaProviderIT` behind the explicit selector
-  `task test TEST=LocalOllamaProviderIT`.
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test TEST=LocalOllamaProviderIT`.
 
 ## TDD Rules
 
@@ -40,12 +40,17 @@ The implemented application is currently small:
 
 ## Provider Feature Tests
 
-Provider feature tests run through `task test` and provider category checks may be
-applied at method or class level. `CODEGEIST_TEST_PROVIDER_CATEGORY` defaults to
-`none`, so ordinary broad verification skips annotated provider calls. `task test`
-always starts the fixed local Ollama service first with `OLLAMA_ENTER=false`; set
-`CODEGEIST_TEST_PROVIDER_CATEGORY=local` when local provider-call methods should
-run.
+Normal tests run through `task cli:test-jvm` with a command-local provider category
+`none` that overrides the caller environment. The canonical `task cli:check`
+ignores ambient `TEST`, runs the complete provider-none suite, adds JVM packaging,
+asserts the JAR license entry, and requires non-empty artifact `--version` output
+without starting providers or Docker. Live provider feature tests run through
+`task cli:test`, whose explicit provider-capable path starts local Ollama before
+Maven. Provider category checks may be applied at method or class level.
+
+Every test that can call a provider must be category-guarded even when its `*IT`
+name excludes it from default Surefire discovery. An explicit `test-jvm` selector
+must skip such a test under the forced `none` category.
 
 Provider categories:
 
@@ -69,8 +74,9 @@ instance started through `task ollama-start`.
 - Do not use Testcontainers for the first Ollama workflow.
 - Do not pull, download, create, or delete local Ollama models in Java tests; the
   Taskfile owns host container startup and selected-model availability.
-- Run provider checks with one command. `task test` invokes `ollama-start` before
-  Maven, and `CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=OllamaProviderTest`
+- Run provider checks with one command. `task cli:test` invokes `ollama-start`
+  before Maven, and
+  `CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test TEST=OllamaProviderTest`
   additionally enables local provider-call methods.
 - Keep deterministic model options such as temperature or seed in the runtime
   request or provider feature test method, not in provider config.
@@ -81,17 +87,18 @@ instance started through `task ollama-start`.
 
 ## Current Commands
 
-Examples from `app/codegeist/cli`:
+Examples from the repository root:
 
 ```bash
-task test TEST=CodegeistApplicationTests
-task test TEST=CodegeistApplicationTests#contextLoads
-task test
+task cli:test-jvm TEST=CodegeistApplicationTests
+task cli:test-jvm TEST=CodegeistApplicationTests#contextLoads
+task cli:check
 ```
 
-Add task-specific `task test` commands in the active task file when new tests are
-added. Do not document direct `mvn test` commands for new Codegeist implementation
-tasks.
+Add task-specific `task cli:test-jvm` commands in the active task file when new
+deterministic tests are added. Reserve `task cli:test` for intentional provider
+setup and do not document direct `mvn test` commands for new Codegeist
+implementation tasks.
 
 ## Solve Checklist
 

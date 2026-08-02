@@ -16,6 +16,14 @@
   `release` branch of `codegeist-devcontainer-kit`.
 - `docs/memory-bank/chat.md` is the canonical lightweight project memory. The
   legacy root-level `chat.md` pointer has been removed.
+- The open T010 contributor baseline adds root `0BSD`, repository-local
+  contribution/task guidance, selective workspace-submodule onboarding,
+  credential-free parser examples, `task cli:check`, and pull-request CI. T010
+  remains open for account-wide rollout across the three source repositories plus
+  default-community infrastructure in `codegeist-ai/.github`, personal profile
+  content in `codegeist-ai/codegeist-ai`, Roadmap
+  `https://github.com/users/codegeist-ai/projects/1`, public issues, test pull
+  requests, metadata, and branch protection.
 - `.devcontainer` uses `.codegeist/.local.env` for ignored local runtime values
   and supports optional repository-specific Compose and image extensions under
   `.codegeist/`. Codegeist no longer checks in a mandatory NVIDIA extension, so
@@ -251,8 +259,9 @@
   configured `pwsh` wrapper, then asserts the workspace side effect and completed
   persisted shell `ToolSessionPart`. Local Linux, Windows, and release CI native
   smokes stay deterministic and use only the fixture-backed file-edit and
-  shell-tool paths. The JVM jar is built and uploaded as a release asset, but it is
-  not smoke-tested.
+  shell-tool paths. The JVM jar is built with the canonical license at
+  `META-INF/LICENSE` and uploaded as a release asset, but release CI does not run a
+  JVM artifact startup smoke.
 - `T007_03_add-mcp-and-read-write-tools` is completed. The slice includes direct
   `mcp:` config, `stdio` and `streamable_http` MCP callbacks, local
   `codegeist_read`, `codegeist_list`, `codegeist_glob`, `codegeist_grep`, and
@@ -329,11 +338,17 @@
   `logging.level.root=DEBUG` or `LOGGING_LEVEL_ROOT=DEBUG`.
 - The repository root `Taskfile.yml` includes `app/codegeist/cli/Taskfile.yml`
   under the `cli` namespace without aliases or flattening, so root commands use
-  `task cli:<name>`. The CLI Taskfile provides `test`, `build`, `run`, `tui`,
+  `task cli:<name>`. The CLI Taskfile provides `test-jvm`, `check`, `test`,
+  `build`, `run`, `tui`,
   `native`, `native-smoke`, `tui-capture-smoke`, `tui-hello-world-smoke`, `docs`,
   `local-linux-smoke`, `mcp-remote-smoke`, `qemu-windows-smoke`, `final-smoke-suite`, and
   `ollama-start`. `task cli:tui` builds the jar before launching the TUI so the
-  prompt surface is not stale.
+  prompt surface is not stale. `task cli:test-jvm` uses a command-local provider
+  category `none`; `task cli:check` also ignores ambient `TEST`, runs the complete
+  suite under `none`, packages `target/codegeist.jar`, asserts
+  `META-INF/LICENSE`, and requires non-empty real `--version` output without
+  Ollama or Docker. `LocalOllamaProviderIT` is class-gated as `local`, so selecting
+  it through `test-jvm` skips it rather than contacting Ollama.
   Local smoke scripts live under `scripts/tests/`. `task test` delegates to Maven
   and accepts a focused selector as `task test TEST=<test-selector>`; from the repo
   root use `task cli:test TEST=<test-selector>`. New implementation tasks should
@@ -391,7 +406,7 @@
   model wording. Smoke scripts now emit stable
   `Duration: <label>: <seconds>s` lines for Maven, package, native compile,
   archive smoke, platform total, SSH, and QEMU wrapper timings. The latest full
-  JVM suite passed with 191 tests, 0 failures, 0 errors, and 6 skips. The latest
+  JVM suite passed with 202 tests, 0 failures, 0 errors, and 6 skips. The latest
   `task mcp-remote-smoke` passed with `mcp remote smoke total: 13.058s`. The latest
   strict `task final-smoke-suite` passed with `linux platform smoke total: 85.696s`,
   `windows qemu smoke total: 233.055s`, `linux-x64 native shell ask total:
@@ -418,9 +433,11 @@
   `pwsh -NoProfile -File scripts/tests/local-linux-smoke.ps1 -RequireNative
   -ReleaseVersion 0.4.0`.
 - The release workflow builds and uploads `codegeist-jvm.jar` without artifact
-  smoke. The native matrix calls `scripts/tests/artifact-smoke.ps1`; the harness
-  packages Linux, Windows, and macOS native archives, unpacks each native archive
-  into a fresh temp directory, smoke-tests `--version`, native `--show-config`, logs,
+  startup smoke after asserting its `META-INF/LICENSE`. The native matrix calls
+  `scripts/tests/artifact-smoke.ps1`; the harness packages Linux, Windows, and
+  macOS native archives with the canonical `LICENSE`, unpacks each archive into a
+  fresh temp directory, hash-compares the license, smoke-tests `--version`, native
+  `--show-config`, logs,
   deterministic file-edit side effects, and deterministic shell-tool side effects
   before upload. Windows also packages and verifies the app-local MSVC CRT. The same
   native jobs then run
@@ -428,8 +445,8 @@
   scripts install from local release-shaped assets on their matching runners before
   upload. A separate install-script staging job syntax-checks and uploads
   `codegeist-install-linux.sh`, `codegeist-install-macos.sh`, and
-  `codegeist-install-windows.ps1` as release assets; `SHA256SUMS.txt` covers the jar,
-  native archives, and install scripts.
+  `codegeist-install-windows.ps1` plus standalone `LICENSE` as release assets;
+  `SHA256SUMS.txt` covers the license, jar, native archives, and install scripts.
 - Codegeist `v0.1.0` is published on GitHub Releases:
   `https://github.com/codegeist-ai/codegeist/releases/tag/v0.1.0`. Pre-tag
   validation run `26537663964`, tag run `26538176834`, and downloaded asset
@@ -442,7 +459,7 @@
   `codegeist-jvm.jar`,
   `codegeist-linux-x64.tar.gz`, `codegeist-windows-x64.zip`,
   `codegeist-macos-x64.tar.gz`, `codegeist-install-linux.sh`,
-  `codegeist-install-macos.sh`, `codegeist-install-windows.ps1`, and
+  `codegeist-install-macos.sh`, `codegeist-install-windows.ps1`, `LICENSE`, and
   `SHA256SUMS.txt`. The already-published `v0.1.0` release used the older
   versioned asset names.
 - Smoke orchestration logic now lives in PowerShell entrypoints under

@@ -67,13 +67,14 @@ immutable `v*` tag carry the version, so filenames intentionally omit it:
 
 | Asset | Source job | Smoke command |
 | --- | --- | --- |
-| `codegeist-jvm.jar` | Ubuntu JVM job | none; build and upload only |
+| `codegeist-jvm.jar` | Ubuntu JVM job | package assertion for canonical `META-INF/LICENSE`; runtime artifact smoke remains outside release CI |
 | `codegeist-linux-x64.tar.gz` | Ubuntu native job | `scripts/tests/artifact-smoke.ps1 -Platform linux-x64` |
 | `codegeist-windows-x64.zip` | Windows native job | `scripts/tests/artifact-smoke.ps1 -Platform windows-x64` |
 | `codegeist-macos-x64.tar.gz` | macOS native job | `scripts/tests/artifact-smoke.ps1 -Platform macos-x64` |
 | `codegeist-install-linux.sh` | Install script staging job | `scripts/tests/install-script-smoke.ps1 -Platform linux-x64` in the native Linux job, plus parser and checksum coverage |
 | `codegeist-install-macos.sh` | Install script staging job | `scripts/tests/install-script-smoke.ps1 -Platform macos-x64` in the native macOS job, plus parser and checksum coverage |
 | `codegeist-install-windows.ps1` | Install script staging job | `scripts/tests/install-script-smoke.ps1 -Platform windows-x64` in the native Windows job, plus parser and checksum coverage |
+| `LICENSE` | `stage-release-support` job | exact repository file included in `SHA256SUMS.txt` |
 | `SHA256SUMS.txt` | Checksum job | `sha256sum -c` before upload |
 
 Native archives keep the executable and required native sidecar libraries in one
@@ -88,19 +89,22 @@ The implemented jobs run these gates in order:
 
 1. Resolve and validate the release version.
 2. Run the Maven test suite with `-Drevision=<version>`.
-3. Build the executable JVM jar and stage it as `codegeist-jvm.jar` without smoke.
+3. Build the executable JVM jar, verify its `META-INF/LICENSE` matches the root
+   license, and stage it as `codegeist-jvm.jar` without runtime artifact smoke.
 4. Build native executables on GitHub-hosted Linux, Windows, and macOS runners.
 5. Activate the MSVC tools environment on Windows before Maven native compile.
-6. Package native archives with sidecar libraries, including the app-local MSVC CRT
-   on Windows.
+6. Package native archives with `LICENSE` and sidecar libraries, including the
+   app-local MSVC CRT on Windows.
 7. Run `scripts/tests/artifact-smoke.ps1` for each native platform; it packages,
-   unpacks, verifies `--version`, verifies `--show-config`, checks logs, and runs
-   deterministic file-edit plus shell-tool side effects.
+   unpacks, hash-compares `LICENSE`, verifies `--version`, verifies
+   `--show-config`, checks logs, and runs deterministic file-edit plus shell-tool
+   side effects.
 8. Run `scripts/tests/install-script-smoke.ps1` on each native runner against the
    matching local archive, including macOS on `macos-15-intel`.
-9. Stage Linux, macOS, and Windows install scripts as release assets.
-10. Generate and verify `SHA256SUMS.txt` for the jar, native archives, and install
-   scripts.
+9. Stage Linux, macOS, and Windows install scripts plus the standalone `LICENSE`
+   release asset.
+10. Generate and verify `SHA256SUMS.txt` for the license, jar, native archives, and
+    install scripts.
 11. Upload all assets as workflow artifacts.
 12. On `v*` tag runs only, upload the same assets to a published GitHub Release.
 
@@ -250,8 +254,8 @@ git push origin v0.1.1
 ```
 
 The tag push starts the release workflow automatically. The release job creates or
-updates a published GitHub Release and uploads the jar, native archives, and
-checksum file.
+updates a published GitHub Release and uploads the license, jar, native archives,
+install scripts, and checksum file.
 
 The same repo-local OpenCode command owns the full release sequence:
 

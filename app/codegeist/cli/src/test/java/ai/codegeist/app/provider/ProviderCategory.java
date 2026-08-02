@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 @ExtendWith(ProviderTestExtension.class)
-@interface ProviderCategory {
+public @interface ProviderCategory {
 
     ProviderTestCategory value();
 }

@@ -10,6 +10,7 @@
 # Inputs:
 # - Platform: `linux-x64`, `windows-x64`, or `macos-x64`.
 # - CliDir: app/codegeist/cli directory containing target/ build outputs.
+# - LicenseFile: canonical repository LICENSE copied into every native archive.
 # - WindowsVcRedistDir: MSVC `VCToolsRedistDir`; required for Windows archives
 #   so the app-local CRT is packaged beside codegeist.exe.
 # - Ask-driven tool smokes use deterministic fixture providers so real model wording
@@ -43,6 +44,8 @@ param(
     [string]$FileEditSmokeScript = "",
 
     [string]$ShellAskSmokeScript = "",
+
+    [string]$LicenseFile = "",
 
     [int]$NativeTimeoutSeconds = 5,
 
@@ -314,6 +317,21 @@ function Assert-WindowsVcRuntime {
     }
 }
 
+function Assert-PackagedLicense {
+    param([string]$Directory)
+
+    $packagedLicense = Join-Path $Directory "LICENSE"
+    if (-not (Test-Path -LiteralPath $packagedLicense -PathType Leaf)) {
+        Fail-Smoke "Canonical LICENSE was not packaged: $packagedLicense"
+    }
+
+    $sourceHash = (Get-FileHash -LiteralPath $LicenseFile -Algorithm SHA256).Hash
+    $packagedHash = (Get-FileHash -LiteralPath $packagedLicense -Algorithm SHA256).Hash
+    if ($packagedHash -ne $sourceHash) {
+        Fail-Smoke "Packaged LICENSE does not match the repository LICENSE: $packagedLicense"
+    }
+}
+
 function New-NativeArchive {
     $binaryName = Get-NativeBinaryName
     $native = if ($NativeExecutable) { Resolve-SmokePath $NativeExecutable } else { Join-Path $CliDir "target/$binaryName" }
@@ -342,6 +360,7 @@ function New-NativeArchive {
 
     Copy-NativeSidecars $packageDir
     Copy-WindowsVcRuntime $packageDir
+    Copy-Item -LiteralPath $LicenseFile -Destination (Join-Path $packageDir "LICENSE") -Force
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     if ($extension -eq "zip") {
@@ -396,6 +415,7 @@ function Invoke-NativeArtifactSmoke {
             Fail-Smoke "Packaged native executable was not found after unpack: $native"
         }
         Assert-WindowsVcRuntime $runDir
+        Assert-PackagedLicense $runDir
 
         Write-SmokeLog "Command: $native --version"
         Invoke-SmokeProcess `
@@ -447,6 +467,14 @@ function Invoke-NativeArtifactSmoke {
 $CliDir = Resolve-SmokePath $CliDir
 if (-not (Test-Path -LiteralPath $CliDir)) {
     Fail-Smoke "CLI module directory not found: $CliDir"
+}
+
+if (-not $LicenseFile) {
+    $LicenseFile = Join-Path $CliDir "../../../LICENSE"
+}
+$LicenseFile = Resolve-SmokePath $LicenseFile
+if (-not (Test-Path -LiteralPath $LicenseFile -PathType Leaf)) {
+    Fail-Smoke "Canonical repository LICENSE not found: $LicenseFile"
 }
 
 if (-not $DistDir) {

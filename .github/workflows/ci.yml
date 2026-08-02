@@ -1,0 +1,41 @@
+# ci.yml - fast contributor validation for Codegeist source changes.
+#
+# Pull requests and pushes to source `main` run the same deterministic
+# `task cli:check` contract documented in CONTRIBUTING.md. This workflow uses no
+# secrets, Docker, provider calls, native-image, QEMU, or release publication.
+name: Codegeist CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: JVM check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: app/codegeist/cli/pom.xml
+
+      - name: Install Task
+        uses: go-task/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Run contributor check
+        env:
+          DOCKER_HOST: tcp://127.0.0.1:1
+        run: task cli:check

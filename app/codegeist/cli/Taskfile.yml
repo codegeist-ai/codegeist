@@ -1,6 +1,32 @@
+# Taskfile.yml - module-local build, test, and smoke entrypoints for the CLI.
+#
+# `test-jvm` and `check` are the deterministic contributor/CI path. Provider,
+# Docker, native-image, QEMU, documentation-capture, and release smokes remain
+# explicit opt-in tasks below.
+
 version: '3'
 
 tasks:
+  test-jvm:
+    desc: Run deterministic JVM tests without provider or Docker setup
+    cmds:
+      - CODEGEIST_TEST_PROVIDER_CATEGORY=none mvn --batch-mode --no-transfer-progress {{if .TEST}}-Dtest={{.TEST}} {{end}}test
+
+  check:
+    desc: Test, package, and smoke the JVM application without external services
+    cmds:
+      # Keep this command independent of ambient TEST so the canonical gate always runs the full suite.
+      - CODEGEIST_TEST_PROVIDER_CATEGORY=none mvn --batch-mode --no-transfer-progress test
+      - mvn --batch-mode --no-transfer-progress -DskipTests clean package
+      - jar --list --file target/codegeist.jar | grep --fixed-strings --line-regexp 'META-INF/LICENSE'
+      - |
+        version_output="$(java -jar target/codegeist.jar --version)"
+        if [ -z "$(printf '%s' "$version_output" | tr -d '[:space:]')" ]; then
+          printf 'Packaged Codegeist jar --version output was empty\n' >&2
+          exit 1
+        fi
+        printf '%s\n' "$version_output"
+
   test:
     env:
       OLLAMA_ENTER: 'false'

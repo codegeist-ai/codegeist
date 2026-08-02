@@ -13,27 +13,31 @@ Test guidance for Codegeist contributors and coding agents.
 
 ## Core Rules
 
-- Use the Taskfile from `app/codegeist/cli` for implementation verification.
-- Prefer `task test TEST=<selector>` for focused checks and `task test` for the
-  broader JVM suite.
+- Use `task cli:test-jvm TEST=<selector>` from the repository root for focused
+  tests that must not start providers or Docker.
+- Use `task cli:check` as the normal final contributor gate. It runs provider
+  category `none`, ignores ambient `TEST`, packages the JVM jar with
+  `META-INF/LICENSE`, and requires non-empty output from the real `--version`
+  command.
 - Do not document new direct `mvn test` commands for Codegeist implementation
   tasks unless a task explicitly needs Maven behavior that the Taskfile cannot
   express.
-- Provider feature tests run through `task test` and method- or class-level
-  provider categories. `CODEGEIST_TEST_PROVIDER_CATEGORY` defaults to `none`, so
-  broad verification skips annotated provider calls. `task test` always starts the
-  fixed local Ollama service first with `OLLAMA_ENTER=false`; set the category to
-  `local` when local provider-call methods should run.
+- Live provider feature tests run through `task cli:test` and method- or
+  class-level provider categories. Unlike `test-jvm`, `cli:test` starts the fixed
+  local Ollama service first with `OLLAMA_ENTER=false`; use it only when that setup
+  is intentional and set the category to `local` when local provider-call methods
+  should run.
 - Hosted provider calls require explicit `remote_free` or `remote_paid` category
   selection. API-key presence alone never enables hosted provider calls.
-- `task mcp-remote-smoke` is the separate Docker-backed MCP `streamable_http` smoke.
+- `task cli:mcp-remote-smoke` is the separate Docker-backed MCP
+  `streamable_http` smoke.
   It builds and runs a local fixture container, checks the direct MCP callback path,
   then checks the `ask` plus local Ollama path. It is intentionally not part of
-  `task test`.
-- `task tui-capture-smoke` is the native TUI documentation-capture smoke. It runs
+  `task cli:check`.
+- `task cli:tui-capture-smoke` is the native TUI documentation-capture smoke. It runs
   the native `codegeist tui` command through VHS with a deterministic fixture
   provider and writes ignored preview artifacts under `target/smoke-test`.
-- `task tui-hello-world-smoke` is the native TUI hello-world video smoke. It builds
+- `task cli:tui-hello-world-smoke` is the native TUI hello-world video smoke. It builds
   the native executable, starts a deterministic Ollama-compatible fixture provider,
   records the real `codegeist tui` surface through VHS as MP4/WebM, asks the TUI to
   create and run `hello-world.sh`, then verifies the workspace and session-store side

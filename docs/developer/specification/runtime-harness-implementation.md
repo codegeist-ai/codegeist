@@ -174,18 +174,18 @@ Rules:
 
 ## Verification
 
-Implementation tasks should use the Taskfile from `app/codegeist/cli`:
+Normal implementation verification should use the root Taskfile:
 
 ```bash
-task test TEST=<test-selector>
-task test
+task cli:test-jvm TEST=<test-selector>
+task cli:check
 ```
 
 Use local provider verification only when a test intentionally hits the local
 Ollama provider:
 
 ```bash
-CODEGEIST_TEST_PROVIDER_CATEGORY=local task test TEST=<test-selector>
+CODEGEIST_TEST_PROVIDER_CATEGORY=local task cli:test TEST=<test-selector>
 ```
 
 Documentation-only edits should run:

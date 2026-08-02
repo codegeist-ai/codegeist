@@ -132,6 +132,7 @@ codegeist-macos-x64.tar.gz
 codegeist-install-linux.sh
 codegeist-install-macos.sh
 codegeist-install-windows.ps1
+LICENSE
 SHA256SUMS.txt
 ```
 
@@ -139,7 +140,7 @@ Release asset filenames intentionally omit the version because the GitHub Releas
 URL and immutable `v*` tag carry the version. Keep `codegeist-jvm.jar` instead of
 `codegeist-jvm-any.jar`; the `jvm` suffix already distinguishes the portable JVM
 artifact from platform-native archives.
-The install scripts are release assets for curl-based bootstrap installs and must
+The install scripts and standalone canonical `LICENSE` are release assets and must
 stay covered by `SHA256SUMS.txt` together with the jar and native archives.
 The release workflow must also run each install script against local release-shaped
 assets on its matching native runner before upload; the macOS installer must be
