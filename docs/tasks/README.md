@@ -62,16 +62,19 @@ or merely open task records as ready work.
 ## Current Contributor Foundation Work
 
 - `T010_build-shared-github-contributor-foundation/` is the open account-wide
-  rollout. This repository contains its local contributor baseline, but shared
-  policy publication, personal account-profile publication, public issues, Roadmap
-  items, test pull requests, and branch protection remain outside the completed
-  local work.
+  rollout tracked by
+  [codegeist-ai/codegeist#2](https://github.com/codegeist-ai/codegeist/issues/2).
+  Shared policy and profile repositories, the Roadmap, source-repository pull
+  request checks, and public ready-work issues are published. Final metadata,
+  branch protection, and account-wide community-profile verification remain.
 - `T011_refresh-provider-implementation-specification.md` is a confirmed unmet
-  intermediate documentation candidate pending issue creation.
+  intermediate documentation task linked from
+  [issue #4](https://github.com/codegeist-ai/codegeist/issues/4).
 - `T012_add-workspace-tools-configuration-example.md` is a confirmed unmet,
-  beginner-safe example/test candidate pending issue creation.
+  beginner-safe example/test task linked from
+  [issue #6](https://github.com/codegeist-ai/codegeist/issues/6).
 - `T013_add-native-reflection-metadata-consistency-test.md` is a confirmed unmet
-  intermediate static-test candidate pending issue creation.
+  intermediate static-test task linked from
+  [issue #5](https://github.com/codegeist-ai/codegeist/issues/5).
 
-None of these candidates is publicly ready until a maintainer creates and links its
-issue and marks it ready in the repository and Roadmap.
+These three tasks are publicly ready and labeled by contribution level and effort.
