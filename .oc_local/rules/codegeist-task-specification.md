@@ -12,6 +12,17 @@ This overlay adds only Codegeist-specific guidance. Keep generic task behavior i
 
 ## Codegeist Guidance
 
+- The new product direction is a greenfield Go project in `app/codegeist/go/`,
+  next to the existing Java project in `app/codegeist/cli/`. Do not migrate or
+  reuse the Java implementation, its architecture, dependencies, or CLI contract
+  for new product work. Keep the existing Java-specific guidance below only for
+  tasks explicitly maintaining the legacy `app/codegeist/cli/` project; new Go
+  tasks should define their own focused contracts and verification.
+- The initial Go task, `docs/tasks/T010_start-codegeist-go-project.md`, creates
+  only a minimal buildable project. The longer-term direction is a general AI
+  agent with CLI/TUI-first interaction and a focus on application size and speed;
+  do not pull those future behaviors into the initial scaffold task.
+
 - Treat `T001` child tasks as documentation-first Codegeist/OpenCode parity
   architecture work unless a task explicitly asks for runtime implementation.
 - Treat `T002_01_align-codegeist-build-baseline.md` as the completed build/layout
