@@ -10,6 +10,10 @@ Use the shared `/task` workflow from `.opencode`:
 This overlay adds only Codegeist-specific guidance. Keep generic task behavior in
 `.opencode/rules/task-workflow.md`.
 
+Apply `.oc_local/rules/github-task-lifecycle.md` as the mandatory Issue, branch,
+PR, merge, synchronization, and cleanup overlay for every `/task` and `/save`
+invocation in this repository.
+
 ## Codegeist Guidance
 
 - The new product direction is a greenfield Go project in `app/codegeist/go/`,

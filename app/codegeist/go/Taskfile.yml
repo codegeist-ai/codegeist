@@ -1,0 +1,22 @@
+# Taskfile.yml - minimal build, test, and run entrypoints for the Go project.
+#
+# Commands run from this directory directly or through the root `go` namespace.
+
+version: '3'
+
+tasks:
+  test:
+    desc: Test the Go project
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build the Go application
+    cmds:
+      - mkdir -p bin
+      - go build -o bin/codegeist .
+
+  run:
+    desc: Run the Go application
+    cmds:
+      - go run .

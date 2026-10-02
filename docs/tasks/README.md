@@ -4,6 +4,8 @@ Repository-local task files preserve implementation detail that does not fit in 
 GitHub issue. They are working specifications and historical records, not a
 standalone public backlog.
 
+GitHub Mirror: https://github.com/codegeist-ai/codegeist
+
 Read [`CONTRIBUTING.md`](../../CONTRIBUTING.md) before starting implementation.
 Codegeist also uses the account-wide
 [Code of Conduct](https://github.com/codegeist-ai/.github/blob/main/CODE_OF_CONDUCT.md),
@@ -50,14 +52,21 @@ Codegeist Roadmap -> repository Issue -> repository task file -> branch -> PR ->
 - Every issue marked ready for implementation should link its canonical task path.
 - Every publicly tracked task should replace `pending issue creation` with the full
   GitHub issue URL.
-- A pull request should link the issue and task, report verification, and close the
-  issue when the implementation is complete. Update the task status in the same
-  implementation unit when practical.
+- Every accepted non-backlog task and child task receives one GitHub Issue. Its
+  implementation uses one task branch and one pull request.
+- Automation closes a solved Issue as completed before opening the PR, waits for
+  required checks, squash-merges the PR, synchronizes GitHub and Gitea `main`, and
+  deletes the task branch from both hosts and locally.
+- Cancellation closes the Issue as not planned and records the cancelled task
+  state through a small automated PR before the same synchronization and cleanup.
+- `/save` may create the deterministic task branch from the current branch. When
+  implemented work has no unique task yet, it first asks whether to create a
+  retrospective task; accepting creates both the local task and mandatory Issue
+  before publication continues.
 
-Ideas do not need a task and issue immediately. Create both when maintainers accept
-the work for implementation and need a durable contract. Do not mirror an entire
-task specification into an issue body, and do not advertise historical, deferred,
-or merely open task records as ready work.
+Backlog ideas remain local until promoted to accepted tasks. Do not mirror an
+entire task specification into an issue body, and do not advertise historical or
+deferred task records as ready work.
 
 ## Current Contributor Foundation Work
 

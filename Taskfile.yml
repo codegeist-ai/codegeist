@@ -1,7 +1,8 @@
 # Taskfile.yml - root entrypoint for repo task shortcuts.
 #
-# Includes the CLI module Taskfile without flattening or aliases so commands stay
-# namespaced, for example `task cli:check` from the repository root.
+# Includes application Taskfiles without flattening or aliases so commands stay
+# namespaced, for example `task cli:check` or `task go:test` from the repository
+# root.
 
 version: '3'
 
@@ -9,3 +10,6 @@ includes:
   cli:
     taskfile: ./app/codegeist/cli/Taskfile.yml
     dir: ./app/codegeist/cli
+  go:
+    taskfile: ./app/codegeist/go/Taskfile.yml
+    dir: ./app/codegeist/go
