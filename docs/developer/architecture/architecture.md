@@ -43,8 +43,13 @@ docs:
 
 ## Current System State
 
-Codegeist currently contains one Java/Spring Boot CLI application under
-`app/codegeist/cli`. Implemented runtime behavior is Spring Boot application
+Codegeist currently contains the existing Java/Spring Boot CLI application under
+`app/codegeist/cli` and a separate minimal greenfield Go project under
+`app/codegeist/go`. The Go project currently provides only an empty executable
+entrypoint plus local test, build, and run tasks; it has no agent, CLI-command,
+TUI, provider, tool, configuration, or session behavior yet.
+
+Implemented Java runtime behavior is Spring Boot application
 startup, typed provider config loading and validation from an explicit path or
 working-directory `codegeist.yml`, trusted local SpEL preprocessing, direct workspace, tools, and
 MCP config loading, active workspace resolution, provider-neutral chat execution
@@ -110,6 +115,10 @@ app/codegeist/cli/
   pom.xml
   Taskfile.yml
   src/...
+app/codegeist/go/
+  go.mod
+  main.go
+  Taskfile.yml
 scripts/tests/
   smoke-common.ps1
   install-script-smoke.ps1
